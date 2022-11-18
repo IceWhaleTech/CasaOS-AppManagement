@@ -42,7 +42,7 @@ require (
 )
 
 require (
-	github.com/IceWhaleTech/CasaOS-Common v0.3.9-0.20221116011801-d8017d2ff420
+	github.com/IceWhaleTech/CasaOS-Common v0.3.9-0.20221118234001-876079b9590f
 	github.com/docker/docker v20.10.21+incompatible
 	github.com/gin-contrib/gzip v0.0.6
 	github.com/gin-contrib/sse v0.1.0 // indirect
