@@ -13,18 +13,13 @@ import (
 	"github.com/IceWhaleTech/CasaOS-AppManagement/pkg/config"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/pkg/docker"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/service"
-	"github.com/IceWhaleTech/CasaOS-AppManagement/service/docker_base"
-	model2 "github.com/IceWhaleTech/CasaOS-AppManagement/service/model"
-	"github.com/IceWhaleTech/CasaOS-AppManagement/types"
 	"github.com/IceWhaleTech/CasaOS-Common/model"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/common_err"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/file"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/logger"
-	port2 "github.com/IceWhaleTech/CasaOS-Common/utils/port"
-	"github.com/IceWhaleTech/CasaOS-Common/utils/random"
+	"github.com/IceWhaleTech/CasaOS-Common/utils/port"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
-	"github.com/jinzhu/copier"
 	uuid "github.com/satori/go.uuid"
 	"go.uber.org/zap"
 	"golang.org/x/crypto/ssh"
@@ -189,7 +184,7 @@ func InstallApp(c *gin.Context) {
 	if len(m.PortMap) > 0 && m.PortMap != "0" {
 		// c.JSON(http.StatusOK, model.Result{Success: common_err.INVALID_PARAMS, Message: common_err.GetMsg(common_err.INVALID_PARAMS)})
 		portMap, _ := strconv.Atoi(m.PortMap)
-		if !port2.IsPortAvailable(portMap, "tcp") {
+		if !port.IsPortAvailable(portMap, "tcp") {
 			c.JSON(common_err.SERVICE_ERROR, model.Result{Success: common_err.SERVICE_ERROR, Message: "Duplicate port:" + m.PortMap})
 			return
 		}
@@ -210,25 +205,25 @@ func InstallApp(c *gin.Context) {
 	for _, u := range m.Ports {
 		if u.Protocol == "udp" {
 			t, _ := strconv.Atoi(u.CommendPort)
-			if !port2.IsPortAvailable(t, "udp") {
+			if !port.IsPortAvailable(t, "udp") {
 				c.JSON(common_err.SERVICE_ERROR, model.Result{Success: common_err.SERVICE_ERROR, Message: "Duplicate port:" + u.CommendPort})
 				return
 			}
 		} else if u.Protocol == "tcp" {
 
 			te, _ := strconv.Atoi(u.CommendPort)
-			if !port2.IsPortAvailable(te, "tcp") {
+			if !port.IsPortAvailable(te, "tcp") {
 				c.JSON(common_err.SERVICE_ERROR, model.Result{Success: common_err.SERVICE_ERROR, Message: "Duplicate port:" + u.CommendPort})
 				return
 			}
 		} else if u.Protocol == "both" {
 			t, _ := strconv.Atoi(u.CommendPort)
-			if !port2.IsPortAvailable(t, "udp") {
+			if !port.IsPortAvailable(t, "udp") {
 				c.JSON(common_err.SERVICE_ERROR, model.Result{Success: common_err.SERVICE_ERROR, Message: "Duplicate port:" + u.CommendPort})
 				return
 			}
 			te, _ := strconv.Atoi(u.CommendPort)
-			if !port2.IsPortAvailable(te, "tcp") {
+			if !port.IsPortAvailable(te, "tcp") {
 				c.JSON(common_err.SERVICE_ERROR, model.Result{Success: common_err.SERVICE_ERROR, Message: "Duplicate port:" + u.CommendPort})
 				return
 			}
@@ -262,58 +257,7 @@ func InstallApp(c *gin.Context) {
 	//}
 	id := uuid.NewV4().String()
 	m.CustomId = id
-	relyMap := make(map[string]string)
 	go func() {
-		// installLog := model2.AppNotify{}
-		// installLog.State = 0
-		// installLog.CustomId = m.Label
-		// installLog.Message = "installing rely"
-		// installLog.Class = types.NOTIFY_APP
-		// installLog.Type = types.NOTIFY_TYPE_UNIMPORTANT
-		// installLog.CreatedAt = strconv.FormatInt(time.Now().Unix(), 10)
-		// installLog.UpdatedAt = strconv.FormatInt(time.Now().Unix(), 10)
-		// installLog.Id = uuid.NewV4().String()
-		// service.MyService.Notify().AddLog(installLog)
-		if m.Origin != CUSTOM {
-			for _, plugin := range appInfo.Plugins {
-				if plugin == "mysql" {
-					mid := uuid.NewV4().String()
-					mc := docker_base.MysqlConfig{}
-					mc.DataBasePassword = random.RandomString(6, false)
-					mc.DataBaseDB = appInfo.Title
-					mc.DataBaseUser = "root"
-					mc.DataBasePort = "3306"
-					mysqlContainerId, err := docker_base.MysqlCreate(mc, mid, m.CpuShares, m.Memory)
-					if len(mysqlContainerId) > 0 && err == nil {
-
-						mc.DataBaseHost = mid
-
-						m.Envs = docker_base.MysqlFilter(mc, m.Envs)
-
-						rely := model2.RelyDBModel{}
-						rely.Type = types.RELY_TYPE_MYSQL
-						rely.ContainerId = mysqlContainerId
-						rely.CustomId = mid
-						rely.ContainerCustomId = m.Label
-						var mysqlConfig model2.MysqlConfigs
-
-						// 结构体转换
-						copier.Copy(&mysqlConfig, &mc)
-						rely.Config = mysqlConfig
-						service.MyService.Rely().Create(rely)
-
-						relyMap["mysql"] = mid
-
-					} else {
-						docker_base.MysqlDelete(mysqlContainerId)
-						// installLog.State = 0
-						// installLog.Message = err.Error()
-						// service.MyService.Notify().UpdateLog(installLog)
-					}
-				}
-			}
-		}
-
 		// step：下载镜像
 		err := service.MyService.Docker().DockerPullImage(dockerImage+":"+dockerImageVersion, m.Icon, m.Label)
 		if err != nil {
@@ -781,7 +725,7 @@ func UpdateSetting(c *gin.Context) {
 	// }
 	service.MyService.Docker().DockerContainerStop(id)
 	portMap, _ := strconv.Atoi(m.PortMap)
-	if !port2.IsPortAvailable(portMap, "tcp") {
+	if !port.IsPortAvailable(portMap, "tcp") {
 		service.MyService.Docker().DockerContainerStart(id)
 		c.JSON(common_err.SERVICE_ERROR, model.Result{Success: common_err.SERVICE_ERROR, Message: "Duplicate port:" + m.PortMap})
 		return
@@ -790,28 +734,28 @@ func UpdateSetting(c *gin.Context) {
 	for _, u := range m.Ports {
 		if u.Protocol == "udp" {
 			t, _ := strconv.Atoi(u.CommendPort)
-			if !port2.IsPortAvailable(t, "udp") {
+			if !port.IsPortAvailable(t, "udp") {
 				service.MyService.Docker().DockerContainerStart(id)
 				c.JSON(common_err.SERVICE_ERROR, model.Result{Success: common_err.SERVICE_ERROR, Message: "Duplicate port:" + u.CommendPort})
 				return
 			}
 		} else if u.Protocol == "tcp" {
 			te, _ := strconv.Atoi(u.CommendPort)
-			if !port2.IsPortAvailable(te, "tcp") {
+			if !port.IsPortAvailable(te, "tcp") {
 				service.MyService.Docker().DockerContainerStart(id)
 				c.JSON(common_err.SERVICE_ERROR, model.Result{Success: common_err.SERVICE_ERROR, Message: "Duplicate port:" + u.CommendPort})
 				return
 			}
 		} else if u.Protocol == "both" {
 			t, _ := strconv.Atoi(u.CommendPort)
-			if !port2.IsPortAvailable(t, "udp") {
+			if !port.IsPortAvailable(t, "udp") {
 				service.MyService.Docker().DockerContainerStart(id)
 				c.JSON(common_err.SERVICE_ERROR, model.Result{Success: common_err.SERVICE_ERROR, Message: "Duplicate port:" + u.CommendPort})
 				return
 			}
 
 			te, _ := strconv.Atoi(u.CommendPort)
-			if !port2.IsPortAvailable(te, "tcp") {
+			if !port.IsPortAvailable(te, "tcp") {
 				service.MyService.Docker().DockerContainerStart(id)
 				c.JSON(common_err.SERVICE_ERROR, model.Result{Success: common_err.SERVICE_ERROR, Message: "Duplicate port:" + u.CommendPort})
 				return
