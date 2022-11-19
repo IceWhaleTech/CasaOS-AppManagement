@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"path/filepath"
 	"strconv"
+	"strings"
 
 	"github.com/IceWhaleTech/CasaOS-AppManagement/model"
 	modelCommon "github.com/IceWhaleTech/CasaOS-Common/model"
@@ -75,41 +76,6 @@ func AppList(c *gin.Context) {
 	data["community"] = collection.Community
 
 	c.JSON(common_err.SUCCESS, &modelCommon.Result{Success: common_err.SUCCESS, Message: common_err.GetMsg(common_err.SUCCESS), Data: data})
-}
-
-// @Summary 获取一个可用端口
-// @Produce  application/json
-// @Accept application/json
-// @Tags app
-// @Param  type query string true "端口类型 udp/tcp"
-// @Security ApiKeyAuth
-// @Success 200 {string} string "ok"
-// @Router /app/getport [get]
-func GetPort(c *gin.Context) {
-	t := c.DefaultQuery("type", "tcp")
-	var p int
-	ok := true
-	for ok {
-		p, _ = port.GetAvailablePort(t)
-		ok = !port.IsPortAvailable(p, t)
-	}
-	// @tiger 这里最好封装成 {'port': ...} 的形式，来体现出参的上下文
-	c.JSON(common_err.SUCCESS, &modelCommon.Result{Success: common_err.SUCCESS, Message: common_err.GetMsg(common_err.SUCCESS), Data: p})
-}
-
-// @Summary 检查端口是否可用
-// @Produce  application/json
-// @Accept application/json
-// @Tags app
-// @Param  port path int true "端口号"
-// @Param  type query string true "端口类型 udp/tcp"
-// @Security ApiKeyAuth
-// @Success 200 {string} string "ok"
-// @Router /app/check/{port} [get]
-func PortCheck(c *gin.Context) {
-	p, _ := strconv.Atoi(c.Param("port"))
-	t := c.DefaultQuery("type", "tcp")
-	c.JSON(common_err.SUCCESS, &modelCommon.Result{Success: common_err.SUCCESS, Message: common_err.GetMsg(common_err.SUCCESS), Data: port.IsPortAvailable(p, t)})
 }
 
 // @Summary 我的应用列表
@@ -324,4 +290,38 @@ func PutDockerDaemonConfiguration(c *gin.Context) {
 	// TODO - println(command.ExecResultStr("systemctl restart docker"))
 
 	c.JSON(http.StatusOK, &modelCommon.Result{Success: common_err.SUCCESS, Message: common_err.GetMsg(common_err.SUCCESS), Data: request})
+}
+
+func GetSystemAppsStatus(c *gin.Context) {
+	systemAppList := service.MyService.App().GetSystemAppList()
+	appList := []model2.MyAppList{}
+	for _, v := range systemAppList {
+		name := strings.ReplaceAll(v.Names[0], "/", "")
+		if len(v.Labels["name"]) > 0 {
+			name = v.Labels["name"]
+		}
+		appList = append(appList, model2.MyAppList{
+			Name:     name,
+			Icon:     v.Labels["icon"],
+			State:    v.State,
+			CustomId: v.Labels["custom_id"],
+			Id:       v.ID,
+			Port:     v.Labels["web"],
+			Index:    v.Labels["index"],
+			// Order:      m.Labels["order"],
+			Image:  v.Image,
+			Latest: false,
+			// Type:   m.Labels["origin"],
+			// Slogan: m.Slogan,
+			// Rely:     m.Rely,
+			Host:     v.Labels["host"],
+			Protocol: v.Labels["protocol"],
+		})
+	}
+	c.JSON(common_err.SUCCESS,
+		model.Result{
+			Success: common_err.SUCCESS,
+			Message: common_err.GetMsg(common_err.SUCCESS),
+			Data:    appList,
+		})
 }

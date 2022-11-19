@@ -5,7 +5,6 @@ go 1.19
 require (
 	github.com/docker/go-connections v0.4.0
 	github.com/gin-gonic/gin v1.8.1
-	github.com/sirupsen/logrus v1.9.0
 )
 
 require (
@@ -29,6 +28,7 @@ require (
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.0.2 // indirect
 	github.com/pierrec/lz4/v4 v4.1.2 // indirect
+	github.com/sirupsen/logrus v1.9.0 // indirect
 	github.com/tidwall/match v1.1.1 // indirect
 	github.com/tidwall/pretty v1.2.0 // indirect
 	github.com/ulikunitz/xz v0.5.9 // indirect
@@ -64,7 +64,7 @@ require (
 	github.com/tidwall/gjson v1.14.3
 	github.com/ugorji/go/codec v1.2.7 // indirect
 	go.uber.org/zap v1.23.0
-	golang.org/x/crypto v0.0.0-20220411220226-7b82a4e95df4
+	golang.org/x/crypto v0.0.0-20220411220226-7b82a4e95df4 // indirect
 	golang.org/x/net v0.0.0-20220722155237-a158d28d115b // indirect
 	golang.org/x/sys v0.0.0-20220722155257-8c9f86f7a55f // indirect
 	golang.org/x/text v0.3.7 // indirect
