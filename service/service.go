@@ -25,6 +25,7 @@ var (
 type Repository interface {
 	App() AppService
 	Docker() DockerService
+	Gateway() external.ManagementService
 }
 
 func NewService(db *gorm.DB, RuntimePath string) Repository {
