@@ -57,7 +57,7 @@ func main() {
 	}
 
 	// register at gateway
-	for _, v := range []string{"apps"} {
+	for _, v := range []string{"apps", "container", "app-categories"} {
 		if err := service.MyService.Gateway().CreateRoute(&model.Route{
 			Path:   "/v1/" + v,
 			Target: "http://" + listener.Addr().String(),
