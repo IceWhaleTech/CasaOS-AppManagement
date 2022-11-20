@@ -1,0 +1,152 @@
+# This is an example .goreleaser.yml file with some sensible defaults.
+# Make sure to check the documentation at https://goreleaser.com
+project_name: casaos-app-management
+before:
+  hooks:
+    - go generate
+    - go run github.com/google/go-licenses@latest check . --disallowed_types=restricted
+    - go mod tidy
+    - go test -v ./...
+builds:
+  - id: casaos-app-management-amd64
+    binary: build/sysroot/usr/bin/casaos-app-management
+    env:
+      - CGO_ENABLED=1
+      - CC=x86_64-linux-gnu-gcc
+    gcflags:
+      - all=-N -l
+    ldflags:
+      - -extldflags "-static"
+    tags:
+      - musl
+      - netgo
+    goos:
+      - linux
+    goarch:
+      - amd64
+  - id: casaos-app-management-arm64
+    binary: build/sysroot/usr/bin/casaos-app-management
+    env:
+      - CGO_ENABLED=1
+      - CC=aarch64-linux-gnu-gcc
+    gcflags:
+      - all=-N -l
+    ldflags:
+      - -extldflags "-static"
+    tags:
+      - musl
+      - netgo
+    goos:
+      - linux
+    goarch:
+      - arm64
+  - id: casaos-app-management-arm-7
+    binary: build/sysroot/usr/bin/casaos-app-management
+    env:
+      - CGO_ENABLED=1
+      - CC=arm-linux-gnueabihf-gcc
+    gcflags:
+      - all=-N -l
+    ldflags:
+      - -extldflags "-static"
+    tags:
+      - musl
+      - netgo
+    goos:
+      - linux
+    goarch:
+      - arm
+    goarm:
+      - "7"
+  - id: casaos-app-management-migration-tool-amd64
+    binary: build/sysroot/usr/bin/casaos-app-management-migration-tool
+    main: ./cmd/migration-tool
+    env:
+      - CGO_ENABLED=1
+      - CC=x86_64-linux-gnu-gcc
+    gcflags:
+      - all=-N -l
+    ldflags:
+      - -extldflags "-static"
+    tags:
+      - musl
+      - netgo
+    goos:
+      - linux
+    goarch:
+      - amd64
+  - id: casaos-app-management-migration-tool-arm64
+    binary: build/sysroot/usr/bin/casaos-app-management-migration-tool
+    main: ./cmd/migration-tool
+    env:
+      - CGO_ENABLED=1
+      - CC=aarch64-linux-gnu-gcc
+    gcflags:
+      - all=-N -l
+    ldflags:
+      - -extldflags "-static"
+    tags:
+      - musl
+      - netgo
+    goos:
+      - linux
+    goarch:
+      - arm64
+  - id: casaos-app-management-migration-tool-arm-7
+    binary: build/sysroot/usr/bin/casaos-app-management-migration-tool
+    main: ./cmd/migration-tool
+    env:
+      - CGO_ENABLED=1
+      - CC=arm-linux-gnueabihf-gcc
+    gcflags:
+      - all=-N -l
+    ldflags:
+      - -extldflags "-static"
+    tags:
+      - musl
+      - netgo
+    goos:
+      - linux
+    goarch:
+      - arm
+    goarm:
+      - "7"
+archives:
+  - name_template: "{{ .Os }}-{{ .Arch }}-{{ .ProjectName }}-v{{ .Version }}"
+    id: casaos-app-management
+    builds:
+      - casaos-app-management-amd64
+      - casaos-app-management-arm64
+      - casaos-app-management-arm-7
+    replacements:
+      arm: arm-7
+    files:
+      - build/**/*
+  - name_template: "{{ .Os }}-{{ .Arch }}-{{ .ProjectName }}-migration-tool-v{{ .Version }}"
+    id: casaos-app-management-migration-tool
+    builds:
+      - casaos-app-management-migration-tool-amd64
+      - casaos-app-management-migration-tool-arm64
+      - casaos-app-management-migration-tool-arm-7
+    replacements:
+      arm: arm-7
+    files:
+      - build/sysroot/etc/**/*
+checksum:
+  name_template: "checksums.txt"
+snapshot:
+  name_template: "{{ incpatch .Version }}-snapshot"
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+release:
+  github:
+    owner: IceWhaleTech
+    name: CasaOS-AppManagement
+  draft: true
+  prerelease: auto
+  mode: replace
+  name_template: "v{{ .Version }}"
