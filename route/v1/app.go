@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/IceWhaleTech/CasaOS-AppManagement/model"
+	model2 "github.com/IceWhaleTech/CasaOS-AppManagement/service/model"
 	modelCommon "github.com/IceWhaleTech/CasaOS-Common/model"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/common_err"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/file"
@@ -319,7 +320,7 @@ func GetSystemAppsStatus(c *gin.Context) {
 		})
 	}
 	c.JSON(common_err.SUCCESS,
-		model.Result{
+		modelCommon.Result{
 			Success: common_err.SUCCESS,
 			Message: common_err.GetMsg(common_err.SUCCESS),
 			Data:    appList,

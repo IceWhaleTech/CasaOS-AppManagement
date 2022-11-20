@@ -10,12 +10,12 @@ import (
 
 	"github.com/IceWhaleTech/CasaOS-AppManagement/model"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/pkg/config"
-	"github.com/IceWhaleTech/CasaOS-AppManagement/pkg/docker"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/service"
 	modelCommon "github.com/IceWhaleTech/CasaOS-Common/model"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/common_err"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/file"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/port"
+	"github.com/IceWhaleTech/CasaOS-Common/utils/ssh"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
 	uuid "github.com/satori/go.uuid"
@@ -51,9 +51,9 @@ func DockerTerminal(c *gin.Context) {
 		hr.Conn.Write([]byte("exit\r"))
 	}()
 	go func() {
-		docker.WsWriterCopy(hr.Conn, conn)
+		ssh.WsWriterCopy(hr.Conn, conn)
 	}()
-	docker.WsReaderCopy(conn, hr.Conn)
+	ssh.WsReaderCopy(conn, hr.Conn)
 }
 
 // @Summary 安装app(该接口需要post json数据)
