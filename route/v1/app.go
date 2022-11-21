@@ -6,14 +6,13 @@ import (
 	"net/http"
 	"path/filepath"
 	"strconv"
-	"strings"
 
 	"github.com/IceWhaleTech/CasaOS-AppManagement/model"
-	model2 "github.com/IceWhaleTech/CasaOS-AppManagement/service/model"
 	modelCommon "github.com/IceWhaleTech/CasaOS-Common/model"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/common_err"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/file"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/port"
+	"github.com/IceWhaleTech/CasaOS-Common/utils/systemctl"
 
 	"github.com/IceWhaleTech/CasaOS-AppManagement/service"
 	"github.com/gin-gonic/gin"
@@ -166,7 +165,6 @@ func AppInfo(c *gin.Context) {
 	}
 
 	info.Image += ":" + info.ImageVersion
-	// TODO - info.MaxMemory = (service.MyService.System().GetMemInfo()["total"]).(uint64) >> 20
 
 	c.JSON(common_err.SUCCESS, &modelCommon.Result{Success: common_err.SUCCESS, Message: common_err.GetMsg(common_err.SUCCESS), Data: info})
 }
@@ -287,42 +285,17 @@ func PutDockerDaemonConfiguration(c *gin.Context) {
 		}
 	}
 
-	// TODO - println(command.ExecResultStr("systemctl daemon-reload"))
-	// TODO - println(command.ExecResultStr("systemctl restart docker"))
+	if err := systemctl.ReloadDaemon(); err != nil {
+		c.JSON(http.StatusInternalServerError, &modelCommon.Result{Success: common_err.SERVICE_ERROR, Message: "error when trying to reload systemd daemon"})
+	}
+
+	if err := systemctl.StopService("docker"); err != nil {
+		c.JSON(http.StatusInternalServerError, &modelCommon.Result{Success: common_err.SERVICE_ERROR, Message: "error when trying to stop docker service"})
+	}
+
+	if err := systemctl.StartService("docker"); err != nil {
+		c.JSON(http.StatusInternalServerError, &modelCommon.Result{Success: common_err.SERVICE_ERROR, Message: "error when trying to start docker service"})
+	}
 
 	c.JSON(http.StatusOK, &modelCommon.Result{Success: common_err.SUCCESS, Message: common_err.GetMsg(common_err.SUCCESS), Data: request})
-}
-
-func GetSystemAppsStatus(c *gin.Context) {
-	systemAppList := service.MyService.App().GetSystemAppList()
-	appList := []model2.MyAppList{}
-	for _, v := range systemAppList {
-		name := strings.ReplaceAll(v.Names[0], "/", "")
-		if len(v.Labels["name"]) > 0 {
-			name = v.Labels["name"]
-		}
-		appList = append(appList, model2.MyAppList{
-			Name:     name,
-			Icon:     v.Labels["icon"],
-			State:    v.State,
-			CustomId: v.Labels["custom_id"],
-			Id:       v.ID,
-			Port:     v.Labels["web"],
-			Index:    v.Labels["index"],
-			// Order:      m.Labels["order"],
-			Image:  v.Image,
-			Latest: false,
-			// Type:   m.Labels["origin"],
-			// Slogan: m.Slogan,
-			// Rely:     m.Rely,
-			Host:     v.Labels["host"],
-			Protocol: v.Labels["protocol"],
-		})
-	}
-	c.JSON(common_err.SUCCESS,
-		modelCommon.Result{
-			Success: common_err.SUCCESS,
-			Message: common_err.GetMsg(common_err.SUCCESS),
-			Data:    appList,
-		})
 }

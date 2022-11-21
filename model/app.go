@@ -50,7 +50,6 @@ type ServerAppList struct {
 	Author         string    `json:"author"`
 	MinMemory      int       `json:"min_memory"`
 	MinDisk        int       `json:"min_disk"`
-	MaxMemory      uint64    `json:"max_memory"`
 	Thumbnail      string    `json:"thumbnail"`
 	Healthy        string    `json:"healthy"`
 	Plugins        Strings   `json:"plugins"`

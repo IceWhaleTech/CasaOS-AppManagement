@@ -1,7 +1,6 @@
 package v1
 
 import (
-	json2 "encoding/json"
 	"net/http"
 	"path/filepath"
 	"strconv"
@@ -563,51 +562,6 @@ func PutAppUpdate(c *gin.Context) {
 	c.JSON(common_err.SUCCESS, modelCommon.Result{Success: common_err.SUCCESS, Message: common_err.GetMsg(common_err.SUCCESS)})
 }
 
-// @Summary 获取容器详情
-// @Produce  application/json
-// @Accept application/json
-// @Tags app
-// @Param  id path string true "appid"
-// @Security ApiKeyAuth
-// @Success 200 {string} string "ok"
-// @Router /app/info/{id} [get]
-func ContainerInfo(c *gin.Context) {
-	appId := c.Param("id")
-
-	// @tiger - 作为最佳实践，不应该直接把数据库的信息返回，来避免未来数据库结构上的迭代带来的新字段
-	appInfo := service.MyService.App().GetAppDBInfo(appId)
-	containerInfo, _ := service.MyService.Docker().DockerContainerStats(appId)
-	// cpuModel := "arm"
-	// if cpu := service.MyService.System().GetCpuInfo(); len(cpu) > 0 {
-	// 	if strings.Count(strings.ToLower(strings.TrimSpace(cpu[0].ModelName)), "intel") > 0 {
-	// 		cpuModel = "intel"
-	// 	} else if strings.Count(strings.ToLower(strings.TrimSpace(cpu[0].ModelName)), "amd") > 0 {
-	// 		cpuModel = "amd"
-	// 	}
-	// } // TODO
-
-	info, err := service.MyService.Docker().DockerContainerInfo(appId)
-	if err != nil {
-		// todo 需要自定义错误
-		c.JSON(common_err.SERVICE_ERROR, modelCommon.Result{Success: common_err.SERVICE_ERROR, Message: common_err.GetMsg(common_err.SERVICE_ERROR), Data: err.Error()})
-		return
-	}
-	con := struct {
-		Status    string `json:"status"`
-		StartedAt string `json:"started_at"`
-		CPUShares int64  `json:"cpu_shares"`
-		Memory    int64  `json:"total_memory"`   // @tiger - 改成 total_memory，方便以后增加 free_memory 之类的字段
-		Restart   string `json:"restart_policy"` // @tiger - 改成 restart_policy?
-	}{Status: info.State.Status, StartedAt: info.State.StartedAt, CPUShares: info.HostConfig.CPUShares, Memory: info.HostConfig.Memory >> 20, Restart: info.HostConfig.RestartPolicy.Name}
-	data := make(map[string]interface{}, 5)
-	data["app"] = appInfo // @tiget - 最佳实践是，返回 appid，然后具体的 app 信息由前端另行获取
-	// data["cpu"] = cpuModel                                            // TODO
-	// data["memory"] = service.MyService.System().GetMemInfo()["total"] // TODO
-	data["container"] = json2.RawMessage(containerInfo)
-	data["info"] = con
-	c.JSON(common_err.SUCCESS, modelCommon.Result{Success: common_err.SUCCESS, Message: common_err.GetMsg(common_err.SUCCESS), Data: data})
-}
-
 func GetDockerNetworks(c *gin.Context) {
 	networks := service.MyService.Docker().DockerNetworkModelList()
 	list := []map[string]string{}
@@ -617,21 +571,6 @@ func GetDockerNetworks(c *gin.Context) {
 		}
 	}
 	c.JSON(common_err.SUCCESS, modelCommon.Result{Success: common_err.SUCCESS, Message: common_err.GetMsg(common_err.SUCCESS), Data: list})
-}
-
-// @Summary 获取依赖数据
-// @Produce  application/json
-// @Accept application/json
-// @Tags app
-// @Param  id path string true "rely id"
-// @Security ApiKeyAuth
-// @Success 200 {string} string "ok"
-// @Router /app/rely/{id}/info [get]
-func ContainerRelyInfo(c *gin.Context) {
-	// TODO
-	// id := c.Param("id")
-	// appInfo := service.MyService.Rely().GetInfo(id)
-	// c.JSON(http.StatusOK, modelCommon.Result{Success: common_err.SUCCESS, Message: common_err.GetMsg(common_err.SUCCESS), Data: appInfo})
 }
 
 // @Produce  application/json

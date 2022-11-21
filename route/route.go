@@ -51,7 +51,6 @@ func InitRouter() *gin.Engine {
 			// there are problems, temporarily do not deal with
 			v1ContainerGroup.GET("/:id/terminal", v1.DockerTerminal) // app/terminal/:id
 			v1ContainerGroup.POST("", v1.InstallApp)                 // app/install
-			// v1ContainerGroup.GET("/:id", v1.ContainerInfo) // /app/info/:id
 
 			v1ContainerGroup.PUT("/:id", v1.UpdateSetting) ///update/:id/setting
 
@@ -69,7 +68,6 @@ func InitRouter() *gin.Engine {
 		v1AppCategoriesGroup.Use()
 		{
 			v1AppCategoriesGroup.GET("", v1.CategoryList)
-			v1AppCategoriesGroup.GET("/apps-state", v1.GetSystemAppsStatus)
 		}
 
 	}
