@@ -69,7 +69,6 @@ func InitRouter() *gin.Engine {
 		v1AppCategoriesGroup.Use()
 		{
 			v1AppCategoriesGroup.GET("", v1.CategoryList)
-			v1AppCategoriesGroup.GET("/apps-state", v1.GetSystemAppsStatus)
 		}
 
 	}

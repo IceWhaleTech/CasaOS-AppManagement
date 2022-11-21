@@ -577,14 +577,6 @@ func ContainerInfo(c *gin.Context) {
 	// @tiger - 作为最佳实践，不应该直接把数据库的信息返回，来避免未来数据库结构上的迭代带来的新字段
 	appInfo := service.MyService.App().GetAppDBInfo(appId)
 	containerInfo, _ := service.MyService.Docker().DockerContainerStats(appId)
-	// cpuModel := "arm"
-	// if cpu := service.MyService.System().GetCpuInfo(); len(cpu) > 0 {
-	// 	if strings.Count(strings.ToLower(strings.TrimSpace(cpu[0].ModelName)), "intel") > 0 {
-	// 		cpuModel = "intel"
-	// 	} else if strings.Count(strings.ToLower(strings.TrimSpace(cpu[0].ModelName)), "amd") > 0 {
-	// 		cpuModel = "amd"
-	// 	}
-	// } // TODO
 
 	info, err := service.MyService.Docker().DockerContainerInfo(appId)
 	if err != nil {
@@ -601,8 +593,7 @@ func ContainerInfo(c *gin.Context) {
 	}{Status: info.State.Status, StartedAt: info.State.StartedAt, CPUShares: info.HostConfig.CPUShares, Memory: info.HostConfig.Memory >> 20, Restart: info.HostConfig.RestartPolicy.Name}
 	data := make(map[string]interface{}, 5)
 	data["app"] = appInfo // @tiget - 最佳实践是，返回 appid，然后具体的 app 信息由前端另行获取
-	// data["cpu"] = cpuModel                                            // TODO
-	// data["memory"] = service.MyService.System().GetMemInfo()["total"] // TODO
+
 	data["container"] = json2.RawMessage(containerInfo)
 	data["info"] = con
 	c.JSON(common_err.SUCCESS, modelCommon.Result{Success: common_err.SUCCESS, Message: common_err.GetMsg(common_err.SUCCESS), Data: data})
