@@ -619,21 +619,6 @@ func GetDockerNetworks(c *gin.Context) {
 	c.JSON(common_err.SUCCESS, modelCommon.Result{Success: common_err.SUCCESS, Message: common_err.GetMsg(common_err.SUCCESS), Data: list})
 }
 
-// @Summary 获取依赖数据
-// @Produce  application/json
-// @Accept application/json
-// @Tags app
-// @Param  id path string true "rely id"
-// @Security ApiKeyAuth
-// @Success 200 {string} string "ok"
-// @Router /app/rely/{id}/info [get]
-func ContainerRelyInfo(c *gin.Context) {
-	// TODO
-	// id := c.Param("id")
-	// appInfo := service.MyService.Rely().GetInfo(id)
-	// c.JSON(http.StatusOK, modelCommon.Result{Success: common_err.SUCCESS, Message: common_err.GetMsg(common_err.SUCCESS), Data: appInfo})
-}
-
 // @Produce  application/json
 // @Accept application/json
 // @Tags app
