@@ -12,6 +12,7 @@ import (
 	"github.com/IceWhaleTech/CasaOS-Common/utils/common_err"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/file"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/port"
+	"github.com/IceWhaleTech/CasaOS-Common/utils/systemctl"
 
 	"github.com/IceWhaleTech/CasaOS-AppManagement/service"
 	"github.com/gin-gonic/gin"
@@ -284,8 +285,17 @@ func PutDockerDaemonConfiguration(c *gin.Context) {
 		}
 	}
 
-	// TODO - println(command.ExecResultStr("systemctl daemon-reload"))
-	// TODO - println(command.ExecResultStr("systemctl restart docker"))
+	if err := systemctl.ReloadDaemon(); err != nil {
+		c.JSON(http.StatusInternalServerError, &modelCommon.Result{Success: common_err.SERVICE_ERROR, Message: "error when trying to reload systemd daemon"})
+	}
+
+	if err := systemctl.StopService("docker"); err != nil {
+		c.JSON(http.StatusInternalServerError, &modelCommon.Result{Success: common_err.SERVICE_ERROR, Message: "error when trying to stop docker service"})
+	}
+
+	if err := systemctl.StartService("docker"); err != nil {
+		c.JSON(http.StatusInternalServerError, &modelCommon.Result{Success: common_err.SERVICE_ERROR, Message: "error when trying to start docker service"})
+	}
 
 	c.JSON(http.StatusOK, &modelCommon.Result{Success: common_err.SUCCESS, Message: common_err.GetMsg(common_err.SUCCESS), Data: request})
 }
