@@ -1,19 +1,17 @@
-/*
- * @Author: link a624669980@163.com
- * @Date: 2022-05-16 17:37:08
- * @LastEditors: LinkLeong
- * @LastEditTime: 2022-07-13 10:46:38
- * @FilePath: /CasaOS/model/category.go
- * @Description:
+/*@Author: link a624669980@163.com
+ *@Date: 2022-05-16 17:37:08
+ *@LastEditors: LinkLeong
+ *@LastEditTime: 2022-07-13 10:46:38
+ *@FilePath: /CasaOS/model/category.go
+ *@Description:
  */
 package model
 
 type ServerCategoryList struct {
-	Version string         `json:"version"`
-	Item    []CategoryList `json:"item"`
+	Item []CategoryList `json:"item"`
 }
 type CategoryList struct {
-	Id uint `gorm:"column:id;primary_key" json:"id"`
+	ID uint `gorm:"column:id;primary_key" json:"id"`
 	//CreatedAt time.Time `json:"created_at"`
 	//
 	//UpdatedAt time.Time `json:"updated_at"`

@@ -5,6 +5,7 @@ go 1.19
 require (
 	github.com/docker/go-connections v0.4.0
 	github.com/gin-gonic/gin v1.8.1
+	github.com/samber/lo v1.35.0
 )
 
 require (
@@ -37,6 +38,7 @@ require (
 	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
 	go.uber.org/atomic v1.7.0 // indirect
 	go.uber.org/multierr v1.6.0 // indirect
+	golang.org/x/exp v0.0.0-20220303212507-bbda1eaf7a17 // indirect
 	golang.org/x/mod v0.6.0-dev.0.20220419223038-86c51ed26bb4 // indirect
 	golang.org/x/time v0.2.0 // indirect
 	golang.org/x/tools v0.1.12 // indirect

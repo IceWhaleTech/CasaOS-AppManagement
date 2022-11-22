@@ -1,12 +1,11 @@
-/*
- * @Author: LinkLeong link@icewhale.com
- * @Date: 2022-07-12 09:48:56
- * @LastEditors: LinkLeong
- * @LastEditTime: 2022-09-02 22:10:05
- * @FilePath: /CasaOS/service/service.go
- * @Description:
- * @Website: https://www.casaos.io
- * Copyright (c) 2022 by icewhale, All Rights Reserved.
+/*@Author: LinkLeong link@icewhale.com
+ *@Date: 2022-07-12 09:48:56
+ *@LastEditors: LinkLeong
+ *@LastEditTime: 2022-09-02 22:10:05
+ *@FilePath: /CasaOS/service/service.go
+ *@Description:
+ *@Website: https://www.casaos.io
+ *Copyright (c) 2022 by icewhale, All Rights Reserved.
  */
 package service
 
@@ -42,7 +41,6 @@ func NewService(db *gorm.DB, RuntimePath string) Repository {
 }
 
 type store struct {
-	db      *gorm.DB
 	app     AppService
 	docker  DockerService
 	gateway external.ManagementService

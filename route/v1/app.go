@@ -36,18 +36,16 @@ const (
 // @Success 200 {string} string "ok"
 // @Router /app/list [get]
 func AppList(c *gin.Context) {
-	// service.MyService.Docker().DockerContainerCommit("test2")
-
 	index := c.DefaultQuery("index", "1")
 	size := c.DefaultQuery("size", "10000")
 	t := c.DefaultQuery("type", "rank")
-	categoryId := c.DefaultQuery("category_id", "0")
+	categoryID := c.DefaultQuery("category_id", "0")
 	key := c.DefaultQuery("key", "")
-	if len(index) == 0 || len(size) == 0 || len(t) == 0 || len(categoryId) == 0 {
+	if len(index) == 0 || len(size) == 0 || len(t) == 0 || len(categoryID) == 0 {
 		c.JSON(common_err.CLIENT_ERROR, &modelCommon.Result{Success: common_err.INVALID_PARAMS, Message: common_err.GetMsg(common_err.INVALID_PARAMS)})
 		return
 	}
-	collection, err := service.MyService.App().GetServerList(index, size, t, categoryId, key)
+	collection, err := service.MyService.App().GetServerList(index, size, t, categoryID, key)
 	if err != nil {
 		c.JSON(common_err.SERVICE_ERROR, &modelCommon.Result{Success: common_err.SERVICE_ERROR, Message: common_err.GetMsg(common_err.SERVICE_ERROR), Data: err.Error()})
 		return
@@ -182,7 +180,7 @@ func CategoryList(c *gin.Context) {
 		c.JSON(common_err.SERVICE_ERROR, &modelCommon.Result{Success: common_err.SERVICE_ERROR, Message: common_err.GetMsg(common_err.SERVICE_ERROR), Data: err.Error()})
 		return
 	}
-	var count uint = 0
+	var count uint
 	for _, category := range list {
 		count += category.Count
 	}
@@ -265,24 +263,26 @@ func PutDockerDaemonConfiguration(c *gin.Context) {
 		}
 	}
 
-	if buf, err := json.Marshal(request); err != nil {
+	buf, err := json.Marshal(request)
+	if err != nil {
 		c.JSON(http.StatusBadRequest, &modelCommon.Result{Success: common_err.CLIENT_ERROR, Message: "error when trying to serialize docker root json", Data: err})
 		return
-	} else {
-		if err := file.WriteToFullPath(buf, dockerRootDirFilePath, 0o644); err != nil {
-			c.JSON(http.StatusInternalServerError, &modelCommon.Result{Success: common_err.SERVICE_ERROR, Message: "error when trying to write " + dockerRootDirFilePath, Data: err})
-			return
-		}
 	}
 
-	if buf, err := json.Marshal(dockerConfig); err != nil {
+	if err := file.WriteToFullPath(buf, dockerRootDirFilePath, 0o644); err != nil {
+		c.JSON(http.StatusInternalServerError, &modelCommon.Result{Success: common_err.SERVICE_ERROR, Message: "error when trying to write " + dockerRootDirFilePath, Data: err})
+		return
+	}
+
+	buf, err = json.Marshal(dockerConfig)
+	if err != nil {
 		c.JSON(http.StatusBadRequest, &modelCommon.Result{Success: common_err.CLIENT_ERROR, Message: "error when trying to serialize docker config", Data: dockerConfig})
 		return
-	} else {
-		if err := file.WriteToFullPath(buf, dockerDaemonConfigurationFilePath, 0o644); err != nil {
-			c.JSON(http.StatusInternalServerError, &modelCommon.Result{Success: common_err.SERVICE_ERROR, Message: "error when trying to write to " + dockerDaemonConfigurationFilePath, Data: err})
-			return
-		}
+	}
+
+	if err := file.WriteToFullPath(buf, dockerDaemonConfigurationFilePath, 0o644); err != nil {
+		c.JSON(http.StatusInternalServerError, &modelCommon.Result{Success: common_err.SERVICE_ERROR, Message: "error when trying to write to " + dockerDaemonConfigurationFilePath, Data: err})
+		return
 	}
 
 	if err := systemctl.ReloadDaemon(); err != nil {
