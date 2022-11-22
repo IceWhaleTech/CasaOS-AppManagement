@@ -50,9 +50,7 @@ type DockerService interface {
 	GetDockerInfo() (types.Info, error)
 }
 
-type dockerService struct {
-	// rootDir string // needed by TODO below
-}
+type dockerService struct{}
 
 func (ds *dockerService) DockerContainerList() []types.Container {
 	cli, err := client2.NewClientWithOpts(client2.FromEnv, client2.WithTimeout(time.Second*5))
@@ -633,7 +631,6 @@ func (ds *dockerService) DockerNetworkModelList() []types.NetworkResource {
 }
 
 func NewDockerService() DockerService {
-	// TODO - return &dockerService{rootDir: command2.ExecResultStr(`source ./shell/helper.sh ;GetDockerRootDir`)}
 	return &dockerService{}
 }
 
