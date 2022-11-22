@@ -18,14 +18,14 @@ type APPModel struct {
 }
 
 type ServerModel struct {
-	HttpPort     string
+	HTTPPort     string
 	RunMode      string
-	ServerApi    string
+	ServerAPI    string
 	LockAccount  bool
 	Token        string
 	USBAutoMount string
 	SocketPort   string
-	UpdateUrl    string
+	UpdateURL    string
 }
 
 type CasaOSGlobalVariables struct {

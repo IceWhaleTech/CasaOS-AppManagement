@@ -45,10 +45,3 @@ func mapTo(section string, v interface{}) {
 		log.Fatalf("Cfg.MapTo %s err: %v", section, err)
 	}
 }
-
-func reflectFrom(section string, v interface{}) {
-	err := Cfg.Section(section).ReflectFrom(v)
-	if err != nil {
-		log.Fatalf("Cfg.ReflectFrom %s err: %v", section, err)
-	}
-}

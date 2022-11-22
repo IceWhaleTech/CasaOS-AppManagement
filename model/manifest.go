@@ -5,11 +5,11 @@ import (
 	"encoding/json"
 )
 
-type TcpPorts struct {
+type TCPPorts struct {
 	Desc          string `json:"desc"`
 	ContainerPort int    `json:"container_port"`
 }
-type UdpPorts struct {
+type UDPPorts struct {
 	Desc          string `json:"desc"`
 	ContainerPort int    `json:"container_port"`
 }
@@ -54,7 +54,7 @@ type EnvArray []Env
 // Value 实现方法
 func (p EnvArray) Value() (driver.Value, error) {
 	return json.Marshal(p)
-	//return .MarshalJSON()
+	// return .MarshalJSON()
 }
 
 // Scan 实现方法
@@ -105,7 +105,7 @@ func (p *PathArray) Scan(input interface{}) error {
 
 type CustomizationPostData struct {
 	ContainerName string    `json:"container_name"`
-	CustomId      string    `json:"custom_id"`
+	CustomID      string    `json:"custom_id"`
 	Origin        string    `json:"origin"`
 	NetworkModel  string    `json:"network_model"`
 	Index         string    `json:"index"`
@@ -115,9 +115,9 @@ type CustomizationPostData struct {
 	Ports         PortArray `json:"ports"`
 	Volumes       PathArray `json:"volumes"`
 	Devices       PathArray `json:"devices"`
-	//Port         string    `json:"port,omitempty"`
+	// Port         string    `json:"port,omitempty"`
 	PortMap     string   `json:"port_map"`
-	CpuShares   int64    `json:"cpu_shares"`
+	CPUShares   int64    `json:"cpu_shares"`
 	Memory      int64    `json:"memory"`
 	Restart     string   `json:"restart"`
 	EnableUPNP  bool     `json:"enable_upnp"`

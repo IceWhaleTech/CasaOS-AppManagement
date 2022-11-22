@@ -1,20 +1,16 @@
 package service
 
 import (
-	"bytes"
 	"context"
-	"encoding/base64"
-	"encoding/binary"
 	"fmt"
 	"io"
 	"io/ioutil"
-	"log"
-	"os"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/samber/lo"
 	"go.uber.org/zap"
 
 	"github.com/IceWhaleTech/CasaOS-AppManagement/model"
@@ -36,8 +32,8 @@ import (
 type DockerService interface {
 	DockerPullImage(imageName string, icon, name string) error
 	IsExistImage(imageName string) bool
-	DockerContainerCreate(m model.CustomizationPostData, id string) (containerId string, err error)
-	DockerContainerCopyCreate(info *types.ContainerJSON) (containerId string, err error)
+	DockerContainerCreate(m model.CustomizationPostData, id string) (containerID string, err error)
+	DockerContainerCopyCreate(info *types.ContainerJSON) (containerID string, err error)
 	DockerContainerStart(name string) error
 	DockerContainerStats(name string) (string, error)
 	DockerListByName(name string) (*types.Container, error)
@@ -49,17 +45,13 @@ type DockerService interface {
 	DockerContainerUpdateName(name, id string) (err error)
 	DockerContainerUpdate(m model.CustomizationPostData, id string) (err error)
 	DockerContainerLog(name string) ([]byte, error)
-	DockerContainerCommit(name string)
 	DockerContainerList() []types.Container
 	DockerNetworkModelList() []types.NetworkResource
-	DockerImageInfo(image string) (types.ImageInspect, error)
-	GetNetWorkNameByNetWorkID(id string) (string, error)
-	ContainerExecShell(container_id string) string
 	GetDockerInfo() (types.Info, error)
 }
 
 type dockerService struct {
-	rootDir string
+	// rootDir string // needed by TODO below
 }
 
 func (ds *dockerService) DockerContainerList() []types.Container {
@@ -73,135 +65,6 @@ func (ds *dockerService) DockerContainerList() []types.Container {
 		return containers
 	}
 	return containers
-}
-
-func (ds *dockerService) ContainerExecShell(container_id string) string {
-	cli, _ := client2.NewClientWithOpts(client2.FromEnv)
-	exec, err := cli.ContainerExecCreate(context.Background(), container_id, types.ExecConfig{
-		User: "1000:1000",
-		Cmd:  []string{"echo -e \"hellow\nworld\" >> /a.txt"},
-	})
-	if err != nil {
-		os.Exit(5)
-	}
-	err = cli.ContainerExecStart(context.Background(), exec.ID, types.ExecStartCheck{})
-	if err != nil {
-		fmt.Println("exec script error ", err)
-	}
-	return exec.ID
-}
-
-// 创建默认网络
-func DockerNetwork() {
-	cli, _ := client2.NewClientWithOpts(client2.FromEnv)
-	defer cli.Close()
-	d, _ := cli.NetworkList(context.Background(), types.NetworkListOptions{})
-
-	for _, resource := range d {
-		if resource.Name == docker.NETWORKNAME {
-			return
-		}
-	}
-	cli.NetworkCreate(context.Background(), docker.NETWORKNAME, types.NetworkCreate{})
-}
-
-// 根据网络id获取网络名
-func (ds *dockerService) GetNetWorkNameByNetWorkID(id string) (string, error) {
-	cli, _ := client2.NewClientWithOpts(client2.FromEnv)
-	defer cli.Close()
-	filter := filters.NewArgs()
-	filter.Add("id", id)
-	d, err := cli.NetworkList(context.Background(), types.NetworkListOptions{Filters: filter})
-	if err == nil && len(d) > 0 {
-		return d[0].Name, nil
-	}
-	return "", err
-}
-
-// 拉取镜像
-func DockerPull() {
-	cli, _ := client2.NewClientWithOpts(client2.FromEnv)
-	defer cli.Close()
-
-	authConfig := types.AuthConfig{}
-	encodedJSON, err := json2.Marshal(authConfig)
-	fmt.Println(err)
-
-	authStr := base64.URLEncoding.EncodeToString(encodedJSON)
-	reader, err := cli.ImagePull(context.Background(), "swr.cn-north-4.myhuaweicloud.com/root/swr-demo-2048:latest", types.ImagePullOptions{RegistryAuth: authStr})
-
-	buf := new(bytes.Buffer)
-	buf.ReadFrom(reader)
-	fmt.Println(buf.String())
-}
-
-// 拉取镜像
-func DockerEx() {
-	cli, _ := client2.NewClientWithOpts(client2.FromEnv)
-	defer cli.Close()
-
-	importResponse, err := cli.ImageImport(context.Background(), types.ImageImportSource{
-		Source:     strings.NewReader("source"),
-		SourceName: "image_source",
-	}, "repository_name:imported", types.ImageImportOptions{
-		Tag:     "imported",
-		Message: "A message",
-		Changes: []string{"change1", "change2"},
-	})
-
-	response, err := ioutil.ReadAll(importResponse)
-	if err != nil {
-		fmt.Println(err)
-	}
-	importResponse.Close()
-	println(string(response))
-	if string(response) != "response" {
-		fmt.Printf("expected response to contain 'response', got %s", string(response))
-	}
-}
-
-//func DockerContainerSize() {
-//	cli, err := client2.NewClientWithOpts(client2.FromEnv)
-//	//but := bytes.Buffer{}
-//	d, err := cli.ContainerExecCreate(context.Background(), "c3adcef92bae648890941ac00e6c4024d7f2959c2e629f0b581d6a19d77b5eda")
-//	fmt.Println(d)
-//	st, _ := ioutil.ReadAll(d.Body)
-//	fmt.Println(string(st))
-//	if err != nil {
-//		fmt.Print(err)
-//	}
-//
-//}
-
-func (ds *dockerService) DockerImageInfo(image string) (types.ImageInspect, error) {
-	cli, err := client2.NewClientWithOpts(client2.FromEnv)
-	if err != nil {
-		return types.ImageInspect{}, err
-	}
-	inspect, _, err := cli.ImageInspectWithRaw(context.Background(), image)
-	if err != nil {
-		return inspect, err
-	}
-	return inspect, nil
-}
-
-func MsqlExec(container string) error {
-	cli, err := client2.NewClientWithOpts(client2.FromEnv)
-	ctx := context.Background()
-	// 执行/bin/bash命令
-	ir, err := cli.ContainerExecCreate(ctx, container, types.ExecConfig{
-		AttachStdin:  false,
-		AttachStdout: true,
-		AttachStderr: true,
-		Cmd:          []string{"date"},
-		Tty:          true,
-		Env:          []string{"aaa=ddd"},
-	})
-	err = cli.ContainerExecStart(ctx, ir.ID, types.ExecStartCheck{})
-
-	fmt.Println(err)
-
-	return err
 }
 
 func Exec(container, row, col string) (hr types.HijackedResponse, err error) {
@@ -225,62 +88,6 @@ func Exec(container, row, col string) (hr types.HijackedResponse, err error) {
 		return
 	}
 	return
-}
-
-func DockerLog() {
-	// cli, err := client2.NewClientWithOpts(client2.FromEnv)
-	// ctx := context.Background()
-	// ir, err := cli.ContainerLogs(ctx, "79c6fa382c330b9149e2d28d24f4d2c231cdb8cfc0710c2d268ccee13c5b24f8", types.ContainerLogsOptions{})
-	// str, err := ioutil.ReadAll(ir)
-	// fmt.Println(string(str))
-	// fmt.Println(err)
-
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	client, _ := client2.NewClientWithOpts(client2.FromEnv)
-	reader, err := client.ContainerLogs(ctx, "79c6fa382c330b9149e2d28d24f4d2c231cdb8cfc0710c2d268ccee13c5b24f8", types.ContainerLogsOptions{})
-	if err != nil {
-		log.Fatal(err)
-	}
-	_, err = io.Copy(os.Stdout, reader)
-	if err != nil && err != io.EOF {
-		log.Fatal(err)
-	}
-}
-
-func DockerLogs() {
-	cli, err := client2.NewClientWithOpts(client2.FromEnv)
-	i, err := cli.ContainerLogs(context.Background(), "79c6fa382c330b9149e2d28d24f4d2c231cdb8cfc0710c2d268ccee13c5b24f8", types.ContainerLogsOptions{
-		ShowStderr: true,
-		ShowStdout: true,
-		Timestamps: false,
-		Follow:     true,
-		Tail:       "40",
-	})
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer i.Close()
-
-	hdr := make([]byte, 8)
-	for {
-		_, err := i.Read(hdr)
-		if err != nil {
-			log.Fatal(err)
-		}
-		var w io.Writer
-		switch hdr[0] {
-		case 1:
-			w = os.Stdout
-		default:
-			w = os.Stderr
-		}
-		count := binary.BigEndian.Uint32(hdr[4:])
-		dat := make([]byte, count)
-		_, err = i.Read(dat)
-		fmt.Fprint(w, string(dat))
-	}
 }
 
 // 正式内容
@@ -345,13 +152,16 @@ func (ds *dockerService) DockerPullImage(imageName string, icon, name string) er
 	return err
 }
 
-func (ds *dockerService) DockerContainerCopyCreate(info *types.ContainerJSON) (containerId string, err error) {
+func (ds *dockerService) DockerContainerCopyCreate(info *types.ContainerJSON) (containerID string, err error) {
 	cli, err := client2.NewClientWithOpts(client2.FromEnv)
 	if err != nil {
 		return "", err
 	}
 	defer cli.Close()
-	container, err := cli.ContainerCreate(context.Background(), info.Config, info.HostConfig, &network.NetworkingConfig{info.NetworkSettings.Networks}, nil, info.Name)
+
+	config := &network.NetworkingConfig{EndpointsConfig: info.NetworkSettings.Networks}
+
+	container, err := cli.ContainerCreate(context.Background(), info.Config, info.HostConfig, config, nil, info.Name)
 	if err != nil {
 		return "", err
 	}
@@ -364,7 +174,7 @@ func (ds *dockerService) DockerContainerCopyCreate(info *types.ContainerJSON) (c
 // param mapPort 容器主端口映射到外部的端口
 // param tcp 容器其他tcp端口
 // param udp 容器其他udp端口
-func (ds *dockerService) DockerContainerCreate(m model.CustomizationPostData, id string) (containerId string, err error) {
+func (ds *dockerService) DockerContainerCreate(m model.CustomizationPostData, id string) (containerID string, err error) {
 	if len(m.NetworkModel) == 0 {
 		m.NetworkModel = "bridge"
 	}
@@ -377,56 +187,30 @@ func (ds *dockerService) DockerContainerCreate(m model.CustomizationPostData, id
 	defer cli.Close()
 	ports := make(nat.PortSet)
 	portMaps := make(nat.PortMap)
-	//	ports[nat.Port(fmt.Sprint(m.PortMap)+"/tcp")] = struct{}{}
-	//	if net != "host" {
-	//		portMaps[nat.Port(fmt.Sprint(m.Port)+"/tcp")] = []nat.PortBinding{{HostIP: "", HostPort: m.PortMap}}
-	//	}
-	// port := ""
+
 	for _, portMap := range m.Ports {
-		// if portMap.CommendPort == m.PortMap && portMap.Protocol == "tcp" || portMap.Protocol == "both" {
-		// 	port = portMap.ContainerPort
-		// }
-		if portMap.Protocol == "tcp" {
+		if !lo.Contains([]string{"tcp", "udp", "both"}, portMap.Protocol) {
+			message := "unknown protocol"
+			logger.Error(message, zap.String("protocol", portMap.Protocol))
+			return "", errors.New(message)
+		}
 
+		protocols := strings.Replace(portMap.Protocol, "both", "tcp,udp", -1)
+		for _, p := range strings.Split(protocols, ",") {
 			tContainer, _ := strconv.Atoi(portMap.ContainerPort)
 			if tContainer > 0 {
-				ports[nat.Port(portMap.ContainerPort+"/tcp")] = struct{}{}
+				ports[nat.Port(portMap.ContainerPort+"/"+p)] = struct{}{}
 				if m.NetworkModel != "host" {
-					portMaps[nat.Port(portMap.ContainerPort+"/tcp")] = []nat.PortBinding{{HostPort: portMap.CommendPort}}
-				}
-			}
-		} else if portMap.Protocol == "both" {
-
-			tContainer, _ := strconv.Atoi(portMap.ContainerPort)
-			if tContainer > 0 {
-				ports[nat.Port(portMap.ContainerPort+"/tcp")] = struct{}{}
-				if m.NetworkModel != "host" {
-					portMaps[nat.Port(portMap.ContainerPort+"/tcp")] = []nat.PortBinding{{HostPort: portMap.CommendPort}}
-				}
-			}
-
-			uContainer, _ := strconv.Atoi(portMap.ContainerPort)
-			if uContainer > 0 {
-				ports[nat.Port(portMap.ContainerPort+"/udp")] = struct{}{}
-				if m.NetworkModel != "host" {
-					portMaps[nat.Port(portMap.ContainerPort+"/udp")] = []nat.PortBinding{{HostPort: portMap.CommendPort}}
-				}
-			}
-
-		} else {
-			uContainer, _ := strconv.Atoi(portMap.ContainerPort)
-			if uContainer > 0 {
-				ports[nat.Port(portMap.ContainerPort+"/udp")] = struct{}{}
-				if m.NetworkModel != "host" {
-					portMaps[nat.Port(portMap.ContainerPort+"/udp")] = []nat.PortBinding{{HostPort: portMap.CommendPort}}
+					portMaps[nat.Port(portMap.ContainerPort+"/"+p)] = []nat.PortBinding{{HostPort: portMap.CommendPort}}
 				}
 			}
 		}
 	}
 
 	var envArr []string
-	var showENV []string
-	showENV = append(showENV, "casaos")
+
+	showENV := []string{"casaos"}
+
 	for _, e := range m.Envs {
 		showENV = append(showENV, e.Name)
 		if strings.HasPrefix(e.Value, "$") {
@@ -443,8 +227,8 @@ func (ds *dockerService) DockerContainerCreate(m model.CustomizationPostData, id
 	}
 
 	res := container.Resources{}
-	if m.CpuShares > 0 {
-		res.CPUShares = m.CpuShares
+	if m.CPUShares > 0 {
+		res.CPUShares = m.CPUShares
 	}
 	if m.Memory > 0 {
 		res.Memory = m.Memory << 20
@@ -543,7 +327,7 @@ func (ds *dockerService) DockerContainerCreate(m model.CustomizationPostData, id
 	config.Labels["icon"] = m.Icon
 	config.Labels["desc"] = m.Description
 	config.Labels["index"] = m.Index
-	config.Labels["custom_id"] = m.CustomId
+	config.Labels["custom_id"] = m.CustomID
 	config.Labels["show_env"] = strings.Join(showENV, ",")
 	config.Labels["protocol"] = m.Protocol
 	config.Labels["host"] = m.Host
@@ -587,7 +371,9 @@ func (ds *dockerService) DockerContainerRemove(name string, update bool) error {
 	if !update {
 		path := docker.GetDir(name, "/config")
 		if !file.CheckNotExist(path) {
-			file.RMDir(path)
+			if err := file.RMDir(path); err != nil {
+				return err
+			}
 		}
 	}
 
@@ -606,19 +392,22 @@ func (ds *dockerService) DockerImageRemove(name string) error {
 	}
 	defer cli.Close()
 	imageList, err := cli.ImageList(context.Background(), types.ImageListOptions{})
+	if err != nil {
+		return err
+	}
 
-	imageId := ""
+	imageID := ""
 
 Loop:
 	for _, ig := range imageList {
 		for _, i := range ig.RepoTags {
 			if i == name {
-				imageId = ig.ID
+				imageID = ig.ID
 				break Loop
 			}
 		}
 	}
-	_, err = cli.ImageRemove(context.Background(), imageId, types.ImageRemoveOptions{})
+	_, err = cli.ImageRemove(context.Background(), imageID, types.ImageRemoveOptions{})
 	return err
 }
 
@@ -628,8 +417,13 @@ func DockerImageRemove(name string) error {
 		return err
 	}
 	defer cli.Close()
+
 	imageList, err := cli.ImageList(context.Background(), types.ImageListOptions{})
-	imageId := ""
+	if err != nil {
+		return err
+	}
+
+	imageID := ""
 
 Loop:
 	for _, ig := range imageList {
@@ -637,12 +431,12 @@ Loop:
 		fmt.Println(ig.Containers)
 		for _, i := range ig.RepoTags {
 			if i == name {
-				imageId = ig.ID
+				imageID = ig.ID
 				break Loop
 			}
 		}
 	}
-	_, err = cli.ImageRemove(context.Background(), imageId, types.ImageRemoveOptions{})
+	_, err = cli.ImageRemove(context.Background(), imageID, types.ImageRemoveOptions{})
 	return err
 }
 
@@ -728,21 +522,6 @@ func (ds *dockerService) DockerContainerStats(name string) (string, error) {
 	return string(sts), nil
 }
 
-// 备份容器
-func (ds *dockerService) DockerContainerCommit(name string) {
-	cli, err := client2.NewClientWithOpts(client2.FromEnv)
-	if err != nil {
-		fmt.Println(err)
-	}
-	defer cli.Close()
-	d, err := cli.ContainerInspect(context.Background(), name)
-	dss, err := cli.ContainerCommit(context.Background(), name, types.ContainerCommitOptions{Reference: "test", Config: d.Config})
-	if err != nil {
-		fmt.Println(err)
-	}
-	fmt.Println(dss)
-}
-
 func (ds *dockerService) DockerListByName(name string) (*types.Container, error) {
 	cli, _ := client2.NewClientWithOpts(client2.FromEnv)
 	defer cli.Close()
@@ -814,8 +593,8 @@ func (ds *dockerService) DockerContainerUpdate(m model.CustomizationPostData, id
 		res.Memory = m.Memory * 1024 * 1024
 		res.MemorySwap = -1
 	}
-	if m.CpuShares > 0 {
-		res.CPUShares = m.CpuShares
+	if m.CPUShares > 0 {
+		res.CPUShares = m.CPUShares
 	}
 	for _, p := range m.Devices {
 		res.Devices = append(res.Devices, container.DeviceMapping{PathOnHost: p.Path, PathInContainer: p.ContainerPath, CgroupPermissions: "rwm"})

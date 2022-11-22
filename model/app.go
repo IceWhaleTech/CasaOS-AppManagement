@@ -10,7 +10,6 @@ type ServerAppListCollection struct {
 	List      []ServerAppList `json:"list"`
 	Recommend []ServerAppList `json:"recommend"`
 	Community []ServerAppList `json:"community"`
-	Version   string          `json:"version"`
 }
 
 // @tiger - 对于用于出参的数据结构，静态信息（例如 title）和
@@ -24,7 +23,7 @@ type ServerAppListCollection struct {
 //	另外，一些针对性字段，例如 Docker 相关的，可以用 map 来保存。
 //	这样在未来增加多态 App，例如 Snap，不需要维护多个结构，或者一个结构保存不必要的字段
 type ServerAppList struct {
-	Id             uint      `gorm:"column:id;primary_key" json:"id"`
+	ID             uint      `gorm:"column:id;primary_key" json:"id"`
 	Title          string    `json:"title"`
 	Description    string    `json:"description"`
 	Tagline        string    `json:"tagline"`
@@ -32,7 +31,7 @@ type ServerAppList struct {
 	Icon           string    `json:"icon"`
 	ScreenshotLink Strings   `gorm:"type:json" json:"screenshot_link"`
 	Category       string    `json:"category"`
-	CategoryId     int       `json:"category_id"`
+	CategoryID     int       `json:"category_id"`
 	CategoryFont   string    `json:"category_font"`
 	PortMap        string    `json:"port_map"`
 	ImageVersion   string    `json:"image_version"`
@@ -89,14 +88,6 @@ type Devices struct {
 	Path          string `json:"path"`
 	Desc          string `json:"desc"`
 	Type          int    `json:"type"` //  1:必选 2:可选 3:默认值不必显示 4:系统处理 5:container内容也可编辑
-}
-
-type configures struct {
-	TcpPorts []Ports   `json:"tcp_ports"`
-	UdpPorts []Ports   `json:"udp_ports"`
-	Envs     []Envs    `json:"envs"`
-	Volumes  []Volume  `json:"volumes"`
-	Devices  []Devices `json:"devices"`
 }
 
 /****************使gorm支持[]string结构*******************/
