@@ -323,11 +323,15 @@ func UnInstallApp(c *gin.Context) {
 		for _, v := range info.Mounts {
 			if strings.Contains(v.Source, info.Name) {
 				path := filepath.Join(strings.Split(v.Source, info.Name)[0], info.Name)
-				service.MyService.App().DelAppConfigDir(path)
+				if err := file.RMDir(path); err != nil {
+					c.JSON(http.StatusInternalServerError, modelCommon.Result{Success: common_err.UNINSTALL_APP_ERROR, Message: err.Error()})
+					return
+				}
 			}
 		}
 	}
 	config.CasaOSGlobalVariables.AppChange = true
+
 	// notify := notify.Application{}
 	// notify.Icon = info.Config.Labels["icon"]
 	// notify.Name = strings.ReplaceAll(info.Name, "/", "")
