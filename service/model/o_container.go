@@ -1,12 +1,11 @@
-/*
- * @Author: LinkLeong link@icewhale.com
- * @Date: 2022-05-13 18:15:46
- * @LastEditors: LinkLeong
- * @LastEditTime: 2022-07-13 10:56:34
- * @FilePath: /CasaOS/service/model/o_container.go
- * @Description:
- * @Website: https://www.casaos.io
- * Copyright (c) 2022 by icewhale, All Rights Reserved.
+/*@Author: LinkLeong link@icewhale.com
+ *@Date: 2022-05-13 18:15:46
+ *@LastEditors: LinkLeong
+ *@LastEditTime: 2022-07-13 10:56:34
+ *@FilePath: /CasaOS/service/model/o_container.go
+ *@Description:
+ *@Website: https://www.casaos.io
+ *Copyright (c) 2022 by icewhale, All Rights Reserved.
  */
 package model
 
@@ -14,7 +13,7 @@ const CONTAINERTABLENAME = "o_container"
 
 // Soon to be removed
 type AppListDBModel struct {
-	CustomId string `gorm:"column:custom_id;primary_key" json:"custom_id"`
+	CustomID string `gorm:"column:custom_id;primary_key" json:"custom_id"`
 	Title    string `json:"title"`
 	//	ScreenshotLink model.Strings `gorm:"type:json" json:"screenshot_link,omitempty"`
 	ScreenshotLink string `json:"screenshot_link"`
@@ -24,7 +23,7 @@ type AppListDBModel struct {
 	Tags        string `json:"tags"`
 	Icon        string `json:"icon"`
 	Version     string `json:"version"`
-	ContainerId string `json:"container_id,omitempty"`
+	ContainerID string `json:"container_id,omitempty"`
 	Image       string `json:"image,omitempty"`
 	Index       string `json:"index"`
 	CreatedAt   string `gorm:"<-:create;autoCreateTime" json:"created_at"`
@@ -43,7 +42,7 @@ type AppListDBModel struct {
 	// Devices   []model.PathMap  `gorm:"type:json" json:"device"`
 	Position  bool   `json:"position"`
 	NetModel  string `json:"net_model"`
-	CpuShares int64  `json:"cpu_shares"`
+	CPUShares int64  `json:"cpu_shares"`
 	Memory    int64  `json:"memory"`
 	Restart   string `json:"restart"`
 	// Rely      model.MapStrings `gorm:"type:json" json:"rely"` //[{"mysql":"id"},{"mysql":"id"}]
@@ -59,11 +58,11 @@ func (p *AppListDBModel) TableName() string {
 }
 
 type MyAppList struct {
-	Id       string `json:"id"`
+	ID       string `json:"id"`
 	Name     string `json:"name"`
 	Icon     string `json:"icon"`
 	State    string `json:"state"`
-	CustomId string `gorm:"column:custom_id;primary_key" json:"custom_id"`
+	CustomID string `gorm:"column:custom_id;primary_key" json:"custom_id"`
 	Index    string `json:"index"`
 	// Order    string `json:"order"`
 	Port   string `json:"port"`

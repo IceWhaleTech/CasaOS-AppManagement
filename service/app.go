@@ -337,9 +337,9 @@ func (o *appStruct) ImportApplications(casaApp bool) {
 	if casaApp {
 		list := MyService.App().GetAllDBApps()
 		for _, app := range list {
-			info, err := MyService.Docker().DockerContainerInfo(app.CustomId)
+			info, err := MyService.Docker().DockerContainerInfo(app.CustomID)
 			if err != nil {
-				MyService.App().DeleteApp(app.CustomId)
+				MyService.App().DeleteApp(app.CustomID)
 				continue
 			}
 			// info.NetworkSettings
@@ -348,22 +348,22 @@ func (o *appStruct) ImportApplications(casaApp bool) {
 			info.Config.Labels["icon"] = app.Icon
 			info.Config.Labels["desc"] = app.Description
 			info.Config.Labels["index"] = app.Index
-			info.Config.Labels["custom_id"] = app.CustomId
+			info.Config.Labels["custom_id"] = app.CustomID
 			info.Name = app.Title
 			containerID, err := MyService.Docker().DockerContainerCopyCreate(info)
 			if err != nil {
 				fmt.Println(err)
 				continue
 			}
-			MyService.App().DeleteApp(app.CustomId)
+			MyService.App().DeleteApp(app.CustomID)
 
-			if err := MyService.Docker().DockerContainerStop(app.CustomId); err != nil {
-				logger.Error("error when stopping container", zap.Error(err), zap.Any("container", app.CustomId))
+			if err := MyService.Docker().DockerContainerStop(app.CustomID); err != nil {
+				logger.Error("error when stopping container", zap.Error(err), zap.Any("container", app.CustomID))
 				continue
 			}
 
-			if err := MyService.Docker().DockerContainerRemove(app.CustomId, false); err != nil {
-				logger.Error("error when removing container", zap.Error(err), zap.Any("container", app.CustomId))
+			if err := MyService.Docker().DockerContainerRemove(app.CustomID, false); err != nil {
+				logger.Error("error when removing container", zap.Error(err), zap.Any("container", app.CustomID))
 				continue
 			}
 
@@ -454,8 +454,8 @@ func (o *appStruct) GetMyList(index, size int, position bool) (*[]model2.MyAppLi
 				Name:     name,
 				Icon:     icon,
 				State:    m.State,
-				CustomId: m.Labels["custom_id"],
-				Id:       m.ID,
+				CustomID: m.Labels["custom_id"],
+				ID:       m.ID,
 				Port:     m.Labels["web"],
 				Index:    m.Labels["index"],
 				// Order:      m.Labels["order"],
@@ -472,8 +472,8 @@ func (o *appStruct) GetMyList(index, size int, position bool) (*[]model2.MyAppLi
 				Name:     strings.ReplaceAll(m.Names[0], "/", ""),
 				Icon:     "",
 				State:    m.State,
-				CustomId: m.ID,
-				Id:       m.ID,
+				CustomID: m.ID,
+				ID:       m.ID,
 				Port:     "",
 				Latest:   false,
 				Host:     "",
