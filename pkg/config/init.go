@@ -3,6 +3,7 @@ package config
 import (
 	"log"
 
+	"github.com/IceWhaleTech/CasaOS-AppManagement/common"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/model"
 	"gopkg.in/ini.v1"
 )
@@ -12,9 +13,16 @@ var (
 		RuntimePath: "/var/run/casaos",
 	}
 
-	// TODO - add default values
-	AppInfo    = &model.APPModel{}
-	ServerInfo = &model.ServerModel{}
+	AppInfo = &model.APPModel{
+		DBPath:      "/var/lib/casaos",
+		LogPath:     "/var/log/casaos",
+		LogSaveName: common.AppManagementServiceName,
+		LogFileExt:  "log",
+	}
+
+	ServerInfo = &model.ServerModel{
+		ServerAPI: "https://api.casaos.io/casaos-api",
+	}
 
 	CasaOSGlobalVariables = &model.CasaOSGlobalVariables{}
 
