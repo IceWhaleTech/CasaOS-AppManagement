@@ -13,8 +13,9 @@ var (
 	}
 
 	// TODO - add default values
-	AppInfo               = &model.APPModel{}
-	ServerInfo            = &model.ServerModel{}
+	AppInfo    = &model.APPModel{}
+	ServerInfo = &model.ServerModel{}
+
 	CasaOSGlobalVariables = &model.CasaOSGlobalVariables{}
 
 	Cfg            *ini.File
