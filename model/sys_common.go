@@ -5,27 +5,14 @@ type CommonModel struct {
 }
 
 type APPModel struct {
-	LogPath        string
-	LogSaveName    string
-	LogFileExt     string
-	DateStrFormat  string
-	DateTimeFormat string
-	UserDataPath   string
-	TimeFormat     string
-	DateFormat     string
-	DBPath         string
-	ShellPath      string
+	LogPath     string
+	LogSaveName string
+	LogFileExt  string
+	DBPath      string
 }
 
 type ServerModel struct {
-	HTTPPort     string
-	RunMode      string
-	ServerAPI    string
-	LockAccount  bool
-	Token        string
-	USBAutoMount string
-	SocketPort   string
-	UpdateURL    string
+	ServerAPI string
 }
 
 type CasaOSGlobalVariables struct {
