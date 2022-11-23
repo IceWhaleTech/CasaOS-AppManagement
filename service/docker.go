@@ -15,8 +15,10 @@ import (
 
 	"github.com/IceWhaleTech/CasaOS-AppManagement/model"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/pkg/docker"
+	"github.com/IceWhaleTech/CasaOS-AppManagement/pkg/utils/envHelper"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/file"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/logger"
+	timeutils "github.com/IceWhaleTech/CasaOS-Common/utils/time"
 
 	//"github.com/containerd/containerd/oci"
 
@@ -212,7 +214,8 @@ func (ds *dockerService) DockerContainerCreate(m model.CustomizationPostData, id
 	for _, e := range m.Envs {
 		showENV = append(showENV, e.Name)
 		if strings.HasPrefix(e.Value, "$") {
-			// TODO - envArr = append(envArr, e.Name+"="+env_helper.ReplaceDefaultENV(e.Value, MyService.System().GetTimeZone()))
+			systemTimeZoneName := timeutils.GetSystemTimeZoneName()
+			envArr = append(envArr, e.Name+"="+envHelper.ReplaceDefaultENV(e.Value, systemTimeZoneName))
 			continue
 		}
 		if len(e.Value) > 0 {
