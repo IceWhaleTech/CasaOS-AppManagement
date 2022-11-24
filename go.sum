@@ -1,7 +1,7 @@
 github.com/Azure/go-ansiterm v0.0.0-20210617225240-d185dfc1b5a1 h1:UQHMgLO+TxOElx5B5HZ4hJQsoJ/PvUvKRhJHDQXO8P8=
 github.com/BurntSushi/toml v1.2.0 h1:Rt8g24XnyGTyglgET/PRUNlrUeu9F5L+7FilkXfZgs0=
-github.com/IceWhaleTech/CasaOS-Common v0.3.9-0.20221121171403-32986f4e8839 h1:YpSh/Y3Sg+K5Vp/2qMzd71aziO21rJ4I2ReKWcbsgjU=
-github.com/IceWhaleTech/CasaOS-Common v0.3.9-0.20221121171403-32986f4e8839/go.mod h1:2MiivEMzvh41codhEKUcn46WK3Ffesop/04qa9jsvQk=
+github.com/IceWhaleTech/CasaOS-Common v0.3.9-0.20221123215333-fceb61cc0996 h1:2OGGXNldd8GdGLd2Qsc47kzsKgVBDq5QaV8j5hmQYwk=
+github.com/IceWhaleTech/CasaOS-Common v0.3.9-0.20221123215333-fceb61cc0996/go.mod h1:xcemiRsXcs1zrmQxYMyExDjZ7UHYwkJqYE71IDIV0xA=
 github.com/Microsoft/go-winio v0.6.0 h1:slsWYD/zyx7lCXoZVlvQrj0hPTM1HI4+v1sIda2yDvg=
 github.com/Microsoft/go-winio v0.6.0/go.mod h1:cTAf44im0RAYeL23bpB+fzCyDH2MJiz2BO69KH/soAE=
 github.com/andybalholm/brotli v1.0.1/go.mod h1:loMXtMfwqflxFJPmdbJO0a3KNoPuLBgiu3qAvBg8x/Y=

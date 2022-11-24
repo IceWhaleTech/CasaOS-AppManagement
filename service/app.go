@@ -46,7 +46,6 @@ type AppService interface {
 	GetAppDBInfo(id string) model2.AppListDBModel
 	UpdateApp(m model2.AppListDBModel)
 	GetSimpleContainerInfo(id string) (types.Container, error)
-	DelAppConfigDir(path string)
 	GetSystemAppList() []types.Container
 	GetHardwareUsageStream()
 	GetHardwareUsage() []model.DockerStatsModel
@@ -623,10 +622,6 @@ func (o *appStruct) SaveContainer(m model2.AppListDBModel) {
 
 func (o *appStruct) UpdateApp(m model2.AppListDBModel) {
 	o.db.Table(model2.CONTAINERTABLENAME).Save(&m)
-}
-
-func (o *appStruct) DelAppConfigDir(path string) {
-	// TODO - command.OnlyExec("source " + config.AppInfo.ShellPath + "/helper.sh ;DelAppConfigDir " + path)
 }
 
 func (o *appStruct) DeleteApp(id string) {
