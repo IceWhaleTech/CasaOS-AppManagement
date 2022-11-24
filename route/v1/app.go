@@ -50,24 +50,7 @@ func AppList(c *gin.Context) {
 		c.JSON(common_err.SERVICE_ERROR, &modelCommon.Result{Success: common_err.SERVICE_ERROR, Message: common_err.GetMsg(common_err.SERVICE_ERROR), Data: err.Error()})
 		return
 	}
-	// for i := 0; i < len(recommend); i++ {
-	// 	ct, _ := service.MyService.Docker().DockerListByImage(recommend[i].Image, recommend[i].ImageVersion)
-	// 	if ct != nil {
-	// 		recommend[i].State = ct.State
-	// 	}
-	// }
-	// for i := 0; i < len(list); i++ {
-	// 	ct, _ := service.MyService.Docker().DockerListByImage(list[i].Image, list[i].ImageVersion)
-	// 	if ct != nil {
-	// 		list[i].State = ct.State
-	// 	}
-	// }
-	// for i := 0; i < len(community); i++ {
-	// 	ct, _ := service.MyService.Docker().DockerListByImage(community[i].Image, community[i].ImageVersion)
-	// 	if ct != nil {
-	// 		community[i].State = ct.State
-	// 	}
-	// }
+
 	data := make(map[string]interface{}, 3)
 	data["recommend"] = collection.Recommend
 	data["list"] = collection.List

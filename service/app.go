@@ -61,13 +61,14 @@ type appStruct struct {
 var json2 = jsoniter.ConfigCompatibleWithStandardLibrary
 
 func (o *appStruct) GetServerList(index, size, tp, categoryID, key string) (model.ServerAppListCollection, error) {
-	keyName := fmt.Sprintf("list_%s_%s_%s_%s_%s", index, size, tp, categoryID, "en")
 	collection := model.ServerAppListCollection{}
+
+	keyName := fmt.Sprintf("list_%s_%s_%s_%s_%s", index, size, tp, categoryID, "en")
+	logger.Info("getting app list collection from cache...", zap.String("key", keyName))
 	if result, ok := Cache.Get(keyName); ok {
-		res, ok := result.(string)
-		if ok {
-			if err := json2.Unmarshal([]byte(res), &collection); err != nil {
-				logger.Error("error when deserializing", zap.Any("err", err), zap.Any("content", res))
+		if collectionBytes, ok := result.([]byte); ok {
+			if err := json2.Unmarshal(collectionBytes, &collection); err != nil {
+				logger.Error("error when deserializing app list collection from cache", zap.Any("err", err), zap.Any("content", collectionBytes))
 				return collection, err
 			}
 
@@ -75,11 +76,11 @@ func (o *appStruct) GetServerList(index, size, tp, categoryID, key string) (mode
 		}
 	}
 
-	collectionStr := file.ReadFullFile(config.AppInfo.DBPath + "/app_list.json")
-
-	err := json2.Unmarshal(collectionStr, &collection)
-	if err != nil {
-		logger.Error("marshal error", zap.Any("err", err), zap.Any("content", string(collectionStr)))
+	path := filepath.Join(config.AppInfo.DBPath, "/app_list.json")
+	logger.Info("getting app list collection from local file...", zap.String("path", path))
+	collectionBytes := file.ReadFullFile(path)
+	if err := json2.Unmarshal(collectionBytes, &collection); err != nil {
+		logger.Info("app list collection from local file is either empty or broken - getting from online...", zap.String("path", path), zap.String("content", string(collectionBytes)))
 		collection, err = o.AsyncGetServerList()
 		if err != nil {
 			return collection, err
@@ -88,7 +89,7 @@ func (o *appStruct) GetServerList(index, size, tp, categoryID, key string) (mode
 
 	go func() {
 		if _, err := o.AsyncGetServerList(); err != nil {
-			logger.Error("error when getting server list", zap.Any("err", err))
+			logger.Error("error when getting app list collection from online", zap.Any("err", err))
 		}
 	}()
 
@@ -149,28 +150,32 @@ func (o *appStruct) GetServerList(index, size, tp, categoryID, key string) (mode
 	return collection, nil
 }
 
-func (o *appStruct) AsyncGetServerList() (collection model.ServerAppListCollection, err error) {
-	results := file.ReadFullFile(config.AppInfo.DBPath + "/app_list.json")
-	errr := json2.Unmarshal(results, &collection)
-	if errr != nil {
-		logger.Error("marshal error", zap.Any("err", err), zap.Any("content", string(results)))
-		return collection, errr
+func (o *appStruct) AsyncGetServerList() (model.ServerAppListCollection, error) {
+	collection := model.ServerAppListCollection{}
+
+	path := filepath.Join(config.AppInfo.DBPath, "/app_list.json")
+
+	logger.Info("getting app list collection from local file...", zap.String("path", path))
+	collectionBytes := file.ReadFullFile(path)
+
+	if err := json2.Unmarshal(collectionBytes, &collection); err != nil {
+		logger.Info("app list collection from local file is either empty or broken.", zap.String("path", path), zap.String("content", string(collectionBytes)))
 	}
 
-	head := make(map[string]string)
-
-	head["Authorization"] = GetToken()
-
+	headers := map[string]string{"Authorization": GetToken()}
 	url := config.ServerInfo.ServerAPI + "/v2/app/newlist?index=1&size=1000&rank=name&category_id=0&key=&language=en"
-	resp, err := http.GetWitHeader(url, 30*time.Second, head)
+
+	logger.Info("getting app list collection from online...", zap.String("url", url))
+	resp, err := http.GetWithHeader(url, 30*time.Second, headers)
 	if err != nil {
-		logger.Error("error when calling url with header", zap.Any("err", err), zap.Any("url", url), zap.Any("head", head))
+		logger.Error("error when calling url with header", zap.Any("err", err), zap.Any("url", url), zap.Any("head", headers))
 		return collection, err
 	}
+	defer resp.Body.Close()
 
 	list, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		logger.Error("error when reading from response body after calling url with header", zap.Any("err", err), zap.Any("url", url), zap.Any("head", head))
+		logger.Error("error when reading from response body after calling url with header", zap.Any("err", err), zap.Any("url", url), zap.Any("head", headers))
 		return collection, err
 	}
 
@@ -210,7 +215,7 @@ func (o *appStruct) AsyncGetServerList() (collection model.ServerAppListCollecti
 			logger.Error("error when writing to file", zap.Error(err), zap.Any("path", filepath.Join(config.AppInfo.DBPath, "app_list.json")))
 		}
 	}
-	return
+	return collection, nil
 }
 
 func (o *appStruct) GetServerAppInfo(id, t string, language string) (model.ServerAppList, error) {
@@ -221,7 +226,7 @@ func (o *appStruct) GetServerAppInfo(id, t string, language string) (model.Serve
 	info := model.ServerAppList{}
 
 	url := config.ServerInfo.ServerAPI + "/v2/app/info/" + id + "?t=" + t + "&language=" + language
-	resp, err := http.GetWitHeader(url, 30*time.Second, head)
+	resp, err := http.GetWithHeader(url, 30*time.Second, head)
 	if err != nil {
 		logger.Error("error when calling url with header", zap.Any("err", err), zap.Any("url", url), zap.Any("head", head))
 		return info, err
@@ -275,7 +280,7 @@ func (o *appStruct) AsyncGetServerCategoryList() ([]model.CategoryList, error) {
 	head["Authorization"] = GetToken()
 
 	url := config.ServerInfo.ServerAPI + "/v2/app/category"
-	resp, err := http.GetWitHeader(url, 30*time.Second, head)
+	resp, err := http.GetWithHeader(url, 30*time.Second, head)
 	if err != nil {
 		logger.Error("error when calling url with header", zap.Any("err", err), zap.Any("url", url), zap.Any("head", head))
 		return item, err
