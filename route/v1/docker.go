@@ -11,6 +11,7 @@ import (
 	"github.com/IceWhaleTech/CasaOS-AppManagement/pkg/config"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/service"
 	modelCommon "github.com/IceWhaleTech/CasaOS-Common/model"
+	"github.com/IceWhaleTech/CasaOS-Common/model/notify"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/common_err"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/file"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/logger"
@@ -34,15 +35,19 @@ func backgroundProcess(imageName string, m *model.CustomizationPostData) {
 	// step：下载镜像
 	err := service.MyService.Docker().DockerPullImage(imageName, m.Icon, m.Label)
 	if err != nil {
-		// notify := notify.Application{}
-		// notify.Icon = m.Icon
-		// notify.Name = m.Label
-		// notify.State = "PULLING"
-		// notify.Type = "INSTALL"
-		// notify.Success = false
-		// notify.Finished = false
-		// notify.Message = err.Error()
-		// TODO - service.MyService.Notify().SendInstallAppBySocket(notify)
+		app := notify.Application{
+			Icon:     m.Icon,
+			Name:     m.Label,
+			State:    "PULLING",
+			Type:     "INSTALL",
+			Success:  false,
+			Finished: false,
+			Message:  err.Error(),
+		}
+
+		if err := service.MyService.Notify().SendInstallAppBySocket(app); err != nil {
+			logger.Error("send install app notify error", zap.Error(err), zap.Any("app", app))
+		}
 		return
 	}
 
@@ -52,41 +57,50 @@ func backgroundProcess(imageName string, m *model.CustomizationPostData) {
 
 	_, err = service.MyService.Docker().DockerContainerCreate(*m, "")
 	if err != nil {
-		// notify := notify.Application{}
-		// notify.Icon = m.Icon
-		// notify.Name = m.Label
-		// notify.State = "STARTING"
-		// notify.Type = "INSTALL"
-		// notify.Success = false
-		// notify.Finished = false
-		// notify.Message = err.Error()
-		// TODO - service.MyService.Notify().SendInstallAppBySocket(notify)
+		app := notify.Application{
+			Icon:     m.Icon,
+			Name:     m.Label,
+			State:    "STARTING",
+			Type:     "INSTALL",
+			Success:  false,
+			Finished: false,
+			Message:  err.Error(),
+		}
+		if err := service.MyService.Notify().SendInstallAppBySocket(app); err != nil {
+			logger.Error("send install app notify error", zap.Error(err), zap.Any("app", app))
+		}
 		return
 	}
 
-	// notify := notify.Application{}
-	// notify.Icon = m.Icon
-	// notify.Name = m.Label
-	// notify.State = "STARTING"
-	// notify.Type = "INSTALL"
-	// notify.Success = true
-	// notify.Finished = false
-	// TODO - service.MyService.Notify().SendInstallAppBySocket(notify)
+	app := notify.Application{
+		Icon:     m.Icon,
+		Name:     m.Label,
+		State:    "STARTING",
+		Type:     "INSTALL",
+		Success:  true,
+		Finished: false,
+	}
 
+	if err := service.MyService.Notify().SendInstallAppBySocket(app); err != nil {
+		logger.Error("send install app notify error", zap.Error(err), zap.Any("app", app))
+	}
 	//		echo -e "hellow\nworld" >>
 
 	// step：启动容器
 	err = service.MyService.Docker().DockerContainerStart(m.ContainerName)
 	if err != nil {
-		// notify := notify.Application{}
-		// notify.Icon = m.Icon
-		// notify.Name = m.Label
-		// notify.State = "STARTING"
-		// notify.Type = "INSTALL"
-		// notify.Success = false
-		// notify.Finished = false
-		// notify.Message = err.Error()
-		// TODO - service.MyService.Notify().SendInstallAppBySocket(notify)
+		app := notify.Application{}
+		app.Icon = m.Icon
+		app.Name = m.Label
+		app.State = "STARTING"
+		app.Type = "INSTALL"
+		app.Success = false
+		app.Finished = false
+		app.Message = err.Error()
+
+		if err := service.MyService.Notify().SendInstallAppBySocket(app); err != nil {
+			logger.Error("send install app notify error", zap.Error(err), zap.Any("app", app))
+		}
 		return
 	}
 
@@ -100,26 +114,34 @@ func backgroundProcess(imageName string, m *model.CustomizationPostData) {
 	// step: 启动成功     检查容器状态确认启动成功
 	container, err := service.MyService.Docker().DockerContainerInfo(m.ContainerName)
 	if err != nil && container.ContainerJSONBase.State.Running {
-		// notify := notify.Application{}
-		// notify.Icon = m.Icon
-		// notify.Name = m.Label
-		// notify.State = "INSTALLED"
-		// notify.Type = "INSTALL"
-		// notify.Success = false
-		// notify.Finished = true
-		// notify.Message = err.Error()
-		// TODO - service.MyService.Notify().SendInstallAppBySocket(notify)
+		app := notify.Application{
+			Icon:     m.Icon,
+			Name:     m.Label,
+			State:    "INSTALLED",
+			Type:     "INSTALL",
+			Success:  false,
+			Finished: true,
+			Message:  err.Error(),
+		}
+
+		if err := service.MyService.Notify().SendInstallAppBySocket(app); err != nil {
+			logger.Error("send install app notify error", zap.Error(err), zap.Any("app", app))
+		}
 		return
 	}
 
-	// notify := notify.Application{}
-	// notify.Icon = m.Icon
-	// notify.Name = m.Label
-	// notify.State = "INSTALLED"
-	// notify.Type = "INSTALL"
-	// notify.Success = true
-	// notify.Finished = true
-	// TODO - service.MyService.Notify().SendInstallAppBySocket(notify)
+	app = notify.Application{
+		Icon:     m.Icon,
+		Name:     m.Label,
+		State:    "INSTALLED",
+		Type:     "INSTALL",
+		Success:  true,
+		Finished: true,
+	}
+
+	if err := service.MyService.Notify().SendInstallAppBySocket(app); err != nil {
+		logger.Error("send install app notify error", zap.Error(err), zap.Any("app", app))
+	}
 
 	// if m.Origin != "custom" {
 	// 	for i := 0; i < len(m.Volumes); i++ {
@@ -332,14 +354,19 @@ func UnInstallApp(c *gin.Context) {
 	}
 	config.CasaOSGlobalVariables.AppChange = true
 
-	// notify := notify.Application{}
-	// notify.Icon = info.Config.Labels["icon"]
-	// notify.Name = strings.ReplaceAll(info.Name, "/", "")
-	// notify.State = "FINISHED"
-	// notify.Type = "UNINSTALL"
-	// notify.Success = true
-	// notify.Finished = true
-	// TODO - service.MyService.Notify().SendUninstallAppBySocket(notify)
+	notify := notify.Application{
+		Icon:     info.Config.Labels["icon"],
+		Name:     strings.ReplaceAll(info.Name, "/", ""),
+		State:    "FINISHED",
+		Type:     "UNINSTALL",
+		Success:  true,
+		Finished: true,
+	}
+
+	if err := service.MyService.Notify().SendUninstallAppBySocket(notify); err != nil {
+		logger.Error("send uninstall app notify error", zap.Error(err), zap.Any("notify", notify))
+	}
+
 	c.JSON(http.StatusOK, modelCommon.Result{Success: common_err.SUCCESS, Message: common_err.GetMsg(common_err.SUCCESS)})
 }
 

@@ -16,6 +16,7 @@ import (
 	"github.com/IceWhaleTech/CasaOS-AppManagement/model"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/pkg/docker"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/pkg/utils/envHelper"
+	"github.com/IceWhaleTech/CasaOS-Common/model/notify"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/file"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/logger"
 	timeutils "github.com/IceWhaleTech/CasaOS-Common/utils/time"
@@ -129,7 +130,7 @@ func (ds *dockerService) DockerPullImage(imageName string, icon, name string) er
 	// io.Copy()
 	buf := make([]byte, 2048*4)
 	for {
-		_, err := out.Read(buf)
+		n, err := out.Read(buf)
 		if err != nil {
 			if err != io.EOF {
 				fmt.Println("read error:", err)
@@ -137,15 +138,20 @@ func (ds *dockerService) DockerPullImage(imageName string, icon, name string) er
 			break
 		}
 		if len(icon) > 0 && len(name) > 0 {
-			// notify := notify.Application{}
-			// notify.Icon = icon
-			// notify.Name = name
-			// notify.State = "PULLING"
-			// notify.Type = "INSTALL"
-			// notify.Finished = false
-			// notify.Success = true
-			// notify.Message = string(buf[:n])
-			// TODO - MyService.Notify().SendInstallAppBySocket(notify)
+			notify := notify.Application{
+				Icon:     icon,
+				Name:     name,
+				State:    "PULLING",
+				Type:     "INSTALL",
+				Finished: false,
+				Success:  true,
+				Message:  string(buf[:n]),
+			}
+
+			if err := MyService.Notify().SendInstallAppBySocket(notify); err != nil {
+				logger.Error("send install app by socket error: ", zap.Error(err), zap.Any("notify", notify))
+				return err
+			}
 		}
 
 	}

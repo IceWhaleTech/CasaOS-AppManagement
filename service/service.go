@@ -25,6 +25,7 @@ type Repository interface {
 	App() AppService
 	Docker() DockerService
 	Gateway() external.ManagementService
+	Notify() external.NotifyService
 }
 
 func NewService(db *gorm.DB, RuntimePath string) Repository {
@@ -35,8 +36,10 @@ func NewService(db *gorm.DB, RuntimePath string) Repository {
 
 	return &store{
 		gateway: gatewayManagement,
-		app:     NewAppService(db),
-		docker:  NewDockerService(),
+		notify:  external.NewNotifyService(RuntimePath),
+
+		app:    NewAppService(db),
+		docker: NewDockerService(),
 	}
 }
 
@@ -44,10 +47,15 @@ type store struct {
 	app     AppService
 	docker  DockerService
 	gateway external.ManagementService
+	notify  external.NotifyService
 }
 
 func (c *store) Gateway() external.ManagementService {
 	return c.gateway
+}
+
+func (c *store) Notify() external.NotifyService {
+	return c.notify
 }
 
 func (c *store) App() AppService {
