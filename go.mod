@@ -46,7 +46,7 @@ require (
 )
 
 require (
-	github.com/IceWhaleTech/CasaOS-Common v0.3.9-0.20221124043453-88f2175065c8
+	github.com/IceWhaleTech/CasaOS-Common v0.3.9-0.20221124185654-1c332126371e
 	github.com/coreos/go-systemd v0.0.0-20191104093116-d3cd4ed1dbcf
 	github.com/docker/docker v20.10.21+incompatible
 	github.com/gin-contrib/gzip v0.0.6

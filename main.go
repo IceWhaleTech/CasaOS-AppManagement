@@ -39,6 +39,10 @@ func main() {
 
 	logger.LogInit(config.AppInfo.LogPath, config.AppInfo.LogSaveName, config.AppInfo.LogFileExt)
 
+	if len(*dbFlag) == 0 {
+		*dbFlag = config.AppInfo.DBPath
+	}
+
 	sqliteDB := sqlite.GetDb(*dbFlag)
 
 	service.MyService = service.NewService(sqliteDB, config.CommonInfo.RuntimePath)
@@ -81,6 +85,8 @@ func main() {
 	} else {
 		logger.Info("This process is not running as a systemd service.")
 	}
+
+	logger.Info("App management service is listening...", zap.Any("address", listener.Addr().String()))
 
 	err = s.Serve(listener) // not using http.serve() to fix G114: Use of net/http serve function that has no support for setting timeouts (see https://github.com/securego/gosec)
 	if err != nil {

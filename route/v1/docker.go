@@ -263,8 +263,7 @@ func InstallApp(c *gin.Context) {
 		for _, p := range strings.Split(protocols, ",") {
 			t, err := strconv.Atoi(u.CommendPort)
 			if err != nil {
-				c.JSON(http.StatusBadRequest, modelCommon.Result{Success: common_err.INVALID_PARAMS, Message: err.Error()})
-				return
+				logger.Info("host port is not number - will pick port number randomly", zap.String("port", u.CommendPort))
 			}
 
 			if !port.IsPortAvailable(t, p) {
@@ -530,8 +529,7 @@ func UpdateSetting(c *gin.Context) {
 	for _, u := range m.Ports {
 		t, err := strconv.Atoi(u.CommendPort)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, modelCommon.Result{Success: common_err.INVALID_PARAMS, Message: err.Error()})
-			return
+			logger.Info("host port is not number - will pick port number randomly", zap.String("port", u.CommendPort))
 		}
 
 		if !lo.Contains([]string{"tcp", "udp", "both"}, u.Protocol) {
