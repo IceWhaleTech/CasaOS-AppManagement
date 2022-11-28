@@ -13,6 +13,8 @@ import (
 )
 
 const (
+	tableName = "o_container"
+
 	appManagementConfigDirPath  = "/etc/casaos"
 	appManagementConfigFilePath = "/etc/casaos/app-management.conf"
 	appManagementName           = "casaos-app-management.service"
@@ -63,7 +65,8 @@ func main() {
 
 	migrationTools := []interfaces.MigrationTool{
 		// NewMigrationDummy(),
-		NewMigrationToolFor038AndOlder(),
+		NewMigrationToolFor033to038(),
+		NewMigrationToolFor032AndOlder(),
 	}
 
 	var selectedMigrationTool interfaces.MigrationTool
