@@ -20,6 +20,7 @@ builds:
     tags:
       - musl
       - netgo
+      - jsoniter
     goos:
       - linux
     goarch:
@@ -52,6 +53,7 @@ builds:
     tags:
       - musl
       - netgo
+      - jsoniter
     goos:
       - linux
     goarch:
@@ -71,6 +73,7 @@ builds:
     tags:
       - musl
       - netgo
+      - jsoniter
     goos:
       - linux
     goarch:

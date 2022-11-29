@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -16,7 +15,6 @@ import (
 
 	"github.com/IceWhaleTech/CasaOS-AppManagement/model"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/pkg/config"
-	model2 "github.com/IceWhaleTech/CasaOS-AppManagement/service/model"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/file"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/http"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/logger"
@@ -25,10 +23,7 @@ import (
 	client2 "github.com/docker/docker/client"
 	jsoniter "github.com/json-iterator/go"
 	"github.com/pkg/errors"
-	uuid "github.com/satori/go.uuid"
-	"github.com/tidwall/gjson"
 	"go.uber.org/zap"
-	"gorm.io/gorm"
 )
 
 type AppService interface {
@@ -38,27 +33,18 @@ type AppService interface {
 	AsyncGetServerCategoryList() ([]model.CategoryList, error)
 	ShareAppFile(body []byte) string
 
-	GetMyList(index, size int, position bool) (*[]model2.MyAppList, *[]model2.MyAppList)
-	SaveContainer(m model2.AppListDBModel)
-	GetUninstallInfo(id string) model2.AppListDBModel
-	DeleteApp(id string)
+	GetMyList(index, size int, position bool) (*[]model.MyAppList, *[]model.MyAppList)
 	GetContainerInfo(id string) (types.Container, error)
-	GetAppDBInfo(id string) model2.AppListDBModel
-	UpdateApp(m model2.AppListDBModel)
 	GetSimpleContainerInfo(id string) (types.Container, error)
 	GetSystemAppList() []types.Container
 	GetHardwareUsageStream()
 	GetHardwareUsage() []model.DockerStatsModel
 	GetAppStats(id string) string
-	GetAllDBApps() []model2.AppListDBModel
-	ImportApplications(casaApp bool)
 }
 
-type appStruct struct {
-	db *gorm.DB
-}
+type appStruct struct{}
 
-var json2 = jsoniter.ConfigCompatibleWithStandardLibrary
+var json = jsoniter.ConfigCompatibleWithStandardLibrary
 
 func (o *appStruct) GetServerList(index, size, tp, categoryID, key string) (model.ServerAppListCollection, error) {
 	collection := model.ServerAppListCollection{}
@@ -67,7 +53,7 @@ func (o *appStruct) GetServerList(index, size, tp, categoryID, key string) (mode
 	logger.Info("getting app list collection from cache...", zap.String("key", keyName))
 	if result, ok := Cache.Get(keyName); ok {
 		if collectionBytes, ok := result.([]byte); ok {
-			if err := json2.Unmarshal(collectionBytes, &collection); err != nil {
+			if err := json.Unmarshal(collectionBytes, &collection); err != nil {
 				logger.Error("error when deserializing app list collection from cache", zap.Any("err", err), zap.Any("content", collectionBytes))
 				return collection, err
 			}
@@ -79,7 +65,7 @@ func (o *appStruct) GetServerList(index, size, tp, categoryID, key string) (mode
 	path := filepath.Join(config.AppInfo.DBPath, "/app_list.json")
 	logger.Info("getting app list collection from local file...", zap.String("path", path))
 	collectionBytes := file.ReadFullFile(path)
-	if err := json2.Unmarshal(collectionBytes, &collection); err != nil {
+	if err := json.Unmarshal(collectionBytes, &collection); err != nil {
 		logger.Info("app list collection from local file is either empty or broken - getting from online...", zap.String("path", path), zap.String("content", string(collectionBytes)))
 		collection, err = o.AsyncGetServerList()
 		if err != nil {
@@ -158,7 +144,7 @@ func (o *appStruct) AsyncGetServerList() (model.ServerAppListCollection, error) 
 	logger.Info("getting app list collection from local file...", zap.String("path", path))
 	collectionBytes := file.ReadFullFile(path)
 
-	if err := json2.Unmarshal(collectionBytes, &collection); err != nil {
+	if err := json.Unmarshal(collectionBytes, &collection); err != nil {
 		logger.Info("app list collection from local file is either empty or broken.", zap.String("path", path), zap.String("content", string(collectionBytes)))
 	}
 
@@ -179,24 +165,22 @@ func (o *appStruct) AsyncGetServerList() (model.ServerAppListCollection, error) 
 		return collection, err
 	}
 
-	listS := string(list)
-
 	listModel := []model.ServerAppList{}
 	communityModel := []model.ServerAppList{}
 	recommendModel := []model.ServerAppList{}
 
-	if err := json2.Unmarshal([]byte(gjson.Get(listS, "data.list").String()), &listModel); err != nil {
-		logger.Error("error when deserializing", zap.Any("err", err), zap.Any("content", listS), zap.Any("property", "data.list"))
+	if err := json.Unmarshal([]byte(jsoniter.Get(list, "data.list").ToString()), &listModel); err != nil {
+		logger.Error("error when deserializing", zap.Any("err", err), zap.Any("content", string(list)), zap.Any("property", "data.list"))
 		return collection, err
 	}
 
-	if err := json2.Unmarshal([]byte(gjson.Get(listS, "data.recommend").String()), &recommendModel); err != nil {
-		logger.Error("error when deserializing", zap.Any("err", err), zap.Any("content", listS), zap.Any("property", "data.recommend"))
+	if err := json.Unmarshal([]byte(jsoniter.Get(list, "data.recommend").ToString()), &recommendModel); err != nil {
+		logger.Error("error when deserializing", zap.Any("err", err), zap.Any("content", string(list)), zap.Any("property", "data.recommend"))
 		return collection, err
 	}
 
-	if err := json2.Unmarshal([]byte(gjson.Get(listS, "data.community").String()), &communityModel); err != nil {
-		logger.Error("error when deserializing", zap.Any("err", err), zap.Any("content", listS), zap.Any("property", "data.community"))
+	if err := json.Unmarshal([]byte(jsoniter.Get(list, "data.community").ToString()), &communityModel); err != nil {
+		logger.Error("error when deserializing", zap.Any("err", err), zap.Any("content", string(list)), zap.Any("property", "data.community"))
 		return collection, err
 	}
 
@@ -238,14 +222,12 @@ func (o *appStruct) GetServerAppInfo(id, t string, language string) (model.Serve
 		return info, err
 	}
 
-	infoS := string(infoB)
-
-	if infoS == "" {
+	if len(infoB) == 0 {
 		return info, errors.New("server error")
 	}
 
-	if err := json2.Unmarshal([]byte(gjson.Get(infoS, "data").String()), &info); err != nil {
-		fmt.Println(infoS)
+	if err := json.Unmarshal([]byte(jsoniter.Get(infoB, "data").ToString()), &info); err != nil {
+		fmt.Println(string(infoB))
 		return info, err
 	}
 
@@ -255,7 +237,7 @@ func (o *appStruct) GetServerAppInfo(id, t string, language string) (model.Serve
 func (o *appStruct) GetServerCategoryList() (list []model.CategoryList, err error) {
 	category := model.ServerCategoryList{}
 	results := file.ReadFullFile(config.AppInfo.DBPath + "/app_category.json")
-	err = json2.Unmarshal(results, &category)
+	err = json.Unmarshal(results, &category)
 	if err != nil {
 		logger.Error("marshal error", zap.Any("err", err), zap.Any("content", string(results)))
 		return o.AsyncGetServerCategoryList()
@@ -271,7 +253,7 @@ func (o *appStruct) GetServerCategoryList() (list []model.CategoryList, err erro
 func (o *appStruct) AsyncGetServerCategoryList() ([]model.CategoryList, error) {
 	list := model.ServerCategoryList{}
 	results := file.ReadFullFile(config.AppInfo.DBPath + "/app_category.json")
-	err := json2.Unmarshal(results, &list)
+	err := json.Unmarshal(results, &list)
 	if err != nil {
 		logger.Error("marshal error", zap.Any("err", err), zap.Any("content", string(results)))
 	}
@@ -292,13 +274,12 @@ func (o *appStruct) AsyncGetServerCategoryList() ([]model.CategoryList, error) {
 		return item, err
 	}
 
-	listS := string(listB)
-	if len(listS) == 0 {
+	if len(listB) == 0 {
 		return item, errors.New("server error")
 	}
 
-	if err := json2.Unmarshal([]byte(gjson.Get(listS, "data").String()), &item); err != nil {
-		logger.Error("error when deserializing", zap.Any("err", err), zap.Any("content", listS), zap.Any("property", "data"))
+	if err := json.Unmarshal([]byte(jsoniter.Get(listB, "data").ToString()), &item); err != nil {
+		logger.Error("error when deserializing", zap.Any("err", err), zap.String("content", string(listB)), zap.Any("property", "data"))
 		return item, err
 	}
 
@@ -337,88 +318,8 @@ func (o *appStruct) ShareAppFile(body []byte) string {
 	return content
 }
 
-func (o *appStruct) ImportApplications(casaApp bool) {
-	if casaApp {
-		list := MyService.App().GetAllDBApps()
-		for _, app := range list {
-			info, err := MyService.Docker().DockerContainerInfo(app.CustomID)
-			if err != nil {
-				MyService.App().DeleteApp(app.CustomID)
-				continue
-			}
-			// info.NetworkSettings
-			info.Config.Labels["casaos"] = "casaos"
-			info.Config.Labels["web"] = app.PortMap
-			info.Config.Labels["icon"] = app.Icon
-			info.Config.Labels["desc"] = app.Description
-			info.Config.Labels["index"] = app.Index
-			info.Config.Labels["custom_id"] = app.CustomID
-			info.Name = app.Title
-			containerID, err := MyService.Docker().DockerContainerCopyCreate(info)
-			if err != nil {
-				fmt.Println(err)
-				continue
-			}
-			MyService.App().DeleteApp(app.CustomID)
-
-			if err := MyService.Docker().DockerContainerStop(app.CustomID); err != nil {
-				logger.Error("error when stopping container", zap.Error(err), zap.Any("container", app.CustomID))
-				continue
-			}
-
-			if err := MyService.Docker().DockerContainerRemove(app.CustomID, false); err != nil {
-				logger.Error("error when removing container", zap.Error(err), zap.Any("container", app.CustomID))
-				continue
-			}
-
-			if err := MyService.Docker().DockerContainerStart(containerID); err != nil {
-				logger.Error("error when starting container", zap.Error(err), zap.Any("container", containerID))
-				continue
-			}
-		}
-	} else {
-		list := MyService.Docker().DockerContainerList()
-		for _, app := range list {
-			info, err := MyService.Docker().DockerContainerInfo(app.ID)
-			if err != nil || info.Config.Labels["casaos"] == "casaos" {
-				continue
-			}
-			info.Config.Labels["casaos"] = "casaos"
-			info.Config.Labels["web"] = ""
-			info.Config.Labels["icon"] = ""
-			info.Config.Labels["desc"] = ""
-			info.Config.Labels["index"] = ""
-			info.Config.Labels["custom_id"] = uuid.NewV4().String()
-
-			_, err = MyService.Docker().DockerContainerCopyCreate(info)
-			if err != nil {
-				continue
-			}
-
-		}
-	}
-
-	// allcontainer := MyService.Docker().DockerContainerList()
-	// for _, app := range allcontainer {
-	// 	info, err := MyService.Docker().DockerContainerInfo(app.ID)
-	// 	if err != nil {
-	// 		continue
-	// 	}
-	// 	MyService.Docker().DockerContainerStop(app.ID)
-	// 	MyService.Docker().DockerContainerRemove(app.ID, false)
-	// 	//info.NetworkSettings
-	// 	info.Config.Labels["custom_id"] = uuid.NewV4().String()
-	// 	container_id, err := MyService.Docker().DockerContainerCopyCreate(info)
-	// 	if err != nil {
-	// 		fmt.Println(err)
-	// 		continue
-	// 	}
-	// 	MyService.Docker().DockerContainerStart(container_id)
-	//}
-}
-
 // 获取我的应用列表
-func (o *appStruct) GetMyList(index, size int, position bool) (*[]model2.MyAppList, *[]model2.MyAppList) {
+func (o *appStruct) GetMyList(index, size int, position bool) (*[]model.MyAppList, *[]model.MyAppList) {
 	cli, err := client2.NewClientWithOpts(client2.FromEnv, client2.WithTimeout(time.Second*5))
 	if err != nil {
 		logger.Error("Failed to init client", zap.Any("err", err))
@@ -434,9 +335,9 @@ func (o *appStruct) GetMyList(index, size int, position bool) (*[]model2.MyAppLi
 	}
 	// 获取本地数据库应用
 
-	unTranslation := []model2.MyAppList{}
+	unTranslation := []model.MyAppList{}
 
-	list := []model2.MyAppList{}
+	list := []model.MyAppList{}
 
 	for _, m := range containers {
 		if m.Labels["casaos"] == "casaos" {
@@ -454,7 +355,7 @@ func (o *appStruct) GetMyList(index, size int, position bool) (*[]model2.MyAppLi
 				}
 			}
 
-			list = append(list, model2.MyAppList{
+			list = append(list, model.MyAppList{
 				Name:     name,
 				Icon:     icon,
 				State:    m.State,
@@ -472,7 +373,7 @@ func (o *appStruct) GetMyList(index, size int, position bool) (*[]model2.MyAppLi
 				Protocol: m.Labels["protocol"],
 			})
 		} else {
-			unTranslation = append(unTranslation, model2.MyAppList{
+			unTranslation = append(unTranslation, model.MyAppList{
 				Name:     strings.ReplaceAll(m.Names[0], "/", ""),
 				Icon:     "",
 				State:    m.State,
@@ -486,47 +387,6 @@ func (o *appStruct) GetMyList(index, size int, position bool) (*[]model2.MyAppLi
 			})
 		}
 	}
-
-	// lMap := make(map[string]interface{})
-	// for _, dbModel := range lm {
-	// 	if position {
-	// 		if dbModel.Position {
-	// 			lMap[dbModel.ContainerId] = dbModel
-	// 		}
-	// 	} else {
-	// 		lMap[dbModel.ContainerId] = dbModel
-	// 	}
-	// }
-	// for _, container := range containers {
-
-	// 	if lMap[container.ID] != nil && container.Labels["origin"] != "system" {
-	// 		m := lMap[container.ID].(model2.AppListDBModel)
-	// 		if len(m.Label) == 0 {
-	// 			m.Label = m.Title
-	// 		}
-
-	// 		// info, err := cli.ContainerInspect(context.Background(), container.ID)
-	// 		// var tm string
-	// 		// if err != nil {
-	// 		// 	tm = time.Now().String()
-	// 		// } else {
-	// 		// 	tm = info.State.StartedAt
-	// 		//}
-	// 		list = append(list, model2.MyAppList{
-	// 			Name:     m.Label,
-	// 			Icon:     m.Icon,
-	// 			State:    container.State,
-	// 			CustomId: strings.ReplaceAll(container.Names[0], "/", ""),
-	// 			Port:     m.PortMap,
-	// 			Index:    m.Index,
-	// 			//UpTime:   tm,
-	// 			Image:  m.Image,
-	// 			Slogan: m.Slogan,
-	// 			//Rely:     m.Rely,
-	// 		})
-	// 	}
-
-	// }
 
 	return &list, &unTranslation
 }
@@ -546,24 +406,7 @@ func (o *appStruct) GetSystemAppList() []types.Container {
 		logger.Error("Failed to get container_list", zap.Any("err", err))
 	}
 
-	// 获取本地数据库应用
-
-	// var lm []model2.AppListDBModel
-	// a.db.Table(model2.CONTAINERTABLENAME).Select("title,icon,port_map,`index`,container_id,position,label,slogan,image,volumes").Find(&lm)
-
-	// list := []model2.MyAppList{}
-	// lMap := make(map[string]interface{})
-	// for _, dbModel := range lm {
-	// 	lMap[dbModel.ContainerId] = dbModel
-	// }
-
 	return containers
-}
-
-func (o *appStruct) GetAllDBApps() []model2.AppListDBModel {
-	var lm []model2.AppListDBModel
-	o.db.Table(model2.CONTAINERTABLENAME).Select("custom_id,title,icon,container_id,label,slogan,image,port_map").Find(&lm)
-	return lm
 }
 
 // 获取我的应用列表
@@ -606,34 +449,7 @@ func (o *appStruct) GetSimpleContainerInfo(id string) (types.Container, error) {
 	return types.Container{}, errors.New("container not existent")
 }
 
-// 获取我的应用列表
-func (o *appStruct) GetAppDBInfo(id string) model2.AppListDBModel {
-	var m model2.AppListDBModel
-	o.db.Table(model2.CONTAINERTABLENAME).Where("custom_id = ?", id).First(&m)
-	return m
-}
-
-// 根据容器id获取镜像名称
-func (o *appStruct) GetUninstallInfo(id string) model2.AppListDBModel {
-	var m model2.AppListDBModel
-	o.db.Table(model2.CONTAINERTABLENAME).Select("image,version,enable_upnp,ports,envs,volumes,origin").Where("custom_id = ?", id).First(&m)
-	return m
-}
-
-// 创建容器成功后保存容器
-func (o *appStruct) SaveContainer(m model2.AppListDBModel) {
-	o.db.Table(model2.CONTAINERTABLENAME).Create(&m)
-}
-
-func (o *appStruct) UpdateApp(m model2.AppListDBModel) {
-	o.db.Table(model2.CONTAINERTABLENAME).Save(&m)
-}
-
-func (o *appStruct) DeleteApp(id string) {
-	o.db.Table(model2.CONTAINERTABLENAME).Where("custom_id = ?", id).Delete(&model2.AppListDBModel{})
-}
-
-var dataStats *sync.Map
+var dataStats sync.Map
 
 var isFinish bool
 
@@ -741,7 +557,7 @@ func (o *appStruct) GetHardwareUsageStream() {
 			}(v, i)
 		}
 		wg.Wait()
-		dataStats = &temp
+		dataStats = temp
 		isFinish = true
 
 		time.Sleep(time.Second * 1)
@@ -750,8 +566,8 @@ func (o *appStruct) GetHardwareUsageStream() {
 	cancel()
 }
 
-func NewAppService(db *gorm.DB) AppService {
-	return &appStruct{db: db}
+func NewAppService() AppService {
+	return &appStruct{}
 }
 
 func GetToken() string {
@@ -782,7 +598,7 @@ func GetToken() string {
 			return
 		}
 
-		t <- gjson.Get(string(buf), "data").String()
+		t <- jsoniter.Get(buf, "data").ToString()
 	}()
 	auth = <-t
 

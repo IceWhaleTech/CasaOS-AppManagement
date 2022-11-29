@@ -2,8 +2,11 @@ package model
 
 import (
 	"database/sql/driver"
-	"encoding/json"
+
+	jsoniter "github.com/json-iterator/go"
 )
+
+var json = jsoniter.ConfigCompatibleWithStandardLibrary
 
 type TCPPorts struct {
 	Desc          string `json:"desc"`
@@ -47,7 +50,7 @@ type Env struct {
 	Type  int    `json:"type"`
 }
 
-type JSON json.RawMessage
+type JSON jsoniter.RawMessage
 
 type EnvArray []Env
 

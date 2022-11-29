@@ -10,7 +10,6 @@ import (
 
 	"github.com/IceWhaleTech/CasaOS-AppManagement/common"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/pkg/config"
-	"github.com/IceWhaleTech/CasaOS-AppManagement/pkg/sqlite"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/route"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/service"
 	"github.com/IceWhaleTech/CasaOS-Common/model"
@@ -43,9 +42,7 @@ func main() {
 		*dbFlag = config.AppInfo.DBPath
 	}
 
-	sqliteDB := sqlite.GetGlobalDB(*dbFlag)
-
-	service.MyService = service.NewService(sqliteDB, config.CommonInfo.RuntimePath)
+	service.MyService = service.NewService(config.CommonInfo.RuntimePath)
 
 	service.Cache = cache.New(5*time.Minute, 60*time.Second)
 

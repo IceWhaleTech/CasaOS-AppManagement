@@ -1,7 +1,6 @@
 package v1
 
 import (
-	"encoding/json"
 	"io/ioutil"
 	"net/http"
 	"path/filepath"
@@ -16,12 +15,15 @@ import (
 
 	"github.com/IceWhaleTech/CasaOS-AppManagement/service"
 	"github.com/gin-gonic/gin"
+	jsoniter "github.com/json-iterator/go"
 )
 
 const (
 	dockerRootDirFilePath             = "/var/lib/casaos/docker_root"
 	dockerDaemonConfigurationFilePath = "/etc/docker/daemon.json"
 )
+
+var json = jsoniter.ConfigCompatibleWithStandardLibrary
 
 // @Summary 获取远程列表
 // @Produce  application/json
@@ -184,7 +186,7 @@ func CategoryList(c *gin.Context) {
 func ShareAppFile(c *gin.Context) {
 	str, _ := ioutil.ReadAll(c.Request.Body)
 	content := service.MyService.App().ShareAppFile(str)
-	c.JSON(common_err.SUCCESS, json.RawMessage(content))
+	c.JSON(common_err.SUCCESS, jsoniter.RawMessage(content))
 }
 
 func GetDockerDaemonConfiguration(c *gin.Context) {
