@@ -12,32 +12,43 @@ import (
 	"gopkg.in/ini.v1"
 )
 
-type migrationTool033to038 struct{}
+type migrationTool038AndOlder struct{}
 
 const (
-	defaultDBPath033to038     = "/var/lib/casaos"
-	defaultConfigPath033to038 = "/etc/casaos.conf"
+	defaultConfigPath033to038    = "/etc/casaos.conf"
+	defaultConfigPath032andOlder = "/casaOS/server/conf/conf.ini"
 )
 
-func (u *migrationTool033to038) IsMigrationNeeded() (bool, error) {
-	status, err := version.GetGlobalMigrationStatus(appManagementNameShort)
-	if err != nil {
+var defaultConfigPath string
+
+func (u *migrationTool038AndOlder) IsMigrationNeeded() (bool, error) {
+	_logger.Info("Checking if migration is needed...")
+
+	if status, err := version.GetGlobalMigrationStatus(appManagementNameShort); err == nil {
 		_status = status
 		if status.LastMigratedVersion != "" {
 			_logger.Info("Last migrated version: %s", status.LastMigratedVersion)
-			if r, err := version.Compare(status.LastMigratedVersion, common.AppManagementVersion); err != nil {
+			if r, err := version.Compare(status.LastMigratedVersion, common.AppManagementVersion); err == nil {
 				return r < 0, nil
 			}
 		}
 	}
 
-	if _, err = os.Stat(defaultConfigPath033to038); err != nil {
-		_logger.Info("`%s` not found, migration is not needed.", defaultConfigPath033to038)
-		return false, err
+	if _, err := os.Stat(defaultConfigPath033to038); err != nil {
+		if _, err := os.Stat(defaultConfigPath032andOlder); err != nil {
+			_logger.Info("No legacy configuration found.")
+			return false, nil
+		} else {
+			_logger.Info("`%s` found", defaultConfigPath032andOlder)
+			defaultConfigPath = defaultConfigPath032andOlder
+		}
+	} else {
+		_logger.Info("`%s` found", defaultConfigPath033to038)
+		defaultConfigPath = defaultConfigPath033to038
 	}
 
 	var majorVersion, minorVersion, patchVersion int
-	majorVersion, minorVersion, patchVersion, err = version.DetectVersion()
+	majorVersion, minorVersion, patchVersion, err := version.DetectVersion()
 	if err != nil {
 		_logger.Info("version not detected - trying to detect if it is a legacy version (v0.3.4 or earlier)...")
 		majorVersion, minorVersion, patchVersion, err = version.DetectLegacyVersion()
@@ -52,23 +63,25 @@ func (u *migrationTool033to038) IsMigrationNeeded() (bool, error) {
 		}
 	}
 
+	_logger.Info("Detected version: %d.%d.%d", majorVersion, minorVersion, patchVersion)
+
 	if majorVersion != 0 {
 		return false, nil
 	}
 
-	if minorVersion != 3 {
+	if minorVersion > 3 {
 		return false, nil
 	}
 
-	if patchVersion < 3 && patchVersion > 8 {
+	if minorVersion == 3 && patchVersion > 8 {
 		return false, nil
 	}
 
-	_logger.Info("Migration is needed for a CasaOS version between 0.3.3 and 0.3.8...")
+	_logger.Info("Migration is needed for a CasaOS version 0.3.8 and older...")
 	return true, nil
 }
 
-func (u *migrationTool033to038) PreMigrate() error {
+func (u *migrationTool038AndOlder) PreMigrate() error {
 	if _, err := os.Stat(appManagementConfigDirPath); os.IsNotExist(err) {
 		_logger.Info("Creating %s since it doesn't exists...", appManagementConfigDirPath)
 		if err := os.Mkdir(appManagementConfigDirPath, 0o755); err != nil {
@@ -93,23 +106,23 @@ func (u *migrationTool033to038) PreMigrate() error {
 
 	extension := "." + time.Now().Format("20060102") + ".bak"
 
-	_logger.Info("Creating a backup %s if it doesn't exist...", defaultConfigPath033to038+extension)
-	return file.CopySingleFile(defaultConfigPath033to038, defaultConfigPath033to038+extension, "skip")
+	_logger.Info("Creating a backup %s if it doesn't exist...", defaultConfigPath+extension)
+	return file.CopySingleFile(defaultConfigPath, defaultConfigPath+extension, "skip")
 }
 
-func (u *migrationTool033to038) Migrate() error {
-	_logger.Info("Loading legacy %s...", defaultConfigPath033to038)
-	legacyConfigFile, err := ini.Load(defaultConfigPath033to038)
+func (u *migrationTool038AndOlder) Migrate() error {
+	_logger.Info("Loading legacy %s...", defaultConfigPath)
+	legacyConfigFile, err := ini.Load(defaultConfigPath)
 	if err != nil {
 		return err
 	}
 
-	migrateConfigurationFile033to038(legacyConfigFile)
+	migrateConfigurationFile(legacyConfigFile)
 
 	return nil
 }
 
-func (u *migrationTool033to038) PostMigrate() error {
+func (u *migrationTool038AndOlder) PostMigrate() error {
 	defer func() {
 		if err := _status.Done(common.AppManagementVersion); err != nil {
 			_logger.Error("Failed to update migration status")
@@ -120,11 +133,11 @@ func (u *migrationTool033to038) PostMigrate() error {
 	return nil
 }
 
-func NewMigrationToolFor033to038() interfaces.MigrationTool {
-	return &migrationTool033to038{}
+func NewMigrationToolFor038AndOlder() interfaces.MigrationTool {
+	return &migrationTool038AndOlder{}
 }
 
-func migrateConfigurationFile033to038(legacyConfigFile *ini.File) {
+func migrateConfigurationFile(legacyConfigFile *ini.File) {
 	_logger.Info("Updating %s with settings from legacy configuration...", config.AppManagementConfigFilePath)
 	config.InitSetup(config.AppManagementConfigFilePath)
 

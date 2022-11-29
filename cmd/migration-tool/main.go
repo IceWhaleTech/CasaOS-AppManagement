@@ -65,18 +65,14 @@ func main() {
 
 	migrationTools := []interfaces.MigrationTool{
 		// NewMigrationDummy(),
-		NewMigrationToolFor033to038(),
-		NewMigrationToolFor032AndOlder(),
+		NewMigrationToolFor038AndOlder(),
 	}
 
 	var selectedMigrationTool interfaces.MigrationTool
 
 	// look for the right migration tool matching current version
 	for _, tool := range migrationTools {
-		migrationNeeded, err := tool.IsMigrationNeeded()
-		if err != nil {
-			panic(err)
-		}
+		migrationNeeded, _ := tool.IsMigrationNeeded()
 
 		if migrationNeeded {
 			selectedMigrationTool = tool
