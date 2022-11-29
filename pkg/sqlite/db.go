@@ -13,7 +13,7 @@ import (
 
 var gdb *gorm.DB
 
-func GetDb(dbPath string) *gorm.DB {
+func GetGlobalDB(dbPath string) *gorm.DB {
 	if gdb != nil {
 		return gdb
 	}

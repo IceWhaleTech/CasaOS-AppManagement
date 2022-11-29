@@ -48,9 +48,32 @@ func InitSetup(config string) {
 	mapTo("server", ServerInfo)
 }
 
+func SaveSetup(config string) {
+	reflectFrom("common", CommonInfo)
+	reflectFrom("app", AppInfo)
+	reflectFrom("server", ServerInfo)
+
+	configFilePath := AppManagementConfigFilePath
+	if len(config) > 0 {
+		configFilePath = config
+	}
+
+	if err := Cfg.SaveTo(configFilePath); err != nil {
+		log.Printf("error when saving to %s", configFilePath)
+		panic(err)
+	}
+}
+
 func mapTo(section string, v interface{}) {
 	err := Cfg.Section(section).MapTo(v)
 	if err != nil {
 		log.Fatalf("Cfg.MapTo %s err: %v", section, err)
+	}
+}
+
+func reflectFrom(section string, v interface{}) {
+	err := Cfg.Section(section).ReflectFrom(v)
+	if err != nil {
+		log.Fatalf("Cfg.ReflectFrom %s err: %v", section, err)
 	}
 }

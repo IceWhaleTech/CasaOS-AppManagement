@@ -43,7 +43,7 @@ func main() {
 		*dbFlag = config.AppInfo.DBPath
 	}
 
-	sqliteDB := sqlite.GetDb(*dbFlag)
+	sqliteDB := sqlite.GetGlobalDB(*dbFlag)
 
 	service.MyService = service.NewService(sqliteDB, config.CommonInfo.RuntimePath)
 

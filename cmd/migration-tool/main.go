@@ -9,21 +9,24 @@ import (
 	"github.com/IceWhaleTech/CasaOS-AppManagement/common"
 	interfaces "github.com/IceWhaleTech/CasaOS-Common"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/systemctl"
+	"github.com/IceWhaleTech/CasaOS-Common/utils/version"
 )
 
 const (
-	messageBusConfigDirPath  = "/etc/casaos"
-	messageBusConfigFilePath = "/etc/casaos/message-bus.conf"
-	messageBusName           = "casaos-message-bus.service"
-	messageBusNameShort      = "message-bus"
+	tableName = "o_container"
+
+	appManagementConfigDirPath  = "/etc/casaos"
+	appManagementConfigFilePath = "/etc/casaos/app-management.conf"
+	appManagementName           = "casaos-app-management.service"
+	appManagementNameShort      = "app-management"
 )
 
-//go:embedded ../../build/sysroot/etc/casaos/message-bus.conf.sample
-// var _messageBusConfigFileSample string
+//go:embedded ../../build/sysroot/etc/casaos/app-management.conf.sample
+var _appManagementConfigFileSample string
 
 var _logger *Logger
 
-// var _status *version.GlobalMigrationStatus
+var _status *version.GlobalMigrationStatus
 
 func main() {
 	versionFlag := flag.Bool("v", false, "version")
@@ -48,30 +51,28 @@ func main() {
 	}
 
 	if !*forceFlag {
-		isRunning, err := systemctl.IsServiceRunning(messageBusName)
+		isRunning, err := systemctl.IsServiceRunning(appManagementName)
 		if err != nil {
-			_logger.Error("Failed to check if %s is running", messageBusName)
+			_logger.Error("Failed to check if %s is running", appManagementName)
 			panic(err)
 		}
 
 		if isRunning {
-			_logger.Info("%s is running. If migration is still needed, try with -f.", messageBusName)
+			_logger.Info("%s is running. If migration is still needed, try with -f.", appManagementName)
 			os.Exit(1)
 		}
 	}
 
 	migrationTools := []interfaces.MigrationTool{
-		NewMigrationDummy(),
+		// NewMigrationDummy(),
+		NewMigrationToolFor038AndOlder(),
 	}
 
 	var selectedMigrationTool interfaces.MigrationTool
 
 	// look for the right migration tool matching current version
 	for _, tool := range migrationTools {
-		migrationNeeded, err := tool.IsMigrationNeeded()
-		if err != nil {
-			panic(err)
-		}
+		migrationNeeded, _ := tool.IsMigrationNeeded()
 
 		if migrationNeeded {
 			selectedMigrationTool = tool
