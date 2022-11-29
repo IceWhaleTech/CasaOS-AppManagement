@@ -2,7 +2,6 @@ package model
 
 import (
 	"database/sql/driver"
-	"encoding/json"
 	"time"
 )
 
@@ -60,6 +59,23 @@ type ServerAppList struct {
 	Privileged     bool      `json:"privileged"`
 	CapAdd         Strings   `json:"cap_add"`
 	Cmd            Strings   `json:"cmd"`
+}
+
+type MyAppList struct {
+	ID       string `json:"id"`
+	Name     string `json:"name"`
+	Icon     string `json:"icon"`
+	State    string `json:"state"`
+	CustomID string `gorm:"column:custom_id;primary_key" json:"custom_id"`
+	Index    string `json:"index"`
+	Port     string `json:"port"`
+	Slogan   string `json:"slogan"`
+	Type     string `json:"type"`
+	Image    string `json:"image"`
+	Volumes  string `json:"volumes"`
+	Latest   bool   `json:"latest"`
+	Host     string `json:"host"`
+	Protocol string `json:"protocol"`
 }
 
 type Ports struct {

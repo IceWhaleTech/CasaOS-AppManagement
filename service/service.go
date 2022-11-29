@@ -12,7 +12,6 @@ package service
 import (
 	"github.com/IceWhaleTech/CasaOS-Common/external"
 	"github.com/patrickmn/go-cache"
-	"gorm.io/gorm"
 )
 
 var (
@@ -28,7 +27,7 @@ type Repository interface {
 	Notify() external.NotifyService
 }
 
-func NewService(db *gorm.DB, RuntimePath string) Repository {
+func NewService(RuntimePath string) Repository {
 	gatewayManagement, err := external.NewManagementService(RuntimePath)
 	if err != nil && len(RuntimePath) > 0 {
 		panic(err)
@@ -38,7 +37,7 @@ func NewService(db *gorm.DB, RuntimePath string) Repository {
 		gateway: gatewayManagement,
 		notify:  external.NewNotifyService(RuntimePath),
 
-		app:    NewAppService(db),
+		app:    NewAppService(),
 		docker: NewDockerService(),
 	}
 }
