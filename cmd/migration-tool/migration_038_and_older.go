@@ -5,6 +5,8 @@ import (
 	"os"
 	"time"
 
+	_ "modernc.org/sqlite"
+
 	"github.com/IceWhaleTech/CasaOS-AppManagement/common"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/pkg/config"
 	interfaces "github.com/IceWhaleTech/CasaOS-Common"
@@ -149,7 +151,7 @@ func (u *migrationTool038AndOlder) PostMigrate() error {
 		dbFile = defaultDBPath033to038
 	}
 
-	legacyDB, err := sql.Open("sqlite3", dbFile)
+	legacyDB, err := sql.Open("sqlite", dbFile)
 	if err != nil {
 		return err
 	}
