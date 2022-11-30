@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"os"
 	"time"
 
@@ -17,6 +18,9 @@ type migrationTool038AndOlder struct{}
 const (
 	defaultConfigPath033to038    = "/etc/casaos.conf"
 	defaultConfigPath032andOlder = "/casaOS/server/conf/conf.ini"
+
+	defaultDBPath033to038    = "/var/lib/casaos/db/casaOS.db"
+	defaultDBPath032andOlder = "/casaOS/server/db/casaOS.db"
 )
 
 var defaultConfigPath string
@@ -130,6 +134,45 @@ func (u *migrationTool038AndOlder) PostMigrate() error {
 		}
 	}()
 
+	var dbFile string
+
+	if _, err := os.Stat(defaultDBPath033to038); err != nil {
+		if _, err := os.Stat(defaultDBPath032andOlder); err != nil {
+			_logger.Info("No legacy database file found.")
+			return nil
+		} else {
+			_logger.Info("`%s` found", defaultDBPath032andOlder)
+			dbFile = defaultDBPath032andOlder
+		}
+	} else {
+		_logger.Info("`%s` found", defaultDBPath033to038)
+		dbFile = defaultDBPath033to038
+	}
+
+	legacyDB, err := sql.Open("sqlite3", dbFile)
+	if err != nil {
+		return err
+	}
+
+	defer legacyDB.Close()
+
+	tableName := "o_container"
+	tableExists, err := isTableExist(legacyDB, tableName)
+	if err != nil {
+		return err
+	}
+
+	if !tableExists {
+		_logger.Info("Table %s doesn't exist, skipping...", tableName)
+		return nil
+	}
+
+	_logger.Info("Dropping `%s` table in legacy database...", tableName)
+
+	if _, err := legacyDB.Exec("DROP TABLE " + tableName); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -155,4 +198,15 @@ func migrateConfigurationFile(legacyConfigFile *ini.File) {
 
 	_logger.Info("Saving %s...", config.AppManagementConfigFilePath)
 	config.SaveSetup(config.AppManagementConfigFilePath)
+}
+
+func isTableExist(legacyDB *sql.DB, tableName string) (bool, error) {
+	rows, err := legacyDB.Query("SELECT name FROM sqlite_master WHERE type='table' AND name = ?", tableName)
+	if err != nil {
+		return false, err
+	}
+
+	defer rows.Close()
+
+	return rows.Next(), nil
 }
