@@ -44,10 +44,11 @@ func (u *migrationTool038AndOlder) IsMigrationNeeded() (bool, error) {
 		if _, err := os.Stat(defaultConfigPath032andOlder); err != nil {
 			_logger.Info("No legacy configuration found.")
 			return false, nil
-		} else {
-			_logger.Info("`%s` found", defaultConfigPath032andOlder)
-			defaultConfigPath = defaultConfigPath032andOlder
 		}
+
+		_logger.Info("`%s` found", defaultConfigPath032andOlder)
+		defaultConfigPath = defaultConfigPath032andOlder
+
 	} else {
 		_logger.Info("`%s` found", defaultConfigPath033to038)
 		defaultConfigPath = defaultConfigPath033to038
@@ -142,10 +143,11 @@ func (u *migrationTool038AndOlder) PostMigrate() error {
 		if _, err := os.Stat(defaultDBPath032andOlder); err != nil {
 			_logger.Info("No legacy database file found.")
 			return nil
-		} else {
-			_logger.Info("`%s` found", defaultDBPath032andOlder)
-			dbFile = defaultDBPath032andOlder
 		}
+
+		_logger.Info("`%s` found", defaultDBPath032andOlder)
+		dbFile = defaultDBPath032andOlder
+
 	} else {
 		_logger.Info("`%s` found", defaultDBPath033to038)
 		dbFile = defaultDBPath033to038

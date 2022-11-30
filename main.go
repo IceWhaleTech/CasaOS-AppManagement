@@ -1,6 +1,9 @@
+//go:generate bash -c "mkdir -p codegen/message_bus && go run github.com/deepmap/oapi-codegen/cmd/oapi-codegen@v1.12.2 -generate types,client -package message_bus https://raw.githubusercontent.com/IceWhaleTech/CasaOS-MessageBus/main/api/message_bus/openapi.yaml > codegen/message_bus/api.go"
+
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"net"
@@ -8,6 +11,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/IceWhaleTech/CasaOS-AppManagement/codegen/message_bus"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/common"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/pkg/config"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/route"
@@ -22,6 +26,9 @@ import (
 const localhost = "127.0.0.1"
 
 func main() {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	// arguments
 	configFlag := flag.String("c", "", "config file path")
 	dbFlag := flag.String("db", "", "db path")
@@ -64,6 +71,20 @@ func main() {
 			Target: "http://" + listener.Addr().String(),
 		}); err != nil {
 			panic(err)
+		}
+	}
+
+	// register at message bus
+	for _, eventType := range []message_bus.EventType{
+		common.EventTypeAppInstalling,
+		common.EventTypeAppInstalled,
+		common.EventTypeAppFailedInstalling,
+		common.EventTypeAppUninstalling,
+		common.EventTypeAppUninstalled,
+		common.EventTypeAppFailedUninstalling,
+	} {
+		if _, err := service.MyService.MessageBus().RegisterEventTypeWithResponse(ctx, eventType); err != nil {
+			logger.Error("error when trying to register event type - the event type will not be discoverable by subscribers", zap.Error(err), zap.Any("event type", eventType))
 		}
 	}
 

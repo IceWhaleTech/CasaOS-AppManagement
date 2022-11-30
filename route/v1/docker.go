@@ -31,7 +31,7 @@ var upgrader = websocket.Upgrader{
 	HandshakeTimeout: time.Duration(time.Second * 5),
 }
 
-func backgroundProcess(imageName string, m *model.CustomizationPostData) {
+func pullAndCreate(imageName string, m *model.CustomizationPostData) {
 	// step：下载镜像
 	err := service.MyService.Docker().DockerPullImage(imageName, m.Icon, m.Label)
 	if err != nil {
@@ -292,7 +292,7 @@ func InstallApp(c *gin.Context) {
 
 	id := uuid.NewV4().String()
 	m.CustomID = id
-	go backgroundProcess(dockerImage+":"+dockerImageVersion, &m)
+	go pullAndCreate(dockerImage+":"+dockerImageVersion, &m)
 
 	c.JSON(http.StatusOK, modelCommon.Result{Success: common_err.SUCCESS, Message: common_err.GetMsg(common_err.SUCCESS), Data: m.Label})
 }

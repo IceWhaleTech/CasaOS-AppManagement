@@ -449,7 +449,7 @@ func (o *appStruct) GetSimpleContainerInfo(id string) (types.Container, error) {
 	return types.Container{}, errors.New("container not existent")
 }
 
-var dataStats sync.Map
+var dataStats = &sync.Map{}
 
 var isFinish bool
 
@@ -557,7 +557,7 @@ func (o *appStruct) GetHardwareUsageStream() {
 			}(v, i)
 		}
 		wg.Wait()
-		dataStats = temp
+		dataStats = &temp
 		isFinish = true
 
 		time.Sleep(time.Second * 1)
