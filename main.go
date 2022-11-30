@@ -76,12 +76,12 @@ func main() {
 
 	// register at message bus
 	for _, eventType := range []message_bus.EventType{
-		common.EventTypeAppInstalling,
-		common.EventTypeAppInstalled,
-		common.EventTypeAppFailedInstalling,
-		common.EventTypeAppUninstalling,
-		common.EventTypeAppUninstalled,
-		common.EventTypeAppFailedUninstalling,
+		common.EventTypeContainerAppInstalling,
+		common.EventTypeContainerAppInstalled,
+		common.EventTypeContainerAppInstallFailed,
+		common.EventTypeContainerAppUninstalling,
+		common.EventTypeContainerAppUninstalled,
+		common.EventTypeContainerAppUninstallFailed,
 	} {
 		if _, err := service.MyService.MessageBus().RegisterEventTypeWithResponse(ctx, eventType); err != nil {
 			logger.Error("error when trying to register event type - the event type will not be discoverable by subscribers", zap.Error(err), zap.Any("event type", eventType))

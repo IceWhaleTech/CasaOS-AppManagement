@@ -4,52 +4,60 @@ import (
 	"fmt"
 
 	"github.com/IceWhaleTech/CasaOS-AppManagement/codegen/message_bus"
+	"github.com/IceWhaleTech/CasaOS-Common/utils"
 )
 
 var (
-	EventTypeAppInstalling       message_bus.EventType
-	EventTypeAppInstalled        message_bus.EventType
-	EventTypeAppFailedInstalling message_bus.EventType
+	// common properties
+	PropertyTypeAppName = message_bus.PropertyType{
+		Name:        fmt.Sprintf("%s:app:name", AppManagementServiceName),
+		Description: utils.Ptr("name of the app that is being installed - it could be a container image name including version, a snap name or the name of any other forms of app"),
+		Example:     utils.Ptr("hello-world:latest"),
+	}
 
-	EventTypeAppUninstalling       message_bus.EventType
-	EventTypeAppUninstalled        message_bus.EventType
-	EventTypeAppFailedUninstalling message_bus.EventType
+	PropertyTypeMessage = message_bus.PropertyType{
+		Name:        fmt.Sprintf("%s:message", AppManagementServiceName),
+		Description: utils.Ptr("message at different levels, typically for error"),
+	}
+
+	// event types for container app
+	EventTypeContainerAppInstalling = message_bus.EventType{
+		SourceID: AppManagementServiceName,
+		Name:     fmt.Sprintf("%s:container:installing", AppManagementServiceName),
+		PropertyTypeList: []message_bus.PropertyType{
+			PropertyTypeAppName,
+		},
+	}
+
+	EventTypeContainerAppInstalled = message_bus.EventType{
+		SourceID:         AppManagementServiceName,
+		Name:             fmt.Sprintf("%s:container:installed", AppManagementServiceName),
+		PropertyTypeList: []message_bus.PropertyType{},
+	}
+
+	EventTypeContainerAppInstallFailed = message_bus.EventType{
+		SourceID: AppManagementServiceName,
+		Name:     fmt.Sprintf("%s:container:install-failed", AppManagementServiceName),
+		PropertyTypeList: []message_bus.PropertyType{
+			PropertyTypeAppName, PropertyTypeMessage,
+		},
+	}
+
+	EventTypeContainerAppUninstalling = message_bus.EventType{
+		SourceID:         AppManagementServiceName,
+		Name:             fmt.Sprintf("%s:container:uninstalling", AppManagementServiceName),
+		PropertyTypeList: []message_bus.PropertyType{},
+	}
+
+	EventTypeContainerAppUninstalled = message_bus.EventType{
+		SourceID:         AppManagementServiceName,
+		Name:             fmt.Sprintf("%s:container:uninstalled", AppManagementServiceName),
+		PropertyTypeList: []message_bus.PropertyType{},
+	}
+
+	EventTypeContainerAppUninstallFailed = message_bus.EventType{
+		SourceID:         AppManagementServiceName,
+		Name:             fmt.Sprintf("%s:container:uninstall-failed", AppManagementServiceName),
+		PropertyTypeList: []message_bus.PropertyType{},
+	}
 )
-
-func init() {
-	EventTypeAppInstalling = message_bus.EventType{
-		SourceID:         AppManagementServiceName,
-		Name:             fmt.Sprintf("%s:app:installing", AppManagementServiceName),
-		PropertyTypeList: []message_bus.PropertyType{},
-	}
-
-	EventTypeAppInstalled = message_bus.EventType{
-		SourceID:         AppManagementServiceName,
-		Name:             fmt.Sprintf("%s:app:installed", AppManagementServiceName),
-		PropertyTypeList: []message_bus.PropertyType{},
-	}
-
-	EventTypeAppFailedInstalling = message_bus.EventType{
-		SourceID:         AppManagementServiceName,
-		Name:             fmt.Sprintf("%s:app:failed-installing", AppManagementServiceName),
-		PropertyTypeList: []message_bus.PropertyType{},
-	}
-
-	EventTypeAppUninstalling = message_bus.EventType{
-		SourceID:         AppManagementServiceName,
-		Name:             fmt.Sprintf("%s:app:uninstalling", AppManagementServiceName),
-		PropertyTypeList: []message_bus.PropertyType{},
-	}
-
-	EventTypeAppUninstalled = message_bus.EventType{
-		SourceID:         AppManagementServiceName,
-		Name:             fmt.Sprintf("%s:app:uninstalled", AppManagementServiceName),
-		PropertyTypeList: []message_bus.PropertyType{},
-	}
-
-	EventTypeAppFailedUninstalling = message_bus.EventType{
-		SourceID:         AppManagementServiceName,
-		Name:             fmt.Sprintf("%s:app:failed-uninstalling", AppManagementServiceName),
-		PropertyTypeList: []message_bus.PropertyType{},
-	}
-}

@@ -1,12 +1,15 @@
 package v1
 
 import (
+	"context"
 	"net/http"
 	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/IceWhaleTech/CasaOS-AppManagement/codegen/message_bus"
+	"github.com/IceWhaleTech/CasaOS-AppManagement/common"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/model"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/pkg/config"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/service"
@@ -31,10 +34,26 @@ var upgrader = websocket.Upgrader{
 	HandshakeTimeout: time.Duration(time.Second * 5),
 }
 
-func pullAndCreate(imageName string, m *model.CustomizationPostData) {
-	// step：下载镜像
-	err := service.MyService.Docker().DockerPullImage(imageName, m.Icon, m.Label)
+func publishEventWrapper(ctx context.Context, eventType message_bus.EventType, properties map[string]string) {
+	response, err := service.MyService.MessageBus().PublishEventWithResponse(ctx, common.AppManagementServiceName, eventType.Name, properties)
 	if err != nil {
+		logger.Error("failed to publish event", zap.Error(err))
+	}
+	defer response.HTTPResponse.Body.Close()
+
+	if response.StatusCode() != http.StatusOK {
+		logger.Error("failed to publish event", zap.String("status code", response.Status()))
+	}
+}
+
+func pullAndCreate(ctx context.Context, imageName string, m *model.CustomizationPostData) {
+	// publish app installing event
+	publishEventWrapper(ctx, common.EventTypeContainerAppInstalling, map[string]string{
+		common.PropertyTypeAppName.Name: imageName,
+	})
+
+	// step：下载镜像
+	if err := service.MyService.Docker().DockerPullImage(imageName, m.Icon, m.Label); err != nil {
 		app := notify.Application{
 			Icon:     m.Icon,
 			Name:     m.Label,
@@ -48,6 +67,11 @@ func pullAndCreate(imageName string, m *model.CustomizationPostData) {
 		if err := service.MyService.Notify().SendInstallAppBySocket(app); err != nil {
 			logger.Error("send install app notify error", zap.Error(err), zap.Any("app", app))
 		}
+
+		publishEventWrapper(ctx, common.EventTypeContainerAppInstallFailed, map[string]string{
+			common.PropertyTypeAppName.Name: imageName,
+			common.PropertyTypeMessage.Name: err.Error(),
+		})
 		return
 	}
 
@@ -55,8 +79,7 @@ func pullAndCreate(imageName string, m *model.CustomizationPostData) {
 		time.Sleep(time.Second)
 	}
 
-	_, err = service.MyService.Docker().DockerContainerCreate(*m, "")
-	if err != nil {
+	if _, err := service.MyService.Docker().DockerContainerCreate(*m, ""); err != nil {
 		app := notify.Application{
 			Icon:     m.Icon,
 			Name:     m.Label,
@@ -66,9 +89,15 @@ func pullAndCreate(imageName string, m *model.CustomizationPostData) {
 			Finished: false,
 			Message:  err.Error(),
 		}
+
 		if err := service.MyService.Notify().SendInstallAppBySocket(app); err != nil {
 			logger.Error("send install app notify error", zap.Error(err), zap.Any("app", app))
 		}
+
+		publishEventWrapper(ctx, common.EventTypeContainerAppInstallFailed, map[string]string{
+			common.PropertyTypeAppName.Name: imageName,
+			common.PropertyTypeMessage.Name: err.Error(),
+		})
 		return
 	}
 
@@ -84,11 +113,9 @@ func pullAndCreate(imageName string, m *model.CustomizationPostData) {
 	if err := service.MyService.Notify().SendInstallAppBySocket(app); err != nil {
 		logger.Error("send install app notify error", zap.Error(err), zap.Any("app", app))
 	}
-	//		echo -e "hellow\nworld" >>
 
 	// step：启动容器
-	err = service.MyService.Docker().DockerContainerStart(m.ContainerName)
-	if err != nil {
+	if err := service.MyService.Docker().DockerContainerStart(m.ContainerName); err != nil {
 		app := notify.Application{}
 		app.Icon = m.Icon
 		app.Name = m.Label
@@ -101,6 +128,11 @@ func pullAndCreate(imageName string, m *model.CustomizationPostData) {
 		if err := service.MyService.Notify().SendInstallAppBySocket(app); err != nil {
 			logger.Error("send install app notify error", zap.Error(err), zap.Any("app", app))
 		}
+
+		publishEventWrapper(ctx, common.EventTypeContainerAppInstallFailed, map[string]string{
+			common.PropertyTypeAppName.Name: imageName,
+			common.PropertyTypeMessage.Name: err.Error(),
+		})
 		return
 	}
 
@@ -127,6 +159,11 @@ func pullAndCreate(imageName string, m *model.CustomizationPostData) {
 		if err := service.MyService.Notify().SendInstallAppBySocket(app); err != nil {
 			logger.Error("send install app notify error", zap.Error(err), zap.Any("app", app))
 		}
+
+		publishEventWrapper(ctx, common.EventTypeContainerAppInstallFailed, map[string]string{
+			common.PropertyTypeAppName.Name: imageName,
+			common.PropertyTypeMessage.Name: err.Error(),
+		})
 		return
 	}
 
@@ -142,6 +179,10 @@ func pullAndCreate(imageName string, m *model.CustomizationPostData) {
 	if err := service.MyService.Notify().SendInstallAppBySocket(app); err != nil {
 		logger.Error("send install app notify error", zap.Error(err), zap.Any("app", app))
 	}
+
+	publishEventWrapper(ctx, common.EventTypeContainerAppInstalled, map[string]string{
+		common.PropertyTypeAppName.Name: imageName,
+	})
 
 	// if m.Origin != "custom" {
 	// 	for i := 0; i < len(m.Volumes); i++ {
@@ -292,7 +333,8 @@ func InstallApp(c *gin.Context) {
 
 	id := uuid.NewV4().String()
 	m.CustomID = id
-	go pullAndCreate(dockerImage+":"+dockerImageVersion, &m)
+
+	go pullAndCreate(c.Request.Context(), dockerImage+":"+dockerImageVersion, &m)
 
 	c.JSON(http.StatusOK, modelCommon.Result{Success: common_err.SUCCESS, Message: common_err.GetMsg(common_err.SUCCESS), Data: m.Label})
 }
