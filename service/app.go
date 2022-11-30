@@ -169,17 +169,17 @@ func (o *appStruct) AsyncGetServerList() (model.ServerAppListCollection, error) 
 	communityModel := []model.ServerAppList{}
 	recommendModel := []model.ServerAppList{}
 
-	if err := json.Unmarshal([]byte(jsoniter.Get(list, "data.list").ToString()), &listModel); err != nil {
+	if err := json.Unmarshal([]byte(jsoniter.Get(list, "data", "list").ToString()), &listModel); err != nil {
 		logger.Error("error when deserializing", zap.Any("err", err), zap.Any("content", string(list)), zap.Any("property", "data.list"))
 		return collection, err
 	}
 
-	if err := json.Unmarshal([]byte(jsoniter.Get(list, "data.recommend").ToString()), &recommendModel); err != nil {
+	if err := json.Unmarshal([]byte(jsoniter.Get(list, "data", "recommend").ToString()), &recommendModel); err != nil {
 		logger.Error("error when deserializing", zap.Any("err", err), zap.Any("content", string(list)), zap.Any("property", "data.recommend"))
 		return collection, err
 	}
 
-	if err := json.Unmarshal([]byte(jsoniter.Get(list, "data.community").ToString()), &communityModel); err != nil {
+	if err := json.Unmarshal([]byte(jsoniter.Get(list, "data", "community").ToString()), &communityModel); err != nil {
 		logger.Error("error when deserializing", zap.Any("err", err), zap.Any("content", string(list)), zap.Any("property", "data.community"))
 		return collection, err
 	}
