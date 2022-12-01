@@ -1,12 +1,15 @@
 package v1
 
 import (
+	"context"
 	"net/http"
 	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/IceWhaleTech/CasaOS-AppManagement/codegen/message_bus"
+	"github.com/IceWhaleTech/CasaOS-AppManagement/common"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/model"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/pkg/config"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/service"
@@ -31,10 +34,29 @@ var upgrader = websocket.Upgrader{
 	HandshakeTimeout: time.Duration(time.Second * 5),
 }
 
-func backgroundProcess(imageName string, m *model.CustomizationPostData) {
-	// step：下载镜像
-	err := service.MyService.Docker().DockerPullImage(imageName, m.Icon, m.Label)
+func publishEventWrapper(ctx context.Context, eventType message_bus.EventType, properties map[string]string) {
+	response, err := service.MyService.MessageBus().PublishEventWithResponse(ctx, common.AppManagementServiceName, eventType.Name, properties)
 	if err != nil {
+		logger.Error("failed to publish event", zap.Error(err))
+	}
+	defer response.HTTPResponse.Body.Close()
+
+	if response.StatusCode() != http.StatusOK {
+		logger.Error("failed to publish event", zap.String("status code", response.Status()))
+	}
+}
+
+func pullAndCreate(imageName string, m *model.CustomizationPostData) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	// publish app installing event
+	publishEventWrapper(ctx, common.EventTypeContainerAppInstalling, map[string]string{
+		common.PropertyTypeAppName.Name: imageName,
+	})
+
+	// step：下载镜像
+	if err := service.MyService.Docker().DockerPullImage(imageName, m.Icon, m.Label); err != nil {
 		app := notify.Application{
 			Icon:     m.Icon,
 			Name:     m.Label,
@@ -48,6 +70,11 @@ func backgroundProcess(imageName string, m *model.CustomizationPostData) {
 		if err := service.MyService.Notify().SendInstallAppBySocket(app); err != nil {
 			logger.Error("send install app notify error", zap.Error(err), zap.Any("app", app))
 		}
+
+		publishEventWrapper(ctx, common.EventTypeContainerAppInstallFailed, map[string]string{
+			common.PropertyTypeAppName.Name: imageName,
+			common.PropertyTypeMessage.Name: err.Error(),
+		})
 		return
 	}
 
@@ -55,8 +82,7 @@ func backgroundProcess(imageName string, m *model.CustomizationPostData) {
 		time.Sleep(time.Second)
 	}
 
-	_, err = service.MyService.Docker().DockerContainerCreate(*m, "")
-	if err != nil {
+	if _, err := service.MyService.Docker().DockerContainerCreate(*m, ""); err != nil {
 		app := notify.Application{
 			Icon:     m.Icon,
 			Name:     m.Label,
@@ -66,9 +92,15 @@ func backgroundProcess(imageName string, m *model.CustomizationPostData) {
 			Finished: false,
 			Message:  err.Error(),
 		}
+
 		if err := service.MyService.Notify().SendInstallAppBySocket(app); err != nil {
 			logger.Error("send install app notify error", zap.Error(err), zap.Any("app", app))
 		}
+
+		publishEventWrapper(ctx, common.EventTypeContainerAppInstallFailed, map[string]string{
+			common.PropertyTypeAppName.Name: imageName,
+			common.PropertyTypeMessage.Name: err.Error(),
+		})
 		return
 	}
 
@@ -84,11 +116,9 @@ func backgroundProcess(imageName string, m *model.CustomizationPostData) {
 	if err := service.MyService.Notify().SendInstallAppBySocket(app); err != nil {
 		logger.Error("send install app notify error", zap.Error(err), zap.Any("app", app))
 	}
-	//		echo -e "hellow\nworld" >>
 
 	// step：启动容器
-	err = service.MyService.Docker().DockerContainerStart(m.ContainerName)
-	if err != nil {
+	if err := service.MyService.Docker().DockerContainerStart(m.ContainerName); err != nil {
 		app := notify.Application{}
 		app.Icon = m.Icon
 		app.Name = m.Label
@@ -101,6 +131,11 @@ func backgroundProcess(imageName string, m *model.CustomizationPostData) {
 		if err := service.MyService.Notify().SendInstallAppBySocket(app); err != nil {
 			logger.Error("send install app notify error", zap.Error(err), zap.Any("app", app))
 		}
+
+		publishEventWrapper(ctx, common.EventTypeContainerAppInstallFailed, map[string]string{
+			common.PropertyTypeAppName.Name: imageName,
+			common.PropertyTypeMessage.Name: err.Error(),
+		})
 		return
 	}
 
@@ -127,6 +162,11 @@ func backgroundProcess(imageName string, m *model.CustomizationPostData) {
 		if err := service.MyService.Notify().SendInstallAppBySocket(app); err != nil {
 			logger.Error("send install app notify error", zap.Error(err), zap.Any("app", app))
 		}
+
+		publishEventWrapper(ctx, common.EventTypeContainerAppInstallFailed, map[string]string{
+			common.PropertyTypeAppName.Name: imageName,
+			common.PropertyTypeMessage.Name: err.Error(),
+		})
 		return
 	}
 
@@ -143,12 +183,11 @@ func backgroundProcess(imageName string, m *model.CustomizationPostData) {
 		logger.Error("send install app notify error", zap.Error(err), zap.Any("app", app))
 	}
 
-	// if m.Origin != "custom" {
-	// 	for i := 0; i < len(m.Volumes); i++ {
-	// 		m.Volumes[i].Path = docker.GetDir(id, m.Volumes[i].Path)
-	// 	}
-	// }
-	// service.MyService.App().SaveContainer(md)
+	publishEventWrapper(ctx, common.EventTypeContainerAppInstalled, map[string]string{
+		common.PropertyTypeAppID.Name:   container.ID,
+		common.PropertyTypeAppName.Name: imageName,
+	})
+
 	config.CasaOSGlobalVariables.AppChange = true
 }
 
@@ -292,7 +331,8 @@ func InstallApp(c *gin.Context) {
 
 	id := uuid.NewV4().String()
 	m.CustomID = id
-	go backgroundProcess(dockerImage+":"+dockerImageVersion, &m)
+
+	go pullAndCreate(dockerImage+":"+dockerImageVersion, &m)
 
 	c.JSON(http.StatusOK, modelCommon.Result{Success: common_err.SUCCESS, Message: common_err.GetMsg(common_err.SUCCESS), Data: m.Label})
 }
@@ -307,19 +347,21 @@ func InstallApp(c *gin.Context) {
 // @Router /app/uninstall/{id} [delete]
 func UnInstallApp(c *gin.Context) {
 	appID := c.Param("id")
-
 	if len(appID) == 0 {
 		c.JSON(http.StatusBadRequest, modelCommon.Result{Success: common_err.INVALID_PARAMS, Message: common_err.GetMsg(common_err.INVALID_PARAMS)})
 		return
 	}
 
-	j := make(map[string]string)
+	j := make(map[string]bool)
 	if err := c.ShouldBind(&j); err != nil {
 		c.JSON(http.StatusBadRequest, modelCommon.Result{Success: common_err.INVALID_PARAMS, Message: err.Error()})
 		return
 	}
 
-	isDelete := j["delete_config_folder"]
+	isDelete, ok := j["delete_config_folder"]
+	if !ok {
+		isDelete = false
+	}
 
 	info, err := service.MyService.Docker().DockerContainerInfo(appID)
 	if err != nil {
@@ -327,31 +369,61 @@ func UnInstallApp(c *gin.Context) {
 		return
 	}
 
+	// publish app installing event
+	publishEventWrapper(c.Request.Context(), common.EventTypeContainerAppUninstalling, map[string]string{
+		common.PropertyTypeAppID.Name:   appID,
+		common.PropertyTypeAppName.Name: info.Config.Image,
+	})
+
 	// step：停止容器
 	err = service.MyService.Docker().DockerContainerStop(appID)
 	if err != nil {
+		publishEventWrapper(c.Request.Context(), common.EventTypeContainerAppUninstallFailed, map[string]string{
+			common.PropertyTypeAppID.Name:   appID,
+			common.PropertyTypeAppName.Name: info.Config.Image,
+			common.PropertyTypeMessage.Name: err.Error(),
+		})
+
 		c.JSON(http.StatusInternalServerError, modelCommon.Result{Success: common_err.UNINSTALL_APP_ERROR, Message: common_err.GetMsg(common_err.UNINSTALL_APP_ERROR), Data: err.Error()})
 		return
 	}
 
 	err = service.MyService.Docker().DockerContainerRemove(appID, false)
 	if err != nil {
+		publishEventWrapper(c.Request.Context(), common.EventTypeContainerAppUninstallFailed, map[string]string{
+			common.PropertyTypeAppID.Name:   appID,
+			common.PropertyTypeAppName.Name: info.Config.Image,
+			common.PropertyTypeMessage.Name: err.Error(),
+		})
+
 		c.JSON(http.StatusInternalServerError, modelCommon.Result{Success: common_err.UNINSTALL_APP_ERROR, Message: common_err.GetMsg(common_err.UNINSTALL_APP_ERROR), Data: err.Error()})
 		return
 	}
 
 	// step：remove image
 	if err := service.MyService.Docker().DockerImageRemove(info.Config.Image); err != nil {
+		publishEventWrapper(c.Request.Context(), common.EventTypeContainerAppUninstallFailed, map[string]string{
+			common.PropertyTypeAppID.Name:   appID,
+			common.PropertyTypeAppName.Name: info.Config.Image,
+			common.PropertyTypeMessage.Name: err.Error(),
+		})
+
 		c.JSON(http.StatusInternalServerError, modelCommon.Result{Success: common_err.UNINSTALL_APP_ERROR, Message: common_err.GetMsg(common_err.UNINSTALL_APP_ERROR), Data: err.Error()})
 		return
 	}
 
-	if info.Config.Labels["origin"] != "custom" && len(isDelete) > 0 {
+	if info.Config.Labels["origin"] != "custom" && isDelete {
 		// step: 删除文件夹
 		for _, v := range info.Mounts {
 			if strings.Contains(v.Source, info.Name) {
 				path := filepath.Join(strings.Split(v.Source, info.Name)[0], info.Name)
 				if err := file.RMDir(path); err != nil {
+					publishEventWrapper(c.Request.Context(), common.EventTypeContainerAppUninstallFailed, map[string]string{
+						common.PropertyTypeAppID.Name:   appID,
+						common.PropertyTypeAppName.Name: info.Config.Image,
+						common.PropertyTypeMessage.Name: err.Error(),
+					})
+
 					c.JSON(http.StatusInternalServerError, modelCommon.Result{Success: common_err.UNINSTALL_APP_ERROR, Message: err.Error()})
 					return
 				}
@@ -372,6 +444,11 @@ func UnInstallApp(c *gin.Context) {
 	if err := service.MyService.Notify().SendUninstallAppBySocket(notify); err != nil {
 		logger.Error("send uninstall app notify error", zap.Error(err), zap.Any("notify", notify))
 	}
+
+	publishEventWrapper(c.Request.Context(), common.EventTypeContainerAppUninstalled, map[string]string{
+		common.PropertyTypeAppID.Name:   appID,
+		common.PropertyTypeAppName.Name: info.Config.Image,
+	})
 
 	c.JSON(http.StatusOK, modelCommon.Result{Success: common_err.SUCCESS, Message: common_err.GetMsg(common_err.SUCCESS)})
 }

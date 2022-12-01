@@ -13,8 +13,6 @@ import (
 )
 
 const (
-	tableName = "o_container"
-
 	appManagementConfigDirPath  = "/etc/casaos"
 	appManagementConfigFilePath = "/etc/casaos/app-management.conf"
 	appManagementName           = "casaos-app-management.service"
