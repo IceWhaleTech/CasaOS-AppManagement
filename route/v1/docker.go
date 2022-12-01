@@ -46,7 +46,10 @@ func publishEventWrapper(ctx context.Context, eventType message_bus.EventType, p
 	}
 }
 
-func pullAndCreate(ctx context.Context, imageName string, m *model.CustomizationPostData) {
+func pullAndCreate(imageName string, m *model.CustomizationPostData) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	// publish app installing event
 	publishEventWrapper(ctx, common.EventTypeContainerAppInstalling, map[string]string{
 		common.PropertyTypeAppName.Name: imageName,
@@ -329,7 +332,7 @@ func InstallApp(c *gin.Context) {
 	id := uuid.NewV4().String()
 	m.CustomID = id
 
-	go pullAndCreate(c.Request.Context(), dockerImage+":"+dockerImageVersion, &m)
+	go pullAndCreate(dockerImage+":"+dockerImageVersion, &m)
 
 	c.JSON(http.StatusOK, modelCommon.Result{Success: common_err.SUCCESS, Message: common_err.GetMsg(common_err.SUCCESS), Data: m.Label})
 }
@@ -349,13 +352,16 @@ func UnInstallApp(c *gin.Context) {
 		return
 	}
 
-	j := make(map[string]string)
+	j := make(map[string]bool)
 	if err := c.ShouldBind(&j); err != nil {
 		c.JSON(http.StatusBadRequest, modelCommon.Result{Success: common_err.INVALID_PARAMS, Message: err.Error()})
 		return
 	}
 
-	isDelete := j["delete_config_folder"]
+	isDelete, ok := j["delete_config_folder"]
+	if !ok {
+		isDelete = false
+	}
 
 	info, err := service.MyService.Docker().DockerContainerInfo(appID)
 	if err != nil {
@@ -366,7 +372,7 @@ func UnInstallApp(c *gin.Context) {
 	// publish app installing event
 	publishEventWrapper(c.Request.Context(), common.EventTypeContainerAppUninstalling, map[string]string{
 		common.PropertyTypeAppID.Name:   appID,
-		common.PropertyTypeAppName.Name: info.Image,
+		common.PropertyTypeAppName.Name: info.Config.Image,
 	})
 
 	// step：停止容器
@@ -374,7 +380,7 @@ func UnInstallApp(c *gin.Context) {
 	if err != nil {
 		publishEventWrapper(c.Request.Context(), common.EventTypeContainerAppUninstallFailed, map[string]string{
 			common.PropertyTypeAppID.Name:   appID,
-			common.PropertyTypeAppName.Name: info.Image,
+			common.PropertyTypeAppName.Name: info.Config.Image,
 			common.PropertyTypeMessage.Name: err.Error(),
 		})
 
@@ -386,7 +392,7 @@ func UnInstallApp(c *gin.Context) {
 	if err != nil {
 		publishEventWrapper(c.Request.Context(), common.EventTypeContainerAppUninstallFailed, map[string]string{
 			common.PropertyTypeAppID.Name:   appID,
-			common.PropertyTypeAppName.Name: info.Image,
+			common.PropertyTypeAppName.Name: info.Config.Image,
 			common.PropertyTypeMessage.Name: err.Error(),
 		})
 
@@ -398,7 +404,7 @@ func UnInstallApp(c *gin.Context) {
 	if err := service.MyService.Docker().DockerImageRemove(info.Config.Image); err != nil {
 		publishEventWrapper(c.Request.Context(), common.EventTypeContainerAppUninstallFailed, map[string]string{
 			common.PropertyTypeAppID.Name:   appID,
-			common.PropertyTypeAppName.Name: info.Image,
+			common.PropertyTypeAppName.Name: info.Config.Image,
 			common.PropertyTypeMessage.Name: err.Error(),
 		})
 
@@ -406,7 +412,7 @@ func UnInstallApp(c *gin.Context) {
 		return
 	}
 
-	if info.Config.Labels["origin"] != "custom" && len(isDelete) > 0 {
+	if info.Config.Labels["origin"] != "custom" && isDelete {
 		// step: 删除文件夹
 		for _, v := range info.Mounts {
 			if strings.Contains(v.Source, info.Name) {
@@ -414,7 +420,7 @@ func UnInstallApp(c *gin.Context) {
 				if err := file.RMDir(path); err != nil {
 					publishEventWrapper(c.Request.Context(), common.EventTypeContainerAppUninstallFailed, map[string]string{
 						common.PropertyTypeAppID.Name:   appID,
-						common.PropertyTypeAppName.Name: info.Image,
+						common.PropertyTypeAppName.Name: info.Config.Image,
 						common.PropertyTypeMessage.Name: err.Error(),
 					})
 
@@ -441,7 +447,7 @@ func UnInstallApp(c *gin.Context) {
 
 	publishEventWrapper(c.Request.Context(), common.EventTypeContainerAppUninstalled, map[string]string{
 		common.PropertyTypeAppID.Name:   appID,
-		common.PropertyTypeAppName.Name: info.Image,
+		common.PropertyTypeAppName.Name: info.Config.Image,
 	})
 
 	c.JSON(http.StatusOK, modelCommon.Result{Success: common_err.SUCCESS, Message: common_err.GetMsg(common_err.SUCCESS)})
