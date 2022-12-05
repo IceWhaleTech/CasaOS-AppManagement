@@ -341,10 +341,11 @@ func UnInstallApp(c *gin.Context) {
 	}
 
 	// step：remove image
-	if err := service.MyService.Docker().DockerImageRemove(info.Config.Image); err != nil {
-		c.JSON(http.StatusInternalServerError, modelCommon.Result{Success: common_err.UNINSTALL_APP_ERROR, Message: common_err.GetMsg(common_err.UNINSTALL_APP_ERROR), Data: err.Error()})
-		return
-	}
+	// if err := service.MyService.Docker().DockerImageRemove(info.Config.Image); err != nil {
+	// 	c.JSON(http.StatusInternalServerError, modelCommon.Result{Success: common_err.UNINSTALL_APP_ERROR, Message: common_err.GetMsg(common_err.UNINSTALL_APP_ERROR), Data: err.Error()})
+	// 	return
+	// }
+	service.MyService.Docker().DockerImageRemove(info.Config.Image)
 
 	if info.Config.Labels["origin"] != "custom" && isDelete {
 		// step: 删除文件夹
