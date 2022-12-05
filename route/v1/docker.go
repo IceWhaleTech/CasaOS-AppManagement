@@ -313,7 +313,7 @@ func UnInstallApp(c *gin.Context) {
 		return
 	}
 
-	j := make(map[string]string)
+	j := make(map[string]bool)
 	if err := c.ShouldBind(&j); err != nil {
 		c.JSON(http.StatusBadRequest, modelCommon.Result{Success: common_err.INVALID_PARAMS, Message: err.Error()})
 		return
@@ -346,7 +346,7 @@ func UnInstallApp(c *gin.Context) {
 		return
 	}
 
-	if info.Config.Labels["origin"] != "custom" && len(isDelete) > 0 {
+	if info.Config.Labels["origin"] != "custom" && isDelete {
 		// step: 删除文件夹
 		for _, v := range info.Mounts {
 			if strings.Contains(v.Source, info.Name) {
