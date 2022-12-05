@@ -402,17 +402,17 @@ func UnInstallApp(c *gin.Context) {
 
 	// step：remove image
 
-	if err := service.MyService.Docker().DockerImageRemove(info.Config.Image); err != nil {
-		publishEventWrapper(c.Request.Context(), common.EventTypeContainerAppUninstallFailed, map[string]string{
-			common.PropertyTypeAppID.Name:   appID,
-			common.PropertyTypeAppName.Name: info.Config.Image,
-			common.PropertyTypeMessage.Name: err.Error(),
-		})
+	// if err := service.MyService.Docker().DockerImageRemove(info.Config.Image); err != nil {
+	// 	publishEventWrapper(c.Request.Context(), common.EventTypeContainerAppUninstallFailed, map[string]string{
+	// 		common.PropertyTypeAppID.Name:   appID,
+	// 		common.PropertyTypeAppName.Name: info.Config.Image,
+	// 		common.PropertyTypeMessage.Name: err.Error(),
+	// 	})
 
-		c.JSON(http.StatusInternalServerError, modelCommon.Result{Success: common_err.UNINSTALL_APP_ERROR, Message: common_err.GetMsg(common_err.UNINSTALL_APP_ERROR), Data: err.Error()})
-		return
-	}
-
+	// 	c.JSON(http.StatusInternalServerError, modelCommon.Result{Success: common_err.UNINSTALL_APP_ERROR, Message: common_err.GetMsg(common_err.UNINSTALL_APP_ERROR), Data: err.Error()})
+	// 	return
+	// }
+	service.MyService.Docker().DockerImageRemove(info.Config.Image)
 	if info.Config.Labels["origin"] != "custom" && isDelete {
 		// step: 删除文件夹
 		for _, v := range info.Mounts {
