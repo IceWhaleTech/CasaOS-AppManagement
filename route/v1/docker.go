@@ -401,6 +401,7 @@ func UnInstallApp(c *gin.Context) {
 	}
 
 	// step：remove image
+
 	if err := service.MyService.Docker().DockerImageRemove(info.Config.Image); err != nil {
 		publishEventWrapper(c.Request.Context(), common.EventTypeContainerAppUninstallFailed, map[string]string{
 			common.PropertyTypeAppID.Name:   appID,
