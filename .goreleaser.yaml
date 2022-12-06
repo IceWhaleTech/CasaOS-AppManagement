@@ -13,6 +13,8 @@ builds:
     env:
       - CC=x86_64-linux-gnu-gcc
     ldflags:
+      - -X main.commit={{.Commit}}
+      - -X main.date={{.Date}}
       - -s
       - -w
       - -extldflags "-static"
@@ -29,6 +31,8 @@ builds:
     env:
       - CC=aarch64-linux-gnu-gcc
     ldflags:
+      - -X main.commit={{.Commit}}
+      - -X main.date={{.Date}}
       - -s
       - -w
       - -extldflags "-static"
@@ -45,6 +49,8 @@ builds:
     env:
       - CC=arm-linux-gnueabihf-gcc
     ldflags:
+      - -X main.commit={{.Commit}}
+      - -X main.date={{.Date}}
       - -s
       - -w
       - -extldflags "-static"
@@ -64,6 +70,8 @@ builds:
     env:
       - CC=x86_64-linux-gnu-gcc
     ldflags:
+      - -X main.commit={{.Commit}}
+      - -X main.date={{.Date}}
       - -s
       - -w
       - -extldflags "-static"
@@ -81,6 +89,8 @@ builds:
     env:
       - CC=aarch64-linux-gnu-gcc
     ldflags:
+      - -X main.commit={{.Commit}}
+      - -X main.date={{.Date}}
       - -s
       - -w
       - -extldflags "-static"
@@ -98,6 +108,8 @@ builds:
     env:
       - CC=arm-linux-gnueabihf-gcc
     ldflags:
+      - -X main.commit={{.Commit}}
+      - -X main.date={{.Date}}
       - -s
       - -w
       - -extldflags "-static"
