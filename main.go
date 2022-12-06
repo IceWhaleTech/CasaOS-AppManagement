@@ -26,8 +26,8 @@ import (
 const localhost = "127.0.0.1"
 
 var (
-	commit = "none"
-	date   = "unknown"
+	commit = "private build"
+	date   = "private build"
 )
 
 func main() {

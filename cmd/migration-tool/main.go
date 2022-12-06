@@ -26,8 +26,8 @@ var (
 	_logger *Logger
 	_status *version.GlobalMigrationStatus
 
-	commit = "none"
-	date   = "unknown"
+	commit = "private build"
+	date   = "private build"
 )
 
 func main() {
