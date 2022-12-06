@@ -15,6 +15,8 @@ builds:
     gcflags:
       - all=-N -l
     ldflags:
+      - -X main.commit={{.Commit}}
+      - -X main.date={{.Date}}
       - -extldflags "-static"
     tags:
       - musl
@@ -31,6 +33,8 @@ builds:
     gcflags:
       - all=-N -l
     ldflags:
+      - -X main.commit={{.Commit}}
+      - -X main.date={{.Date}}
       - -extldflags "-static"
     tags:
       - musl
@@ -47,6 +51,8 @@ builds:
     gcflags:
       - all=-N -l
     ldflags:
+      - -X main.commit={{.Commit}}
+      - -X main.date={{.Date}}
       - -extldflags "-static"
     tags:
       - musl
@@ -66,6 +72,8 @@ builds:
     gcflags:
       - all=-N -l
     ldflags:
+      - -X main.commit={{.Commit}}
+      - -X main.date={{.Date}}
       - -extldflags "-static"
     tags:
       - musl
@@ -83,6 +91,8 @@ builds:
     gcflags:
       - all=-N -l
     ldflags:
+      - -X main.commit={{.Commit}}
+      - -X main.date={{.Date}}
       - -extldflags "-static"
     tags:
       - musl
@@ -100,6 +110,8 @@ builds:
     gcflags:
       - all=-N -l
     ldflags:
+      - -X main.commit={{.Commit}}
+      - -X main.date={{.Date}}
       - -extldflags "-static"
     tags:
       - musl

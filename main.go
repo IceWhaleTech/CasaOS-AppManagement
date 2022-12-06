@@ -25,6 +25,11 @@ import (
 
 const localhost = "127.0.0.1"
 
+var (
+	commit = "private build"
+	date   = "private build"
+)
+
 func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -41,6 +46,9 @@ func main() {
 		os.Exit(0)
 	}
 
+	println("git commit:", commit)
+	println("build date:", date)
+
 	config.InitSetup(*configFlag)
 
 	logger.LogInit(config.AppInfo.LogPath, config.AppInfo.LogSaveName, config.AppInfo.LogFileExt)
@@ -52,8 +60,6 @@ func main() {
 	service.MyService = service.NewService(config.CommonInfo.RuntimePath)
 
 	service.Cache = cache.New(5*time.Minute, 60*time.Second)
-
-	service.GetToken()
 
 	service.GetToken()
 
