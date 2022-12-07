@@ -36,7 +36,7 @@ paths:
       summary: Ping the WebUI port (if exists) of an app
       description: |
         TODO - add description here
-      operationId: subscribeapp
+      operationId: pingApp
       tags:
         - App methods
       parameters:
