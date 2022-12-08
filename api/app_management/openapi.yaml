@@ -31,19 +31,21 @@ security:
   - access_token: []
 
 paths:
-  /app/{app_id}/ping:
+  /app/{app_id}/healthcheck:
     get:
-      summary: Ping the WebUI port (if exists) of an app
+      summary: Check if an app is running healthy
       description: |
-        TODO - add description here
-      operationId: pingApp
+        By default this method simply check if the WebUI port of the app returns `200 OK` status code.
+
+        Custom health check procedure will be implemented in the future.
+      operationId: checkApp
       tags:
         - App methods
       parameters:
         - $ref: "#/components/parameters/AppID"
       responses:
         "200":
-          $ref: "#/components/responses/AppPingOK"
+          $ref: "#/components/responses/AppHealthCheckOK"
         "404":
           $ref: "#/components/responses/ResponseNotFound"
 
@@ -89,7 +91,7 @@ components:
           example:
             message: "Bad Request"
 
-    AppPingOK:
+    AppHealthCheckOK:
       description: OK
       content:
         application/json:

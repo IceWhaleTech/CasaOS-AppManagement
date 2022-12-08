@@ -40,6 +40,8 @@ type AppService interface {
 	GetHardwareUsageStream()
 	GetHardwareUsage() []model.DockerStatsModel
 	GetAppStats(id string) string
+
+	CheckContainer(id string) bool
 }
 
 type appStruct struct{}
