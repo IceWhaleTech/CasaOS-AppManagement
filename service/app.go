@@ -13,10 +13,11 @@ import (
 	"sync"
 	"time"
 
+	"github.com/IceWhaleTech/CasaOS-AppManagement/common"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/model"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/pkg/config"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/file"
-	"github.com/IceWhaleTech/CasaOS-Common/utils/http"
+	httpUtil "github.com/IceWhaleTech/CasaOS-Common/utils/http"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/logger"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/filters"
@@ -35,13 +36,12 @@ type AppService interface {
 
 	GetMyList(index, size int, position bool) (*[]model.MyAppList, *[]model.MyAppList)
 	GetContainerInfo(id string) (types.Container, error)
-	GetSimpleContainerInfo(id string) (types.Container, error)
 	GetSystemAppList() []types.Container
 	GetHardwareUsageStream()
 	GetHardwareUsage() []model.DockerStatsModel
 	GetAppStats(id string) string
 
-	CheckContainer(id string) bool
+	CheckMyApp(id string) (bool, error)
 }
 
 type appStruct struct{}
@@ -154,7 +154,7 @@ func (o *appStruct) AsyncGetServerList() (model.ServerAppListCollection, error) 
 	url := config.ServerInfo.ServerAPI + "/v2/app/newlist?index=1&size=1000&rank=name&category_id=0&key=&language=en"
 
 	logger.Info("getting app list collection from online...", zap.String("url", url))
-	resp, err := http.GetWithHeader(url, 30*time.Second, headers)
+	resp, err := httpUtil.GetWithHeader(url, 30*time.Second, headers)
 	if err != nil {
 		logger.Error("error when calling url with header", zap.Any("err", err), zap.Any("url", url), zap.Any("head", headers))
 		return collection, err
@@ -212,7 +212,7 @@ func (o *appStruct) GetServerAppInfo(id, t string, language string) (model.Serve
 	info := model.ServerAppList{}
 
 	url := config.ServerInfo.ServerAPI + "/v2/app/info/" + id + "?t=" + t + "&language=" + language
-	resp, err := http.GetWithHeader(url, 30*time.Second, head)
+	resp, err := httpUtil.GetWithHeader(url, 30*time.Second, head)
 	if err != nil {
 		logger.Error("error when calling url with header", zap.Any("err", err), zap.Any("url", url), zap.Any("head", head))
 		return info, err
@@ -264,7 +264,7 @@ func (o *appStruct) AsyncGetServerCategoryList() ([]model.CategoryList, error) {
 	head["Authorization"] = GetToken()
 
 	url := config.ServerInfo.ServerAPI + "/v2/app/category"
-	resp, err := http.GetWithHeader(url, 30*time.Second, head)
+	resp, err := httpUtil.GetWithHeader(url, 30*time.Second, head)
 	if err != nil {
 		logger.Error("error when calling url with header", zap.Any("err", err), zap.Any("url", url), zap.Any("head", head))
 		return item, err
@@ -304,7 +304,7 @@ func (o *appStruct) ShareAppFile(body []byte) string {
 	head["Authorization"] = GetToken()
 
 	url := config.ServerInfo.ServerAPI + "/v1/community/add"
-	resp, err := http.PostWithHeader(url, body, 30*time.Second, head)
+	resp, err := httpUtil.PostWithHeader(url, body, 30*time.Second, head)
 	if err != nil {
 		logger.Error("error when calling url with header", zap.Any("err", err), zap.Any("url", url), zap.Any("head", head))
 		return ""
@@ -417,38 +417,22 @@ func (o *appStruct) GetContainerInfo(id string) (types.Container, error) {
 	cli, err := client2.NewClientWithOpts(client2.FromEnv)
 	if err != nil {
 		logger.Error("Failed to init client", zap.Any("err", err))
+		return types.Container{}, err
 	}
+	defer cli.Close()
+
 	filters := filters.NewArgs()
 	filters.Add("id", id)
 	containers, err := cli.ContainerList(context.Background(), types.ContainerListOptions{All: true, Filters: filters})
 	if err != nil {
 		logger.Error("Failed to get container_list", zap.Any("err", err))
+		return types.Container{}, err
 	}
 
 	if len(containers) > 0 {
 		return containers[0], nil
 	}
 	return types.Container{}, nil
-}
-
-func (o *appStruct) GetSimpleContainerInfo(id string) (types.Container, error) {
-	// 获取docker应用
-	cli, err := client2.NewClientWithOpts(client2.FromEnv)
-	if err != nil {
-		return types.Container{}, err
-	}
-	defer cli.Close()
-	filters := filters.NewArgs()
-	filters.Add("id", id)
-	containers, err := cli.ContainerList(context.Background(), types.ContainerListOptions{All: true, Filters: filters})
-	if err != nil {
-		return types.Container{}, err
-	}
-
-	if len(containers) > 0 {
-		return containers[0], nil
-	}
-	return types.Container{}, errors.New("container not existent")
 }
 
 var dataStats = &sync.Map{}
@@ -568,6 +552,28 @@ func (o *appStruct) GetHardwareUsageStream() {
 	cancel()
 }
 
+func (o *appStruct) CheckMyApp(id string) (bool, error) {
+	container, err := o.GetContainerInfo(id)
+	if err != nil {
+		return false, err
+	}
+
+	if webUIPort, ok := container.Labels["web"]; ok {
+		response, err := httpUtil.Get(fmt.Sprintf("http://%s:%s", common.Localhost, webUIPort), 30*time.Second)
+		if err != nil {
+			return false, err
+		}
+
+		// TODO - test redirection
+
+		if response.StatusCode >= 200 && response.StatusCode < 300 {
+			return true, nil
+		}
+	}
+
+	return false, nil
+}
+
 func NewAppService() AppService {
 	return &appStruct{}
 }
@@ -586,7 +592,7 @@ func GetToken() string {
 	go func() {
 		url := config.ServerInfo.ServerAPI + "/token"
 
-		resp, err := http.Get(url, 30*time.Second)
+		resp, err := httpUtil.Get(url, 30*time.Second)
 		if err != nil {
 			logger.Error("error when calling url", zap.Any("err", err), zap.Any("url", url))
 			t <- ""

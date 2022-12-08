@@ -24,8 +24,6 @@ import (
 	"go.uber.org/zap"
 )
 
-const localhost = "127.0.0.1"
-
 var (
 	commit = "private build"
 	date   = "private build"
@@ -66,7 +64,7 @@ func main() {
 
 	service.NewVersionApp = make(map[string]string)
 
-	listener, err := net.Listen("tcp", net.JoinHostPort(localhost, "0"))
+	listener, err := net.Listen("tcp", net.JoinHostPort(common.Localhost, "0"))
 	if err != nil {
 		panic(err)
 	}

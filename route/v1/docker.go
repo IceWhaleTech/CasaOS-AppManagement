@@ -551,7 +551,7 @@ func ContainerLog(c *gin.Context) {
 func GetContainerState(c *gin.Context) {
 	id := c.Param("id")
 	// t := c.DefaultQuery("type", "0")
-	containerInfo, e := service.MyService.App().GetSimpleContainerInfo(id)
+	containerInfo, e := service.MyService.App().GetContainerInfo(id)
 	if e != nil {
 		c.JSON(http.StatusInternalServerError, modelCommon.Result{Success: common_err.SERVICE_ERROR, Message: e.Error()})
 		return
