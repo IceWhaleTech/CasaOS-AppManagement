@@ -46,8 +46,8 @@ paths:
       responses:
         "200":
           $ref: "#/components/responses/AppHealthCheckOK"
-        "404":
-          $ref: "#/components/responses/ResponseNotFound"
+        "503":
+          $ref: "#/components/responses/ResponseServiceUnavailable"
 
 components:
   securitySchemes:
@@ -90,6 +90,15 @@ components:
             $ref: "#/components/schemas/BaseResponse"
           example:
             message: "Bad Request"
+
+    ResponseServiceUnavailable:
+      description: Service Unavailable
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/BaseResponse"
+          example:
+            message: "Service Unavailable"
 
     AppHealthCheckOK:
       description: OK
