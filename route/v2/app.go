@@ -8,8 +8,8 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-func (a *AppManagement) CheckApp(ctx echo.Context, appID codegen.AppID) error {
-	result, err := service.MyService.App().CheckMyApp(appID)
+func (a *AppManagement) CheckApp(ctx echo.Context, id codegen.ContainerID) error {
+	result, err := service.MyService.App().CheckMyApp(id)
 	if err != nil {
 		message := err.Error()
 		return ctx.JSON(http.StatusServiceUnavailable, codegen.ResponseServiceUnavailable{Message: &message})

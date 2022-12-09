@@ -18,20 +18,20 @@ servers:
   - url: /v2/app_management
 
 tags:
-  - name: App methods
+  - name: Container methods
     description: |-
       methods for managing app lifecycle
 
 x-tagGroups:
   - name: Methods
     tags:
-      - App methods
+      - Container methods
 
 security:
   - access_token: []
 
 paths:
-  /app/{app_id}/healthcheck:
+  /container/{id}/healthcheck:
     get:
       summary: Check if an app is running healthy
       description: |
@@ -40,9 +40,9 @@ paths:
         Custom health check procedure will be implemented in the future.
       operationId: checkApp
       tags:
-        - App methods
+        - Container methods
       parameters:
-        - $ref: "#/components/parameters/AppID"
+        - $ref: "#/components/parameters/ContainerID"
       responses:
         "200":
           $ref: "#/components/responses/AppHealthCheckOK"
@@ -57,10 +57,9 @@ components:
       name: Authorization
 
   parameters:
-    AppID:
-      name: app_id
+    ContainerID:
+      name: id
       in: path
-      description: App ID
       required: true
       schema:
         type: string
