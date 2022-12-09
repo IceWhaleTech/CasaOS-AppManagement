@@ -19,7 +19,7 @@ import (
 	"go.uber.org/zap"
 )
 
-type AppService interface {
+type AppStore interface {
 	GetServerList(index, size, tp, categoryID, key string) (model.ServerAppListCollection, error)
 	GetServerAppInfo(id, t string, language string) (model.ServerAppList, error)
 	GetServerCategoryList() (list []model.CategoryList, err error)
@@ -27,11 +27,11 @@ type AppService interface {
 	ShareAppFile(body []byte) string
 }
 
-type appStruct struct{}
+type appStore struct{}
 
 var json = jsoniter.ConfigCompatibleWithStandardLibrary
 
-func (o *appStruct) GetServerList(index, size, tp, categoryID, key string) (model.ServerAppListCollection, error) {
+func (o *appStore) GetServerList(index, size, tp, categoryID, key string) (model.ServerAppListCollection, error) {
 	collection := model.ServerAppListCollection{}
 
 	keyName := fmt.Sprintf("list_%s_%s_%s_%s_%s", index, size, tp, categoryID, "en")
@@ -121,7 +121,7 @@ func (o *appStruct) GetServerList(index, size, tp, categoryID, key string) (mode
 	return collection, nil
 }
 
-func (o *appStruct) AsyncGetServerList() (model.ServerAppListCollection, error) {
+func (o *appStore) AsyncGetServerList() (model.ServerAppListCollection, error) {
 	collection := model.ServerAppListCollection{}
 
 	path := filepath.Join(config.AppInfo.DBPath, "/app_list.json")
@@ -187,7 +187,7 @@ func (o *appStruct) AsyncGetServerList() (model.ServerAppListCollection, error) 
 	return collection, nil
 }
 
-func (o *appStruct) GetServerAppInfo(id, t string, language string) (model.ServerAppList, error) {
+func (o *appStore) GetServerAppInfo(id, t string, language string) (model.ServerAppList, error) {
 	head := make(map[string]string)
 
 	head["Authorization"] = GetToken()
@@ -219,7 +219,7 @@ func (o *appStruct) GetServerAppInfo(id, t string, language string) (model.Serve
 	return info, nil
 }
 
-func (o *appStruct) GetServerCategoryList() (list []model.CategoryList, err error) {
+func (o *appStore) GetServerCategoryList() (list []model.CategoryList, err error) {
 	category := model.ServerCategoryList{}
 	results := file.ReadFullFile(config.AppInfo.DBPath + "/app_category.json")
 	err = json.Unmarshal(results, &category)
@@ -235,7 +235,7 @@ func (o *appStruct) GetServerCategoryList() (list []model.CategoryList, err erro
 	return category.Item, err
 }
 
-func (o *appStruct) AsyncGetServerCategoryList() ([]model.CategoryList, error) {
+func (o *appStore) AsyncGetServerCategoryList() ([]model.CategoryList, error) {
 	list := model.ServerCategoryList{}
 	results := file.ReadFullFile(config.AppInfo.DBPath + "/app_category.json")
 	err := json.Unmarshal(results, &list)
@@ -281,7 +281,7 @@ func (o *appStruct) AsyncGetServerCategoryList() ([]model.CategoryList, error) {
 	return item, nil
 }
 
-func (o *appStruct) ShareAppFile(body []byte) string {
+func (o *appStore) ShareAppFile(body []byte) string {
 	head := make(map[string]string)
 
 	head["Authorization"] = GetToken()
@@ -307,8 +307,8 @@ var dataStats = &sync.Map{}
 
 var isFinish bool
 
-func NewAppService() AppService {
-	return &appStruct{}
+func NewAppService() AppStore {
+	return &appStore{}
 }
 
 func GetToken() string {

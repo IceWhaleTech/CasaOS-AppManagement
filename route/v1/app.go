@@ -47,7 +47,7 @@ func AppList(c *gin.Context) {
 		c.JSON(common_err.CLIENT_ERROR, &modelCommon.Result{Success: common_err.INVALID_PARAMS, Message: common_err.GetMsg(common_err.INVALID_PARAMS)})
 		return
 	}
-	collection, err := service.MyService.App().GetServerList(index, size, t, categoryID, key)
+	collection, err := service.MyService.AppStore().GetServerList(index, size, t, categoryID, key)
 	if err != nil {
 		c.JSON(common_err.SERVICE_ERROR, &modelCommon.Result{Success: common_err.SERVICE_ERROR, Message: common_err.GetMsg(common_err.SERVICE_ERROR), Data: err.Error()})
 		return
@@ -107,7 +107,7 @@ func AppUsageList(c *gin.Context) {
 func AppInfo(c *gin.Context) {
 	id := c.Param("id")
 	language := c.GetHeader("Language")
-	info, err := service.MyService.App().GetServerAppInfo(id, "", language)
+	info, err := service.MyService.AppStore().GetServerAppInfo(id, "", language)
 	if err != nil {
 		c.JSON(common_err.SERVICE_ERROR, &modelCommon.Result{Success: common_err.SERVICE_ERROR, Message: common_err.GetMsg(common_err.SERVICE_ERROR), Data: err.Error()})
 		return
@@ -160,7 +160,7 @@ func AppInfo(c *gin.Context) {
 // @Success 200 {string} string "ok"
 // @Router /app/category [get]
 func CategoryList(c *gin.Context) {
-	list, err := service.MyService.App().GetServerCategoryList()
+	list, err := service.MyService.AppStore().GetServerCategoryList()
 	if err != nil {
 		c.JSON(common_err.SERVICE_ERROR, &modelCommon.Result{Success: common_err.SERVICE_ERROR, Message: common_err.GetMsg(common_err.SERVICE_ERROR), Data: err.Error()})
 		return
@@ -185,7 +185,7 @@ func CategoryList(c *gin.Context) {
 // @Router /app/share [post]
 func ShareAppFile(c *gin.Context) {
 	str, _ := ioutil.ReadAll(c.Request.Body)
-	content := service.MyService.App().ShareAppFile(str)
+	content := service.MyService.AppStore().ShareAppFile(str)
 	c.JSON(common_err.SUCCESS, jsoniter.RawMessage(content))
 }
 
