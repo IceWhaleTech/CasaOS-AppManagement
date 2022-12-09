@@ -183,9 +183,7 @@ func (ds *dockerService) CheckContainerHealth(id string) (bool, error) {
 
 		// TODO - test redirection
 
-		if response.StatusCode >= 200 && response.StatusCode < 300 {
-			return true, nil
-		}
+		return response.StatusCode >= 200 && response.StatusCode < 300, nil
 	}
 
 	return false, nil
