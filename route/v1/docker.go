@@ -513,7 +513,7 @@ func ChangAppState(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, modelCommon.Result{Success: common_err.INVALID_PARAMS, Message: "`state` should be start, stop or restart"})
 	}
 
-	info, err := service.MyService.App().GetContainerInfo(appID)
+	info, err := service.MyService.Docker().GetContainerInfo(appID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, modelCommon.Result{Success: common_err.SERVICE_ERROR, Message: err.Error()})
 		return
@@ -554,7 +554,7 @@ func ContainerLog(c *gin.Context) {
 func GetContainerState(c *gin.Context) {
 	id := c.Param("id")
 	// t := c.DefaultQuery("type", "0")
-	containerInfo, e := service.MyService.App().GetContainerInfo(id)
+	containerInfo, e := service.MyService.Docker().GetContainerInfo(id)
 	if e != nil {
 		c.JSON(http.StatusInternalServerError, modelCommon.Result{Success: common_err.SERVICE_ERROR, Message: e.Error()})
 		return

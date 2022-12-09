@@ -5,19 +5,24 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"runtime"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/pkg/errors"
 	"github.com/samber/lo"
 	"go.uber.org/zap"
 
+	"github.com/IceWhaleTech/CasaOS-AppManagement/common"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/model"
+	"github.com/IceWhaleTech/CasaOS-AppManagement/pkg/config"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/pkg/docker"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/pkg/utils/envHelper"
 	"github.com/IceWhaleTech/CasaOS-Common/model/notify"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/file"
+	httpUtil "github.com/IceWhaleTech/CasaOS-Common/utils/http"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/logger"
 	timeutils "github.com/IceWhaleTech/CasaOS-Common/utils/time"
 
@@ -33,8 +38,12 @@ import (
 )
 
 type DockerService interface {
+	// image
 	DockerPullImage(imageName string, icon, name string) error
 	IsExistImage(imageName string) bool
+	DockerImageRemove(name string) error
+
+	// container
 	DockerContainerCreate(m model.CustomizationPostData, id string) (containerID string, err error)
 	DockerContainerCopyCreate(info *types.ContainerJSON) (containerID string, err error)
 	DockerContainerStart(name string) error
@@ -42,18 +51,279 @@ type DockerService interface {
 	DockerListByName(name string) (*types.Container, error)
 	DockerListByImage(image, version string) (*types.Container, error)
 	DockerContainerInfo(name string) (*types.ContainerJSON, error)
-	DockerImageRemove(name string) error
 	DockerContainerRemove(name string, update bool) error
 	DockerContainerStop(id string) error
 	DockerContainerUpdateName(name, id string) (err error)
 	DockerContainerUpdate(m model.CustomizationPostData, id string) (err error)
 	DockerContainerLog(name string) ([]byte, error)
 	DockerContainerList() []types.Container
+
+	GetAppStats(id string) string
+	GetHardwareUsageStream()
+	GetMyList(index, size int, position bool) (*[]model.MyAppList, *[]model.MyAppList)
+	GetContainerInfo(id string) (types.Container, error)
+	GetSystemAppList() []types.Container
+	GetHardwareUsage() []model.DockerStatsModel
+	CheckMyApp(id string) (bool, error)
+
+	// network
 	DockerNetworkModelList() []types.NetworkResource
+
+	// docker server
 	GetDockerInfo() (types.Info, error)
 }
 
 type dockerService struct{}
+
+func (ds *dockerService) GetHardwareUsage() []model.DockerStatsModel {
+	stream := true
+	for !isFinish {
+		if stream {
+			stream = false
+			go func() {
+				ds.GetHardwareUsageStream()
+			}()
+		}
+		runtime.Gosched()
+	}
+	list := []model.DockerStatsModel{}
+
+	dataStats.Range(func(key, value interface{}) bool {
+		list = append(list, value.(model.DockerStatsModel))
+		return true
+	})
+	return list
+}
+
+func (ds *dockerService) CheckMyApp(id string) (bool, error) {
+	container, err := ds.GetContainerInfo(id)
+	if err != nil {
+		return false, err
+	}
+
+	if webUIPort, ok := container.Labels["web"]; ok {
+		response, err := httpUtil.Get(fmt.Sprintf("http://%s:%s", common.Localhost, webUIPort), 30*time.Second)
+		if err != nil {
+			return false, err
+		}
+
+		// TODO - test redirection
+
+		if response.StatusCode >= 200 && response.StatusCode < 300 {
+			return true, nil
+		}
+	}
+
+	return false, nil
+}
+
+// system application list
+func (ds *dockerService) GetSystemAppList() []types.Container {
+	// 获取docker应用
+	cli, err := client2.NewClientWithOpts(client2.FromEnv)
+	if err != nil {
+		logger.Error("Failed to init client", zap.Any("err", err))
+	}
+	defer cli.Close()
+	fts := filters.NewArgs()
+	fts.Add("label", "origin=system")
+	containers, err := cli.ContainerList(context.Background(), types.ContainerListOptions{All: true, Filters: fts})
+	if err != nil {
+		logger.Error("Failed to get container_list", zap.Any("err", err))
+	}
+
+	return containers
+}
+
+// 获取我的应用列表
+func (ds *dockerService) GetContainerInfo(id string) (types.Container, error) {
+	// 获取docker应用
+	cli, err := client2.NewClientWithOpts(client2.FromEnv)
+	if err != nil {
+		logger.Error("Failed to init client", zap.Any("err", err))
+		return types.Container{}, err
+	}
+	defer cli.Close()
+
+	filters := filters.NewArgs()
+	filters.Add("id", id)
+	containers, err := cli.ContainerList(context.Background(), types.ContainerListOptions{All: true, Filters: filters})
+	if err != nil {
+		logger.Error("Failed to get container_list", zap.Any("err", err))
+		return types.Container{}, err
+	}
+
+	if len(containers) > 0 {
+		return containers[0], nil
+	}
+	return types.Container{}, nil
+}
+
+// 获取我的应用列表
+func (ds *dockerService) GetMyList(index, size int, position bool) (*[]model.MyAppList, *[]model.MyAppList) {
+	cli, err := client2.NewClientWithOpts(client2.FromEnv, client2.WithTimeout(time.Second*5))
+	if err != nil {
+		logger.Error("Failed to init client", zap.Any("err", err))
+	}
+	defer cli.Close()
+	// fts := filters.NewArgs()
+	// fts.Add("label", "casaos=casaos")
+	// fts.Add("label", "casaos")
+	// fts.Add("casaos", "casaos")
+	containers, err := cli.ContainerList(context.Background(), types.ContainerListOptions{All: true})
+	if err != nil {
+		logger.Error("Failed to get container_list", zap.Any("err", err))
+	}
+	// 获取本地数据库应用
+
+	unTranslation := []model.MyAppList{}
+
+	list := []model.MyAppList{}
+
+	for _, m := range containers {
+		if m.Labels["casaos"] == "casaos" {
+
+			_, newVersion := NewVersionApp[m.ID]
+			name := strings.ReplaceAll(m.Names[0], "/", "")
+			icon := m.Labels["icon"]
+			if len(m.Labels["name"]) > 0 {
+				name = m.Labels["name"]
+			}
+			if m.Labels["origin"] == "system" {
+				name = strings.Split(m.Image, ":")[0]
+				if len(strings.Split(name, "/")) > 1 {
+					icon = "https://icon.casaos.io/main/all/" + strings.Split(name, "/")[1] + ".png"
+				}
+			}
+
+			list = append(list, model.MyAppList{
+				Name:     name,
+				Icon:     icon,
+				State:    m.State,
+				CustomID: m.Labels["custom_id"],
+				ID:       m.ID,
+				Port:     m.Labels["web"],
+				Index:    m.Labels["index"],
+				// Order:      m.Labels["order"],
+				Image:  m.Image,
+				Latest: newVersion,
+				// Type:   m.Labels["origin"],
+				// Slogan: m.Slogan,
+				// Rely:     m.Rely,
+				Host:     m.Labels["host"],
+				Protocol: m.Labels["protocol"],
+			})
+		} else {
+			unTranslation = append(unTranslation, model.MyAppList{
+				Name:     strings.ReplaceAll(m.Names[0], "/", ""),
+				Icon:     "",
+				State:    m.State,
+				CustomID: m.ID,
+				ID:       m.ID,
+				Port:     "",
+				Latest:   false,
+				Host:     "",
+				Protocol: "",
+				Image:    m.Image,
+			})
+		}
+	}
+
+	return &list, &unTranslation
+}
+
+func (ds *dockerService) GetAppStats(id string) string {
+	cli, err := client2.NewClientWithOpts(client2.FromEnv)
+	if err != nil {
+		return ""
+	}
+	defer cli.Close()
+	con, err := cli.ContainerStats(context.Background(), id, false)
+	if err != nil {
+		return err.Error()
+	}
+	defer con.Body.Close()
+	c, _ := ioutil.ReadAll(con.Body)
+	return string(c)
+}
+
+func (ds *dockerService) GetHardwareUsageStream() {
+	cli, err := client2.NewClientWithOpts(client2.FromEnv)
+	if err != nil {
+		return
+	}
+	defer cli.Close()
+
+	ctx := context.Background()
+	ctx, cancel := context.WithCancel(ctx)
+
+	fts := filters.NewArgs()
+	fts.Add("label", "casaos=casaos")
+	// fts.Add("status", "running")
+	containers, err := cli.ContainerList(context.Background(), types.ContainerListOptions{All: true, Filters: fts})
+	if err != nil {
+		logger.Error("Failed to get container_list", zap.Any("err", err))
+	}
+	for i := 0; i < 100; i++ {
+		if i%10 == 0 {
+			containers, err = cli.ContainerList(context.Background(), types.ContainerListOptions{All: true, Filters: fts})
+			if err != nil {
+				logger.Error("Failed to get container_list", zap.Any("err", err))
+				continue
+			}
+		}
+		if config.CasaOSGlobalVariables.AppChange {
+			config.CasaOSGlobalVariables.AppChange = false
+			dataStats.Range(func(key, value interface{}) bool {
+				dataStats.Delete(key)
+				return true
+			})
+		}
+
+		var temp sync.Map
+		var wg sync.WaitGroup
+		for _, v := range containers {
+			if v.State != "running" {
+				continue
+			}
+			wg.Add(1)
+			go func(v types.Container, i int) {
+				defer wg.Done()
+				stats, err := cli.ContainerStatsOneShot(ctx, v.ID)
+				if err != nil {
+					return
+				}
+				decode := json.NewDecoder(stats.Body)
+				var data interface{}
+				if err := decode.Decode(&data); err == io.EOF {
+					return
+				}
+				m, _ := dataStats.Load(v.ID)
+				dockerStats := model.DockerStatsModel{}
+				if m != nil {
+					dockerStats.Previous = m.(model.DockerStatsModel).Data
+				}
+				dockerStats.Data = data
+				dockerStats.Icon = v.Labels["icon"]
+				dockerStats.Title = strings.ReplaceAll(v.Names[0], "/", "")
+
+				// @tiger - 不建议直接把依赖的数据结构封装返回。
+				//          如果依赖的数据结构有变化，应该在这里适配或者保存，这样更加对客户端负责
+				temp.Store(v.ID, dockerStats)
+				if i == 99 {
+					stats.Body.Close()
+				}
+			}(v, i)
+		}
+		wg.Wait()
+		dataStats = &temp
+		isFinish = true
+
+		time.Sleep(time.Second * 1)
+	}
+	isFinish = false
+	cancel()
+}
 
 func (ds *dockerService) DockerContainerList() []types.Container {
 	cli, err := client2.NewClientWithOpts(client2.FromEnv, client2.WithTimeout(time.Second*5))

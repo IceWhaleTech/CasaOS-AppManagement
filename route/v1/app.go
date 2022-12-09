@@ -75,7 +75,7 @@ func MyAppList(c *gin.Context) {
 	index, _ := strconv.Atoi(c.DefaultQuery("index", "1"))
 	size, _ := strconv.Atoi(c.DefaultQuery("size", "0"))
 	position, _ := strconv.ParseBool(c.DefaultQuery("position", "true"))
-	list, unTranslation := service.MyService.App().GetMyList(index, size, position)
+	list, unTranslation := service.MyService.Docker().GetMyList(index, size, position)
 	data := make(map[string]interface{}, 2)
 	data["casaos_apps"] = list
 	data["local_apps"] = unTranslation
@@ -91,7 +91,7 @@ func MyAppList(c *gin.Context) {
 // @Success 200 {string} string "ok"
 // @Router /app/usage [get]
 func AppUsageList(c *gin.Context) {
-	list := service.MyService.App().GetHardwareUsage()
+	list := service.MyService.Docker().GetHardwareUsage()
 	c.JSON(common_err.SUCCESS, &modelCommon.Result{Success: common_err.SUCCESS, Message: common_err.GetMsg(common_err.SUCCESS), Data: list})
 	// c.JSON(common_err.SUCCESS, &modelCommon.Result{Success: common_err.SUCCESS, Message: common_err.GetMsg(common_err.SUCCESS), Data: nil})
 }
