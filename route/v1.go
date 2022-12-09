@@ -10,7 +10,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func InitRouter() *gin.Engine {
+func InitV1Router() *gin.Engine {
 	// check if environment variable is set
 	ginMode, success := os.LookupEnv(gin.EnvGinMode)
 	if !success {

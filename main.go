@@ -5,6 +5,7 @@ package main
 
 import (
 	"context"
+	_ "embed"
 	"flag"
 	"fmt"
 	"net"
@@ -22,11 +23,19 @@ import (
 	"github.com/coreos/go-systemd/daemon"
 	"github.com/patrickmn/go-cache"
 	"go.uber.org/zap"
+
+	util_http "github.com/IceWhaleTech/CasaOS-Common/utils/http"
 )
 
 var (
 	commit = "private build"
 	date   = "private build"
+
+	//go:embed api/index.html
+	_docHTML string
+
+	//go:embed api/app_management/openapi.yaml
+	_docYAML string
 )
 
 func main() {
@@ -70,9 +79,17 @@ func main() {
 	}
 
 	// register at gateway
-	for _, v := range []string{"apps", "container", "app-categories"} {
+	apiPaths := []string{
+		"/v1/apps",
+		"/v1/container",
+		"/v1/app-categories",
+		route.V2APIPath,
+		route.V2DocPath,
+	}
+
+	for _, apiPath := range apiPaths {
 		if err := service.MyService.Gateway().CreateRoute(&model.Route{
-			Path:   "/v1/" + v,
+			Path:   apiPath,
 			Target: "http://" + listener.Addr().String(),
 		}); err != nil {
 			panic(err)
@@ -93,11 +110,16 @@ func main() {
 		}
 	}
 
-	r := route.InitRouter()
+	v1Router := route.InitV1Router()
+	v2Router := route.InitV2Router()
+	v2DocRouter := route.InitV2DocRouter(_docHTML, _docYAML)
 
-	s := &http.Server{
-		Handler:           r,
-		ReadHeaderTimeout: 5 * time.Second, // fix G112: Potential slowloris attack (see https://github.com/securego/gosec)
+	mux := &util_http.HandlerMultiplexer{
+		HandlerMap: map[string]http.Handler{
+			"v1":  v1Router,
+			"v2":  v2Router,
+			"doc": v2DocRouter,
+		},
 	}
 
 	// notify systemd that we are ready
@@ -110,6 +132,11 @@ func main() {
 	}
 
 	logger.Info("App management service is listening...", zap.Any("address", listener.Addr().String()))
+
+	s := &http.Server{
+		Handler:           mux,
+		ReadHeaderTimeout: 5 * time.Second, // fix G112: Potential slowloris attack (see https://github.com/securego/gosec)
+	}
 
 	err = s.Serve(listener) // not using http.serve() to fix G114: Use of net/http serve function that has no support for setting timeouts (see https://github.com/securego/gosec)
 	if err != nil {
