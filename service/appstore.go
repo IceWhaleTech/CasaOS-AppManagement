@@ -6,7 +6,6 @@ import (
 	"path/filepath"
 	"sort"
 	"strconv"
-	"sync"
 	"time"
 
 	"github.com/IceWhaleTech/CasaOS-AppManagement/model"
@@ -302,10 +301,6 @@ func (o *appStore) ShareAppFile(body []byte) string {
 	content := string(contentB)
 	return content
 }
-
-var dataStats = &sync.Map{}
-
-var isFinish bool
 
 func NewAppService() AppStore {
 	return &appStore{}

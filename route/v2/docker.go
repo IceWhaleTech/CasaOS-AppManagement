@@ -9,7 +9,7 @@ import (
 )
 
 func (a *AppManagement) CheckApp(ctx echo.Context, id codegen.ContainerID) error {
-	result, err := service.MyService.Docker().CheckMyApp(id)
+	result, err := service.MyService.Docker().CheckContainerHealth(id)
 	if err != nil {
 		message := err.Error()
 		return ctx.JSON(http.StatusServiceUnavailable, codegen.ResponseServiceUnavailable{Message: &message})
