@@ -1,0 +1,118 @@
+openapi: 3.0.3
+
+info:
+  title: CasaOS App Management API
+  version: v2
+  description: |
+    <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/IceWhaleTech/logo/main/casaos/casaos_banner_dark_night_800px.png">
+        <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/IceWhaleTech/logo/main/casaos/casaos_banner_twilight_blue_800px.png">
+        <img alt="CasaOS" src="https://raw.githubusercontent.com/IceWhaleTech/logo/main/casaos/casaos_banner_twilight_blue_800px.png">
+    </picture>
+
+    CasaOS App Management manages app lifecycle, including installing, uninstalling, starting, stopping, setting, etc.
+
+    For issues and discussions, please visit the [GitHub repository](https://github.com/IceWhaleTech/CasaOS) or join [our Discord](https://discord.gg/knqAbbBbeX).
+
+servers:
+  - url: /v2/app_management
+
+tags:
+  - name: Container methods
+    description: |-
+      methods for managing app lifecycle
+
+x-tagGroups:
+  - name: Methods
+    tags:
+      - Container methods
+
+security:
+  - access_token: []
+
+paths:
+  /container/{id}/healthcheck:
+    get:
+      summary: Check if an app is running healthy
+      description: |
+        By default this method simply check if the WebUI port of the app returns `200 OK` status code.
+
+        Custom health check procedure will be implemented in the future.
+      operationId: checkApp
+      tags:
+        - Container methods
+      parameters:
+        - $ref: "#/components/parameters/ContainerID"
+      responses:
+        "200":
+          $ref: "#/components/responses/AppHealthCheckOK"
+        "503":
+          $ref: "#/components/responses/ResponseServiceUnavailable"
+
+components:
+  securitySchemes:
+    access_token:
+      type: apiKey
+      in: header
+      name: Authorization
+
+  parameters:
+    ContainerID:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+
+  responses:
+    ResponseInternalServerError:
+      description: (TODO)
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/BaseResponse"
+
+    ResponseNotFound:
+      description: Not Found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/BaseResponse"
+          example:
+            message: "Not Found"
+
+    ResponseBadRequest:
+      description: Bad Request
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/BaseResponse"
+          example:
+            message: "Bad Request"
+
+    ResponseServiceUnavailable:
+      description: Service Unavailable
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/BaseResponse"
+          example:
+            message: "Service Unavailable"
+
+    AppHealthCheckOK:
+      description: OK
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/BaseResponse"
+          example:
+            message: "pong"
+
+  schemas:
+    BaseResponse:
+      properties:
+        message:
+          readOnly: true
+          description: message returned by server side if there is any
+          type: string
+          example: ""

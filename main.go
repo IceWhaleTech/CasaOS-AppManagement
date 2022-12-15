@@ -1,9 +1,11 @@
-//go:generate bash -c "mkdir -p codegen/message_bus && go run github.com/deepmap/oapi-codegen/cmd/oapi-codegen@v1.12.2 -generate types,client -package message_bus https://raw.githubusercontent.com/IceWhaleTech/CasaOS-MessageBus/main/api/message_bus/openapi.yaml > codegen/message_bus/api.go"
+//go:generate bash -c "mkdir -p codegen && go run github.com/deepmap/oapi-codegen/cmd/oapi-codegen@v1.12.4 -generate types,server,spec -package codegen api/app_management/openapi.yaml > codegen/app_management_api.go"
+//go:generate bash -c "mkdir -p codegen/message_bus && go run github.com/deepmap/oapi-codegen/cmd/oapi-codegen@v1.12.4 -generate types,client -package message_bus https://raw.githubusercontent.com/IceWhaleTech/CasaOS-MessageBus/main/api/message_bus/openapi.yaml > codegen/message_bus/api.go"
 
 package main
 
 import (
 	"context"
+	_ "embed"
 	"flag"
 	"fmt"
 	"net"
@@ -21,13 +23,19 @@ import (
 	"github.com/coreos/go-systemd/daemon"
 	"github.com/patrickmn/go-cache"
 	"go.uber.org/zap"
-)
 
-const localhost = "127.0.0.1"
+	util_http "github.com/IceWhaleTech/CasaOS-Common/utils/http"
+)
 
 var (
 	commit = "private build"
 	date   = "private build"
+
+	//go:embed api/index.html
+	_docHTML string
+
+	//go:embed api/app_management/openapi.yaml
+	_docYAML string
 )
 
 func main() {
@@ -65,15 +73,23 @@ func main() {
 
 	service.NewVersionApp = make(map[string]string)
 
-	listener, err := net.Listen("tcp", net.JoinHostPort(localhost, "0"))
+	listener, err := net.Listen("tcp", net.JoinHostPort(common.Localhost, "0"))
 	if err != nil {
 		panic(err)
 	}
 
 	// register at gateway
-	for _, v := range []string{"apps", "container", "app-categories"} {
+	apiPaths := []string{
+		"/v1/apps",
+		"/v1/container",
+		"/v1/app-categories",
+		route.V2APIPath,
+		route.V2DocPath,
+	}
+
+	for _, apiPath := range apiPaths {
 		if err := service.MyService.Gateway().CreateRoute(&model.Route{
-			Path:   "/v1/" + v,
+			Path:   apiPath,
 			Target: "http://" + listener.Addr().String(),
 		}); err != nil {
 			panic(err)
@@ -94,11 +110,16 @@ func main() {
 		}
 	}
 
-	r := route.InitRouter()
+	v1Router := route.InitV1Router()
+	v2Router := route.InitV2Router()
+	v2DocRouter := route.InitV2DocRouter(_docHTML, _docYAML)
 
-	s := &http.Server{
-		Handler:           r,
-		ReadHeaderTimeout: 5 * time.Second, // fix G112: Potential slowloris attack (see https://github.com/securego/gosec)
+	mux := &util_http.HandlerMultiplexer{
+		HandlerMap: map[string]http.Handler{
+			"v1":  v1Router,
+			"v2":  v2Router,
+			"doc": v2DocRouter,
+		},
 	}
 
 	// notify systemd that we are ready
@@ -111,6 +132,11 @@ func main() {
 	}
 
 	logger.Info("App management service is listening...", zap.Any("address", listener.Addr().String()))
+
+	s := &http.Server{
+		Handler:           mux,
+		ReadHeaderTimeout: 5 * time.Second, // fix G112: Potential slowloris attack (see https://github.com/securego/gosec)
+	}
 
 	err = s.Serve(listener) // not using http.serve() to fix G114: Use of net/http serve function that has no support for setting timeouts (see https://github.com/securego/gosec)
 	if err != nil {

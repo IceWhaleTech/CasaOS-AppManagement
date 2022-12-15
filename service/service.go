@@ -23,7 +23,7 @@ var (
 )
 
 type Services interface {
-	App() AppService
+	AppStore() AppStore
 	Docker() DockerService
 	Gateway() external.ManagementService
 	Notify() external.NotifyService
@@ -40,16 +40,16 @@ func NewService(RuntimePath string) Services {
 		gateway: gatewayManagement,
 		notify:  external.NewNotifyService(RuntimePath),
 
-		app:    NewAppService(),
-		docker: NewDockerService(),
+		appStore: NewAppService(),
+		docker:   NewDockerService(),
 	}
 }
 
 type store struct {
-	app     AppService
-	docker  DockerService
-	gateway external.ManagementService
-	notify  external.NotifyService
+	appStore AppStore
+	docker   DockerService
+	gateway  external.ManagementService
+	notify   external.NotifyService
 }
 
 func (c *store) Gateway() external.ManagementService {
@@ -60,8 +60,8 @@ func (c *store) Notify() external.NotifyService {
 	return c.notify
 }
 
-func (c *store) App() AppService {
-	return c.app
+func (c *store) AppStore() AppStore {
+	return c.appStore
 }
 
 func (c *store) Docker() DockerService {

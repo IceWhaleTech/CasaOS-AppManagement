@@ -5,19 +5,24 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"runtime"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/pkg/errors"
 	"github.com/samber/lo"
 	"go.uber.org/zap"
 
+	"github.com/IceWhaleTech/CasaOS-AppManagement/common"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/model"
+	"github.com/IceWhaleTech/CasaOS-AppManagement/pkg/config"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/pkg/docker"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/pkg/utils/envHelper"
 	"github.com/IceWhaleTech/CasaOS-Common/model/notify"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/file"
+	httpUtil "github.com/IceWhaleTech/CasaOS-Common/utils/http"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/logger"
 	timeutils "github.com/IceWhaleTech/CasaOS-Common/utils/time"
 
@@ -32,43 +37,256 @@ import (
 	"github.com/docker/go-connections/nat"
 )
 
+var (
+	dataStats = &sync.Map{}
+	isFinish  bool
+)
+
 type DockerService interface {
-	DockerPullImage(imageName string, icon, name string) error
+	// image
 	IsExistImage(imageName string) bool
-	DockerContainerCreate(m model.CustomizationPostData, id string) (containerID string, err error)
-	DockerContainerCopyCreate(info *types.ContainerJSON) (containerID string, err error)
-	DockerContainerStart(name string) error
-	DockerContainerStats(name string) (string, error)
-	DockerListByName(name string) (*types.Container, error)
-	DockerListByImage(image, version string) (*types.Container, error)
-	DockerContainerInfo(name string) (*types.ContainerJSON, error)
-	DockerImageRemove(name string) error
-	DockerContainerRemove(name string, update bool) error
-	DockerContainerStop(id string) error
-	DockerContainerUpdateName(name, id string) (err error)
-	DockerContainerUpdate(m model.CustomizationPostData, id string) (err error)
-	DockerContainerLog(name string) ([]byte, error)
-	DockerContainerList() []types.Container
-	DockerNetworkModelList() []types.NetworkResource
-	GetDockerInfo() (types.Info, error)
+	PullImage(imageName string, icon, name string) error
+	RemoveImage(name string) error
+
+	// container
+	CheckContainerHealth(id string) (bool, error)
+	CloneContainer(info *types.ContainerJSON) (containerID string, err error)
+	CreateContainer(m model.CustomizationPostData, id string) (containerID string, err error)
+	CreateContainerShellSession(container, row, col string) (hr types.HijackedResponse, err error)
+	DescribeContainer(name string) (*types.ContainerJSON, error)
+	GetContainer(id string) (types.Container, error)
+	GetContainerAppList(index, size int, position bool) (*[]model.MyAppList, *[]model.MyAppList)
+	GetContainerByName(name string) (*types.Container, error)
+	GetContainerLog(name string) ([]byte, error)
+	GetContainerStats() []model.DockerStatsModel
+	RemoveContainer(name string, update bool) error
+	RenameContainer(name, id string) (err error)
+	StartContainer(name string) error
+	StopContainer(id string) error
+
+	// network
+	GetNetworkList() []types.NetworkResource
+
+	// docker server
+	GetServerInfo() (types.Info, error)
 }
 
 type dockerService struct{}
 
-func (ds *dockerService) DockerContainerList() []types.Container {
-	cli, err := client2.NewClientWithOpts(client2.FromEnv, client2.WithTimeout(time.Second*5))
+func getContainerStats() {
+	cli, err := client2.NewClientWithOpts(client2.FromEnv)
 	if err != nil {
-		return nil
+		return
 	}
 	defer cli.Close()
-	containers, err := cli.ContainerList(context.Background(), types.ContainerListOptions{All: true})
+
+	ctx := context.Background()
+	ctx, cancel := context.WithCancel(ctx)
+
+	fts := filters.NewArgs()
+	fts.Add("label", "casaos=casaos")
+	// fts.Add("status", "running")
+	containers, err := cli.ContainerList(context.Background(), types.ContainerListOptions{All: true, Filters: fts})
 	if err != nil {
-		return containers
+		logger.Error("Failed to get container_list", zap.Any("err", err))
 	}
-	return containers
+	for i := 0; i < 100; i++ {
+		if i%10 == 0 {
+			containers, err = cli.ContainerList(context.Background(), types.ContainerListOptions{All: true, Filters: fts})
+			if err != nil {
+				logger.Error("Failed to get container_list", zap.Any("err", err))
+				continue
+			}
+		}
+		if config.CasaOSGlobalVariables.AppChange {
+			config.CasaOSGlobalVariables.AppChange = false
+			dataStats.Range(func(key, value interface{}) bool {
+				dataStats.Delete(key)
+				return true
+			})
+		}
+
+		var temp sync.Map
+		var wg sync.WaitGroup
+		for _, v := range containers {
+			if v.State != "running" {
+				continue
+			}
+			wg.Add(1)
+			go func(v types.Container, i int) {
+				defer wg.Done()
+				stats, err := cli.ContainerStatsOneShot(ctx, v.ID)
+				if err != nil {
+					return
+				}
+				decoder := json.NewDecoder(stats.Body)
+				var data interface{}
+				if err := decoder.Decode(&data); err == io.EOF {
+					return
+				}
+				m, _ := dataStats.Load(v.ID)
+				dockerStats := model.DockerStatsModel{}
+				if m != nil {
+					dockerStats.Previous = m.(model.DockerStatsModel).Data
+				}
+				dockerStats.Data = data
+				dockerStats.Icon = v.Labels["icon"]
+				dockerStats.Title = strings.ReplaceAll(v.Names[0], "/", "")
+
+				// @tiger - 不建议直接把依赖的数据结构封装返回。
+				//          如果依赖的数据结构有变化，应该在这里适配或者保存，这样更加对客户端负责
+				temp.Store(v.ID, dockerStats)
+				if i == 99 {
+					stats.Body.Close()
+				}
+			}(v, i)
+		}
+		wg.Wait()
+		dataStats = &temp
+		isFinish = true
+
+		time.Sleep(time.Second * 1)
+	}
+	isFinish = false
+	cancel()
 }
 
-func Exec(container, row, col string) (hr types.HijackedResponse, err error) {
+func (ds *dockerService) GetContainerStats() []model.DockerStatsModel {
+	stream := true
+	for !isFinish {
+		if stream {
+			stream = false
+			go getContainerStats()
+		}
+		runtime.Gosched()
+	}
+	list := []model.DockerStatsModel{}
+
+	dataStats.Range(func(key, value interface{}) bool {
+		list = append(list, value.(model.DockerStatsModel))
+		return true
+	})
+	return list
+}
+
+func (ds *dockerService) CheckContainerHealth(id string) (bool, error) {
+	container, err := ds.GetContainer(id)
+	if err != nil {
+		return false, err
+	}
+
+	if webUIPort, ok := container.Labels["web"]; ok {
+		response, err := httpUtil.Get(fmt.Sprintf("http://%s:%s", common.Localhost, webUIPort), 30*time.Second)
+		if err != nil {
+			return false, err
+		}
+
+		// TODO - test redirection
+
+		return response.StatusCode >= 200 && response.StatusCode < 300, nil
+	}
+
+	return false, nil
+}
+
+// 获取我的应用列表
+func (ds *dockerService) GetContainer(id string) (types.Container, error) {
+	// 获取docker应用
+	cli, err := client2.NewClientWithOpts(client2.FromEnv)
+	if err != nil {
+		logger.Error("Failed to init client", zap.Any("err", err))
+		return types.Container{}, err
+	}
+	defer cli.Close()
+
+	filters := filters.NewArgs()
+	filters.Add("id", id)
+	containers, err := cli.ContainerList(context.Background(), types.ContainerListOptions{All: true, Filters: filters})
+	if err != nil {
+		logger.Error("Failed to get container_list", zap.Any("err", err))
+		return types.Container{}, err
+	}
+
+	if len(containers) > 0 {
+		return containers[0], nil
+	}
+	return types.Container{}, nil
+}
+
+// 获取我的应用列表
+func (ds *dockerService) GetContainerAppList(index, size int, position bool) (*[]model.MyAppList, *[]model.MyAppList) {
+	cli, err := client2.NewClientWithOpts(client2.FromEnv, client2.WithTimeout(time.Second*5))
+	if err != nil {
+		logger.Error("Failed to init client", zap.Any("err", err))
+	}
+	defer cli.Close()
+	// fts := filters.NewArgs()
+	// fts.Add("label", "casaos=casaos")
+	// fts.Add("label", "casaos")
+	// fts.Add("casaos", "casaos")
+	containers, err := cli.ContainerList(context.Background(), types.ContainerListOptions{All: true})
+	if err != nil {
+		logger.Error("Failed to get container_list", zap.Any("err", err))
+	}
+	// 获取本地数据库应用
+
+	unTranslation := []model.MyAppList{}
+
+	list := []model.MyAppList{}
+
+	for _, m := range containers {
+		if m.Labels["casaos"] == "casaos" {
+
+			_, newVersion := NewVersionApp[m.ID]
+			name := strings.ReplaceAll(m.Names[0], "/", "")
+			icon := m.Labels["icon"]
+			if len(m.Labels["name"]) > 0 {
+				name = m.Labels["name"]
+			}
+			if m.Labels["origin"] == "system" {
+				name = strings.Split(m.Image, ":")[0]
+				if len(strings.Split(name, "/")) > 1 {
+					icon = "https://icon.casaos.io/main/all/" + strings.Split(name, "/")[1] + ".png"
+				}
+			}
+
+			list = append(list, model.MyAppList{
+				Name:     name,
+				Icon:     icon,
+				State:    m.State,
+				CustomID: m.Labels["custom_id"],
+				ID:       m.ID,
+				Port:     m.Labels["web"],
+				Index:    m.Labels["index"],
+				// Order:      m.Labels["order"],
+				Image:  m.Image,
+				Latest: newVersion,
+				// Type:   m.Labels["origin"],
+				// Slogan: m.Slogan,
+				// Rely:     m.Rely,
+				Host:     m.Labels["host"],
+				Protocol: m.Labels["protocol"],
+			})
+		} else {
+			unTranslation = append(unTranslation, model.MyAppList{
+				Name:     strings.ReplaceAll(m.Names[0], "/", ""),
+				Icon:     "",
+				State:    m.State,
+				CustomID: m.ID,
+				ID:       m.ID,
+				Port:     "",
+				Latest:   false,
+				Host:     "",
+				Protocol: "",
+				Image:    m.Image,
+			})
+		}
+	}
+
+	return &list, &unTranslation
+}
+
+func (ds *dockerService) CreateContainerShellSession(container, row, col string) (hr types.HijackedResponse, err error) {
 	cli, err := client2.NewClientWithOpts(client2.FromEnv)
 	ctx := context.Background()
 	// 执行/bin/bash命令
@@ -113,7 +331,7 @@ func (ds *dockerService) IsExistImage(imageName string) bool {
 }
 
 // 安装镜像
-func (ds *dockerService) DockerPullImage(imageName string, icon, name string) error {
+func (ds *dockerService) PullImage(imageName string, icon, name string) error {
 	cli, err := client2.NewClientWithOpts(client2.FromEnv)
 	if err != nil {
 		return err
@@ -158,7 +376,7 @@ func (ds *dockerService) DockerPullImage(imageName string, icon, name string) er
 	return err
 }
 
-func (ds *dockerService) DockerContainerCopyCreate(info *types.ContainerJSON) (containerID string, err error) {
+func (ds *dockerService) CloneContainer(info *types.ContainerJSON) (containerID string, err error) {
 	cli, err := client2.NewClientWithOpts(client2.FromEnv)
 	if err != nil {
 		return "", err
@@ -180,7 +398,7 @@ func (ds *dockerService) DockerContainerCopyCreate(info *types.ContainerJSON) (c
 // param mapPort 容器主端口映射到外部的端口
 // param tcp 容器其他tcp端口
 // param udp 容器其他udp端口
-func (ds *dockerService) DockerContainerCreate(m model.CustomizationPostData, id string) (containerID string, err error) {
+func (ds *dockerService) CreateContainer(m model.CustomizationPostData, id string) (containerID string, err error) {
 	if len(m.NetworkModel) == 0 {
 		m.NetworkModel = "bridge"
 	}
@@ -366,7 +584,7 @@ func (ds *dockerService) DockerContainerCreate(m model.CustomizationPostData, id
 }
 
 // 删除容器
-func (ds *dockerService) DockerContainerRemove(name string, update bool) error {
+func (ds *dockerService) RemoveContainer(name string, update bool) error {
 	cli, err := client2.NewClientWithOpts(client2.FromEnv)
 	if err != nil {
 		return err
@@ -392,7 +610,7 @@ func (ds *dockerService) DockerContainerRemove(name string, update bool) error {
 }
 
 // 删除镜像
-func (ds *dockerService) DockerImageRemove(name string) error {
+func (ds *dockerService) RemoveImage(name string) error {
 	cli, err := client2.NewClientWithOpts(client2.FromEnv)
 	if err != nil {
 		return err
@@ -418,7 +636,7 @@ Loop:
 	return err
 }
 
-func DockerImageRemove(name string) error {
+func RemoveImage(name string) error {
 	cli, err := client2.NewClientWithOpts(client2.FromEnv)
 	if err != nil {
 		return err
@@ -448,7 +666,7 @@ Loop:
 }
 
 // 停止镜像
-func (ds *dockerService) DockerContainerStop(id string) error {
+func (ds *dockerService) StopContainer(id string) error {
 	cli, err := client2.NewClientWithOpts(client2.FromEnv)
 	if err != nil {
 		return err
@@ -459,7 +677,7 @@ func (ds *dockerService) DockerContainerStop(id string) error {
 }
 
 // 启动容器
-func (ds *dockerService) DockerContainerStart(name string) error {
+func (ds *dockerService) StartContainer(name string) error {
 	cli, err := client2.NewClientWithOpts(client2.FromEnv)
 	if err != nil {
 		return err
@@ -470,7 +688,7 @@ func (ds *dockerService) DockerContainerStart(name string) error {
 }
 
 // 查看日志
-func (ds *dockerService) DockerContainerLog(name string) ([]byte, error) {
+func (ds *dockerService) GetContainerLog(name string) ([]byte, error) {
 	cli, err := client2.NewClientWithOpts(client2.FromEnv)
 	if err != nil {
 		return []byte(""), err
@@ -510,26 +728,7 @@ func DockerContainerStats1() error {
 	return nil
 }
 
-// 获取容器状态
-func (ds *dockerService) DockerContainerStats(name string) (string, error) {
-	cli, err := client2.NewClientWithOpts(client2.FromEnv)
-	if err != nil {
-		return "", err
-	}
-	defer cli.Close()
-	dss, err := cli.ContainerStats(context.Background(), name, false)
-	if err != nil {
-		return "", err
-	}
-	defer dss.Body.Close()
-	sts, err := ioutil.ReadAll(dss.Body)
-	if err != nil {
-		return "", err
-	}
-	return string(sts), nil
-}
-
-func (ds *dockerService) DockerListByName(name string) (*types.Container, error) {
+func (ds *dockerService) GetContainerByName(name string) (*types.Container, error) {
 	cli, _ := client2.NewClientWithOpts(client2.FromEnv)
 	defer cli.Close()
 	filter := filters.NewArgs()
@@ -544,23 +743,8 @@ func (ds *dockerService) DockerListByName(name string) (*types.Container, error)
 	return &containers[0], nil
 }
 
-func (ds *dockerService) DockerListByImage(image, version string) (*types.Container, error) {
-	cli, _ := client2.NewClientWithOpts(client2.FromEnv)
-	defer cli.Close()
-	filter := filters.NewArgs()
-	filter.Add("ancestor", image+":"+version)
-	containers, err := cli.ContainerList(context.Background(), types.ContainerListOptions{Filters: filter})
-	if err != nil {
-		return nil, err
-	}
-	if len(containers) == 0 {
-		return nil, nil
-	}
-	return &containers[0], nil
-}
-
 // 获取容器详情
-func (ds *dockerService) DockerContainerInfo(name string) (*types.ContainerJSON, error) {
+func (ds *dockerService) DescribeContainer(name string) (*types.ContainerJSON, error) {
 	cli, err := client2.NewClientWithOpts(client2.FromEnv)
 	if err != nil {
 		return &types.ContainerJSON{}, err
@@ -573,51 +757,10 @@ func (ds *dockerService) DockerContainerInfo(name string) (*types.ContainerJSON,
 	return &d, nil
 }
 
-// 更新容器
-// param shares cpu优先级
-// param containerDbId 数据库的id
-// param port 容器内部主端口
-// param mapPort 容器主端口映射到外部的端口
-// param tcp 容器其他tcp端口
-// param udp 容器其他udp端口
-func (ds *dockerService) DockerContainerUpdate(m model.CustomizationPostData, id string) (err error) {
-	cli, err := client2.NewClientWithOpts(client2.FromEnv)
-	if err != nil {
-		return err
-	}
-	defer cli.Close()
-	// 重启策略
-	rp := container.RestartPolicy{
-		Name:              "",
-		MaximumRetryCount: 0,
-	}
-	if len(m.Restart) > 0 {
-		rp.Name = m.Restart
-	}
-	res := container.Resources{}
-
-	if m.Memory > 0 {
-		res.Memory = m.Memory * 1024 * 1024
-		res.MemorySwap = -1
-	}
-	if m.CPUShares > 0 {
-		res.CPUShares = m.CPUShares
-	}
-	for _, p := range m.Devices {
-		res.Devices = append(res.Devices, container.DeviceMapping{PathOnHost: p.Path, PathInContainer: p.ContainerPath, CgroupPermissions: "rwm"})
-	}
-	_, err = cli.ContainerUpdate(context.Background(), id, container.UpdateConfig{RestartPolicy: rp, Resources: res})
-	if err != nil {
-		return err
-	}
-
-	return
-}
-
 // 更新容器名称
 // param name 容器名称
 // param id 老的容器名称
-func (ds *dockerService) DockerContainerUpdateName(name, id string) (err error) {
+func (ds *dockerService) RenameContainer(name, id string) (err error) {
 	cli, err := client2.NewClientWithOpts(client2.FromEnv)
 	if err != nil {
 		return err
@@ -632,7 +775,7 @@ func (ds *dockerService) DockerContainerUpdateName(name, id string) (err error) 
 }
 
 // 获取网络列表
-func (ds *dockerService) DockerNetworkModelList() []types.NetworkResource {
+func (ds *dockerService) GetNetworkList() []types.NetworkResource {
 	cli, _ := client2.NewClientWithOpts(client2.FromEnv)
 	defer cli.Close()
 	networks, _ := cli.NetworkList(context.Background(), types.NetworkListOptions{})
@@ -643,7 +786,7 @@ func NewDockerService() DockerService {
 	return &dockerService{}
 }
 
-func (ds *dockerService) GetDockerInfo() (types.Info, error) {
+func (ds *dockerService) GetServerInfo() (types.Info, error) {
 	cli, err := client2.NewClientWithOpts(client2.FromEnv)
 	if err != nil {
 		return types.Info{}, err

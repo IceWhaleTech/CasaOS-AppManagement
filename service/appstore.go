@@ -1,52 +1,36 @@
 package service
 
 import (
-	"context"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"path/filepath"
-	"runtime"
 	"sort"
 	"strconv"
-	"strings"
-	"sync"
 	"time"
 
 	"github.com/IceWhaleTech/CasaOS-AppManagement/model"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/pkg/config"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/file"
-	"github.com/IceWhaleTech/CasaOS-Common/utils/http"
+	httpUtil "github.com/IceWhaleTech/CasaOS-Common/utils/http"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/logger"
-	"github.com/docker/docker/api/types"
-	"github.com/docker/docker/api/types/filters"
-	client2 "github.com/docker/docker/client"
 	jsoniter "github.com/json-iterator/go"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 )
 
-type AppService interface {
+type AppStore interface {
 	GetServerList(index, size, tp, categoryID, key string) (model.ServerAppListCollection, error)
 	GetServerAppInfo(id, t string, language string) (model.ServerAppList, error)
 	GetServerCategoryList() (list []model.CategoryList, err error)
 	AsyncGetServerCategoryList() ([]model.CategoryList, error)
 	ShareAppFile(body []byte) string
-
-	GetMyList(index, size int, position bool) (*[]model.MyAppList, *[]model.MyAppList)
-	GetContainerInfo(id string) (types.Container, error)
-	GetSimpleContainerInfo(id string) (types.Container, error)
-	GetSystemAppList() []types.Container
-	GetHardwareUsageStream()
-	GetHardwareUsage() []model.DockerStatsModel
-	GetAppStats(id string) string
 }
 
-type appStruct struct{}
+type appStore struct{}
 
 var json = jsoniter.ConfigCompatibleWithStandardLibrary
 
-func (o *appStruct) GetServerList(index, size, tp, categoryID, key string) (model.ServerAppListCollection, error) {
+func (o *appStore) GetServerList(index, size, tp, categoryID, key string) (model.ServerAppListCollection, error) {
 	collection := model.ServerAppListCollection{}
 
 	keyName := fmt.Sprintf("list_%s_%s_%s_%s_%s", index, size, tp, categoryID, "en")
@@ -136,7 +120,7 @@ func (o *appStruct) GetServerList(index, size, tp, categoryID, key string) (mode
 	return collection, nil
 }
 
-func (o *appStruct) AsyncGetServerList() (model.ServerAppListCollection, error) {
+func (o *appStore) AsyncGetServerList() (model.ServerAppListCollection, error) {
 	collection := model.ServerAppListCollection{}
 
 	path := filepath.Join(config.AppInfo.DBPath, "/app_list.json")
@@ -152,7 +136,7 @@ func (o *appStruct) AsyncGetServerList() (model.ServerAppListCollection, error) 
 	url := config.ServerInfo.ServerAPI + "/v2/app/newlist?index=1&size=1000&rank=name&category_id=0&key=&language=en"
 
 	logger.Info("getting app list collection from online...", zap.String("url", url))
-	resp, err := http.GetWithHeader(url, 30*time.Second, headers)
+	resp, err := httpUtil.GetWithHeader(url, 30*time.Second, headers)
 	if err != nil {
 		logger.Error("error when calling url with header", zap.Any("err", err), zap.Any("url", url), zap.Any("head", headers))
 		return collection, err
@@ -202,7 +186,7 @@ func (o *appStruct) AsyncGetServerList() (model.ServerAppListCollection, error) 
 	return collection, nil
 }
 
-func (o *appStruct) GetServerAppInfo(id, t string, language string) (model.ServerAppList, error) {
+func (o *appStore) GetServerAppInfo(id, t string, language string) (model.ServerAppList, error) {
 	head := make(map[string]string)
 
 	head["Authorization"] = GetToken()
@@ -210,7 +194,7 @@ func (o *appStruct) GetServerAppInfo(id, t string, language string) (model.Serve
 	info := model.ServerAppList{}
 
 	url := config.ServerInfo.ServerAPI + "/v2/app/info/" + id + "?t=" + t + "&language=" + language
-	resp, err := http.GetWithHeader(url, 30*time.Second, head)
+	resp, err := httpUtil.GetWithHeader(url, 30*time.Second, head)
 	if err != nil {
 		logger.Error("error when calling url with header", zap.Any("err", err), zap.Any("url", url), zap.Any("head", head))
 		return info, err
@@ -234,7 +218,7 @@ func (o *appStruct) GetServerAppInfo(id, t string, language string) (model.Serve
 	return info, nil
 }
 
-func (o *appStruct) GetServerCategoryList() (list []model.CategoryList, err error) {
+func (o *appStore) GetServerCategoryList() (list []model.CategoryList, err error) {
 	category := model.ServerCategoryList{}
 	results := file.ReadFullFile(config.AppInfo.DBPath + "/app_category.json")
 	err = json.Unmarshal(results, &category)
@@ -250,7 +234,7 @@ func (o *appStruct) GetServerCategoryList() (list []model.CategoryList, err erro
 	return category.Item, err
 }
 
-func (o *appStruct) AsyncGetServerCategoryList() ([]model.CategoryList, error) {
+func (o *appStore) AsyncGetServerCategoryList() ([]model.CategoryList, error) {
 	list := model.ServerCategoryList{}
 	results := file.ReadFullFile(config.AppInfo.DBPath + "/app_category.json")
 	err := json.Unmarshal(results, &list)
@@ -262,7 +246,7 @@ func (o *appStruct) AsyncGetServerCategoryList() ([]model.CategoryList, error) {
 	head["Authorization"] = GetToken()
 
 	url := config.ServerInfo.ServerAPI + "/v2/app/category"
-	resp, err := http.GetWithHeader(url, 30*time.Second, head)
+	resp, err := httpUtil.GetWithHeader(url, 30*time.Second, head)
 	if err != nil {
 		logger.Error("error when calling url with header", zap.Any("err", err), zap.Any("url", url), zap.Any("head", head))
 		return item, err
@@ -296,13 +280,13 @@ func (o *appStruct) AsyncGetServerCategoryList() ([]model.CategoryList, error) {
 	return item, nil
 }
 
-func (o *appStruct) ShareAppFile(body []byte) string {
+func (o *appStore) ShareAppFile(body []byte) string {
 	head := make(map[string]string)
 
 	head["Authorization"] = GetToken()
 
 	url := config.ServerInfo.ServerAPI + "/v1/community/add"
-	resp, err := http.PostWithHeader(url, body, 30*time.Second, head)
+	resp, err := httpUtil.PostWithHeader(url, body, 30*time.Second, head)
 	if err != nil {
 		logger.Error("error when calling url with header", zap.Any("err", err), zap.Any("url", url), zap.Any("head", head))
 		return ""
@@ -318,256 +302,8 @@ func (o *appStruct) ShareAppFile(body []byte) string {
 	return content
 }
 
-// 获取我的应用列表
-func (o *appStruct) GetMyList(index, size int, position bool) (*[]model.MyAppList, *[]model.MyAppList) {
-	cli, err := client2.NewClientWithOpts(client2.FromEnv, client2.WithTimeout(time.Second*5))
-	if err != nil {
-		logger.Error("Failed to init client", zap.Any("err", err))
-	}
-	defer cli.Close()
-	// fts := filters.NewArgs()
-	// fts.Add("label", "casaos=casaos")
-	// fts.Add("label", "casaos")
-	// fts.Add("casaos", "casaos")
-	containers, err := cli.ContainerList(context.Background(), types.ContainerListOptions{All: true})
-	if err != nil {
-		logger.Error("Failed to get container_list", zap.Any("err", err))
-	}
-	// 获取本地数据库应用
-
-	unTranslation := []model.MyAppList{}
-
-	list := []model.MyAppList{}
-
-	for _, m := range containers {
-		if m.Labels["casaos"] == "casaos" {
-
-			_, newVersion := NewVersionApp[m.ID]
-			name := strings.ReplaceAll(m.Names[0], "/", "")
-			icon := m.Labels["icon"]
-			if len(m.Labels["name"]) > 0 {
-				name = m.Labels["name"]
-			}
-			if m.Labels["origin"] == "system" {
-				name = strings.Split(m.Image, ":")[0]
-				if len(strings.Split(name, "/")) > 1 {
-					icon = "https://icon.casaos.io/main/all/" + strings.Split(name, "/")[1] + ".png"
-				}
-			}
-
-			list = append(list, model.MyAppList{
-				Name:     name,
-				Icon:     icon,
-				State:    m.State,
-				CustomID: m.Labels["custom_id"],
-				ID:       m.ID,
-				Port:     m.Labels["web"],
-				Index:    m.Labels["index"],
-				// Order:      m.Labels["order"],
-				Image:  m.Image,
-				Latest: newVersion,
-				// Type:   m.Labels["origin"],
-				// Slogan: m.Slogan,
-				// Rely:     m.Rely,
-				Host:     m.Labels["host"],
-				Protocol: m.Labels["protocol"],
-			})
-		} else {
-			unTranslation = append(unTranslation, model.MyAppList{
-				Name:     strings.ReplaceAll(m.Names[0], "/", ""),
-				Icon:     "",
-				State:    m.State,
-				CustomID: m.ID,
-				ID:       m.ID,
-				Port:     "",
-				Latest:   false,
-				Host:     "",
-				Protocol: "",
-				Image:    m.Image,
-			})
-		}
-	}
-
-	return &list, &unTranslation
-}
-
-// system application list
-func (o *appStruct) GetSystemAppList() []types.Container {
-	// 获取docker应用
-	cli, err := client2.NewClientWithOpts(client2.FromEnv)
-	if err != nil {
-		logger.Error("Failed to init client", zap.Any("err", err))
-	}
-	defer cli.Close()
-	fts := filters.NewArgs()
-	fts.Add("label", "origin=system")
-	containers, err := cli.ContainerList(context.Background(), types.ContainerListOptions{All: true, Filters: fts})
-	if err != nil {
-		logger.Error("Failed to get container_list", zap.Any("err", err))
-	}
-
-	return containers
-}
-
-// 获取我的应用列表
-func (o *appStruct) GetContainerInfo(id string) (types.Container, error) {
-	// 获取docker应用
-	cli, err := client2.NewClientWithOpts(client2.FromEnv)
-	if err != nil {
-		logger.Error("Failed to init client", zap.Any("err", err))
-	}
-	filters := filters.NewArgs()
-	filters.Add("id", id)
-	containers, err := cli.ContainerList(context.Background(), types.ContainerListOptions{All: true, Filters: filters})
-	if err != nil {
-		logger.Error("Failed to get container_list", zap.Any("err", err))
-	}
-
-	if len(containers) > 0 {
-		return containers[0], nil
-	}
-	return types.Container{}, nil
-}
-
-func (o *appStruct) GetSimpleContainerInfo(id string) (types.Container, error) {
-	// 获取docker应用
-	cli, err := client2.NewClientWithOpts(client2.FromEnv)
-	if err != nil {
-		return types.Container{}, err
-	}
-	defer cli.Close()
-	filters := filters.NewArgs()
-	filters.Add("id", id)
-	containers, err := cli.ContainerList(context.Background(), types.ContainerListOptions{All: true, Filters: filters})
-	if err != nil {
-		return types.Container{}, err
-	}
-
-	if len(containers) > 0 {
-		return containers[0], nil
-	}
-	return types.Container{}, errors.New("container not existent")
-}
-
-var dataStats = &sync.Map{}
-
-var isFinish bool
-
-func (o *appStruct) GetAppStats(id string) string {
-	cli, err := client2.NewClientWithOpts(client2.FromEnv)
-	if err != nil {
-		return ""
-	}
-	defer cli.Close()
-	con, err := cli.ContainerStats(context.Background(), id, false)
-	if err != nil {
-		return err.Error()
-	}
-	defer con.Body.Close()
-	c, _ := ioutil.ReadAll(con.Body)
-	return string(c)
-}
-
-func (o *appStruct) GetHardwareUsage() []model.DockerStatsModel {
-	stream := true
-	for !isFinish {
-		if stream {
-			stream = false
-			go func() {
-				o.GetHardwareUsageStream()
-			}()
-		}
-		runtime.Gosched()
-	}
-	list := []model.DockerStatsModel{}
-
-	dataStats.Range(func(key, value interface{}) bool {
-		list = append(list, value.(model.DockerStatsModel))
-		return true
-	})
-	return list
-}
-
-func (o *appStruct) GetHardwareUsageStream() {
-	cli, err := client2.NewClientWithOpts(client2.FromEnv)
-	if err != nil {
-		return
-	}
-	defer cli.Close()
-
-	ctx := context.Background()
-	ctx, cancel := context.WithCancel(ctx)
-
-	fts := filters.NewArgs()
-	fts.Add("label", "casaos=casaos")
-	// fts.Add("status", "running")
-	containers, err := cli.ContainerList(context.Background(), types.ContainerListOptions{All: true, Filters: fts})
-	if err != nil {
-		logger.Error("Failed to get container_list", zap.Any("err", err))
-	}
-	for i := 0; i < 100; i++ {
-		if i%10 == 0 {
-			containers, err = cli.ContainerList(context.Background(), types.ContainerListOptions{All: true, Filters: fts})
-			if err != nil {
-				logger.Error("Failed to get container_list", zap.Any("err", err))
-				continue
-			}
-		}
-		if config.CasaOSGlobalVariables.AppChange {
-			config.CasaOSGlobalVariables.AppChange = false
-			dataStats.Range(func(key, value interface{}) bool {
-				dataStats.Delete(key)
-				return true
-			})
-		}
-
-		var temp sync.Map
-		var wg sync.WaitGroup
-		for _, v := range containers {
-			if v.State != "running" {
-				continue
-			}
-			wg.Add(1)
-			go func(v types.Container, i int) {
-				defer wg.Done()
-				stats, err := cli.ContainerStatsOneShot(ctx, v.ID)
-				if err != nil {
-					return
-				}
-				decode := json.NewDecoder(stats.Body)
-				var data interface{}
-				if err := decode.Decode(&data); err == io.EOF {
-					return
-				}
-				m, _ := dataStats.Load(v.ID)
-				dockerStats := model.DockerStatsModel{}
-				if m != nil {
-					dockerStats.Previous = m.(model.DockerStatsModel).Data
-				}
-				dockerStats.Data = data
-				dockerStats.Icon = v.Labels["icon"]
-				dockerStats.Title = strings.ReplaceAll(v.Names[0], "/", "")
-
-				// @tiger - 不建议直接把依赖的数据结构封装返回。
-				//          如果依赖的数据结构有变化，应该在这里适配或者保存，这样更加对客户端负责
-				temp.Store(v.ID, dockerStats)
-				if i == 99 {
-					stats.Body.Close()
-				}
-			}(v, i)
-		}
-		wg.Wait()
-		dataStats = &temp
-		isFinish = true
-
-		time.Sleep(time.Second * 1)
-	}
-	isFinish = false
-	cancel()
-}
-
-func NewAppService() AppService {
-	return &appStruct{}
+func NewAppService() AppStore {
+	return &appStore{}
 }
 
 func GetToken() string {
@@ -584,7 +320,7 @@ func GetToken() string {
 	go func() {
 		url := config.ServerInfo.ServerAPI + "/token"
 
-		resp, err := http.Get(url, 30*time.Second)
+		resp, err := httpUtil.Get(url, 30*time.Second)
 		if err != nil {
 			logger.Error("error when calling url", zap.Any("err", err), zap.Any("url", url))
 			t <- ""
