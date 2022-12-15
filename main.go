@@ -97,17 +97,22 @@ func main() {
 	}
 
 	// register at message bus
-	for _, eventType := range []message_bus.EventType{
+	eventTypes := []message_bus.EventType{
 		common.EventTypeContainerAppInstalling,
 		common.EventTypeContainerAppInstalled,
 		common.EventTypeContainerAppInstallFailed,
 		common.EventTypeContainerAppUninstalling,
 		common.EventTypeContainerAppUninstalled,
 		common.EventTypeContainerAppUninstallFailed,
-	} {
-		if _, err := service.MyService.MessageBus().RegisterEventTypeWithResponse(ctx, eventType); err != nil {
-			logger.Error("error when trying to register event type - the event type will not be discoverable by subscribers", zap.Error(err), zap.Any("event type", eventType))
-		}
+	}
+
+	response, err := service.MyService.MessageBus().RegisterEventTypesWithResponse(ctx, eventTypes)
+	if err != nil {
+		logger.Error("error when trying to register one or more event types - some event type will not be discoverable", zap.Error(err))
+	}
+
+	if response != nil && response.StatusCode() != http.StatusOK {
+		logger.Error("error when trying to register one or more event types - some event type will not be discoverable", zap.String("status", response.Status()), zap.String("body", string(response.Body)))
 	}
 
 	v1Router := route.InitV1Router()
