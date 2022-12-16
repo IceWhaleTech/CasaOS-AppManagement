@@ -181,12 +181,10 @@ func (ds *dockerService) CheckContainerHealth(id string) (bool, error) {
 			return false, err
 		}
 
-		// TODO - test redirection
-
-		return response.StatusCode >= 200 && response.StatusCode < 300, nil
+		return response.StatusCode >= 200 && response.StatusCode < 300, errors.New(response.Status)
 	}
 
-	return false, nil
+	return false, errors.New("no web port")
 }
 
 // 获取我的应用列表
