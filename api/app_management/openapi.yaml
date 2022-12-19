@@ -18,6 +18,10 @@ servers:
   - url: /v2/app_management
 
 tags:
+  - name: AppStore methods
+    description: |-
+      methods for accessing local app store
+
   - name: Container methods
     description: |-
       methods for managing app lifecycle
@@ -25,12 +29,29 @@ tags:
 x-tagGroups:
   - name: Methods
     tags:
+      - AppStore methods
       - Container methods
 
 security:
   - access_token: []
 
 paths:
+  /apps/{id}:
+    get:
+      summary: Get app info
+      operationId: getAppInfo
+      tags:
+        - AppStore methods
+      parameters:
+        - $ref: "#/components/parameters/AppID"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AppInfo"
+
   /container/{id}/healthcheck:
     get:
       summary: Check if an app is running healthy
@@ -57,6 +78,13 @@ components:
       name: Authorization
 
   parameters:
+    AppID:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+
     ContainerID:
       name: id
       in: path
