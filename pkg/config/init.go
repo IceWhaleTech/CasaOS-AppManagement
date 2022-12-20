@@ -1,6 +1,7 @@
 package config
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"strings"
@@ -62,6 +63,7 @@ func InitSetup(config string) {
 
 	// load from environment variables
 	if disableAppStoreCache, ok := os.LookupEnv(EnvDisableAppStoreCache); ok {
+		fmt.Printf("%s = %s\n", EnvDisableAppStoreCache, disableAppStoreCache)
 		DebugInfo.DisableAppStoreCache = strings.ToLower(disableAppStoreCache) == "true" || strings.ToLower(disableAppStoreCache) == "yes" || disableAppStoreCache == "1"
 	}
 }
