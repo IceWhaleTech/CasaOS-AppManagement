@@ -922,10 +922,7 @@ func ContainerUpdateInfo(c *gin.Context) {
 // @Success 200 {string} string "ok"
 // @Router /app/my/list [get]
 func MyAppList(c *gin.Context) {
-	index, _ := strconv.Atoi(c.DefaultQuery("index", "1"))
-	size, _ := strconv.Atoi(c.DefaultQuery("size", "0"))
-	position, _ := strconv.ParseBool(c.DefaultQuery("position", "true"))
-	list, unTranslation := service.MyService.Docker().GetContainerAppList(index, size, position)
+	list, unTranslation := service.MyService.Docker().GetContainerAppList()
 	data := make(map[string]interface{}, 2)
 	data["casaos_apps"] = list
 	data["local_apps"] = unTranslation

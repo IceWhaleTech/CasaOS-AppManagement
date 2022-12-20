@@ -55,7 +55,7 @@ type DockerService interface {
 	CreateContainerShellSession(container, row, col string) (hr types.HijackedResponse, err error)
 	DescribeContainer(name string) (*types.ContainerJSON, error)
 	GetContainer(id string) (types.Container, error)
-	GetContainerAppList(index, size int, position bool) (*[]model.MyAppList, *[]model.MyAppList)
+	GetContainerAppList() (*[]model.MyAppList, *[]model.MyAppList)
 	GetContainerByName(name string) (*types.Container, error)
 	GetContainerLog(name string) ([]byte, error)
 	GetContainerStats() []model.DockerStatsModel
@@ -212,7 +212,7 @@ func (ds *dockerService) GetContainer(id string) (types.Container, error) {
 }
 
 // 获取我的应用列表
-func (ds *dockerService) GetContainerAppList(index, size int, position bool) (*[]model.MyAppList, *[]model.MyAppList) {
+func (ds *dockerService) GetContainerAppList() (*[]model.MyAppList, *[]model.MyAppList) {
 	cli, err := client2.NewClientWithOpts(client2.FromEnv, client2.WithTimeout(time.Second*5))
 	if err != nil {
 		logger.Error("Failed to init client", zap.Any("err", err))
