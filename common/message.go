@@ -11,14 +11,14 @@ var (
 	// common properties
 	PropertyTypeAppID = message_bus.PropertyType{
 		Name:        fmt.Sprintf("%s:app:id", AppManagementServiceName),
-		Description: utils.Ptr("id of the app"),
-		Example:     utils.Ptr("(add example of app id here...)"),
+		Description: utils.Ptr("id of the app which could be a container id, a snap id or the id of any other forms of app"),
+		Example:     utils.Ptr("855084f79fc89bea4de5111c69621b3329ecf0a1106863a7a83bbdef01d33b9e (this is a container id)"),
 	}
 
 	PropertyTypeAppName = message_bus.PropertyType{
 		Name:        fmt.Sprintf("%s:app:name", AppManagementServiceName),
 		Description: utils.Ptr("name of the app which could be a container image name including version, a snap name or the name of any other forms of app"),
-		Example:     utils.Ptr("hello-world:latest"),
+		Example:     utils.Ptr("hello-world:latest (this is the name of a container image"),
 	}
 
 	PropertyTypeMessage = message_bus.PropertyType{

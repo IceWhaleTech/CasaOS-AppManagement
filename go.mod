@@ -72,7 +72,7 @@ require (
 )
 
 require (
-	github.com/IceWhaleTech/CasaOS-Common v0.4.0-alpha1
+	github.com/IceWhaleTech/CasaOS-Common v0.4.1-alpha1
 	github.com/coreos/go-systemd v0.0.0-20191104093116-d3cd4ed1dbcf
 	github.com/docker/docker v20.10.21+incompatible
 	github.com/gin-contrib/gzip v0.0.6
