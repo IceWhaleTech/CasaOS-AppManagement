@@ -3,12 +3,14 @@ package v1
 import (
 	"io/ioutil"
 	"strconv"
+	"strings"
 
 	"github.com/IceWhaleTech/CasaOS-AppManagement/model"
 	modelCommon "github.com/IceWhaleTech/CasaOS-Common/model"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/common_err"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/file"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/port"
+	"github.com/samber/lo"
 
 	"github.com/IceWhaleTech/CasaOS-AppManagement/service"
 	"github.com/gin-gonic/gin"
@@ -39,16 +41,19 @@ func AppList(c *gin.Context) {
 		c.JSON(common_err.CLIENT_ERROR, &modelCommon.Result{Success: common_err.INVALID_PARAMS, Message: common_err.GetMsg(common_err.INVALID_PARAMS)})
 		return
 	}
-	collection, err := service.MyService.AppStore().GetServerList(index, size, t, categoryID, key)
+
+	serverAppLists, err := service.MyService.AppStore().GetServerList(index, size, t, categoryID, key)
 	if err != nil {
 		c.JSON(common_err.SERVICE_ERROR, &modelCommon.Result{Success: common_err.SERVICE_ERROR, Message: common_err.GetMsg(common_err.SERVICE_ERROR), Data: err.Error()})
 		return
 	}
 
+	myAppList, _ := service.MyService.Docker().GetContainerAppList()
+
 	data := make(map[string]interface{}, 3)
-	data["recommend"] = collection.Recommend
-	data["list"] = collection.List
-	data["community"] = collection.Community
+	data["recommend"] = updateState(&serverAppLists.Recommend, myAppList)
+	data["list"] = updateState(&serverAppLists.List, myAppList)
+	data["community"] = updateState(&serverAppLists.Community, myAppList)
 
 	c.JSON(common_err.SUCCESS, &modelCommon.Result{Success: common_err.SUCCESS, Message: common_err.GetMsg(common_err.SUCCESS), Data: data})
 }
@@ -104,6 +109,14 @@ func AppInfo(c *gin.Context) {
 		}
 	}
 
+	myAppList, _ := service.MyService.Docker().GetContainerAppList()
+	for _, myApp := range *myAppList {
+		if info.Image == strings.Split(myApp.Image, ":")[0] {
+			info.State = model.StateEnumInstalled
+			break
+		}
+	}
+
 	info.Image += ":" + info.ImageVersion
 
 	c.JSON(common_err.SUCCESS, &modelCommon.Result{Success: common_err.SUCCESS, Message: common_err.GetMsg(common_err.SUCCESS), Data: info})
@@ -144,4 +157,18 @@ func ShareAppFile(c *gin.Context) {
 	str, _ := ioutil.ReadAll(c.Request.Body)
 	content := service.MyService.AppStore().ShareAppFile(str)
 	c.JSON(common_err.SUCCESS, jsoniter.RawMessage(content))
+}
+
+func updateState(serverAppList *[]model.ServerAppList, myAppList *[]model.MyAppList) []model.ServerAppList {
+	result := make([]model.ServerAppList, len(*serverAppList))
+	for i, serverApp := range *serverAppList {
+		if lo.ContainsBy(*myAppList, func(app model.MyAppList) bool {
+			return serverApp.Image == strings.Split(app.Image, ":")[0]
+		}) {
+			serverApp.State = model.StateEnumInstalled
+		}
+		result[i] = serverApp
+	}
+
+	return result
 }

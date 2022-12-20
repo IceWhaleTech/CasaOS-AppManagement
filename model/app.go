@@ -11,6 +11,13 @@ type ServerAppListCollection struct {
 	Community []ServerAppList `json:"community"`
 }
 
+type StateEnum int
+
+const (
+	StateEnumNotInstalled StateEnum = iota
+	StateEnumInstalled
+)
+
 // @tiger - 对于用于出参的数据结构，静态信息（例如 title）和
 //
 //	动态信息（例如 state、query_count）应该划分到不同的数据结构中
@@ -44,7 +51,7 @@ type ServerAppList struct {
 	Index          string    `json:"index"`
 	CreatedAt      time.Time `json:"created_at"`
 	UpdatedAt      time.Time `json:"updated_at"`
-	State          int       `json:"state"`
+	State          StateEnum `json:"state"`
 	Author         string    `json:"author"`
 	MinMemory      int       `json:"min_memory"`
 	MinDisk        int       `json:"min_disk"`
