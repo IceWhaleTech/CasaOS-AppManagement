@@ -228,9 +228,9 @@ func (ds *dockerService) GetContainerAppList() (*[]model.MyAppList, *[]model.MyA
 	}
 	// 获取本地数据库应用
 
-	unTranslation := []model.MyAppList{}
+	localApps := []model.MyAppList{}
 
-	list := []model.MyAppList{}
+	casaOSApps := []model.MyAppList{}
 
 	for _, m := range containers {
 		if m.Labels["casaos"] == "casaos" {
@@ -248,7 +248,7 @@ func (ds *dockerService) GetContainerAppList() (*[]model.MyAppList, *[]model.MyA
 				}
 			}
 
-			list = append(list, model.MyAppList{
+			casaOSApps = append(casaOSApps, model.MyAppList{
 				Name:     name,
 				Icon:     icon,
 				State:    m.State,
@@ -266,7 +266,7 @@ func (ds *dockerService) GetContainerAppList() (*[]model.MyAppList, *[]model.MyA
 				Protocol: m.Labels["protocol"],
 			})
 		} else {
-			unTranslation = append(unTranslation, model.MyAppList{
+			localApps = append(localApps, model.MyAppList{
 				Name:     strings.ReplaceAll(m.Names[0], "/", ""),
 				Icon:     "",
 				State:    m.State,
@@ -281,7 +281,7 @@ func (ds *dockerService) GetContainerAppList() (*[]model.MyAppList, *[]model.MyA
 		}
 	}
 
-	return &list, &unTranslation
+	return &casaOSApps, &localApps
 }
 
 func (ds *dockerService) CreateContainerShellSession(container, row, col string) (hr types.HijackedResponse, err error) {
