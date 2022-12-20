@@ -922,10 +922,14 @@ func ContainerUpdateInfo(c *gin.Context) {
 // @Success 200 {string} string "ok"
 // @Router /app/my/list [get]
 func MyAppList(c *gin.Context) {
-	list, unTranslation := service.MyService.Docker().GetContainerAppList()
+	name := c.Query("name")
+	image := c.Query("image")
+	state := c.Query("state")
+
+	casaOSApps, localApps := service.MyService.Docker().GetContainerAppList(&name, &image, &state)
 	data := make(map[string]interface{}, 2)
-	data["casaos_apps"] = list
-	data["local_apps"] = unTranslation
+	data["casaos_apps"] = casaOSApps
+	data["local_apps"] = localApps
 
 	c.JSON(common_err.SUCCESS, &modelCommon.Result{Success: common_err.SUCCESS, Message: common_err.GetMsg(common_err.SUCCESS), Data: data})
 }

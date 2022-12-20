@@ -83,6 +83,7 @@ type MyAppList struct {
 	Latest   bool   `json:"latest"`
 	Host     string `json:"host"`
 	Protocol string `json:"protocol"`
+	Created  int64  `json:"created"`
 }
 
 type Ports struct {

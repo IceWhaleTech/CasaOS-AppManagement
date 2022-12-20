@@ -48,7 +48,7 @@ func AppList(c *gin.Context) {
 		return
 	}
 
-	myAppList, _ := service.MyService.Docker().GetContainerAppList()
+	myAppList, _ := service.MyService.Docker().GetContainerAppList(nil, nil, nil)
 
 	data := make(map[string]interface{}, 3)
 	data["recommend"] = updateState(&serverAppLists.Recommend, myAppList)
@@ -109,12 +109,9 @@ func AppInfo(c *gin.Context) {
 		}
 	}
 
-	myAppList, _ := service.MyService.Docker().GetContainerAppList()
-	for _, myApp := range *myAppList {
-		if info.Image == strings.Split(myApp.Image, ":")[0] {
-			info.State = model.StateEnumInstalled
-			break
-		}
+	myAppList, _ := service.MyService.Docker().GetContainerAppList(nil, &strings.Split(info.Image, ":")[0], nil)
+	if len(*myAppList) > 0 {
+		info.State = model.StateEnumInstalled
 	}
 
 	info.Image += ":" + info.ImageVersion

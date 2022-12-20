@@ -55,7 +55,7 @@ type DockerService interface {
 	CreateContainerShellSession(container, row, col string) (hr types.HijackedResponse, err error)
 	DescribeContainer(name string) (*types.ContainerJSON, error)
 	GetContainer(id string) (types.Container, error)
-	GetContainerAppList() (*[]model.MyAppList, *[]model.MyAppList)
+	GetContainerAppList(name, image, state *string) (*[]model.MyAppList, *[]model.MyAppList)
 	GetContainerByName(name string) (*types.Container, error)
 	GetContainerLog(name string) ([]byte, error)
 	GetContainerStats() []model.DockerStatsModel
@@ -212,7 +212,7 @@ func (ds *dockerService) GetContainer(id string) (types.Container, error) {
 }
 
 // 获取我的应用列表
-func (ds *dockerService) GetContainerAppList() (*[]model.MyAppList, *[]model.MyAppList) {
+func (ds *dockerService) GetContainerAppList(name, image, state *string) (*[]model.MyAppList, *[]model.MyAppList) {
 	cli, err := client2.NewClientWithOpts(client2.FromEnv, client2.WithTimeout(time.Second*5))
 	if err != nil {
 		logger.Error("Failed to init client", zap.Any("err", err))
@@ -228,11 +228,30 @@ func (ds *dockerService) GetContainerAppList() (*[]model.MyAppList, *[]model.MyA
 	}
 	// 获取本地数据库应用
 
-	unTranslation := []model.MyAppList{}
+	localApps := []model.MyAppList{}
 
-	list := []model.MyAppList{}
+	casaOSApps := []model.MyAppList{}
 
 	for _, m := range containers {
+
+		if name != nil && len(*name) > 0 {
+			if !lo.ContainsBy(m.Names, func(n string) bool { return strings.Contains(n, *name) }) {
+				continue
+			}
+		}
+
+		if image != nil && len(*image) > 0 {
+			if !strings.HasPrefix(m.Image, *image) {
+				continue
+			}
+		}
+
+		if state != nil && len(*state) > 0 {
+			if m.State != *state {
+				continue
+			}
+		}
+
 		if m.Labels["casaos"] == "casaos" {
 
 			_, newVersion := NewVersionApp[m.ID]
@@ -248,7 +267,7 @@ func (ds *dockerService) GetContainerAppList() (*[]model.MyAppList, *[]model.MyA
 				}
 			}
 
-			list = append(list, model.MyAppList{
+			casaOSApp := model.MyAppList{
 				Name:     name,
 				Icon:     icon,
 				State:    m.State,
@@ -256,17 +275,16 @@ func (ds *dockerService) GetContainerAppList() (*[]model.MyAppList, *[]model.MyA
 				ID:       m.ID,
 				Port:     m.Labels["web"],
 				Index:    m.Labels["index"],
-				// Order:      m.Labels["order"],
-				Image:  m.Image,
-				Latest: newVersion,
-				// Type:   m.Labels["origin"],
-				// Slogan: m.Slogan,
-				// Rely:     m.Rely,
+				Image:    m.Image,
+				Latest:   newVersion,
 				Host:     m.Labels["host"],
 				Protocol: m.Labels["protocol"],
-			})
+				Created:  m.Created,
+			}
+
+			casaOSApps = append(casaOSApps, casaOSApp)
 		} else {
-			unTranslation = append(unTranslation, model.MyAppList{
+			localApp := model.MyAppList{
 				Name:     strings.ReplaceAll(m.Names[0], "/", ""),
 				Icon:     "",
 				State:    m.State,
@@ -277,11 +295,14 @@ func (ds *dockerService) GetContainerAppList() (*[]model.MyAppList, *[]model.MyA
 				Host:     "",
 				Protocol: "",
 				Image:    m.Image,
-			})
+				Created:  m.Created,
+			}
+
+			localApps = append(localApps, localApp)
 		}
 	}
 
-	return &list, &unTranslation
+	return &casaOSApps, &localApps
 }
 
 func (ds *dockerService) CreateContainerShellSession(container, row, col string) (hr types.HijackedResponse, err error) {
