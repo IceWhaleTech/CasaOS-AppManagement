@@ -34,15 +34,18 @@ func (o *appStore) GetServerList(index, size, tp, categoryID, key string) (model
 	collection := model.ServerAppListCollection{}
 
 	keyName := fmt.Sprintf("list_%s_%s_%s_%s_%s", index, size, tp, categoryID, "en")
-	logger.Info("getting app list collection from cache...", zap.String("key", keyName))
-	if result, ok := Cache.Get(keyName); ok {
-		if collectionBytes, ok := result.([]byte); ok {
-			if err := json.Unmarshal(collectionBytes, &collection); err != nil {
-				logger.Error("error when deserializing app list collection from cache", zap.Any("err", err), zap.Any("content", collectionBytes))
-				return collection, err
-			}
 
-			return collection, nil
+	if !config.DebugInfo.DisableAppStoreCache {
+		logger.Info("getting app list collection from cache...", zap.String("key", keyName))
+		if result, ok := Cache.Get(keyName); ok {
+			if collectionBytes, ok := result.([]byte); ok {
+				if err := json.Unmarshal(collectionBytes, &collection); err != nil {
+					logger.Error("error when deserializing app list collection from cache", zap.Any("err", err), zap.Any("content", collectionBytes))
+					return collection, err
+				}
+
+				return collection, nil
+			}
 		}
 	}
 

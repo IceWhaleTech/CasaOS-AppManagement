@@ -2,10 +2,16 @@ package config
 
 import (
 	"log"
+	"os"
+	"strings"
 
 	"github.com/IceWhaleTech/CasaOS-AppManagement/common"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/model"
 	"gopkg.in/ini.v1"
+)
+
+const (
+	EnvDisableAppStoreCache = "CASAOS_DISABLE_APP_STORE_CACHE"
 )
 
 var (
@@ -28,9 +34,16 @@ var (
 
 	Cfg            *ini.File
 	ConfigFilePath string
+
+	DebugInfo = struct {
+		DisableAppStoreCache bool
+	}{
+		DisableAppStoreCache: false,
+	}
 )
 
 func InitSetup(config string) {
+	// load from config file
 	ConfigFilePath = AppManagementConfigFilePath
 	if len(config) > 0 {
 		ConfigFilePath = config
@@ -46,6 +59,11 @@ func InitSetup(config string) {
 	mapTo("common", CommonInfo)
 	mapTo("app", AppInfo)
 	mapTo("server", ServerInfo)
+
+	// load from environment variables
+	if disableAppStoreCache, ok := os.LookupEnv(EnvDisableAppStoreCache); ok {
+		DebugInfo.DisableAppStoreCache = strings.ToLower(disableAppStoreCache) == "true" || strings.ToLower(disableAppStoreCache) == "yes" || disableAppStoreCache == "1"
+	}
 }
 
 func SaveSetup(config string) {
