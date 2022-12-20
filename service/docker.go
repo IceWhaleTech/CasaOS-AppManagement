@@ -742,13 +742,13 @@ func (ds *dockerService) GetContainerByName(name string) (*types.Container, erro
 }
 
 // 获取容器详情
-func (ds *dockerService) DescribeContainer(name string) (*types.ContainerJSON, error) {
+func (ds *dockerService) DescribeContainer(nameOrID string) (*types.ContainerJSON, error) {
 	cli, err := client2.NewClientWithOpts(client2.FromEnv)
 	if err != nil {
 		return &types.ContainerJSON{}, err
 	}
 	defer cli.Close()
-	d, err := cli.ContainerInspect(context.Background(), name)
+	d, err := cli.ContainerInspect(context.Background(), nameOrID)
 	if err != nil {
 		return &types.ContainerJSON{}, err
 	}
