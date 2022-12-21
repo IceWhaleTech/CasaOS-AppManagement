@@ -9,7 +9,7 @@ import (
 type ComposeApp types.Project
 
 func (a *ComposeApp) StoreInfo() (*codegen.ComposeAppStoreInfo, error) {
-	if ex, ok := a.Extensions["x-casaos"]; ok {
+	if ex, ok := a.Extensions[yamlExtensionName]; ok {
 		var storeInfo codegen.ComposeAppStoreInfo
 		if err := loader.Transform(ex, &storeInfo); err != nil {
 			return nil, err
