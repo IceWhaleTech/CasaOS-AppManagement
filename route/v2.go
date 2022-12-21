@@ -7,7 +7,8 @@ import (
 	"strings"
 
 	"github.com/IceWhaleTech/CasaOS-AppManagement/codegen"
-	v2 "github.com/IceWhaleTech/CasaOS-AppManagement/route/v2"
+
+	v2Route "github.com/IceWhaleTech/CasaOS-AppManagement/route/v2"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/common_err"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/jwt"
 	"github.com/deepmap/oapi-codegen/pkg/middleware"
@@ -42,7 +43,7 @@ func init() {
 }
 
 func InitV2Router() http.Handler {
-	appManagement := v2.NewAppManagement()
+	appManagement := v2Route.NewAppManagement()
 
 	e := echo.New()
 

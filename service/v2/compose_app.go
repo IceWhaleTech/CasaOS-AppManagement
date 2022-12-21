@@ -36,6 +36,15 @@ func (a *ComposeApp) App(name string) *App {
 	return nil
 }
 
+func (a *ComposeApp) Apps() []*App {
+	apps := make([]*App, len(a.Services))
+	for i := range a.Services {
+		apps[i] = (*App)(&a.Services[i])
+	}
+
+	return apps
+}
+
 func (a *ComposeApp) MainApp() (*App, error) {
 	storeInfo, err := a.StoreInfo()
 	if err != nil {
