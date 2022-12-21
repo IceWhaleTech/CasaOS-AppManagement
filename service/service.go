@@ -13,6 +13,7 @@ import (
 	"github.com/IceWhaleTech/CasaOS-AppManagement/codegen/message_bus"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/pkg/config"
 	v1 "github.com/IceWhaleTech/CasaOS-AppManagement/service/v1"
+	v2 "github.com/IceWhaleTech/CasaOS-AppManagement/service/v2"
 	"github.com/IceWhaleTech/CasaOS-Common/external"
 )
 
@@ -20,6 +21,8 @@ var MyService Services
 
 type Services interface {
 	V1AppStore() v1.AppStore
+	V2AppStore() *v2.AppStore
+
 	Docker() DockerService
 	Gateway() external.ManagementService
 	Notify() external.NotifyService
@@ -32,20 +35,28 @@ func NewService(RuntimePath string) Services {
 		panic(err)
 	}
 
+	v2appStore, err := v2.NewAppStore()
+	if err != nil {
+		panic(err)
+	}
+
 	return &store{
 		gateway: gatewayManagement,
 		notify:  external.NewNotifyService(RuntimePath),
 
 		v1appStore: v1.NewAppService(),
+		v2appStore: v2appStore,
 		docker:     NewDockerService(),
 	}
 }
 
 type store struct {
 	v1appStore v1.AppStore
-	docker     DockerService
-	gateway    external.ManagementService
-	notify     external.NotifyService
+	v2appStore *v2.AppStore
+
+	docker  DockerService
+	gateway external.ManagementService
+	notify  external.NotifyService
 }
 
 func (c *store) Gateway() external.ManagementService {
@@ -58,6 +69,10 @@ func (c *store) Notify() external.NotifyService {
 
 func (c *store) V1AppStore() v1.AppStore {
 	return c.v1appStore
+}
+
+func (c *store) V2AppStore() *v2.AppStore {
+	return c.v2appStore
 }
 
 func (c *store) Docker() DockerService {

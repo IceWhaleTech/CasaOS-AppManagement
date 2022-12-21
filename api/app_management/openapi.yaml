@@ -26,11 +26,29 @@ tags:
     description: |-
       methods for managing app lifecycle
 
+  - name: ComposeAppStoreInfo
+    description: |-
+      <SchemaDefinition schemaRef="#/components/schemas/ComposeAppStoreInfo" />
+
+  - name: ComposeAppStoreInfoDetails
+    description: |-
+      <SchemaDefinition schemaRef="#/components/schemas/ComposeAppStoreInfoDetails" />
+
+  - name: AppStoreInfo
+    description: |-
+      <SchemaDefinition schemaRef="#/components/schemas/AppStoreInfo" />
+
 x-tagGroups:
   - name: Methods
     tags:
       - AppStore methods
       - Container methods
+
+  - name: Schemas
+    tags:
+      - ComposeAppStoreInfo
+      - ComposeAppStoreInfoDetails
+      - AppStoreInfo
 
 security:
   - access_token: []
@@ -128,21 +146,11 @@ components:
       content:
         application/json:
           schema:
-            readOnly: true
             allOf:
               - $ref: "#/components/schemas/BaseResponse"
-              - type: object
-                properties:
+              - properties:
                   data:
-                    type: object
-                    allOf:
-                      - $ref: "#/components/schemas/ComposeAppStoreInfo"
-                      - type: object
-                        properties:
-                          apps:
-                            type: array
-                            items:
-                              $ref: "#/components/schemas/AppStoreInfo"
+                    $ref: "#/components/schemas/ComposeAppStoreInfoDetails"
 
         application/yaml:
           schema:
@@ -182,6 +190,19 @@ components:
           example: "syncthing"
           x-oapi-codegen-extra-tags:
             mapstructure: "main_app"
+
+    ComposeAppStoreInfoDetails:
+      type: object
+      allOf:
+        - $ref: "#/components/schemas/ComposeAppStoreInfo"
+        - type: object
+          properties:
+            apps:
+              type: object
+              additionalProperties:
+                $ref: "#/components/schemas/AppStoreInfo"
+              example:
+                syncthing: {}
 
     AppStoreInfo:
       type: object
