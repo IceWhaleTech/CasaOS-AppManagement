@@ -632,15 +632,13 @@ func UpdateSetting(c *gin.Context) {
 	}
 
 	if err := service.MyService.Docker().RenameContainer(id, id); err != nil {
-		c.JSON(http.StatusInternalServerError, modelCommon.Result{Success: common_err.SERVICE_ERROR, Message: err.Error()})
-		return
+		logger.Error("rename container error: ", zap.Error(err))
 	}
 
 	containerID, err := service.MyService.Docker().CreateContainer(m, id)
 	if err != nil {
 		if err := service.MyService.Docker().RenameContainer(m.ContainerName, id); err != nil {
-			c.JSON(http.StatusInternalServerError, modelCommon.Result{Success: common_err.SERVICE_ERROR, Message: err.Error()})
-			return
+			logger.Error("rename container error: ", zap.Error(err))
 		}
 
 		if err := service.MyService.Docker().StartContainer(id); err != nil {
@@ -701,8 +699,7 @@ func PutAppUpdate(c *gin.Context) {
 	}
 
 	if err := service.MyService.Docker().RenameContainer(id, id); err != nil {
-		c.JSON(http.StatusInternalServerError, modelCommon.Result{Success: common_err.SERVICE_ERROR, Message: err.Error()})
-		return
+		logger.Error("rename container error: ", zap.Error(err))
 	}
 
 	inspect.Image = imageLatest
@@ -711,8 +708,7 @@ func PutAppUpdate(c *gin.Context) {
 	containerID, err := service.MyService.Docker().CloneContainer(inspect)
 	if err != nil {
 		if err := service.MyService.Docker().RenameContainer(inspect.Name, id); err != nil {
-			c.JSON(http.StatusInternalServerError, modelCommon.Result{Success: common_err.SERVICE_ERROR, Message: err.Error()})
-			return
+			logger.Error("rename container error: ", zap.Error(err))
 		}
 
 		if err := service.MyService.Docker().StartContainer(id); err != nil {
