@@ -25,15 +25,12 @@ services:
 
     x-casaos:
       title:
-        - lang: en_US
-          text: Syncthing
+        en_US: Syncthing
       icon: "https://cdn.jsdelivr.net/gh/IceWhaleTech/CasaOS-AppStore@main/Apps/Syncthing/icon.png"
       tagline:
-        - lang: en_US
-          text: Free, secure, and distributed file synchronisation tool.
+        en_US: Free, secure, and distributed file synchronisation tool.
       overview:
-        - lang: en_US
-          text: Syncthing is a continuous file synchronization program. It synchronizes files between two or more computers in real time, safely protected from prying eyes. Your data is your data alone and you deserve to choose where it is stored, whether it is shared with some third party, and how it's transmitted over the internet.
+        en_US: Syncthing is a continuous file synchronization program. It synchronizes files between two or more computers in real time, safely protected from prying eyes. Your data is your data alone and you deserve to choose where it is stored, whether it is shared with some third party, and how it's transmitted over the internet.
       thumbnail: https://cdn.jsdelivr.net/gh/IceWhaleTech/CasaOS-AppStore@main/Apps/Jellyfin/thumbnail.jpg
       screenshots: []
       category:
@@ -56,59 +53,50 @@ services:
           - key: TZ
             configurable: false
             description:
-              - lang: en_US
-                text: Timezone
+              en_US: Timezone
           - key: PUID
             configurable: false
             description:
-              - lang: en_US
-                text: Run Syncthing as specified uid.
+              en_US: Run Syncthing as specified uid.
           - key: PGID
             configurable: false
             description:
-              - lang: en_US
-                text: Run Syncthing as specified gid.
+              en_US: Run Syncthing as specified gid.
         ports:
           - container: 8384
             type: tcp
             allocation: preferred
             configurable: advanced
             description:
-              - lang: en_US
-                text: WebUI HTTP Port
+              en_US: WebUI HTTP Port
           - container: 22000
             type: tcp
             allocation: required
             configurable: no
             description:
-              - lang: en_US
-                text: Syncthing listening port (TCP)
+              en_US: Syncthing listening port (TCP)
           - container: 22000
             type: udp
             allocation: required
             configurable: no
             description:
-              - lang: en_US
-                text: Syncthing listening port (UDP)
+              en_US: Syncthing listening port (UDP)
           - container: 21027
             type: udp
             allocation: optional
             configurable: no
             description:
-              - lang: en_US
-                text: Syncthing protocol discovery port
+              en_US: Syncthing protocol discovery port
         volumes:
           - container: /config
             allocation: automatic
             configurable: no
             description:
-              - lang: en_US
-                text: Syncthing configuration directory
+              en_US: Syncthing configuration directory
           - container: /DATA
             allocation: automatic
             configurable: advanced
             description:
-              - lang: en_US
-                text: Syncthing accessible directory
+              en_US: Syncthing accessible directory
         constraints:
           min_storage: 1024m
