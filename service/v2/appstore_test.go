@@ -6,8 +6,16 @@ import (
 	"gotest.tools/v3/assert"
 )
 
-func TestYAMLUnmarshal(t *testing.T) {
-	for _, v := range catalog {
-		assert.Equal(t, len(v.Project.Services), 1)
+func TestGetComposeApp(t *testing.T) {
+	for storeAppID, composeApp := range Store {
+		storeInfo, err := composeApp.StoreInfo()
+		assert.NilError(t, err)
+		assert.Equal(t, storeInfo.StoreAppID, storeAppID)
+	}
+}
+
+func TestComposeYAML(t *testing.T) {
+	for _, composeApp := range Store {
+		assert.Equal(t, *composeApp.YAML(), SampleComposeAppYAML)
 	}
 }
