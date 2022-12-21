@@ -181,7 +181,11 @@ func (ds *dockerService) CheckContainerHealth(id string) (bool, error) {
 			return false, err
 		}
 
-		return response.StatusCode >= 200 && response.StatusCode < 300, errors.New(response.Status)
+		if response.StatusCode >= 200 && response.StatusCode < 300 {
+			return true, nil
+		}
+
+		return false, errors.New(response.Status)
 	}
 
 	return false, errors.New("no web port")
