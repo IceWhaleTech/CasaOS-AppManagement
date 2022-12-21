@@ -1,10 +1,10 @@
 # (REMOVE THIS TAG TO ENABLE YAML SCHEMA) yaml-language-server: $schema=https://raw.githubusercontent.com/tigerinus/CasaOS-AppStore-Hub/init/schemas/compose-x-casaos-spec.json
 x-casaos:
-  store_appid: e4380876-d759-4b26-af1f-968a4606d399
-  main_app: app
+  appstore_id: e4380876-d759-4b26-af1f-968a4606d399
+  main_app: syncthing
 
 services:
-  app:
+  syncthing:
     image: linuxserver/syncthing:latest
     privileged: false
     network_mode: bridge
@@ -27,7 +27,6 @@ services:
       title:
         - lang: en_US
           text: Syncthing
-      name: syncthing
       icon: "https://cdn.jsdelivr.net/gh/IceWhaleTech/CasaOS-AppStore@main/Apps/Syncthing/icon.png"
       tagline:
         - lang: en_US

@@ -43,10 +43,10 @@ paths:
       tags:
         - AppStore methods
       parameters:
-        - $ref: "#/components/parameters/StoreAppID"
+        - $ref: "#/components/parameters/AppStoreID"
       responses:
         "200":
-          $ref: "#/components/responses/StoreAppInfoOK"
+          $ref: "#/components/responses/ComposeAppStoreInfoOK"
 
   /container/{id}/healthcheck:
     get:
@@ -74,7 +74,7 @@ components:
       name: Authorization
 
   parameters:
-    StoreAppID:
+    AppStoreID:
       name: id
       in: path
       required: true
@@ -123,7 +123,7 @@ components:
           example:
             message: "Service Unavailable"
 
-    StoreAppInfoOK:
+    ComposeAppStoreInfoOK:
       description: OK
       content:
         application/json:
@@ -134,7 +134,16 @@ components:
               - type: object
                 properties:
                   data:
-                    $ref: "#/components/schemas/StoreAppInfo"
+                    type: object
+                    allOf:
+                      - $ref: "#/components/schemas/ComposeAppStoreInfo"
+                      - type: object
+                        properties:
+                          apps:
+                            type: array
+                            items:
+                              $ref: "#/components/schemas/AppStoreInfo"
+
         application/yaml:
           schema:
             type: string
@@ -157,17 +166,33 @@ components:
           type: string
           example: ""
 
-    StoreAppInfo:
+    ComposeAppStoreInfo:
       type: object
-      description: app info is also included as `x-casaos` extension in any Docker Compose format for app store
+      required:
+        - appstore_id
       properties:
-        id:
+        appstore_id:
           type: string
-          description: app ID
-          example: adb311b6-835b-455c-90fc-94bec14ce6ff
+          example: "e4380876-d759-4b26-af1f-968a4606d399"
+          x-go-name: AppStoreID
+          x-oapi-codegen-extra-tags:
+            mapstructure: "appstore_id"
+        main_app:
+          type: string
+          example: "syncthing"
+          x-oapi-codegen-extra-tags:
+            mapstructure: "main_app"
+
+    AppStoreInfo:
+      type: object
+      required:
+        - title
+      properties:
         title:
           type: object
           additionalProperties:
             type: string
           example:
             en_US: Syncthing
+          x-oapi-codegen-extra-tags:
+            mapstructure: "title"
