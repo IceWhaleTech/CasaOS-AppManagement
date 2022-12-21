@@ -6,5 +6,6 @@ import (
 )
 
 func (*AppManagement) GetAppInfo(ctx echo.Context, id codegen.StoreAppID) error {
+	// TODO: implement
 	return nil
 }
