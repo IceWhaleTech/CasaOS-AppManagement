@@ -624,47 +624,10 @@ func UpdateSetting(c *gin.Context) {
 		return
 	}
 
-	if len(m.PortMap) > 0 && m.PortMap != "0" {
-		portMap, err := strconv.Atoi(m.PortMap)
-		if err != nil {
-			c.JSON(http.StatusBadRequest, modelCommon.Result{Success: common_err.INVALID_PARAMS, Message: err.Error()})
-			return
-		}
-
-		if !port.IsPortAvailable(portMap, "tcp") {
-			if err := service.MyService.Docker().StartContainer(id); err != nil {
-				c.JSON(http.StatusInternalServerError, modelCommon.Result{Success: common_err.SERVICE_ERROR, Message: err.Error()})
-				return
-			}
-
-			c.JSON(http.StatusInternalServerError, modelCommon.Result{Success: common_err.SERVICE_ERROR, Message: "Duplicate port:" + m.PortMap})
-			return
-		}
-	}
-
 	for _, u := range m.Ports {
-		t, err := strconv.Atoi(u.CommendPort)
-		if err != nil {
-			logger.Info("host port is not number - will pick port number randomly", zap.String("port", u.CommendPort))
-		}
-
 		if !lo.Contains([]string{"tcp", "udp", "both"}, u.Protocol) {
 			c.JSON(http.StatusBadRequest, modelCommon.Result{Success: common_err.INVALID_PARAMS, Message: "protocol should be tcp, udp or both"})
 			return
-		}
-
-		protocols := strings.Replace(u.Protocol, "both", "tcp,udp", -1)
-
-		for _, p := range strings.Split(protocols, ",") {
-			if !port.IsPortAvailable(t, p) {
-				if err := service.MyService.Docker().StartContainer(id); err != nil {
-					c.JSON(http.StatusInternalServerError, modelCommon.Result{Success: common_err.SERVICE_ERROR, Message: err.Error()})
-					return
-				}
-
-				c.JSON(http.StatusInternalServerError, modelCommon.Result{Success: common_err.SERVICE_ERROR, Message: "Duplicate port:" + u.CommendPort})
-				return
-			}
 		}
 	}
 
