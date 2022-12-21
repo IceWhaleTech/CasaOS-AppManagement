@@ -3,6 +3,7 @@ package v2
 import (
 	"fmt"
 
+	"github.com/IceWhaleTech/CasaOS-AppManagement/codegen"
 	"github.com/compose-spec/compose-go/loader"
 	"github.com/compose-spec/compose-go/types"
 
@@ -22,41 +23,31 @@ var (
 )
 
 type (
-	App   types.ServiceConfig
-	AppEx struct {
-		Title map[string]string      `mapstructure:"title"`
-		Name  string                 `mapstructure:"name"`
-		Other map[string]interface{} `mapstructure:",remain"`
-	}
+	App types.ServiceConfig
 )
 
-func (a *App) StoreInfo() (*AppEx, error) {
+func (a *App) StoreInfo() (*codegen.AppStoreInfo, error) {
 	if ex, ok := a.Extensions[extensionName]; ok {
-		var appEx AppEx
-		if err := loader.Transform(ex, &appEx); err != nil {
+		var storeInfo codegen.AppStoreInfo
+		if err := loader.Transform(ex, &storeInfo); err != nil {
 			return nil, err
 		}
-		return &appEx, nil
+		return &storeInfo, nil
 	}
 	return nil, ErrExtensionNotFound
 }
 
 type (
-	ComposeApp   types.Project
-	ComposeAppEx struct {
-		StoreAppID string                 `mapstructure:"store_appid"`
-		MainApp    *string                `mapstructure:"main_app"`
-		Other      map[string]interface{} `mapstructure:",remain"`
-	}
+	ComposeApp types.Project
 )
 
-func (a *ComposeApp) StoreInfo() (*ComposeAppEx, error) {
+func (a *ComposeApp) StoreInfo() (*codegen.ComposeAppStoreInfo, error) {
 	if ex, ok := a.Extensions["x-casaos"]; ok {
-		var appEx ComposeAppEx
-		if err := loader.Transform(ex, &appEx); err != nil {
+		var storeInfo codegen.ComposeAppStoreInfo
+		if err := loader.Transform(ex, &storeInfo); err != nil {
 			return nil, err
 		}
-		return &appEx, nil
+		return &storeInfo, nil
 	}
 	return nil, ErrExtensionNotFound
 }
@@ -111,18 +102,18 @@ func init() {
 	project.Extensions["yaml"] = &SampleComposeAppYAML
 
 	if ex, ok := project.Extensions["x-casaos"]; ok {
-		var projectEx ComposeAppEx
-		if err := loader.Transform(ex, &projectEx); err != nil {
+		var storeInfo codegen.ComposeAppStoreInfo
+		if err := loader.Transform(ex, &storeInfo); err != nil {
 			panic(err)
 		}
 
-		Store[projectEx.StoreAppID] = (*ComposeApp)(project)
+		Store[storeInfo.AppStoreID] = (*ComposeApp)(project)
 
 	} else {
 		panic("invalid project extension")
 	}
 }
 
-func GetComposeApp(storeAppID string) *ComposeApp {
-	return Store[storeAppID]
+func GetComposeApp(appStoreID string) *ComposeApp {
+	return Store[appStoreID]
 }

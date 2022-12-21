@@ -10,7 +10,7 @@ func TestGetComposeApp(t *testing.T) {
 	for storeAppID, composeApp := range Store {
 		storeInfo, err := composeApp.StoreInfo()
 		assert.NilError(t, err)
-		assert.Equal(t, storeInfo.StoreAppID, storeAppID)
+		assert.Equal(t, storeInfo.AppStoreID, storeAppID)
 	}
 }
 
@@ -33,6 +33,6 @@ func TestGetMainApp(t *testing.T) {
 	for _, composeApp := range Store {
 		mainApp, err := composeApp.MainApp()
 		assert.NilError(t, err)
-		assert.Equal(t, mainApp.Name, "app")
+		assert.Equal(t, mainApp.Name, "syncthing")
 	}
 }
