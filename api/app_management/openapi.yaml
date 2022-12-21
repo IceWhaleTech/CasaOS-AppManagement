@@ -43,14 +43,10 @@ paths:
       tags:
         - AppStore methods
       parameters:
-        - $ref: "#/components/parameters/AppID"
+        - $ref: "#/components/parameters/StoreAppID"
       responses:
         "200":
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/AppInfo"
+          $ref: "#/components/responses/StoreAppInfoOK"
 
   /container/{id}/healthcheck:
     get:
@@ -78,7 +74,7 @@ components:
       name: Authorization
 
   parameters:
-    AppID:
+    StoreAppID:
       name: id
       in: path
       required: true
@@ -127,6 +123,22 @@ components:
           example:
             message: "Service Unavailable"
 
+    StoreAppInfoOK:
+      description: OK
+      content:
+        application/json:
+          schema:
+            readOnly: true
+            allOf:
+              - $ref: "#/components/schemas/BaseResponse"
+              - type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/StoreAppInfo"
+        application/yaml:
+          schema:
+            type: string
+
     AppHealthCheckOK:
       description: OK
       content:
@@ -144,3 +156,18 @@ components:
           description: message returned by server side if there is any
           type: string
           example: ""
+
+    StoreAppInfo:
+      type: object
+      description: app info is also included as `x-casaos` extension in any Docker Compose format for app store
+      properties:
+        id:
+          type: string
+          description: app ID
+          example: adb311b6-835b-455c-90fc-94bec14ce6ff
+        title:
+          type: object
+          additionalProperties:
+            type: string
+          example:
+            en_US: Syncthing
