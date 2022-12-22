@@ -12,9 +12,27 @@ import (
 func (*AppManagement) GetAppInfo(ctx echo.Context, id codegen.AppStoreID) error {
 	composeApp := service.MyService.V2AppStore().ComposeApp(id)
 
+	if composeApp == nil {
+		return ctx.JSON(http.StatusNotFound, codegen.ResponseNotFound{
+			Message: utils.Ptr("app not found"),
+		})
+	}
+
+	accept := ctx.Request().Header.Get(echo.HeaderAccept)
+	if accept == MIMEApplicationYAML {
+		yaml := composeApp.YAML()
+		if yaml == nil {
+			return ctx.JSON(http.StatusInternalServerError, codegen.ResponseInternalServerError{
+				Message: utils.Ptr("yaml not found"),
+			})
+		}
+
+		return ctx.String(http.StatusOK, *yaml)
+	}
+
 	storeInfo, err := composeApp.StoreInfo()
 	if err != nil {
-		return ctx.JSON(http.StatusInternalServerError, codegen.BaseResponse{
+		return ctx.JSON(http.StatusInternalServerError, codegen.ResponseInternalServerError{
 			Message: utils.Ptr(err.Error()),
 		})
 	}
@@ -24,7 +42,7 @@ func (*AppManagement) GetAppInfo(ctx echo.Context, id codegen.AppStoreID) error 
 	for _, app := range composeApp.Apps() {
 		appStoreInfo, err := app.StoreInfo()
 		if err != nil {
-			return ctx.JSON(http.StatusInternalServerError, codegen.BaseResponse{
+			return ctx.JSON(http.StatusInternalServerError, codegen.ResponseInternalServerError{
 				Message: utils.Ptr(err.Error()),
 			})
 		}

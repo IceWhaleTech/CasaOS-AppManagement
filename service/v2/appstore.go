@@ -29,7 +29,11 @@ func (s *AppStore) Catalog() map[string]*ComposeApp {
 }
 
 func (s *AppStore) ComposeApp(appStoreID string) *ComposeApp {
-	return s.catalog[appStoreID]
+	if composeApp, ok := s.catalog[appStoreID]; ok {
+		return composeApp
+	}
+
+	return nil
 }
 
 func NewAppStore() (*AppStore, error) {

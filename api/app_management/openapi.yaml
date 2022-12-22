@@ -80,15 +80,26 @@ security:
 paths:
   /apps/{id}:
     get:
-      summary: Get app info
+      summary: Get app info from AppStore
+      description: |
+        Accept both `application/json` and `application/yaml` content type for the `Accept` header in the HTTP request.
+
+        - If the `Accept` header is set to `application/yaml`, the response will be the original [Docker Compose](https://docs.docker.com/compose/) content.
+        - Otherwise the `Accept` header is assumed to be `application/json` and the response will be provided in the schema described below.
+
       operationId: getAppInfo
       tags:
         - AppStore methods
+
       parameters:
         - $ref: "#/components/parameters/AppStoreID"
       responses:
         "200":
           $ref: "#/components/responses/ComposeAppStoreInfoOK"
+        "404":
+          $ref: "#/components/responses/ResponseNotFound"
+        "500":
+          $ref: "#/components/responses/ResponseInternalServerError"
 
   /container/{id}/healthcheck:
     get:
@@ -226,7 +237,7 @@ components:
               additionalProperties:
                 $ref: "#/components/schemas/AppStoreInfo"
               example:
-                syncthing: {}
+                syncthing: { "(AppStoreInfo schema here)": ... }
 
     AppStoreInfo:
       type: object
