@@ -33,17 +33,9 @@ services:
         en_US: Syncthing is a continuous file synchronization program. It synchronizes files between two or more computers in real time, safely protected from prying eyes. Your data is your data alone and you deserve to choose where it is stored, whether it is shared with some third party, and how it's transmitted over the internet.
       thumbnail: https://cdn.jsdelivr.net/gh/IceWhaleTech/CasaOS-AppStore@main/Apps/Jellyfin/thumbnail.jpg
       screenshot_link: []
-      category:
-        - Backup
-        - File Sync
-      developer:
-        name: Syncthing
-        website: https://syncthing.net/
-      adaptor:
-        name: CasaOS Team
-        website: https://casaos.io
-      support: https://discord.gg/knqAbbBbeX
-      website: https://casaos.io
+      category: Backup
+      developer: Syncthing
+      author: CasaOS Team
       container:
         shell: bash
         port_map: "8384"
@@ -63,25 +55,25 @@ services:
               en_US: Run Syncthing as specified gid.
         ports:
           - container: 8384
-            type: tcp
+            protocol: tcp
             allocation: preferred
             configurable: advanced
             description:
               en_US: WebUI HTTP Port
           - container: 22000
-            type: tcp
+            protocol: tcp
             allocation: required
             configurable: no
             description:
               en_US: Syncthing listening port (TCP)
           - container: 22000
-            type: udp
+            protocol: udp
             allocation: required
             configurable: no
             description:
               en_US: Syncthing listening port (UDP)
           - container: 21027
-            type: udp
+            protocol: udp
             allocation: optional
             configurable: no
             description:

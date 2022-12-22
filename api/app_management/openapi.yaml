@@ -22,6 +22,10 @@ tags:
     description: |-
       methods for accessing local app store
 
+  - name: Compose methods
+    description: |-
+      methods for managing compose app lifecycle
+
   - name: Container methods
     description: |-
       methods for managing app lifecycle
@@ -38,10 +42,27 @@ tags:
     description: |-
       <SchemaDefinition schemaRef="#/components/schemas/AppStoreInfo" />
 
+  - name: ContainerStoreInfo
+    description: |-
+      <SchemaDefinition schemaRef="#/components/schemas/ContainerStoreInfo" />
+
+  - name: EnvStoreInfo
+    description: |-
+      <SchemaDefinition schemaRef="#/components/schemas/EnvStoreInfo" />
+
+  - name: PortStoreInfo
+    description: |-
+      <SchemaDefinition schemaRef="#/components/schemas/PortStoreInfo" />
+
+  - name: VolumeStoreInfo
+    description: |-
+      <SchemaDefinition schemaRef="#/components/schemas/VolumeStoreInfo" />
+
 x-tagGroups:
   - name: Methods
     tags:
       - AppStore methods
+      - Compose methods
       - Container methods
 
   - name: Schemas
@@ -49,6 +70,9 @@ x-tagGroups:
       - ComposeAppStoreInfo
       - ComposeAppStoreInfoDetails
       - AppStoreInfo
+      - ContainerStoreInfo
+      - EnvStoreInfo
+      - PortStoreInfo
 
 security:
   - access_token: []
@@ -247,6 +271,21 @@ components:
             - https://cdn.jsdelivr.net/gh/IceWhaleTech/CasaOS-AppStore@main/Apps/OpenSpeedTest/screenshot-2.png
           x-oapi-codegen-extra-tags:
             mapstructure: "screenshot_link"
+        thumbnail:
+          type: string
+          example: https://cdn.jsdelivr.net/gh/IceWhaleTech/CasaOS-AppStore@main/Apps/Jellyfin/thumbnail.jpg
+          x-oapi-codegen-extra-tags:
+            mapstructure: "thumbnail"
+        author:
+          type: string
+          example: CasaOS Team
+          x-oapi-codegen-extra-tags:
+            mapstructure: "author"
+        developer:
+          type: string
+          example: Syncthing
+          x-oapi-codegen-extra-tags:
+            mapstructure: "developer"
         category:
           type: string
           example: Backup
@@ -262,10 +301,23 @@ components:
           example: "8384"
           x-oapi-codegen-extra-tags:
             mapstructure: "port_map"
+        index:
+          type: string
+          example: "/"
+          x-oapi-codegen-extra-tags:
+            mapstructure: "index"
         envs:
           type: array
           items:
             $ref: "#/components/schemas/EnvStoreInfo"
+        ports:
+          type: array
+          items:
+            $ref: "#/components/schemas/PortStoreInfo"
+        volumes:
+          type: array
+          items:
+            $ref: "#/components/schemas/VolumeStoreInfo"
 
     EnvStoreInfo:
       properties:
@@ -283,7 +335,57 @@ components:
           x-oapi-codegen-extra-tags:
             mapstructure: "description"
         configurable:
-          type: boolean
-          example: false
+          $ref: "#/components/schemas/Configurable"
+
+    PortStoreInfo:
+      properties:
+        container:
+          type: string
+          example: 8384
           x-oapi-codegen-extra-tags:
-            mapstructure: "configurable"
+            mapstructure: "container"
+        protocol:
+          type: string
+          enum:
+            - tcp
+            - udp
+          x-oapi-codegen-extra-tags:
+            mapstructure: "protocol"
+        description:
+          type: object
+          additionalProperties:
+            type: string
+          example:
+            en_US: Web UI
+          x-oapi-codegen-extra-tags:
+            mapstructure: "description"
+        configurable:
+          $ref: "#/components/schemas/Configurable"
+
+    VolumeStoreInfo:
+      properties:
+        container:
+          type: string
+          example: /config
+          x-oapi-codegen-extra-tags:
+            mapstructure: "container"
+        description:
+          type: object
+          additionalProperties:
+            type: string
+          example:
+            en_US: Syncthing config directory
+          x-oapi-codegen-extra-tags:
+            mapstructure: "description"
+        configurable:
+          $ref: "#/components/schemas/Configurable"
+
+    Configurable:
+      type: string
+      enum:
+        - yes
+        - no
+        - basic
+        - advanced
+      x-oapi-codegen-extra-tags:
+        mapstructure: "configurable"
