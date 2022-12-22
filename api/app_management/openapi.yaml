@@ -67,9 +67,9 @@ x-tagGroups:
 
   - name: Schemas
     tags:
+      - AppStoreInfo
       - ComposeAppStoreInfo
       - ComposeAppStoreInfoDetails
-      - AppStoreInfo
       - ContainerStoreInfo
       - EnvStoreInfo
       - PortStoreInfo
