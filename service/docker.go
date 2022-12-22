@@ -11,6 +11,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/labstack/echo/v4"
 	"github.com/pkg/errors"
 	"github.com/samber/lo"
 	"go.uber.org/zap"
@@ -172,22 +173,33 @@ func (ds *dockerService) GetContainerStats() []model.DockerStatsModel {
 func (ds *dockerService) CheckContainerHealth(id string) (bool, error) {
 	container, err := ds.GetContainer(id)
 	if err != nil {
+		logger.Error("failed to get container by id", zap.Error(err), zap.String("id", id))
 		return false, err
 	}
 
 	if webUIPort, ok := container.Labels["web"]; ok {
-		response, err := httpUtil.Get(fmt.Sprintf("http://%s:%s", common.Localhost, webUIPort), 30*time.Second)
+		url := fmt.Sprintf("http://%s:%s", common.Localhost, webUIPort)
+
+		logger.Info("checking container health at the specified web port...", zap.Any("name", container.Names), zap.String("id", id), zap.Any("url", url))
+
+		response, err := httpUtil.GetWithHeader(url, 30*time.Second, map[string]string{
+			echo.HeaderAccept: echo.MIMETextHTML, // emulate a browser
+		})
 		if err != nil {
+			logger.Error("failed to check container health", zap.Error(err), zap.Any("name", container.Names), zap.String("id", id))
 			return false, err
 		}
 
 		if response.StatusCode >= 200 && response.StatusCode < 300 {
+			logger.Info("container health check passed at the specified web port", zap.Any("name", container.Names), zap.String("id", id), zap.Any("url", url))
 			return true, nil
 		}
 
+		logger.Error("container health check failed at the specified web port", zap.Any("name", container.Names), zap.String("id", id), zap.Any("url", url), zap.String("status", response.Status))
 		return false, errors.New(response.Status)
 	}
 
+	logger.Error("container health check failed, no web port specified", zap.Any("name", container.Names), zap.String("id", id))
 	return false, errors.New("no web port")
 }
 
