@@ -143,11 +143,13 @@ components:
 
   responses:
     ResponseInternalServerError:
-      description: (TODO)
+      description: Internal Server Error
       content:
         application/json:
           schema:
             $ref: "#/components/schemas/BaseResponse"
+          example:
+            message: "Internal Server Error"
 
     ResponseNotFound:
       description: Not Found
