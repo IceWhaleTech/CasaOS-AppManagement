@@ -217,3 +217,73 @@ components:
             en_US: Syncthing
           x-oapi-codegen-extra-tags:
             mapstructure: "title"
+        description:
+          type: object
+          additionalProperties:
+            type: string
+          example:
+            en_US: Syncthing is a continuous file synchronization program. It synchronizes files between two or more computers in real time, safely protected from prying eyes. Your data is your data alone and you deserve to choose where it is stored, whether it is shared with some third party, and how it's transmitted over the internet.
+          x-oapi-codegen-extra-tags:
+            mapstructure: "description"
+        tagline:
+          type: object
+          additionalProperties:
+            type: string
+          example:
+            en_US: Free, secure, and distributed file synchronisation tool.
+          x-oapi-codegen-extra-tags:
+            mapstructure: "tagline"
+        icon:
+          type: string
+          example: https://cdn.jsdelivr.net/gh/IceWhaleTech/CasaOS-AppStore@main/Apps/Syncthing/icon.png
+          x-oapi-codegen-extra-tags:
+            mapstructure: "icon"
+        screenshot_link:
+          type: array
+          items:
+            type: string
+          example:
+            - https://cdn.jsdelivr.net/gh/IceWhaleTech/CasaOS-AppStore@main/Apps/OpenSpeedTest/screenshot-1.png
+            - https://cdn.jsdelivr.net/gh/IceWhaleTech/CasaOS-AppStore@main/Apps/OpenSpeedTest/screenshot-2.png
+          x-oapi-codegen-extra-tags:
+            mapstructure: "screenshot_link"
+        category:
+          type: string
+          example: Backup
+          x-oapi-codegen-extra-tags:
+            mapstructure: "category"
+        container:
+          $ref: "#/components/schemas/ContainerStoreInfo"
+
+    ContainerStoreInfo:
+      properties:
+        port_map:
+          type: string
+          example: "8384"
+          x-oapi-codegen-extra-tags:
+            mapstructure: "port_map"
+        envs:
+          type: array
+          items:
+            $ref: "#/components/schemas/EnvStoreInfo"
+
+    EnvStoreInfo:
+      properties:
+        container:
+          type: string
+          example: TZ
+          x-oapi-codegen-extra-tags:
+            mapstructure: "container"
+        description:
+          type: object
+          additionalProperties:
+            type: string
+          example:
+            en_US: Time Zone
+          x-oapi-codegen-extra-tags:
+            mapstructure: "description"
+        configurable:
+          type: boolean
+          example: false
+          x-oapi-codegen-extra-tags:
+            mapstructure: "configurable"
