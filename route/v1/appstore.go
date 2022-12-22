@@ -76,14 +76,16 @@ func AppInfo(c *gin.Context) {
 	}
 	if info.NetworkModel != "host" {
 		for i := 0; i < len(info.Ports); i++ {
-			if p, _ := strconv.Atoi(info.Ports[i].ContainerPort); port.IsPortAvailable(p, info.Ports[i].Protocol) {
+			protocol := strings.ToLower(info.Ports[i].Protocol)
+
+			if p, _ := strconv.Atoi(info.Ports[i].ContainerPort); port.IsPortAvailable(p, protocol) {
 				info.Ports[i].CommendPort = strconv.Itoa(p)
 			} else {
-				if info.Ports[i].Protocol == "tcp" {
+				if protocol == "tcp" {
 					if p, err := port.GetAvailablePort("tcp"); err == nil {
 						info.Ports[i].CommendPort = strconv.Itoa(p)
 					}
-				} else if info.Ports[i].Protocol == "upd" {
+				} else if protocol == "upd" {
 					if p, err := port.GetAvailablePort("udp"); err == nil {
 						info.Ports[i].CommendPort = strconv.Itoa(p)
 					}
