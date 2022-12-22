@@ -44,7 +44,7 @@ services:
           - container: TZ
             configurable: "no"
             description:
-              en_US: Timezone
+              en_US: Time Zone
           - container: PUID
             configurable: "no"
             description:

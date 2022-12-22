@@ -6,6 +6,8 @@ import (
 
 type AppManagement struct{}
 
+const MIMEApplicationYAML = "application/yaml"
+
 func NewAppManagement() codegen.ServerInterface {
 	return &AppManagement{}
 }
