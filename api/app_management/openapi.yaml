@@ -130,17 +130,21 @@ components:
   parameters:
     AppStoreID:
       name: id
+      description: App ID in the AppStore
       in: path
       required: true
       schema:
         type: string
+        example: "e4380876-d759-4b26-af1f-968a4606d399"
 
     ContainerID:
       name: id
+      description: Container ID in the Docker runtime
       in: path
       required: true
       schema:
         type: string
+      example: 09e70f4a7dd3fc43de6a1bc40d45c79f857544e13679e5b1a47409034a7ce621
 
   responses:
     ResponseInternalServerError:
