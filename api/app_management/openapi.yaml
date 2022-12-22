@@ -30,6 +30,10 @@ tags:
     description: |-
       methods for managing app lifecycle
 
+  - name: AppStoreInfo
+    description: |-
+      <SchemaDefinition schemaRef="#/components/schemas/AppStoreInfo" />
+
   - name: ComposeAppStoreInfo
     description: |-
       <SchemaDefinition schemaRef="#/components/schemas/ComposeAppStoreInfo" />
@@ -37,10 +41,6 @@ tags:
   - name: ComposeAppStoreInfoDetails
     description: |-
       <SchemaDefinition schemaRef="#/components/schemas/ComposeAppStoreInfoDetails" />
-
-  - name: AppStoreInfo
-    description: |-
-      <SchemaDefinition schemaRef="#/components/schemas/AppStoreInfo" />
 
   - name: ContainerStoreInfo
     description: |-
