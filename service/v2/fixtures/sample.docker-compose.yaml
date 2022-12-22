@@ -42,46 +42,46 @@ services:
         index: "/"
         envs:
           - container: TZ
-            configurable: false
+            configurable: "no"
             description:
               en_US: Timezone
           - container: PUID
-            configurable: false
+            configurable: "no"
             description:
               en_US: Run Syncthing as specified uid.
           - container: PGID
-            configurable: false
+            configurable: "no"
             description:
               en_US: Run Syncthing as specified gid.
         ports:
-          - container: 8384
+          - container: "8384"
             protocol: tcp
             allocation: preferred
             configurable: advanced
             description:
               en_US: WebUI HTTP Port
-          - container: 22000
+          - container: "22000"
             protocol: tcp
             allocation: required
-            configurable: no
+            configurable: "no"
             description:
               en_US: Syncthing listening port (TCP)
-          - container: 22000
+          - container: "22000"
             protocol: udp
             allocation: required
-            configurable: no
+            configurable: "no"
             description:
               en_US: Syncthing listening port (UDP)
-          - container: 21027
+          - container: "21027"
             protocol: udp
             allocation: optional
-            configurable: no
+            configurable: "no"
             description:
               en_US: Syncthing protocol discovery port
         volumes:
           - container: /config
             allocation: automatic
-            configurable: no
+            configurable: "no"
             description:
               en_US: Syncthing configuration directory
           - container: /DATA
