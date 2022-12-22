@@ -436,13 +436,15 @@ func (ds *dockerService) CreateContainer(m model.CustomizationPostData, id strin
 	portMaps := make(nat.PortMap)
 
 	for _, portMap := range m.Ports {
-		if !lo.Contains([]string{"tcp", "udp", "both"}, portMap.Protocol) {
+		protocol := strings.ToLower(portMap.Protocol)
+
+		if !lo.Contains([]string{"tcp", "udp", "both"}, protocol) {
 			message := "unknown protocol"
-			logger.Error(message, zap.String("protocol", portMap.Protocol))
+			logger.Error(message, zap.String("protocol", protocol))
 			return "", errors.New(message)
 		}
 
-		protocols := strings.Replace(portMap.Protocol, "both", "tcp,udp", -1)
+		protocols := strings.Replace(protocol, "both", "tcp,udp", -1)
 		for _, p := range strings.Split(protocols, ",") {
 			tContainer, _ := strconv.Atoi(portMap.ContainerPort)
 			if tContainer > 0 {

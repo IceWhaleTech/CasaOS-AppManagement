@@ -315,13 +315,14 @@ func InstallApp(c *gin.Context) {
 	}
 	m.Image = dockerImage + ":" + dockerImageVersion
 	for _, u := range m.Ports {
+		protocol := strings.ToLower(u.Protocol)
 
-		if !lo.Contains([]string{"tcp", "udp", "both"}, u.Protocol) {
+		if !lo.Contains([]string{"tcp", "udp", "both"}, protocol) {
 			c.JSON(http.StatusBadRequest, modelCommon.Result{Success: common_err.INVALID_PARAMS, Message: "Protocol must be tcp or udp or both"})
 			return
 		}
 
-		protocols := strings.Replace(u.Protocol, "both", "tcp,udp", -1)
+		protocols := strings.Replace(protocol, "both", "tcp,udp", -1)
 		for _, p := range strings.Split(protocols, ",") {
 			t, err := strconv.Atoi(u.CommendPort)
 			if err != nil {
@@ -625,7 +626,9 @@ func UpdateSetting(c *gin.Context) {
 	}
 
 	for _, u := range m.Ports {
-		if !lo.Contains([]string{"tcp", "udp", "both"}, u.Protocol) {
+		protocol := strings.ToLower(u.Protocol)
+
+		if !lo.Contains([]string{"tcp", "udp", "both"}, protocol) {
 			c.JSON(http.StatusBadRequest, modelCommon.Result{Success: common_err.INVALID_PARAMS, Message: "protocol should be tcp, udp or both"})
 			return
 		}
@@ -770,7 +773,7 @@ func ContainerUpdateInfo(c *gin.Context) {
 			CommendPort:   v[0].HostPort,
 			ContainerPort: k.Port(),
 
-			Protocol: k.Proto(),
+			Protocol: strings.ToLower(k.Proto()),
 		}
 		port = append(port, temp)
 	}
