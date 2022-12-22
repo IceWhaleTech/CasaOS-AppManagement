@@ -73,6 +73,7 @@ x-tagGroups:
       - ContainerStoreInfo
       - EnvStoreInfo
       - PortStoreInfo
+      - VolumeStoreInfo
 
 security:
   - access_token: []
