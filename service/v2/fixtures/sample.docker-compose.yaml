@@ -29,10 +29,10 @@ services:
       icon: "https://cdn.jsdelivr.net/gh/IceWhaleTech/CasaOS-AppStore@main/Apps/Syncthing/icon.png"
       tagline:
         en_US: Free, secure, and distributed file synchronisation tool.
-      overview:
+      description:
         en_US: Syncthing is a continuous file synchronization program. It synchronizes files between two or more computers in real time, safely protected from prying eyes. Your data is your data alone and you deserve to choose where it is stored, whether it is shared with some third party, and how it's transmitted over the internet.
       thumbnail: https://cdn.jsdelivr.net/gh/IceWhaleTech/CasaOS-AppStore@main/Apps/Jellyfin/thumbnail.jpg
-      screenshots: []
+      screenshot_link: []
       category:
         - Backup
         - File Sync
@@ -46,19 +46,18 @@ services:
       website: https://casaos.io
       container:
         shell: bash
-        web_ui:
-          http: 8384
-          path: /
+        port_map: "8384"
+        index: "/"
         envs:
-          - key: TZ
+          - container: TZ
             configurable: false
             description:
               en_US: Timezone
-          - key: PUID
+          - container: PUID
             configurable: false
             description:
               en_US: Run Syncthing as specified uid.
-          - key: PGID
+          - container: PGID
             configurable: false
             description:
               en_US: Run Syncthing as specified gid.
