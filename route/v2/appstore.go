@@ -10,7 +10,11 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-func (*AppManagement) GetAppInfo(ctx echo.Context, id codegen.AppStoreID) error {
+func (*AppManagement) AppList(ctx echo.Context) error {
+	return ctx.JSON(http.StatusOK, codegen.ComposeAppStoreListOK{})
+}
+
+func (*AppManagement) AppInfo(ctx echo.Context, id codegen.AppStoreID) error {
 	composeApp := service.MyService.V2AppStore().ComposeApp(id)
 
 	if composeApp == nil {
