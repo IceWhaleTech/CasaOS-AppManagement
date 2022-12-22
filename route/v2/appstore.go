@@ -6,6 +6,7 @@ import (
 	"github.com/IceWhaleTech/CasaOS-AppManagement/codegen"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/service"
 	"github.com/IceWhaleTech/CasaOS-Common/utils"
+	"github.com/compose-spec/compose-go/types"
 	"github.com/labstack/echo/v4"
 )
 
@@ -55,6 +56,7 @@ func (*AppManagement) GetAppInfo(ctx echo.Context, id codegen.AppStoreID) error 
 			AppStoreID: storeInfo.AppStoreID,
 			MainApp:    storeInfo.MainApp,
 			Apps:       &apps,
+			Compose:    (*types.Project)(composeApp),
 		},
 	})
 }

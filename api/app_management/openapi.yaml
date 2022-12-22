@@ -239,12 +239,18 @@ components:
         - $ref: "#/components/schemas/ComposeAppStoreInfo"
         - type: object
           properties:
+            compose:
+              type: object
+              x-go-type: types.Project
+              x-go-type-import:
+                name: types
+                path: github.com/compose-spec/compose-go/types
             apps:
               type: object
               additionalProperties:
                 $ref: "#/components/schemas/AppStoreInfo"
               example:
-                syncthing: { "(AppStoreInfo schema here)": ... }
+                syncthing: {}
 
     AppStoreInfo:
       type: object
