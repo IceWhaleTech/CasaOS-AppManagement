@@ -18,3 +18,8 @@ func (a *App) StoreInfo() (*codegen.AppStoreInfo, error) {
 	}
 	return nil, ErrYAMLExtensionNotFound
 }
+
+func (a *App) State() error {
+	// TODO implement installation state
+	return nil
+}
