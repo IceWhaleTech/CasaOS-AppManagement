@@ -5,4 +5,6 @@ const (
 
 	AppManagementVersion     = "0.4.1"
 	AppManagementServiceName = "app-management"
+
+	ContainerLabelV1AppStoreID = "io.casaos.v1.app.store.id"
 )

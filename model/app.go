@@ -1,7 +1,6 @@
 package model
 
 import (
-	"database/sql/driver"
 	"time"
 )
 
@@ -69,21 +68,22 @@ type ServerAppList struct {
 }
 
 type MyAppList struct {
-	ID       string `json:"id"`
-	Name     string `json:"name"`
-	Icon     string `json:"icon"`
-	State    string `json:"state"`
-	CustomID string `gorm:"column:custom_id;primary_key" json:"custom_id"`
-	Index    string `json:"index"`
-	Port     string `json:"port"`
-	Slogan   string `json:"slogan"`
-	Type     string `json:"type"`
-	Image    string `json:"image"`
-	Volumes  string `json:"volumes"`
-	Latest   bool   `json:"latest"`
-	Host     string `json:"host"`
-	Protocol string `json:"protocol"`
-	Created  int64  `json:"created"`
+	ID         string `json:"id"`
+	Name       string `json:"name"`
+	Icon       string `json:"icon"`
+	State      string `json:"state"`
+	CustomID   string `gorm:"column:custom_id;primary_key" json:"custom_id"`
+	Index      string `json:"index"`
+	Port       string `json:"port"`
+	Slogan     string `json:"slogan"`
+	Type       string `json:"type"`
+	Image      string `json:"image"`
+	Volumes    string `json:"volumes"`
+	Latest     bool   `json:"latest"`
+	Host       string `json:"host"`
+	Protocol   string `json:"protocol"`
+	Created    int64  `json:"created"`
+	AppStoreID uint   `json:"appstore_id"`
 }
 
 type Ports struct {
@@ -114,30 +114,6 @@ type Devices struct {
 	Type          int    `json:"type"` //  1:必选 2:可选 3:默认值不必显示 4:系统处理 5:container内容也可编辑
 }
 
-/****************使gorm支持[]string结构*******************/
 type Strings []string
 
-func (c Strings) Value() (driver.Value, error) {
-	b, err := json.Marshal(c)
-	return string(b), err
-}
-
-func (c *Strings) Scan(input interface{}) error {
-	return json.Unmarshal(input.([]byte), c)
-}
-
-/****************使gorm支持[]string结构*******************/
-
-/****************使gorm支持[]string结构*******************/
 type MapStrings []map[string]string
-
-func (c MapStrings) Value() (driver.Value, error) {
-	b, err := json.Marshal(c)
-	return string(b), err
-}
-
-func (c *MapStrings) Scan(input interface{}) error {
-	return json.Unmarshal(input.([]byte), c)
-}
-
-/****************使gorm支持[]string结构*******************/

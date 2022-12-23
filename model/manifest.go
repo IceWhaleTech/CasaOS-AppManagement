@@ -133,4 +133,5 @@ type CustomizationPostData struct {
 	Cmd         []string `json:"cmd"`
 	Protocol    string   `json:"protocol"`
 	Host        string   `json:"host"`
+	AppStoreID  uint     `json:"appstore_id"`
 }
