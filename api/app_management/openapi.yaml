@@ -34,13 +34,17 @@ tags:
     description: |-
       <SchemaDefinition schemaRef="#/components/schemas/AppStoreInfo" />
 
+  - name: ComposeApp
+    description: |-
+      <SchemaDefinition schemaRef="#/components/schemas/ComposeApp" />
+
+  - name: ComposeAppStoreInfoLists
+    description: |-
+      <SchemaDefinition schemaRef="#/components/schemas/ComposeAppStoreInfoLists" />
+
   - name: ComposeAppStoreInfo
     description: |-
       <SchemaDefinition schemaRef="#/components/schemas/ComposeAppStoreInfo" />
-
-  - name: ComposeAppStoreInfoDetails
-    description: |-
-      <SchemaDefinition schemaRef="#/components/schemas/ComposeAppStoreInfoDetails" />
 
   - name: ContainerStoreInfo
     description: |-
@@ -68,8 +72,9 @@ x-tagGroups:
   - name: Schemas
     tags:
       - AppStoreInfo
+      - ComposeApp
+      - ComposeAppStoreInfoLists
       - ComposeAppStoreInfo
-      - ComposeAppStoreInfoDetails
       - ContainerStoreInfo
       - EnvStoreInfo
       - PortStoreInfo
@@ -90,7 +95,7 @@ paths:
 
       responses:
         "200":
-          $ref: "#/components/responses/ComposeAppStoreListOK"
+          $ref: "#/components/responses/ComposeAppStoreInfoListsOK"
         "500":
           $ref: "#/components/responses/ResponseInternalServerError"
 
@@ -98,15 +103,10 @@ paths:
     get:
       summary: Get app info
       description: |
-        Accept both `application/json` and `application/yaml` content type for the `Accept` header in the HTTP request.
-
-        - If the `Accept` header is set to `application/yaml`, the response will be the original [Docker Compose](https://docs.docker.com/compose/) content.
-        - Otherwise the `Accept` header is assumed to be `application/json` and the response will be provided in the schema described below.
-
+        (TODO)
       operationId: appInfo
       tags:
         - AppStore methods
-
       parameters:
         - $ref: "#/components/parameters/AppStoreID"
       responses:
@@ -116,6 +116,27 @@ paths:
           $ref: "#/components/responses/ResponseNotFound"
         "500":
           $ref: "#/components/responses/ResponseInternalServerError"
+
+  /apps/{id}/compose:
+    get:
+      summary: Get app compose details
+      description: |
+        Accept both `application/json` and `application/yaml` content type for the `Accept` header in the HTTP request.
+
+        If the `Accept` header is set to `application/yaml`, the response will be the original `docker-compose.yml` content that follows [Compose Specification](https://compose-spec.io).
+      operationId: appCompose
+      tags:
+        - AppStore methods
+      parameters:
+        - $ref: "#/components/parameters/AppStoreID"
+      responses:
+        "200":
+          $ref: "#/components/responses/ComposeAppOK"
+        "404":
+          $ref: "#/components/responses/ResponseNotFound"
+        "500":
+          $ref: "#/components/responses/ResponseInternalServerError"
+
 
   /container/{id}/healthcheck:
     get:
@@ -198,13 +219,16 @@ components:
           example:
             message: "Service Unavailable"
 
-    ComposeAppStoreListOK:
+    ComposeAppStoreInfoListsOK:
       description: OK
       content:
         application/json:
           schema:
             allOf:
               - $ref: "#/components/schemas/BaseResponse"
+              - properties:
+                  data:
+                    $ref: "#/components/schemas/ComposeAppStoreInfoLists"
 
     ComposeAppStoreInfoOK:
       description: OK
@@ -215,8 +239,18 @@ components:
               - $ref: "#/components/schemas/BaseResponse"
               - properties:
                   data:
-                    $ref: "#/components/schemas/ComposeAppStoreInfoDetails"
+                    $ref: "#/components/schemas/ComposeAppStoreInfo"
 
+    ComposeAppOK:
+      description: OK
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: "#/components/schemas/BaseResponse"
+              - properties:
+                  data:
+                    $ref: "#/components/schemas/ComposeApp"
         application/yaml:
           schema:
             type: string
@@ -239,8 +273,22 @@ components:
           type: string
           example: ""
 
+    ComposeAppStoreInfoLists:
+      properties:
+        recommend:
+          type: array
+          items:
+            $ref: "#/components/schemas/ComposeAppStoreInfo"
+        list:
+          type: array
+          items:
+            $ref: "#/components/schemas/ComposeAppStoreInfo"
+        community:
+          type: array
+          items:
+            $ref: "#/components/schemas/ComposeAppStoreInfo"
+
     ComposeAppStoreInfo:
-      type: object
       required:
         - appstore_id
       properties:
@@ -255,28 +303,24 @@ components:
           example: "syncthing"
           x-oapi-codegen-extra-tags:
             mapstructure: "main_app"
+        apps:
+          type: object
+          additionalProperties:
+            $ref: "#/components/schemas/AppStoreInfo"
+          example:
+            syncthing: {}
 
-    ComposeAppStoreInfoDetails:
+    ComposeApp:
       type: object
-      allOf:
-        - $ref: "#/components/schemas/ComposeAppStoreInfo"
-        - type: object
-          properties:
-            compose:
-              type: object
-              x-go-type: types.Project
-              x-go-type-import:
-                name: types
-                path: github.com/compose-spec/compose-go/types
-            apps:
-              type: object
-              additionalProperties:
-                $ref: "#/components/schemas/AppStoreInfo"
-              example:
-                syncthing: {}
+      description: |-
+        See [Compose Specification](https://compose-spec.io) for the schema structure.
+
+      x-go-type: types.Project
+      x-go-type-import:
+        name: types
+        path: github.com/compose-spec/compose-go/types
 
     AppStoreInfo:
-      type: object
       required:
         - title
       properties:
