@@ -165,8 +165,8 @@ func (a *AppFile) ComposeAppStoreInfo() *codegen.ComposeAppStoreInfo {
 
 func (a *AppFile) ComposeApp() *types.Project {
 	environment := make(map[string]*string, len(a.Container.Envs))
-	for _, env := range a.Container.Envs {
-		environment[env.Key] = &env.Value
+	for i, env := range a.Container.Envs {
+		environment[env.Key] = &a.Container.Envs[i].Value
 	}
 
 	ports := make([]types.ServicePortConfig, len(a.Container.Ports))
@@ -198,6 +198,7 @@ func (a *AppFile) ComposeApp() *types.Project {
 	}
 
 	services := []types.ServiceConfig{{
+		Name:           a.Name,
 		Image:          a.Container.Image,
 		Privileged:     a.Container.Privileged,
 		NetworkMode:    a.Container.NetworkModel,
