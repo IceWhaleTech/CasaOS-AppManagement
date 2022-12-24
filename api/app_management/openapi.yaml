@@ -456,6 +456,7 @@ components:
         - container
         - protocol
         - description
+        - configurable
       properties:
         container:
           type: string
