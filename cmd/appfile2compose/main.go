@@ -7,7 +7,6 @@ import (
 
 	"github.com/IceWhaleTech/CasaOS-AppManagement/common"
 	"github.com/IceWhaleTech/CasaOS-Common/utils"
-	"github.com/compose-spec/compose-go/types"
 )
 
 var (
@@ -53,14 +52,14 @@ func main() {
 
 	composeApp := appFile.ComposeApp()
 
-	composeYAML := YAML(composeApp)
+	composeYAML, err := YAML(composeApp)
+	if err != nil {
+		logger.Error("failed to marshal docker-compose.yml: %s", err)
+		os.Exit(1)
+	}
 
 	if err := os.WriteFile(*outputFlag, composeYAML, 0o600); err != nil {
 		logger.Error("failed to write docker-compose.yml: %s", err)
 		os.Exit(1)
 	}
-}
-
-func YAML(composeApp *types.Project) []byte {
-	panic("implement me")
 }
