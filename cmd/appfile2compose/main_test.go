@@ -4,6 +4,8 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/compose-spec/compose-go/loader"
+	"github.com/compose-spec/compose-go/types"
 	"gotest.tools/v3/assert"
 )
 
@@ -17,6 +19,15 @@ func TestMain(t *testing.T) {
 	composeYAML, err := YAML(composeApp)
 	assert.NilError(t, err)
 
-	output := string(composeYAML)
-	assert.Assert(t, len(output) > 0)
+	project, err := loader.Load(types.ConfigDetails{
+		ConfigFiles: []types.ConfigFile{
+			{
+				Content: composeYAML,
+			},
+		},
+		Environment: map[string]string{},
+	})
+	assert.NilError(t, err)
+
+	assert.Equal(t, project.Name, "jellyfin")
 }

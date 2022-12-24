@@ -186,6 +186,7 @@ func (a *AppFile) ComposeApp() *types.Project {
 	volumes := make([]types.ServiceVolumeConfig, len(a.Container.Volumes))
 	for i, volume := range a.Container.Volumes {
 		volumes[i] = types.ServiceVolumeConfig{
+			Type:     "bind",
 			Target:   volume.Container,
 			Source:   volume.Host,
 			ReadOnly: strings.ToLower(volume.Mode) == "ro",
