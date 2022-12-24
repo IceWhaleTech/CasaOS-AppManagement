@@ -115,6 +115,25 @@ func (a *AppFile) AppStoreInfo() *codegen.AppStoreInfo {
 		}
 	}
 
+	ports := make([]codegen.PortStoreInfo, len(a.Container.Ports))
+	for i, port := range a.Container.Ports {
+		ports[i] = codegen.PortStoreInfo{
+			Container:    port.Container,
+			Protocol:     codegen.PortStoreInfoProtocol(port.Type),
+			Description:  langTextMap(port.Description),
+			Configurable: codegen.Configurable(port.Configurable),
+		}
+	}
+
+	volumes := make([]codegen.VolumeStoreInfo, len(a.Container.Volumes))
+	for i, volume := range a.Container.Volumes {
+		volumes[i] = codegen.VolumeStoreInfo{
+			Container:    volume.Container,
+			Description:  langTextMap(volume.Description),
+			Configurable: codegen.Configurable(volume.Configurable),
+		}
+	}
+
 	appStoreInfo := &codegen.AppStoreInfo{
 		Author:   a.Adaptor.Name,
 		Category: a.Category[0],
@@ -122,11 +141,9 @@ func (a *AppFile) AppStoreInfo() *codegen.AppStoreInfo {
 			PortMap: a.Container.WebUI.HTTP,
 			Index:   a.Container.WebUI.Path,
 			Shell:   lo.If(a.Container.Shell != "", &a.Container.Shell).Else(nil),
-			Envs: []codegen.EnvStoreInfo{
-				{},
-			},
-			Ports:   []codegen.PortStoreInfo{},
-			Volumes: []codegen.VolumeStoreInfo{},
+			Envs:    envs,
+			Ports:   ports,
+			Volumes: volumes,
 		},
 		Description:    langTextMap(a.Overview),
 		Developer:      a.Developer.Name,
