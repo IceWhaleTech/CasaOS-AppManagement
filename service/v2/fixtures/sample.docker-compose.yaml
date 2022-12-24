@@ -20,6 +20,8 @@ services:
     volumes:
       - /DATA/AppData/Syncthing/config:/config:rw
       - /DATA:/DATA:rw
+    devices:
+      - /dev/dri:/dev/dri
     mem_reservation: 256m
     restart: unless-stopped
 

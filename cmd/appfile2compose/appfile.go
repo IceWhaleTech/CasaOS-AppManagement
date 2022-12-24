@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"strconv"
+	"strings"
 
 	"github.com/IceWhaleTech/CasaOS-AppManagement/codegen"
 	"github.com/compose-spec/compose-go/types"
@@ -185,38 +186,32 @@ func (a *AppFile) ComposeApp() *types.Project {
 	volumes := make([]types.ServiceVolumeConfig, len(a.Container.Volumes))
 	for i, volume := range a.Container.Volumes {
 		volumes[i] = types.ServiceVolumeConfig{
-			Source: volume.Host,
-			Target: volume.Container,
-			// TODO
+			Target:   volume.Container,
+			Source:   volume.Host,
+			ReadOnly: strings.ToLower(volume.Mode) == "ro",
 		}
 	}
 
-	services := []types.ServiceConfig{{
-		Image:       a.Container.Image,
-		Privileged:  a.Container.Privileged,
-		NetworkMode: a.Container.NetworkModel,
-		Environment: environment,
-		Ports:       ports,
-		Volumes:     volumes,
-	}}
+	devices := make([]string, len(a.Container.Devices))
+	for i, device := range a.Container.Devices {
+		devices[i] = device.Host + ":" + device.Container
+	}
 
-	// TODO
+	services := []types.ServiceConfig{{
+		Image:          a.Container.Image,
+		Privileged:     a.Container.Privileged,
+		NetworkMode:    a.Container.NetworkModel,
+		Environment:    environment,
+		Ports:          ports,
+		Volumes:        volumes,
+		Devices:        devices,
+		MemReservation: types.UnitBytes(a.Container.Constraints.MinMemory * 1024 * 1024),
+		Restart:        a.Container.RestartPolicy,
+	}}
 
 	composeApp := &types.Project{
 		Name:     a.Name,
 		Services: services,
-		Networks: map[string]types.NetworkConfig{
-			// TODO
-		},
-		Volumes: map[string]types.VolumeConfig{
-			// TODO
-		},
-		Secrets: map[string]types.SecretConfig{
-			// TODO
-		},
-		Configs: map[string]types.ConfigObjConfig{
-			// TODO
-		},
 	}
 
 	return composeApp
