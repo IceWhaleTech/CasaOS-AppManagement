@@ -62,6 +62,10 @@ tags:
     description: |-
       <SchemaDefinition schemaRef="#/components/schemas/VolumeStoreInfo" />
 
+  - name: DeviceStoreInfo
+    description: |-
+      <SchemaDefinition schemaRef="#/components/schemas/DeviceStoreInfo" />
+
 x-tagGroups:
   - name: Methods
     tags:
@@ -79,6 +83,7 @@ x-tagGroups:
       - EnvStoreInfo
       - PortStoreInfo
       - VolumeStoreInfo
+      - DeviceStoreInfo
 
 security:
   - access_token: []
@@ -400,6 +405,7 @@ components:
         - port_map
         - ports
         - volumes
+        - devices
       properties:
         port_map:
           type: string
@@ -423,6 +429,10 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/VolumeStoreInfo"
+        devices:
+          type: array
+          items:
+            $ref: "#/components/schemas/DeviceStoreInfo"
         shell:
           type: string
           example: "/bin/sh"
@@ -498,6 +508,24 @@ components:
             type: string
           example:
             en_US: Syncthing config directory
+          x-oapi-codegen-extra-tags:
+            mapstructure: "description"
+        configurable:
+          $ref: "#/components/schemas/Configurable"
+
+    DeviceStoreInfo:
+      properties:
+        container:
+          type: string
+          example: /dev/dri
+          x-oapi-codegen-extra-tags:
+            mapstructure: "container"
+        description:
+          type: object
+          additionalProperties:
+            type: string
+          example:
+            en_US: GPU device
           x-oapi-codegen-extra-tags:
             mapstructure: "description"
         configurable:
