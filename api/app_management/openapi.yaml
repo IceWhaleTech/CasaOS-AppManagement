@@ -137,7 +137,6 @@ paths:
         "500":
           $ref: "#/components/responses/ResponseInternalServerError"
 
-
   /container/{id}/healthcheck:
     get:
       summary: Check if an app is running healthy
@@ -322,6 +321,15 @@ components:
 
     AppStoreInfo:
       required:
+        - author
+        - category
+        - container
+        - description
+        - developer
+        - icon
+        - screenshot_link
+        - tagline
+        - thumbnail
         - title
       properties:
         title:
@@ -386,6 +394,12 @@ components:
           $ref: "#/components/schemas/ContainerStoreInfo"
 
     ContainerStoreInfo:
+      required:
+        - envs
+        - index
+        - port_map
+        - ports
+        - volumes
       properties:
         port_map:
           type: string
@@ -409,8 +423,17 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/VolumeStoreInfo"
+        shell:
+          type: string
+          example: "/bin/sh"
+          x-oapi-codegen-extra-tags:
+            mapstructure: "shell"
 
     EnvStoreInfo:
+      required:
+        - container
+        - description
+        - configurable
       properties:
         container:
           type: string
@@ -429,6 +452,10 @@ components:
           $ref: "#/components/schemas/Configurable"
 
     PortStoreInfo:
+      required:
+        - container
+        - protocol
+        - description
       properties:
         container:
           type: string
@@ -454,6 +481,10 @@ components:
           $ref: "#/components/schemas/Configurable"
 
     VolumeStoreInfo:
+      required:
+        - container
+        - description
+        - configurable
       properties:
         container:
           type: string
