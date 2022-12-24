@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"io/ioutil"
+	"strconv"
 
 	"github.com/IceWhaleTech/CasaOS-AppManagement/codegen"
 	"github.com/compose-spec/compose-go/types"
@@ -162,16 +163,60 @@ func (a *AppFile) ComposeAppStoreInfo() *codegen.ComposeAppStoreInfo {
 }
 
 func (a *AppFile) ComposeApp() *types.Project {
-	environment := make(map[string]string, len(a.Container.Envs))
+	environment := make(map[string]*string, len(a.Container.Envs))
 	for _, env := range a.Container.Envs {
-		environment[env.Key] = env.Value
+		environment[env.Key] = &env.Value
 	}
 
-	// TODO: add volumes, ports, devices
+	ports := make([]types.ServicePortConfig, len(a.Container.Ports))
+	for i, port := range a.Container.Ports {
+		target, err := strconv.Atoi(port.Container)
+		if err != nil {
+			continue
+		}
+
+		ports[i] = types.ServicePortConfig{
+			Target:    uint32(target),
+			Published: port.Host,
+			Protocol:  port.Type,
+		}
+	}
+
+	volumes := make([]types.ServiceVolumeConfig, len(a.Container.Volumes))
+	for i, volume := range a.Container.Volumes {
+		volumes[i] = types.ServiceVolumeConfig{
+			Source: volume.Host,
+			Target: volume.Container,
+			// TODO
+		}
+	}
+
+	services := []types.ServiceConfig{{
+		Image:       a.Container.Image,
+		Privileged:  a.Container.Privileged,
+		NetworkMode: a.Container.NetworkModel,
+		Environment: environment,
+		Ports:       ports,
+		Volumes:     volumes,
+	}}
+
+	// TODO
 
 	composeApp := &types.Project{
-		Name:        a.Name,
-		Environment: environment,
+		Name:     a.Name,
+		Services: services,
+		Networks: map[string]types.NetworkConfig{
+			// TODO
+		},
+		Volumes: map[string]types.VolumeConfig{
+			// TODO
+		},
+		Secrets: map[string]types.SecretConfig{
+			// TODO
+		},
+		Configs: map[string]types.ConfigObjConfig{
+			// TODO
+		},
 	}
 
 	return composeApp
