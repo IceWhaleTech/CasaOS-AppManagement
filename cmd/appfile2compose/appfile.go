@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/IceWhaleTech/CasaOS-AppManagement/codegen"
+	"github.com/IceWhaleTech/CasaOS-AppManagement/common"
 	"github.com/compose-spec/compose-go/types"
 	"github.com/samber/lo"
 )
@@ -209,6 +210,9 @@ func (a *AppFile) ComposeApp() *types.Project {
 		Devices:        devices,
 		MemReservation: types.UnitBytes(a.Container.Constraints.MinMemory * 1024 * 1024),
 		Restart:        a.Container.RestartPolicy,
+		Extensions: map[string]interface{}{
+			common.ComposeYamlExtensionName: a.AppStoreInfo(),
+		},
 	}}
 
 	composeApp := &types.Project{

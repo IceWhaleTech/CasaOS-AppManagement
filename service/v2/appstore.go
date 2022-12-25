@@ -6,11 +6,10 @@ import (
 	_ "embed"
 
 	"github.com/IceWhaleTech/CasaOS-AppManagement/codegen"
+	"github.com/IceWhaleTech/CasaOS-AppManagement/common"
 	"github.com/compose-spec/compose-go/loader"
 	"github.com/compose-spec/compose-go/types"
 )
-
-const yamlExtensionName = "x-casaos"
 
 type AppStore struct {
 	catalog map[string]*ComposeApp
@@ -20,7 +19,7 @@ var (
 	//go:embed fixtures/sample.docker-compose.yaml
 	SampleComposeAppYAML string
 
-	ErrYAMLExtensionNotFound = fmt.Errorf("extension `%s` not found", yamlExtensionName)
+	ErrYAMLExtensionNotFound = fmt.Errorf("extension `%s` not found", common.ComposeYamlExtensionName)
 	ErrMainAppNotFound       = fmt.Errorf("main app not found")
 )
 
@@ -63,7 +62,7 @@ func tempStoreForTest() (map[string]*ComposeApp, error) {
 
 	project.Extensions["yaml"] = &SampleComposeAppYAML
 
-	if ex, ok := project.Extensions[yamlExtensionName]; ok {
+	if ex, ok := project.Extensions[common.ComposeYamlExtensionName]; ok {
 		var storeInfo codegen.ComposeAppStoreInfo
 		if err := loader.Transform(ex, &storeInfo); err != nil {
 			panic(err)
