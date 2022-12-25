@@ -2,6 +2,8 @@ package v2
 
 import (
 	"fmt"
+	"regexp"
+	"strings"
 
 	_ "embed"
 
@@ -9,6 +11,7 @@ import (
 	"github.com/IceWhaleTech/CasaOS-AppManagement/common"
 	"github.com/compose-spec/compose-go/loader"
 	"github.com/compose-spec/compose-go/types"
+	"github.com/google/uuid"
 )
 
 type AppStore struct {
@@ -68,11 +71,30 @@ func tempStoreForTest() (map[string]*ComposeApp, error) {
 			panic(err)
 		}
 
-		store[storeInfo.AppStoreID] = (*ComposeApp)(project)
+		// TODO - implement appstore id autogen
+		store[uuid.NewString()] = (*ComposeApp)(project)
 
 	} else {
 		return nil, ErrYAMLExtensionNotFound
 	}
 
 	return store, nil
+}
+
+var nonAlphaNumeric = regexp.MustCompile(`[^a-z0-9]+`)
+
+func Standardize(text string) string {
+	result := strings.ToLower(text)
+
+	// Replace any non-alphanumeric characters with a single hyphen
+	result = nonAlphaNumeric.ReplaceAllString(result, "-")
+
+	for strings.Contains(result, "--") {
+		result = strings.Replace(result, "--", "-", -1)
+	}
+
+	// Remove any leading or trailing hyphens
+	result = strings.Trim(result, "-")
+
+	return result
 }
