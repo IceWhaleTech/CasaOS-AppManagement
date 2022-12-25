@@ -123,6 +123,65 @@ builds:
       - arm
     goarm:
       - "7"
+  - id: casaos-app-management-appfile2compose-amd64
+    binary: build/sysroot/usr/bin/casaos-app-management-appfile2compose
+    main: ./cmd/appfile2compose
+    env:
+      - CC=x86_64-linux-gnu-gcc
+    gcflags:
+      - all=-N -l
+    ldflags:
+      - -X main.commit={{.Commit}}
+      - -X main.date={{.Date}}
+      - -extldflags "-static"
+    tags:
+      - musl
+      - netgo
+      - osusergo
+    goos:
+      - linux
+    goarch:
+      - amd64
+  - id: casaos-app-management-appfile2compose-arm64
+    binary: build/sysroot/usr/bin/casaos-app-management-appfile2compose
+    main: ./cmd/appfile2compose
+    env:
+      - CC=aarch64-linux-gnu-gcc
+    gcflags:
+      - all=-N -l
+    ldflags:
+      - -X main.commit={{.Commit}}
+      - -X main.date={{.Date}}
+      - -extldflags "-static"
+    tags:
+      - musl
+      - netgo
+      - osusergo
+    goos:
+      - linux
+    goarch:
+      - arm64
+  - id: casaos-app-management-appfile2compose-arm-7
+    binary: build/sysroot/usr/bin/casaos-app-management-appfile2compose
+    main: ./cmd/appfile2compose
+    env:
+      - CC=arm-linux-gnueabihf-gcc
+    gcflags:
+      - all=-N -l
+    ldflags:
+      - -X main.commit={{.Commit}}
+      - -X main.date={{.Date}}
+      - -extldflags "-static"
+    tags:
+      - musl
+      - netgo
+      - osusergo
+    goos:
+      - linux
+    goarch:
+      - arm
+    goarm:
+      - "7"
 archives:
   - name_template: "{{ .Os }}-{{ .Arch }}-{{ .ProjectName }}-v{{ .Version }}"
     id: casaos-app-management
