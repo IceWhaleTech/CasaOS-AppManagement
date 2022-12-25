@@ -6,6 +6,7 @@ import (
 
 	"github.com/compose-spec/compose-go/loader"
 	"github.com/compose-spec/compose-go/types"
+	"gopkg.in/yaml.v2"
 	"gotest.tools/v3/assert"
 )
 
@@ -16,7 +17,7 @@ func TestMain(t *testing.T) {
 	composeApp := appFile.ComposeApp()
 	assert.Equal(t, composeApp.Name, "jellyfin")
 
-	composeYAML, err := YAML(composeApp)
+	composeYAML, err := yaml.Marshal(composeApp)
 	assert.NilError(t, err)
 
 	project, err := loader.Load(types.ConfigDetails{

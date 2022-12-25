@@ -7,6 +7,7 @@ import (
 
 	"github.com/IceWhaleTech/CasaOS-AppManagement/common"
 	"github.com/IceWhaleTech/CasaOS-Common/utils"
+	"gopkg.in/yaml.v2"
 )
 
 var (
@@ -52,7 +53,7 @@ func main() {
 
 	composeApp := appFile.ComposeApp()
 
-	composeYAML, err := YAML(composeApp)
+	composeYAML, err := yaml.Marshal(composeApp)
 	if err != nil {
 		logger.Error("failed to marshal docker-compose.yml: %s", err)
 		os.Exit(1)
