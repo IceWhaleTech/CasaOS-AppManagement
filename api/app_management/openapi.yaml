@@ -293,26 +293,29 @@ components:
             $ref: "#/components/schemas/ComposeAppStoreInfo"
 
     ComposeAppStoreInfo:
-      required:
-        - appstore_id
       properties:
         appstore_id:
+          readOnly: true
           type: string
-          example: "e4380876-d759-4b26-af1f-968a4606d399"
+          example: "fix this" # TODO
           x-go-name: AppStoreID
           x-oapi-codegen-extra-tags:
             mapstructure: "appstore_id"
+            yaml: "appstore_id,omitempty"
         main_app:
           type: string
           example: "syncthing"
           x-oapi-codegen-extra-tags:
             mapstructure: "main_app"
+            yaml: "main_app"
         apps:
           type: object
           additionalProperties:
             $ref: "#/components/schemas/AppStoreInfo"
           example:
             syncthing: {}
+          x-oapi-codegen-extra-tags:
+            yaml: ",omitempty"
 
     ComposeApp:
       type: object
@@ -343,29 +346,21 @@ components:
             type: string
           example:
             en_US: Syncthing
-          x-oapi-codegen-extra-tags:
-            mapstructure: "title"
         description:
           type: object
           additionalProperties:
             type: string
           example:
             en_US: Syncthing is a continuous file synchronization program. It synchronizes files between two or more computers in real time, safely protected from prying eyes. Your data is your data alone and you deserve to choose where it is stored, whether it is shared with some third party, and how it's transmitted over the internet.
-          x-oapi-codegen-extra-tags:
-            mapstructure: "description"
         tagline:
           type: object
           additionalProperties:
             type: string
           example:
             en_US: Free, secure, and distributed file synchronisation tool.
-          x-oapi-codegen-extra-tags:
-            mapstructure: "tagline"
         icon:
           type: string
           example: https://cdn.jsdelivr.net/gh/IceWhaleTech/CasaOS-AppStore@main/Apps/Syncthing/icon.png
-          x-oapi-codegen-extra-tags:
-            mapstructure: "icon"
         screenshot_link:
           type: array
           items:
@@ -375,26 +370,19 @@ components:
             - https://cdn.jsdelivr.net/gh/IceWhaleTech/CasaOS-AppStore@main/Apps/OpenSpeedTest/screenshot-2.png
           x-oapi-codegen-extra-tags:
             mapstructure: "screenshot_link"
+            yaml: "screenshot_link"
         thumbnail:
           type: string
           example: https://cdn.jsdelivr.net/gh/IceWhaleTech/CasaOS-AppStore@main/Apps/Jellyfin/thumbnail.jpg
-          x-oapi-codegen-extra-tags:
-            mapstructure: "thumbnail"
         author:
           type: string
           example: CasaOS Team
-          x-oapi-codegen-extra-tags:
-            mapstructure: "author"
         developer:
           type: string
           example: Syncthing
-          x-oapi-codegen-extra-tags:
-            mapstructure: "developer"
         category:
           type: string
           example: Backup
-          x-oapi-codegen-extra-tags:
-            mapstructure: "category"
         container:
           $ref: "#/components/schemas/ContainerStoreInfo"
 
@@ -412,11 +400,10 @@ components:
           example: "8384"
           x-oapi-codegen-extra-tags:
             mapstructure: "port_map"
+            yaml: "port_map"
         index:
           type: string
           example: "/"
-          x-oapi-codegen-extra-tags:
-            mapstructure: "index"
         envs:
           type: array
           items:
@@ -436,8 +423,6 @@ components:
         shell:
           type: string
           example: "/bin/sh"
-          x-oapi-codegen-extra-tags:
-            mapstructure: "shell"
 
     EnvStoreInfo:
       required:
@@ -448,16 +433,12 @@ components:
         container:
           type: string
           example: TZ
-          x-oapi-codegen-extra-tags:
-            mapstructure: "container"
         description:
           type: object
           additionalProperties:
             type: string
           example:
             en_US: Time Zone
-          x-oapi-codegen-extra-tags:
-            mapstructure: "description"
         configurable:
           $ref: "#/components/schemas/Configurable"
 
@@ -471,23 +452,17 @@ components:
         container:
           type: string
           example: 8384
-          x-oapi-codegen-extra-tags:
-            mapstructure: "container"
         protocol:
           type: string
           enum:
             - tcp
             - udp
-          x-oapi-codegen-extra-tags:
-            mapstructure: "protocol"
         description:
           type: object
           additionalProperties:
             type: string
           example:
             en_US: Web UI
-          x-oapi-codegen-extra-tags:
-            mapstructure: "description"
         configurable:
           $ref: "#/components/schemas/Configurable"
 
@@ -500,16 +475,12 @@ components:
         container:
           type: string
           example: /config
-          x-oapi-codegen-extra-tags:
-            mapstructure: "container"
         description:
           type: object
           additionalProperties:
             type: string
           example:
             en_US: Syncthing config directory
-          x-oapi-codegen-extra-tags:
-            mapstructure: "description"
         configurable:
           $ref: "#/components/schemas/Configurable"
 
@@ -518,16 +489,12 @@ components:
         container:
           type: string
           example: /dev/dri
-          x-oapi-codegen-extra-tags:
-            mapstructure: "container"
         description:
           type: object
           additionalProperties:
             type: string
           example:
             en_US: GPU device
-          x-oapi-codegen-extra-tags:
-            mapstructure: "description"
         configurable:
           $ref: "#/components/schemas/Configurable"
 
@@ -538,5 +505,3 @@ components:
         - no
         - basic
         - advanced
-      x-oapi-codegen-extra-tags:
-        mapstructure: "configurable"

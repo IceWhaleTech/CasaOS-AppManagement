@@ -161,7 +161,9 @@ func (a *AppFile) AppStoreInfo() *codegen.AppStoreInfo {
 }
 
 func (a *AppFile) ComposeAppStoreInfo() *codegen.ComposeAppStoreInfo {
-	return nil
+	return &codegen.ComposeAppStoreInfo{
+		MainApp: &a.Name,
+	}
 }
 
 func (a *AppFile) ComposeApp() *types.Project {
@@ -218,6 +220,9 @@ func (a *AppFile) ComposeApp() *types.Project {
 	composeApp := &types.Project{
 		Name:     a.Name,
 		Services: services,
+		Extensions: map[string]interface{}{
+			common.ComposeYamlExtensionName: a.ComposeAppStoreInfo(),
+		},
 	}
 
 	return composeApp
