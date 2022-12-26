@@ -37,10 +37,11 @@ func (a *ComposeApp) App(name string) *App {
 	return nil
 }
 
-func (a *ComposeApp) Apps() []*App {
-	apps := make([]*App, len(a.Services))
-	for i := range a.Services {
-		apps[i] = (*App)(&a.Services[i])
+func (a *ComposeApp) Apps() map[string]*App {
+	apps := make(map[string]*App)
+
+	for i, service := range a.Services {
+		apps[service.Name] = (*App)(&a.Services[i])
 	}
 
 	return apps
