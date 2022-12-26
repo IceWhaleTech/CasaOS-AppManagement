@@ -63,12 +63,12 @@ func tempStoreForTest() (map[string]*ComposeApp, error) {
 
 	composeApp := (*ComposeApp)(project)
 
-	appStoreID, err := composeApp.StoreAppID()
+	composeAppStoreInfo, err := composeApp.StoreInfo()
 	if err != nil {
 		return nil, err
 	}
 
-	store[appStoreID] = composeApp
+	store[*composeAppStoreInfo.AppStoreID] = composeApp
 
 	project.Extensions["yaml"] = &SampleComposeAppYAML
 

@@ -14,7 +14,7 @@ func TestGetComposeApp(t *testing.T) {
 	for storeAppID, composeApp := range appStore.Catalog() {
 		storeInfo, err := composeApp.StoreInfo()
 		assert.NilError(t, err)
-		assert.Equal(t, storeInfo.AppStoreID, storeAppID)
+		assert.Equal(t, *storeInfo.AppStoreID, storeAppID)
 	}
 }
 
@@ -36,16 +36,5 @@ func TestGetApp(t *testing.T) {
 			app := composeApp.App(service.Name)
 			assert.Equal(t, app.Name, service.Name)
 		}
-	}
-}
-
-func TestGetMainApp(t *testing.T) {
-	appStore, err := v2.NewAppStore()
-	assert.NilError(t, err)
-
-	for _, composeApp := range appStore.Catalog() {
-		mainApp, err := composeApp.MainApp()
-		assert.NilError(t, err)
-		assert.Equal(t, mainApp.Name, "syncthing")
 	}
 }

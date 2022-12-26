@@ -17,33 +17,34 @@ func (a *ComposeApp) StoreInfo() (*codegen.ComposeAppStoreInfo, error) {
 		if err := loader.Transform(ex, &storeInfo); err != nil {
 			return nil, err
 		}
+
+		// locate main app
+		mainApp := a.App(*storeInfo.MainApp)
+		if mainApp == nil {
+			for _, app := range a.Apps() {
+				mainApp = app
+				break
+			}
+		}
+
+		if a.Name == "" {
+			a.Name = mainApp.Name
+		}
+
+		appStoreInfo, err := mainApp.StoreInfo()
+		if err != nil {
+			return nil, err
+		}
+
+		// appStoreID is auto-generated
+		appStoreID := fmt.Sprintf("%s.%s", Standardize(appStoreInfo.Developer), Standardize(a.Name))
+
+		storeInfo.AppStoreID = &appStoreID
+
 		return &storeInfo, nil
 	}
+
 	return nil, ErrYAMLExtensionNotFound
-}
-
-func (a *ComposeApp) StoreAppID() (string, error) {
-	storeInfo, err := a.StoreInfo()
-	if err != nil {
-		return "", err
-	}
-
-	mainApp := a.App(*storeInfo.MainApp)
-	if mainApp == nil {
-		for _, app := range a.Apps() {
-			mainApp = app
-			break
-		}
-	}
-
-	appStoreInfo, err := mainApp.StoreInfo()
-	if err != nil {
-		return "", err
-	}
-
-	appStoreID := fmt.Sprintf("%s.%s", Standardize(appStoreInfo.Developer), Standardize(a.Name))
-
-	return appStoreID, nil
 }
 
 func (a *ComposeApp) YAML() *string {
@@ -54,6 +55,10 @@ func (a *ComposeApp) YAML() *string {
 }
 
 func (a *ComposeApp) App(name string) *App {
+	if name == "" {
+		return nil
+	}
+
 	for i, service := range a.Services {
 		if service.Name == name {
 			return (*App)(&a.Services[i])
@@ -71,22 +76,4 @@ func (a *ComposeApp) Apps() map[string]*App {
 	}
 
 	return apps
-}
-
-func (a *ComposeApp) MainApp() (*App, error) {
-	storeInfo, err := a.StoreInfo()
-	if err != nil {
-		return nil, err
-	}
-
-	if storeInfo.MainApp == nil || *storeInfo.MainApp == "" {
-		return (*App)(&a.Services[0]), nil
-	}
-
-	app := a.App(*storeInfo.MainApp)
-	if app == nil {
-		return nil, ErrMainAppNotFound
-	}
-
-	return app, nil
 }
