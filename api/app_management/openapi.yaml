@@ -401,14 +401,7 @@ components:
           type: string
           example: Backup
         tips:
-          properties:
-            before_install:
-              type: array
-              items:
-                $ref: "#/components/schemas/Tip"
-              x-oapi-codegen-extra-tags:
-                mapstructure: "before_install"
-                yaml: "before_install,omitempty"
+          $ref: "#/components/schemas/TipsStoreInfo"
         container:
           $ref: "#/components/schemas/ContainerStoreInfo"
 
@@ -524,6 +517,16 @@ components:
         configurable:
           $ref: "#/components/schemas/Configurable"
 
+    TipsStoreInfo:
+      properties:
+        before_install:
+          type: array
+          items:
+            $ref: "#/components/schemas/Tip"
+          x-oapi-codegen-extra-tags:
+            mapstructure: "before_install"
+            yaml: "before_install,omitempty"
+
     Configurable:
       type: string
       enum:
@@ -537,8 +540,13 @@ components:
         - content
       properties:
         content:
-          type: string
-          example: "Username: "
+          type: object
+          additionalProperties:
+            type: string
+          example:
+            en_US: "Username: "
         value:
           type: string
           example: "admin"
+          x-oapi-codegen-extra-tags:
+            yaml: ",omitempty"
