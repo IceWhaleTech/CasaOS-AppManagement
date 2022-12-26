@@ -2,8 +2,6 @@ package v2
 
 import (
 	"fmt"
-	"regexp"
-	"strings"
 
 	_ "embed"
 
@@ -84,22 +82,4 @@ func tempStoreForTest() (map[string]*ComposeApp, error) {
 	store[*composeAppStoreInfo.AppStoreID] = composeApp
 
 	return store, nil
-}
-
-var nonAlphaNumeric = regexp.MustCompile(`[^a-z0-9]+`)
-
-func Standardize(text string) string {
-	result := strings.ToLower(text)
-
-	// Replace any non-alphanumeric characters with a single hyphen
-	result = nonAlphaNumeric.ReplaceAllString(result, "-")
-
-	for strings.Contains(result, "--") {
-		result = strings.Replace(result, "--", "-", -1)
-	}
-
-	// Remove any leading or trailing hyphens
-	result = strings.Trim(result, "-")
-
-	return result
 }

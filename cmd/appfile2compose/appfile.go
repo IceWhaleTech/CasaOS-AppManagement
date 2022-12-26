@@ -252,6 +252,8 @@ func NewAppFile(path string) (*AppFile, error) {
 		return nil, err
 	}
 
+	appFile.Name = v2.Standardize(appFile.Name)
+
 	return appFile, nil
 }
 
