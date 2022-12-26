@@ -48,6 +48,7 @@ func TestMain(t *testing.T) {
 }
 
 func TestAll(t *testing.T) {
+	t.Skip("Tiger's own test - skip")
 	appsRootDir := "/home/wxh/dev/CasaOS-AppStore/Apps"
 
 	err := filepath.WalkDir(appsRootDir, func(path string, d fs.DirEntry, err error) error {
@@ -64,10 +65,6 @@ func TestAll(t *testing.T) {
 		}
 
 		appFile, err := NewAppFile(path)
-		if err != nil {
-			return err
-		}
-
 		assert.NilError(t, err)
 
 		composeApp1 := appFile.ComposeApp()
