@@ -157,7 +157,7 @@ func (a *AppFile) AppStoreInfo() *codegen.AppStoreInfo {
 		Thumbnail:      a.Thumbnail,
 		Title:          langTextMap(a.Title),
 		Tips: codegen.TipsStoreInfo{
-			BeforeInstall: &tipsBeforeInstall,
+			BeforeInstall: tipsBeforeInstall,
 		},
 		Container: codegen.ContainerStoreInfo{
 			PortMap: a.Container.WebUI.HTTP,
