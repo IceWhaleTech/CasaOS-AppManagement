@@ -137,9 +137,27 @@ func (a *AppFile) AppStoreInfo() *codegen.AppStoreInfo {
 		}
 	}
 
+	tipsBeforeInstall := make([]codegen.Tip, len(a.Tips.BeforeInstall))
+	for i, tip := range a.Tips.BeforeInstall {
+		tipsBeforeInstall[i] = codegen.Tip{
+			Content: langTextMap(tip.Content),
+			Value:   lo.If(tip.Value != "", &a.Tips.BeforeInstall[i].Value).Else(nil),
+		}
+	}
+
 	appStoreInfo := &codegen.AppStoreInfo{
-		Author:   a.Adaptor.Name,
-		Category: a.Category[0],
+		Author:         a.Adaptor.Name,
+		Category:       a.Category[0],
+		Description:    langTextMap(a.Overview),
+		Developer:      a.Developer.Name,
+		Icon:           a.Icon,
+		ScreenshotLink: a.Screenshots,
+		Tagline:        langTextMap(a.Tagline),
+		Thumbnail:      a.Thumbnail,
+		Title:          langTextMap(a.Title),
+		Tips: codegen.TipsStoreInfo{
+			BeforeInstall: &tipsBeforeInstall,
+		},
 		Container: codegen.ContainerStoreInfo{
 			PortMap: a.Container.WebUI.HTTP,
 			Index:   a.Container.WebUI.Path,
@@ -148,13 +166,6 @@ func (a *AppFile) AppStoreInfo() *codegen.AppStoreInfo {
 			Ports:   ports,
 			Volumes: volumes,
 		},
-		Description:    langTextMap(a.Overview),
-		Developer:      a.Developer.Name,
-		Icon:           a.Icon,
-		ScreenshotLink: a.Screenshots,
-		Tagline:        langTextMap(a.Tagline),
-		Thumbnail:      a.Thumbnail,
-		Title:          langTextMap(a.Title),
 	}
 
 	return appStoreInfo
