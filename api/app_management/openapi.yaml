@@ -93,7 +93,11 @@ paths:
     get:
       summary: Get app list
       description: |
-        (TODO)
+        Get lists of StoreInfo of all compose apps from AppStore.
+
+        - `recommend` - Compose apps recommended by CasaOS team
+        - `list` - All compose apps
+        - `community` - Compose apps contributed by community
       operationId: appList
       tags:
         - AppStore methods
@@ -108,7 +112,9 @@ paths:
     get:
       summary: Get app info
       description: |
-        (TODO)
+        Get StoreInfo of specific compose app.
+
+        > A compose app contains one or more container `apps`. One of the `apps` is the `main_app` of this compose app, whereas others are dependency `apps`.
       operationId: appInfo
       tags:
         - AppStore methods
@@ -295,25 +301,32 @@ components:
     ComposeAppStoreInfo:
       properties:
         appstore_id:
+          title: StoreID of the compose app
+          description: |
+            The StoreID is the unique identifier of the app in the AppStore.
           readOnly: true
           type: string
-          example: "fix this" # TODO
+          example: "syncthing.syncthing (developer + app name)" # TODO
           x-go-name: AppStoreID
           x-oapi-codegen-extra-tags:
             mapstructure: "appstore_id"
             yaml: "appstore_id,omitempty"
         main_app:
+          title: name of the main container app in `apps`
+          description: |
+            The main container app is one of the container `apps` that the user will interact with.
           type: string
           example: "syncthing"
           x-oapi-codegen-extra-tags:
             mapstructure: "main_app"
             yaml: "main_app"
         apps:
+          title: container apps included in the compose app
+          description: |
+            The key is the name of a container app, and the value is the StoreInfo of this container app.
           type: object
           additionalProperties:
             $ref: "#/components/schemas/AppStoreInfo"
-          example:
-            syncthing: {}
           x-oapi-codegen-extra-tags:
             yaml: ",omitempty"
 
@@ -328,6 +341,10 @@ components:
         path: github.com/compose-spec/compose-go/types
 
     AppStoreInfo:
+      title: StoreInfo of an app
+      type: object
+      description: |-
+        > Do not mistake it as *information of AppStore* which does not exist.
       required:
         - author
         - category
