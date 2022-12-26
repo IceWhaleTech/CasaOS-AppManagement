@@ -1,6 +1,8 @@
 package v2
 
 import (
+	"fmt"
+
 	"github.com/IceWhaleTech/CasaOS-AppManagement/codegen"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/common"
 	"github.com/compose-spec/compose-go/loader"
@@ -18,6 +20,30 @@ func (a *ComposeApp) StoreInfo() (*codegen.ComposeAppStoreInfo, error) {
 		return &storeInfo, nil
 	}
 	return nil, ErrYAMLExtensionNotFound
+}
+
+func (a *ComposeApp) StoreAppID() (string, error) {
+	storeInfo, err := a.StoreInfo()
+	if err != nil {
+		return "", err
+	}
+
+	mainApp := a.App(*storeInfo.MainApp)
+	if mainApp == nil {
+		for _, app := range a.Apps() {
+			mainApp = app
+			break
+		}
+	}
+
+	appStoreInfo, err := mainApp.StoreInfo()
+	if err != nil {
+		return "", err
+	}
+
+	appStoreID := fmt.Sprintf("%s.%s", Standardize(appStoreInfo.Developer), Standardize(a.Name))
+
+	return appStoreID, nil
 }
 
 func (a *ComposeApp) YAML() *string {
