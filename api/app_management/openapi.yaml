@@ -319,7 +319,7 @@ components:
           example: "syncthing"
           x-oapi-codegen-extra-tags:
             mapstructure: "main_app"
-            yaml: "main_app"
+            yaml: "main_app,omitempty"
         apps:
           title: container apps included in the compose app
           description: |
@@ -342,7 +342,6 @@ components:
 
     AppStoreInfo:
       title: StoreInfo of an app
-      type: object
       description: |-
         > Do not mistake it as *information of AppStore* which does not exist.
       required:
@@ -356,6 +355,7 @@ components:
         - tagline
         - thumbnail
         - title
+        - tips
       properties:
         title:
           type: object
@@ -387,7 +387,7 @@ components:
             - https://cdn.jsdelivr.net/gh/IceWhaleTech/CasaOS-AppStore@main/Apps/OpenSpeedTest/screenshot-2.png
           x-oapi-codegen-extra-tags:
             mapstructure: "screenshot_link"
-            yaml: "screenshot_link"
+            yaml: "screenshot_link,omitempty"
         thumbnail:
           type: string
           example: https://cdn.jsdelivr.net/gh/IceWhaleTech/CasaOS-AppStore@main/Apps/Jellyfin/thumbnail.jpg
@@ -400,6 +400,15 @@ components:
         category:
           type: string
           example: Backup
+        tips:
+          properties:
+            before_install:
+              type: array
+              items:
+                $ref: "#/components/schemas/Tip"
+              x-oapi-codegen-extra-tags:
+                mapstructure: "before_install"
+                yaml: "before_install,omitempty"
         container:
           $ref: "#/components/schemas/ContainerStoreInfo"
 
@@ -417,7 +426,7 @@ components:
           example: "8384"
           x-oapi-codegen-extra-tags:
             mapstructure: "port_map"
-            yaml: "port_map"
+            yaml: "port_map,omitempty"
         index:
           type: string
           example: "/"
@@ -522,3 +531,14 @@ components:
         - no
         - basic
         - advanced
+
+    Tip:
+      required:
+        - content
+      properties:
+        content:
+          type: string
+          example: "Username: "
+        value:
+          type: string
+          example: "admin"
