@@ -423,6 +423,8 @@ components:
         index:
           type: string
           example: "/"
+          x-oapi-codegen-extra-tags:
+            yaml: ",omitempty"
         envs:
           type: array
           items:
@@ -431,17 +433,25 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/PortStoreInfo"
+          x-oapi-codegen-extra-tags:
+            yaml: ",omitempty"
         volumes:
           type: array
           items:
             $ref: "#/components/schemas/VolumeStoreInfo"
+          x-oapi-codegen-extra-tags:
+            yaml: ",omitempty"
         devices:
           type: array
           items:
             $ref: "#/components/schemas/DeviceStoreInfo"
+          x-oapi-codegen-extra-tags:
+            yaml: ",omitempty"
         shell:
           type: string
           example: "/bin/sh"
+          x-oapi-codegen-extra-tags:
+            yaml: ",omitempty"
 
     EnvStoreInfo:
       required:

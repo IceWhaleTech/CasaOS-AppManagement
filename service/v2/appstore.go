@@ -47,21 +47,34 @@ func NewAppStore() (*AppStore, error) {
 	}, nil
 }
 
-func tempStoreForTest() (map[string]*ComposeApp, error) {
-	store := map[string]*ComposeApp{}
-
-	project, err := loader.Load(types.ConfigDetails{
-		ConfigFiles: []types.ConfigFile{
-			{
-				Content: []byte(SampleComposeAppYAML),
+func LoadComposeApp(yaml []byte) (*ComposeApp, error) {
+	project, err := loader.Load(
+		types.ConfigDetails{
+			ConfigFiles: []types.ConfigFile{
+				{
+					Content: []byte(yaml),
+				},
 			},
+			Environment: map[string]string{},
 		},
-	})
+		func(o *loader.Options) { o.SkipInterpolation = true },
+	)
 	if err != nil {
 		return nil, err
 	}
 
-	composeApp := (*ComposeApp)(project)
+	project.Extensions["yaml"] = &SampleComposeAppYAML
+
+	return (*ComposeApp)(project), nil
+}
+
+func tempStoreForTest() (map[string]*ComposeApp, error) {
+	store := map[string]*ComposeApp{}
+
+	composeApp, err := LoadComposeApp([]byte(SampleComposeAppYAML))
+	if err != nil {
+		return nil, err
+	}
 
 	composeAppStoreInfo, err := composeApp.StoreInfo()
 	if err != nil {
@@ -69,8 +82,6 @@ func tempStoreForTest() (map[string]*ComposeApp, error) {
 	}
 
 	store[*composeAppStoreInfo.AppStoreID] = composeApp
-
-	project.Extensions["yaml"] = &SampleComposeAppYAML
 
 	return store, nil
 }

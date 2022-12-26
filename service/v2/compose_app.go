@@ -6,10 +6,9 @@ import (
 	"github.com/IceWhaleTech/CasaOS-AppManagement/codegen"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/common"
 	"github.com/compose-spec/compose-go/loader"
-	"github.com/compose-spec/compose-go/types"
 )
 
-type ComposeApp types.Project
+type ComposeApp codegen.ComposeApp
 
 func (a *ComposeApp) StoreInfo() (*codegen.ComposeAppStoreInfo, error) {
 	if ex, ok := a.Extensions[common.ComposeYamlExtensionName]; ok {
