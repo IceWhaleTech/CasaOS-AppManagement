@@ -429,6 +429,8 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/EnvStoreInfo"
+          x-oapi-codegen-extra-tags:
+            yaml: ",omitempty"
         ports:
           type: array
           items:
@@ -528,6 +530,8 @@ components:
           $ref: "#/components/schemas/Configurable"
 
     TipsStoreInfo:
+      required:
+        - before_install
       properties:
         before_install:
           type: array

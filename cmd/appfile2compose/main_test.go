@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	v2 "github.com/IceWhaleTech/CasaOS-AppManagement/service/v2"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"gopkg.in/yaml.v3"
 	"gotest.tools/v3/assert"
 )
@@ -98,7 +99,7 @@ func TestAll(t *testing.T) {
 		mainAppStoreInfo2, err := mainApp2.StoreInfo()
 		assert.NilError(t, err)
 
-		assert.DeepEqual(t, mainAppStoreInfo1, mainAppStoreInfo2)
+		assert.DeepEqual(t, mainAppStoreInfo1, mainAppStoreInfo2, cmpopts.EquateEmpty())
 
 		return nil
 	})
