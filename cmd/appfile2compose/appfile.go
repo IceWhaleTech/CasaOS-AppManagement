@@ -8,6 +8,7 @@ import (
 
 	"github.com/IceWhaleTech/CasaOS-AppManagement/codegen"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/common"
+	v2 "github.com/IceWhaleTech/CasaOS-AppManagement/service/v2"
 	"github.com/compose-spec/compose-go/types"
 	"github.com/samber/lo"
 )
@@ -177,7 +178,7 @@ func (a *AppFile) ComposeAppStoreInfo() *codegen.ComposeAppStoreInfo {
 	}
 }
 
-func (a *AppFile) ComposeApp() *types.Project {
+func (a *AppFile) ComposeApp() *v2.ComposeApp {
 	environment := make(map[string]*string, len(a.Container.Envs))
 	for i, env := range a.Container.Envs {
 		environment[env.Key] = &a.Container.Envs[i].Value
@@ -228,15 +229,15 @@ func (a *AppFile) ComposeApp() *types.Project {
 		},
 	}}
 
-	composeApp := &types.Project{
+	composeApp := (v2.ComposeApp)(types.Project{
 		Name:     a.Name,
 		Services: services,
 		Extensions: map[string]interface{}{
 			common.ComposeYamlExtensionName: a.ComposeAppStoreInfo(),
 		},
-	}
+	})
 
-	return composeApp
+	return &composeApp
 }
 
 func NewAppFile(path string) (*AppFile, error) {

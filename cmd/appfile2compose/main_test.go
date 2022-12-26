@@ -1,11 +1,11 @@
 package main
 
 import (
+	"io/fs"
 	"path/filepath"
 	"testing"
 
-	"github.com/compose-spec/compose-go/loader"
-	"github.com/compose-spec/compose-go/types"
+	v2 "github.com/IceWhaleTech/CasaOS-AppManagement/service/v2"
 	"gopkg.in/yaml.v3"
 	"gotest.tools/v3/assert"
 )
@@ -14,21 +14,94 @@ func TestMain(t *testing.T) {
 	appFile, err := NewAppFile(filepath.Join("fixtures", "appfile.json"))
 	assert.NilError(t, err)
 
-	composeApp := appFile.ComposeApp()
-	assert.Equal(t, composeApp.Name, "jellyfin")
+	composeApp1 := appFile.ComposeApp()
 
-	composeYAML, err := yaml.Marshal(composeApp)
+	composeYAML, err := yaml.Marshal(composeApp1)
 	assert.NilError(t, err)
 
-	project, err := loader.Load(types.ConfigDetails{
-		ConfigFiles: []types.ConfigFile{
-			{
-				Content: composeYAML,
-			},
-		},
-		Environment: map[string]string{},
+	composeApp2, err := v2.LoadComposeApp(composeYAML)
+	assert.NilError(t, err)
+	assert.Assert(t, composeApp2 != nil)
+
+	storeInfo1, err := composeApp1.StoreInfo()
+	assert.NilError(t, err)
+
+	storeInfo2, err := composeApp2.StoreInfo()
+	assert.NilError(t, err)
+
+	assert.DeepEqual(t, storeInfo1, storeInfo2)
+
+	mainApp1 := composeApp1.App(*storeInfo1.MainApp)
+	assert.Assert(t, mainApp1 != nil)
+
+	mainApp2 := composeApp2.App(*storeInfo2.MainApp)
+	assert.Assert(t, mainApp2 != nil)
+
+	mainAppStoreInfo1, err := mainApp1.StoreInfo()
+	assert.NilError(t, err)
+
+	mainAppStoreInfo2, err := mainApp2.StoreInfo()
+	assert.NilError(t, err)
+
+	assert.DeepEqual(t, mainAppStoreInfo1, mainAppStoreInfo2)
+}
+
+func TestAll(t *testing.T) {
+	appsRootDir := "/home/wxh/dev/CasaOS-AppStore/Apps"
+
+	err := filepath.WalkDir(appsRootDir, func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+
+		if d.IsDir() {
+			return nil
+		}
+
+		if filepath.Base(path) != "appfile.json" {
+			return nil
+		}
+
+		appFile, err := NewAppFile(path)
+		if err != nil {
+			return err
+		}
+
+		assert.NilError(t, err)
+
+		composeApp1 := appFile.ComposeApp()
+
+		composeYAML, err := yaml.Marshal(composeApp1)
+		assert.NilError(t, err)
+
+		composeApp2, err := v2.LoadComposeApp(composeYAML)
+		assert.NilError(t, err)
+		assert.Assert(t, composeApp2 != nil)
+
+		storeInfo1, err := composeApp1.StoreInfo()
+		assert.NilError(t, err)
+
+		storeInfo2, err := composeApp2.StoreInfo()
+		assert.NilError(t, err)
+
+		assert.DeepEqual(t, storeInfo1, storeInfo2)
+
+		mainApp1 := composeApp1.App(*storeInfo1.MainApp)
+		assert.Assert(t, mainApp1 != nil)
+
+		mainApp2 := composeApp2.App(*storeInfo2.MainApp)
+		assert.Assert(t, mainApp2 != nil)
+
+		mainAppStoreInfo1, err := mainApp1.StoreInfo()
+		assert.NilError(t, err)
+
+		mainAppStoreInfo2, err := mainApp2.StoreInfo()
+		assert.NilError(t, err)
+
+		assert.DeepEqual(t, mainAppStoreInfo1, mainAppStoreInfo2)
+
+		return nil
 	})
-	assert.NilError(t, err)
 
-	assert.Equal(t, project.Name, "jellyfin")
+	assert.NilError(t, err)
 }
