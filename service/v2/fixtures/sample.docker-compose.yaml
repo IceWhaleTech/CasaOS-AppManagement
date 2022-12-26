@@ -1,6 +1,5 @@
 # (REMOVE THIS TAG TO ENABLE YAML SCHEMA) yaml-language-server: $schema=https://raw.githubusercontent.com/tigerinus/CasaOS-AppStore-Hub/init/schemas/compose-x-casaos-spec.json
 x-casaos:
-  appstore_id: e4380876-d759-4b26-af1f-968a4606d399
   main_app: syncthing
 
 services:

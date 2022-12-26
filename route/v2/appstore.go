@@ -50,12 +50,10 @@ func (*AppManagement) AppInfo(ctx echo.Context, id codegen.AppStoreID) error {
 		apps[app.Name] = *appStoreInfo
 	}
 
+	storeInfo.Apps = &apps
+
 	return ctx.JSON(http.StatusOK, codegen.ComposeAppStoreInfoOK{
-		Data: &codegen.ComposeAppStoreInfo{
-			AppStoreID: storeInfo.AppStoreID,
-			MainApp:    storeInfo.MainApp,
-			Apps:       &apps,
-		},
+		Data: storeInfo,
 	})
 }
 
