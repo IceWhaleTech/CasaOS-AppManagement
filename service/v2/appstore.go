@@ -7,11 +7,9 @@ import (
 
 	_ "embed"
 
-	"github.com/IceWhaleTech/CasaOS-AppManagement/codegen"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/common"
 	"github.com/compose-spec/compose-go/loader"
 	"github.com/compose-spec/compose-go/types"
-	"github.com/google/uuid"
 )
 
 type AppStore struct {
@@ -63,20 +61,30 @@ func tempStoreForTest() (map[string]*ComposeApp, error) {
 		return nil, err
 	}
 
-	project.Extensions["yaml"] = &SampleComposeAppYAML
+	composeApp := (*ComposeApp)(project)
 
-	if ex, ok := project.Extensions[common.ComposeYamlExtensionName]; ok {
-		var storeInfo codegen.ComposeAppStoreInfo
-		if err := loader.Transform(ex, &storeInfo); err != nil {
-			panic(err)
-		}
-
-		// TODO - implement appstore id autogen
-		store[uuid.NewString()] = (*ComposeApp)(project)
-
-	} else {
-		return nil, ErrYAMLExtensionNotFound
+	composeAppStoreInfo, err := composeApp.StoreInfo()
+	if err != nil {
+		return nil, err
 	}
+
+	mainApp := composeApp.App(*composeAppStoreInfo.MainApp)
+	if mainApp == nil {
+		for _, app := range composeApp.Apps() {
+			mainApp = app
+			break
+		}
+	}
+
+	mainAppStoreInfo, err := mainApp.StoreInfo()
+	if err != nil {
+		return nil, err
+	}
+
+	appStoreID := fmt.Sprintf("%s.%s", Standardize(mainAppStoreInfo.Developer), Standardize(mainApp.Name))
+	store[appStoreID] = composeApp
+
+	project.Extensions["yaml"] = &SampleComposeAppYAML
 
 	return store, nil
 }
