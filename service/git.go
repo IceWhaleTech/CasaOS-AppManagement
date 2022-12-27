@@ -21,6 +21,8 @@ type GitService struct {
 
 func NewGitService() *GitService {
 	repos := make(map[string]string)
+
+	// TODO - run in parallel
 	for _, repoURL := range config.ServerInfo.AppStoreList {
 		if _, err := url.Parse(repoURL); err != nil {
 			logger.Error("invalid app store url", zap.Error(err), zap.String("url", repoURL))
@@ -44,13 +46,14 @@ func NewGitService() *GitService {
 
 			logger.Info("clone app store repo success", zap.String("repo", repoURL))
 		} else {
+
+			// TODO - start background job to pull repo periodically
 			if err := pullRepo(r); err != nil {
 				logger.Info("pull app store repo failed - trying to clean and clone", zap.Error(err), zap.String("repo", repoURL))
 				continue
 			}
 
 			logger.Info("pull app store repo success", zap.String("repo", repoURL))
-
 		}
 
 		repos[repoURL] = dir
