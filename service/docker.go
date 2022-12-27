@@ -248,7 +248,7 @@ func (ds *dockerService) GetContainerAppList(name, image, state *string) (*[]mod
 
 	casaOSApps := []model.MyAppList{}
 
-	for _, m := range containers {
+	for i, m := range containers {
 
 		if name != nil && len(*name) > 0 {
 			if !lo.ContainsBy(m.Names, func(n string) bool { return strings.Contains(n, *name) }) {
@@ -284,18 +284,19 @@ func (ds *dockerService) GetContainerAppList(name, image, state *string) (*[]mod
 			}
 
 			casaOSApp := model.MyAppList{
-				Name:     name,
-				Icon:     icon,
-				State:    m.State,
-				CustomID: m.Labels["custom_id"],
-				ID:       m.ID,
-				Port:     m.Labels["web"],
-				Index:    m.Labels["index"],
-				Image:    m.Image,
-				Latest:   newVersion,
-				Host:     m.Labels["host"],
-				Protocol: m.Labels["protocol"],
-				Created:  m.Created,
+				Name:       name,
+				Icon:       icon,
+				State:      m.State,
+				CustomID:   m.Labels["custom_id"],
+				ID:         m.ID,
+				Port:       m.Labels["web"],
+				Index:      m.Labels["index"],
+				Image:      m.Image,
+				Latest:     newVersion,
+				Host:       m.Labels["host"],
+				Protocol:   m.Labels["protocol"],
+				Created:    m.Created,
+				AppStoreID: getV1AppStoreID(&containers[i]),
 			}
 
 			casaOSApps = append(casaOSApps, casaOSApp)
@@ -594,6 +595,7 @@ func (ds *dockerService) CreateContainer(m model.CustomizationPostData, id strin
 	config.Labels["protocol"] = m.Protocol
 	config.Labels["host"] = m.Host
 	config.Labels["name"] = m.Label
+	config.Labels[common.ContainerLabelV1AppStoreID] = strconv.Itoa((int)(m.AppStoreID))
 	// container, err := cli.ContainerCreate(context.Background(), info.Config, info.HostConfig, &network.NetworkingConfig{info.NetworkSettings.Networks}, nil, info.Name)
 
 	hostConfig.Mounts = volumes
@@ -819,10 +821,6 @@ func (ds *dockerService) GetNetworkList() []types.NetworkResource {
 	return networks
 }
 
-func NewDockerService() DockerService {
-	return &dockerService{}
-}
-
 func (ds *dockerService) GetServerInfo() (types.Info, error) {
 	cli, err := client2.NewClientWithOpts(client2.FromEnv)
 	if err != nil {
@@ -833,84 +831,24 @@ func (ds *dockerService) GetServerInfo() (types.Info, error) {
 	return cli.Info(context.Background())
 }
 
-//   ---------------------------------------test------------------------------------
-//func ServiceCreate() {
-//	cli, err := client2.NewClientWithOpts(client2.FromEnv)
-//	r, err := cli.ServiceCreate(context.Background(), swarm.ServiceSpec{}, types.ServiceCreateOptions{})
-//	if err != nil {
-//		fmt.Println("error", err)
-//	}
-//
-//
-//}
+func NewDockerService() DockerService {
+	return &dockerService{}
+}
 
-// func Containerd() {
-// 	// create a new client connected to the default socket path for containerd
-// 	cli, err := containerd.New("/run/containerd/containerd.sock")
-// 	if err != nil {
-// 		fmt.Println("111")
-// 		fmt.Println(err)
-// 	}
-// 	defer cli.Close()
+func getV1AppStoreID(m *types.Container) uint {
+	if appStoreIDString, ok := m.Labels[common.ContainerLabelV1AppStoreID]; ok {
+		appStoreID, err := strconv.Atoi(appStoreIDString)
+		if err != nil {
+			logger.Info("failed to convert v1 app store id", zap.Error(err), zap.String("appStoreIDString", appStoreIDString), zap.String("containerID", m.ID), zap.String("containerName", m.Names[0]))
+		}
 
-// 	// create a new context with an "example" namespace
-// 	ctx := namespaces.WithNamespace(context.Background(), "default")
+		if appStoreID < 0 {
+			appStoreID = 0
+		}
 
-// 	// pull the redis image from DockerHub
-// 	image, err := cli.Pull(ctx, "docker.io/library/busybox:latest", containerd.WithPullUnpack)
-// 	if err != nil {
-// 		fmt.Println("222")
-// 		fmt.Println(err)
-// 	}
+		return uint(appStoreID)
+	}
 
-// 	// create a container
-// 	container, err := cli.NewContainer(
-// 		ctx,
-// 		"test1",
-// 		containerd.WithImage(image),
-// 		containerd.WithNewSnapshot("redis-server-snapshot1", image),
-// 		containerd.WithNewSpec(oci.WithImageConfig(image)),
-// 	)
-
-// 	if err != nil {
-// 		fmt.Println(err)
-// 	}
-// 	defer container.Delete(ctx, containerd.WithSnapshotCleanup)
-
-// 	// create a task from the container
-// 	task, err := container.NewTask(ctx, cio.NewCreator(cio.WithStdio))
-// 	if err != nil {
-// 		fmt.Println(err)
-// 	}
-// 	defer task.Delete(ctx)
-
-// 	// make sure we wait before calling start
-// 	exitStatusC, err := task.Wait(ctx)
-// 	if err != nil {
-// 		fmt.Println(err)
-// 	}
-
-// 	// call start on the task to execute the redis server
-// 	if err = task.Start(ctx); err != nil {
-// 		fmt.Println(err)
-// 	}
-
-// 	fmt.Println("执行完成等待")
-// 	// sleep for a lil bit to see the logs
-// 	time.Sleep(3 * time.Second)
-
-// 	// kill the process and get the exit status
-// 	if err = task.Kill(ctx, syscall.SIGTERM); err != nil {
-// 		fmt.Println(err)
-// 	}
-
-// 	// wait for the process to fully exit and print out the exit status
-
-// 	status := <-exitStatusC
-// 	code, _, err := status.Result()
-// 	if err != nil {
-// 		fmt.Println(err)
-// 	}
-// 	fmt.Printf("redis-server exited with status: %d\n", code)
-
-// }
+	logger.Info("the container does not have a v1 app store id", zap.String("containerID", m.ID), zap.String("containerName", m.Names[0]))
+	return 0
+}
