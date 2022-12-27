@@ -1,11 +1,12 @@
 [common]
-RuntimePath=/var/run/casaos
+RuntimePath = /var/run/casaos
 
 [app]
 LogPath = /var/log/casaos/
 LogSaveName = app-management
 LogFileExt = log
 DBPath     = /var/lib/casaos/db
+AppStorePath = /var/lib/casaos/appstore
 
 [server]
 ServerApi = https://api.casaos.io/casaos-api
