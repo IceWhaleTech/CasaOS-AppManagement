@@ -12,7 +12,8 @@ type APPModel struct {
 }
 
 type ServerModel struct {
-	ServerAPI string
+	ServerAPI    string
+	AppStoreList []string `ini:"appstore,,allowshadow"`
 }
 
 type CasaOSGlobalVariables struct {

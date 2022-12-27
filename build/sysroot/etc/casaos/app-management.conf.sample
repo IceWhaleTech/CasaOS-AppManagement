@@ -9,4 +9,5 @@ DBPath     = /var/lib/casaos/db
 
 [server]
 ServerApi = https://api.casaos.io/casaos-api
-
+appstore = https://github.com/IceWhaleTech/CasaOS-AppStore.git
+appstore = https://gitee.com/icewhale-team/CasaOS-AppStore.git
