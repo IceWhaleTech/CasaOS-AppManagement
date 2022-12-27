@@ -22,6 +22,10 @@ type GitService struct {
 func NewGitService() *GitService {
 	repos := make(map[string]string)
 
+	// TODO - package the latest app store along with other packages
+
+	// TODO - select last successful app store dir
+
 	// TODO - run in parallel
 	for _, repoURL := range config.ServerInfo.AppStoreList {
 		if _, err := url.Parse(repoURL); err != nil {
