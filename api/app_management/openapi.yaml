@@ -91,14 +91,14 @@ security:
 paths:
   /apps:
     get:
-      summary: Get app list
+      summary: Get app list from AppStore
       description: |
         Get lists of StoreInfo of all compose apps from AppStore.
 
         - `recommend` - Compose apps recommended by CasaOS team
         - `list` - All compose apps
         - `community` - Compose apps contributed by community
-      operationId: appList
+      operationId: composeAppStoreInfoList
       tags:
         - AppStore methods
 
@@ -110,12 +110,12 @@ paths:
 
   /apps/{id}:
     get:
-      summary: Get app info
+      summary: Get app info from AppStore
       description: |
         Get StoreInfo of specific compose app.
 
         > A compose app contains one or more container `apps`. One of the `apps` is the `main_app` of this compose app, whereas others are dependency `apps`.
-      operationId: appInfo
+      operationId: composeAppStoreInfo
       tags:
         - AppStore methods
       parameters:
@@ -130,12 +130,12 @@ paths:
 
   /apps/{id}/compose:
     get:
-      summary: Get app compose details
+      summary: Get compose details of an app from AppStore
       description: |
         Accept both `application/json` and `application/yaml` content type for the `Accept` header in the HTTP request.
 
         If the `Accept` header is set to `application/yaml`, the response will be the original `docker-compose.yml` content that follows [Compose Specification](https://compose-spec.io).
-      operationId: appCompose
+      operationId: composeApp
       tags:
         - AppStore methods
       parameters:
@@ -145,6 +145,20 @@ paths:
           $ref: "#/components/responses/ComposeAppOK"
         "404":
           $ref: "#/components/responses/ResponseNotFound"
+        "500":
+          $ref: "#/components/responses/ResponseInternalServerError"
+
+  /compose:
+    get:
+      summary: Get the list of locally runnig compose apps
+      description: |
+        TODO
+      operationId: myComposeAppList
+      tags:
+        - Compose methods
+      responses:
+        "200":
+          $ref: "#/components/responses/ComposeAppListOK"
         "500":
           $ref: "#/components/responses/ResponseInternalServerError"
 
@@ -250,6 +264,19 @@ components:
               - properties:
                   data:
                     $ref: "#/components/schemas/ComposeAppStoreInfo"
+
+    ComposeAppListOK:
+      description: OK
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: "#/components/schemas/BaseResponse"
+              - properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/ComposeApp"
 
     ComposeAppOK:
       description: OK
