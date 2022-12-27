@@ -80,6 +80,7 @@ func pullRepo(r *git.Repository) error {
 		RemoteName: "origin",
 		Progress:   os.Stdout,
 		Force:      true,
+		Depth:      1,
 	})
 	if err != nil && err != git.NoErrAlreadyUpToDate {
 		return err
@@ -98,6 +99,7 @@ func cloneRepo(repoURL, dir string, clean bool) error {
 	if _, err := git.PlainClone(dir, false, &git.CloneOptions{
 		URL:      repoURL,
 		Progress: os.Stdout,
+		Depth:    1,
 	}); err != nil {
 		return err
 	}
