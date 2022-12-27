@@ -141,8 +141,8 @@ builds:
       - arm
     goarm:
       - "7"
-  - id: casaos-app-management-appfile2compose-amd64
-    binary: build/sysroot/usr/bin/casaos-app-management-appfile2compose
+  - id: casaos-appfile2compose-amd64
+    binary: build/sysroot/usr/bin/casaos-appfile2compose
     main: ./cmd/appfile2compose
     env:
       - CC=x86_64-linux-gnu-gcc
@@ -160,8 +160,8 @@ builds:
       - linux
     goarch:
       - amd64
-  - id: casaos-app-management-appfile2compose-arm64
-    binary: build/sysroot/usr/bin/casaos-app-management-appfile2compose
+  - id: casaos-appfile2compose-arm64
+    binary: build/sysroot/usr/bin/casaos-appfile2compose
     main: ./cmd/appfile2compose
     env:
       - CC=aarch64-linux-gnu-gcc
@@ -179,8 +179,8 @@ builds:
       - linux
     goarch:
       - arm64
-  - id: casaos-app-management-appfile2compose-arm-7
-    binary: build/sysroot/usr/bin/casaos-app-management-appfile2compose
+  - id: casaos-appfile2compose-arm-7
+    binary: build/sysroot/usr/bin/casaos-appfile2compose
     main: ./cmd/appfile2compose
     env:
       - CC=arm-linux-gnueabihf-gcc
@@ -217,6 +217,16 @@ archives:
       - casaos-app-management-migration-tool-amd64
       - casaos-app-management-migration-tool-arm64
       - casaos-app-management-migration-tool-arm-7
+    replacements:
+      arm: arm-7
+    files:
+      - build/sysroot/etc/**/*
+  - name_template: "{{ .Os }}-{{ .Arch }}-appfile2compose-v{{ .Version }}"
+    id: casaos-appfile2compose
+    builds:
+      - casaos-appfile2compose-amd64
+      - casaos-appfile2compose-arm64
+      - casaos-appfile2compose-arm-7
     replacements:
       arm: arm-7
     files:
