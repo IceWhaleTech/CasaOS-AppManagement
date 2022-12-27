@@ -10,7 +10,7 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-func (*AppManagement) AppList(ctx echo.Context) error {
+func (*AppManagement) ComposeAppStoreInfoList(ctx echo.Context) error {
 	return ctx.JSON(http.StatusOK, codegen.ComposeAppStoreInfoListsOK{
 		Data: &codegen.ComposeAppStoreInfoLists{
 			// TODO
@@ -21,7 +21,7 @@ func (*AppManagement) AppList(ctx echo.Context) error {
 	})
 }
 
-func (*AppManagement) AppInfo(ctx echo.Context, id codegen.AppStoreID) error {
+func (*AppManagement) ComposeAppStoreInfo(ctx echo.Context, id codegen.AppStoreID) error {
 	composeApp := service.MyService.V2AppStore().ComposeApp(id)
 
 	if composeApp == nil {
@@ -57,7 +57,7 @@ func (*AppManagement) AppInfo(ctx echo.Context, id codegen.AppStoreID) error {
 	})
 }
 
-func (*AppManagement) AppCompose(ctx echo.Context, id codegen.AppStoreID) error {
+func (*AppManagement) ComposeApp(ctx echo.Context, id codegen.AppStoreID) error {
 	composeApp := service.MyService.V2AppStore().ComposeApp(id)
 
 	if composeApp == nil {
