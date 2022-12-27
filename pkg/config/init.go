@@ -14,10 +14,11 @@ var (
 	}
 
 	AppInfo = &model.APPModel{
-		DBPath:      "/var/lib/casaos",
-		LogPath:     "/var/log/casaos",
-		LogSaveName: common.AppManagementServiceName,
-		LogFileExt:  "log",
+		DBPath:       "/var/lib/casaos",
+		AppStorePath: "/var/lib/casaos/appstore",
+		LogPath:      "/var/log/casaos",
+		LogSaveName:  common.AppManagementServiceName,
+		LogFileExt:   "log",
 	}
 
 	ServerInfo = &model.ServerModel{
