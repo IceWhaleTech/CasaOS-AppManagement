@@ -21,7 +21,8 @@ var (
 	}
 
 	ServerInfo = &model.ServerModel{
-		ServerAPI: "https://api.casaos.io/casaos-api",
+		ServerAPI:    "https://api.casaos.io/casaos-api",
+		AppStoreList: []string{"https://github.com/IceWhaleTech/CasaOS-AppStore.git"},
 	}
 
 	CasaOSGlobalVariables = &model.CasaOSGlobalVariables{}
@@ -38,7 +39,7 @@ func InitSetup(config string) {
 
 	var err error
 
-	Cfg, err = ini.LoadSources(ini.LoadOptions{Insensitive: true}, ConfigFilePath)
+	Cfg, err = ini.LoadSources(ini.LoadOptions{Insensitive: true, AllowShadows: true}, ConfigFilePath)
 	if err != nil {
 		panic(err)
 	}

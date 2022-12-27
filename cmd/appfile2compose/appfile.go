@@ -123,7 +123,7 @@ func (a *AppFile) AppStoreInfo() *codegen.AppStoreInfo {
 	for i, port := range a.Container.Ports {
 		ports[i] = codegen.PortStoreInfo{
 			Container:    port.Container,
-			Protocol:     codegen.PortStoreInfoProtocol(port.Type),
+			Protocol:     codegen.PortStoreInfoProtocol(strings.ToLower(port.Type)),
 			Description:  langTextMap(port.Description),
 			Configurable: codegen.Configurable(port.Configurable),
 		}
