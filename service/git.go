@@ -22,7 +22,7 @@ type GitService struct {
 func NewGitService() *GitService {
 	repos := make(map[string]string)
 
-	// TODO - package the latest app store along with other packages
+	// TODO - package the latest app store along with other packages, as part of workflow
 
 	// TODO - select last successful app store dir
 
