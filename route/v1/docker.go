@@ -1,12 +1,15 @@
 package v1
 
 import (
+	"context"
 	"net/http"
 	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/IceWhaleTech/CasaOS-AppManagement/codegen/message_bus"
+	"github.com/IceWhaleTech/CasaOS-AppManagement/common"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/model"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/pkg/config"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/service"
@@ -17,11 +20,17 @@ import (
 	"github.com/IceWhaleTech/CasaOS-Common/utils/logger"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/port"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/ssh"
+	"github.com/IceWhaleTech/CasaOS-Common/utils/systemctl"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
 	"github.com/samber/lo"
 	uuid "github.com/satori/go.uuid"
 	"go.uber.org/zap"
+)
+
+const (
+	dockerRootDirFilePath             = "/var/lib/casaos/docker_root"
+	dockerDaemonConfigurationFilePath = "/etc/docker/daemon.json"
 )
 
 var upgrader = websocket.Upgrader{
@@ -31,23 +40,50 @@ var upgrader = websocket.Upgrader{
 	HandshakeTimeout: time.Duration(time.Second * 5),
 }
 
-func backgroundProcess(imageName string, m *model.CustomizationPostData) {
-	// step：下载镜像
-	err := service.MyService.Docker().DockerPullImage(imageName, m.Icon, m.Label)
+func publishEventWrapper(ctx context.Context, eventType message_bus.EventType, properties map[string]string) {
+	response, err := service.MyService.MessageBus().PublishEventWithResponse(ctx, common.AppManagementServiceName, eventType.Name, properties)
 	if err != nil {
+		logger.Error("failed to publish event", zap.Error(err))
+	}
+	defer response.HTTPResponse.Body.Close()
+
+	if response.StatusCode() != http.StatusOK {
+		logger.Error("failed to publish event", zap.String("status code", response.Status()))
+	}
+}
+
+func pullAndCreate(imageName string, m *model.CustomizationPostData) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	// publish app installing event
+	publishEventWrapper(ctx, common.EventTypeContainerAppInstalling, map[string]string{
+		common.PropertyTypeAppName.Name: imageName,
+	})
+
+	// step：下载镜像
+	if err := service.MyService.Docker().PullImage(imageName, m.Icon, m.Label); err != nil {
+		properties := map[string]string{
+			common.PropertyTypeAppName.Name: imageName,
+			common.PropertyTypeMessage.Name: err.Error(),
+		}
+
 		app := notify.Application{
-			Icon:     m.Icon,
-			Name:     m.Label,
-			State:    "PULLING",
-			Type:     "INSTALL",
-			Success:  false,
-			Finished: false,
-			Message:  err.Error(),
+			Icon:       m.Icon,
+			Name:       m.Label,
+			State:      "PULLING",
+			Type:       "INSTALL",
+			Success:    false,
+			Finished:   false,
+			Message:    err.Error(),
+			Properties: properties,
 		}
 
 		if err := service.MyService.Notify().SendInstallAppBySocket(app); err != nil {
 			logger.Error("send install app notify error", zap.Error(err), zap.Any("app", app))
 		}
+
+		publishEventWrapper(ctx, common.EventTypeContainerAppInstallFailed, properties)
 		return
 	}
 
@@ -55,20 +91,28 @@ func backgroundProcess(imageName string, m *model.CustomizationPostData) {
 		time.Sleep(time.Second)
 	}
 
-	_, err = service.MyService.Docker().DockerContainerCreate(*m, "")
-	if err != nil {
-		app := notify.Application{
-			Icon:     m.Icon,
-			Name:     m.Label,
-			State:    "STARTING",
-			Type:     "INSTALL",
-			Success:  false,
-			Finished: false,
-			Message:  err.Error(),
+	if _, err := service.MyService.Docker().CreateContainer(*m, ""); err != nil {
+		properties := map[string]string{
+			common.PropertyTypeAppName.Name: imageName,
+			common.PropertyTypeMessage.Name: err.Error(),
 		}
+
+		app := notify.Application{
+			Icon:       m.Icon,
+			Name:       m.Label,
+			State:      "STARTING",
+			Type:       "INSTALL",
+			Success:    false,
+			Finished:   false,
+			Message:    err.Error(),
+			Properties: properties,
+		}
+
 		if err := service.MyService.Notify().SendInstallAppBySocket(app); err != nil {
 			logger.Error("send install app notify error", zap.Error(err), zap.Any("app", app))
 		}
+
+		publishEventWrapper(ctx, common.EventTypeContainerAppInstallFailed, properties)
 		return
 	}
 
@@ -84,23 +128,30 @@ func backgroundProcess(imageName string, m *model.CustomizationPostData) {
 	if err := service.MyService.Notify().SendInstallAppBySocket(app); err != nil {
 		logger.Error("send install app notify error", zap.Error(err), zap.Any("app", app))
 	}
-	//		echo -e "hellow\nworld" >>
 
 	// step：启动容器
-	err = service.MyService.Docker().DockerContainerStart(m.ContainerName)
-	if err != nil {
-		app := notify.Application{}
-		app.Icon = m.Icon
-		app.Name = m.Label
-		app.State = "STARTING"
-		app.Type = "INSTALL"
-		app.Success = false
-		app.Finished = false
-		app.Message = err.Error()
+	if err := service.MyService.Docker().StartContainer(m.ContainerName); err != nil {
+		properties := map[string]string{
+			common.PropertyTypeAppName.Name: imageName,
+			common.PropertyTypeMessage.Name: err.Error(),
+		}
+
+		app := notify.Application{
+			Icon:       m.Icon,
+			Name:       m.Label,
+			State:      "STARTING",
+			Type:       "INSTALL",
+			Success:    false,
+			Finished:   false,
+			Message:    err.Error(),
+			Properties: properties,
+		}
 
 		if err := service.MyService.Notify().SendInstallAppBySocket(app); err != nil {
 			logger.Error("send install app notify error", zap.Error(err), zap.Any("app", app))
 		}
+
+		publishEventWrapper(ctx, common.EventTypeContainerAppInstallFailed, properties)
 		return
 	}
 
@@ -112,43 +163,54 @@ func backgroundProcess(imageName string, m *model.CustomizationPostData) {
 	// service.MyService.Notify().UpdateLog(installLog)
 
 	// step: 启动成功     检查容器状态确认启动成功
-	container, err := service.MyService.Docker().DockerContainerInfo(m.ContainerName)
+	container, err := service.MyService.Docker().DescribeContainer(m.ContainerName)
 	if err != nil && container.ContainerJSONBase.State.Running {
+
+		properties := map[string]string{
+			common.PropertyTypeAppName.Name: imageName,
+			common.PropertyTypeMessage.Name: err.Error(),
+		}
+
 		app := notify.Application{
-			Icon:     m.Icon,
-			Name:     m.Label,
-			State:    "INSTALLED",
-			Type:     "INSTALL",
-			Success:  false,
-			Finished: true,
-			Message:  err.Error(),
+			Icon:       m.Icon,
+			Name:       m.Label,
+			State:      "INSTALLED",
+			Type:       "INSTALL",
+			Success:    false,
+			Finished:   true,
+			Message:    err.Error(),
+			Properties: properties,
 		}
 
 		if err := service.MyService.Notify().SendInstallAppBySocket(app); err != nil {
 			logger.Error("send install app notify error", zap.Error(err), zap.Any("app", app))
 		}
+
+		publishEventWrapper(ctx, common.EventTypeContainerAppInstallFailed, properties)
 		return
 	}
 
+	properties := map[string]string{
+		common.PropertyTypeAppID.Name:   container.ID,
+		common.PropertyTypeAppName.Name: imageName,
+	}
+
 	app = notify.Application{
-		Icon:     m.Icon,
-		Name:     m.Label,
-		State:    "INSTALLED",
-		Type:     "INSTALL",
-		Success:  true,
-		Finished: true,
+		Icon:       m.Icon,
+		Name:       m.Label,
+		State:      "INSTALLED",
+		Type:       "INSTALL",
+		Success:    true,
+		Finished:   true,
+		Properties: properties,
 	}
 
 	if err := service.MyService.Notify().SendInstallAppBySocket(app); err != nil {
 		logger.Error("send install app notify error", zap.Error(err), zap.Any("app", app))
 	}
 
-	// if m.Origin != "custom" {
-	// 	for i := 0; i < len(m.Volumes); i++ {
-	// 		m.Volumes[i].Path = docker.GetDir(id, m.Volumes[i].Path)
-	// 	}
-	// }
-	// service.MyService.App().SaveContainer(md)
+	publishEventWrapper(ctx, common.EventTypeContainerAppInstalled, properties)
+
 	config.CasaOSGlobalVariables.AppChange = true
 }
 
@@ -163,7 +225,7 @@ func DockerTerminal(c *gin.Context) {
 	}
 	defer conn.Close()
 	container := c.Param("id")
-	hr, err := service.Exec(container, row, col)
+	hr, err := service.MyService.Docker().CreateContainerShellSession(container, row, col)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, modelCommon.Result{Success: common_err.SERVICE_ERROR, Message: err.Error()})
 		return
@@ -218,12 +280,12 @@ func InstallApp(c *gin.Context) {
 				m.ContainerName = oldName + "-" + strconv.Itoa(i)
 				m.Label = oldLabel + "-" + strconv.Itoa(i)
 			}
-			if _, err := service.MyService.Docker().DockerListByName(m.ContainerName); err != nil {
+			if _, err := service.MyService.Docker().GetContainerByName(m.ContainerName); err != nil {
 				break
 			}
 		}
 	} else {
-		if _, err := service.MyService.Docker().DockerListByName(m.ContainerName); err == nil {
+		if _, err := service.MyService.Docker().GetContainerByName(m.ContainerName); err == nil {
 			c.JSON(http.StatusInternalServerError, modelCommon.Result{Success: common_err.ERROR_APP_NAME_EXIST, Message: common_err.GetMsg(common_err.ERROR_APP_NAME_EXIST)})
 			return
 		}
@@ -253,13 +315,14 @@ func InstallApp(c *gin.Context) {
 	}
 	m.Image = dockerImage + ":" + dockerImageVersion
 	for _, u := range m.Ports {
+		protocol := strings.ToLower(u.Protocol)
 
-		if !lo.Contains([]string{"tcp", "udp", "both"}, u.Protocol) {
+		if !lo.Contains([]string{"tcp", "udp", "both"}, protocol) {
 			c.JSON(http.StatusBadRequest, modelCommon.Result{Success: common_err.INVALID_PARAMS, Message: "Protocol must be tcp or udp or both"})
 			return
 		}
 
-		protocols := strings.Replace(u.Protocol, "both", "tcp,udp", -1)
+		protocols := strings.Replace(protocol, "both", "tcp,udp", -1)
 		for _, p := range strings.Split(protocols, ",") {
 			t, err := strconv.Atoi(u.CommendPort)
 			if err != nil {
@@ -292,7 +355,8 @@ func InstallApp(c *gin.Context) {
 
 	id := uuid.NewV4().String()
 	m.CustomID = id
-	go backgroundProcess(dockerImage+":"+dockerImageVersion, &m)
+
+	go pullAndCreate(dockerImage+":"+dockerImageVersion, &m)
 
 	c.JSON(http.StatusOK, modelCommon.Result{Success: common_err.SUCCESS, Message: common_err.GetMsg(common_err.SUCCESS), Data: m.Label})
 }
@@ -306,45 +370,88 @@ func InstallApp(c *gin.Context) {
 // @Success 200 {string} string "ok"
 // @Router /app/uninstall/{id} [delete]
 func UnInstallApp(c *gin.Context) {
-	appID := c.Param("id")
-
-	if len(appID) == 0 {
+	containerID := c.Param("id")
+	if len(containerID) == 0 {
 		c.JSON(http.StatusBadRequest, modelCommon.Result{Success: common_err.INVALID_PARAMS, Message: common_err.GetMsg(common_err.INVALID_PARAMS)})
 		return
 	}
-	// info := service.MyService.App().GetUninstallInfo(appId)
 
-	info, err := service.MyService.Docker().DockerContainerInfo(appID)
+	j := make(map[string]bool)
+	if err := c.ShouldBind(&j); err != nil {
+		c.JSON(http.StatusBadRequest, modelCommon.Result{Success: common_err.INVALID_PARAMS, Message: err.Error()})
+		return
+	}
+
+	isDelete, ok := j["delete_config_folder"]
+	if !ok {
+		isDelete = false
+	}
+
+	container, err := service.MyService.Docker().DescribeContainer(containerID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, modelCommon.Result{Success: common_err.SERVICE_ERROR, Message: err.Error()})
 		return
 	}
 
+	// publish app installing event
+	publishEventWrapper(c.Request.Context(), common.EventTypeContainerAppUninstalling, map[string]string{
+		common.PropertyTypeAppID.Name:   containerID,
+		common.PropertyTypeAppName.Name: container.Config.Image,
+	})
+
 	// step：停止容器
-	err = service.MyService.Docker().DockerContainerStop(appID)
+	err = service.MyService.Docker().StopContainer(containerID)
 	if err != nil {
+		publishEventWrapper(c.Request.Context(), common.EventTypeContainerAppUninstallFailed, map[string]string{
+			common.PropertyTypeAppID.Name:   containerID,
+			common.PropertyTypeAppName.Name: container.Config.Image,
+			common.PropertyTypeMessage.Name: err.Error(),
+		})
+
 		c.JSON(http.StatusInternalServerError, modelCommon.Result{Success: common_err.UNINSTALL_APP_ERROR, Message: common_err.GetMsg(common_err.UNINSTALL_APP_ERROR), Data: err.Error()})
 		return
 	}
 
-	err = service.MyService.Docker().DockerContainerRemove(appID, false)
+	err = service.MyService.Docker().RemoveContainer(containerID, false)
 	if err != nil {
+		publishEventWrapper(c.Request.Context(), common.EventTypeContainerAppUninstallFailed, map[string]string{
+			common.PropertyTypeAppID.Name:   containerID,
+			common.PropertyTypeAppName.Name: container.Config.Image,
+			common.PropertyTypeMessage.Name: err.Error(),
+		})
+
 		c.JSON(http.StatusInternalServerError, modelCommon.Result{Success: common_err.UNINSTALL_APP_ERROR, Message: common_err.GetMsg(common_err.UNINSTALL_APP_ERROR), Data: err.Error()})
 		return
 	}
 
 	// step：remove image
-	if err := service.MyService.Docker().DockerImageRemove(info.Config.Image); err != nil {
-		c.JSON(http.StatusInternalServerError, modelCommon.Result{Success: common_err.UNINSTALL_APP_ERROR, Message: common_err.GetMsg(common_err.UNINSTALL_APP_ERROR), Data: err.Error()})
-		return
+
+	// if err := service.MyService.Docker().RemoveImage(info.Config.Image); err != nil {
+	// 	publishEventWrapper(c.Request.Context(), common.EventTypeContainerAppUninstallFailed, map[string]string{
+	// 		common.PropertyTypeAppID.Name:   appID,
+	// 		common.PropertyTypeAppName.Name: info.Config.Image,
+	// 		common.PropertyTypeMessage.Name: err.Error(),
+	// 	})
+
+	// 	c.JSON(http.StatusInternalServerError, modelCommon.Result{Success: common_err.UNINSTALL_APP_ERROR, Message: common_err.GetMsg(common_err.UNINSTALL_APP_ERROR), Data: err.Error()})
+	// 	return
+	// }
+	if err := service.MyService.Docker().RemoveImage(container.Config.Image); err != nil {
+		logger.Error("error when trying to remove docker image", zap.Error(err), zap.String("image", container.Config.Image))
 	}
 
-	if info.Config.Labels["origin"] != "custom" {
+	if container.Config.Labels["origin"] != "custom" && isDelete {
 		// step: 删除文件夹
-		for _, v := range info.Mounts {
-			if strings.Contains(v.Source, info.Name) {
-				path := filepath.Join(strings.Split(v.Source, info.Name)[0], info.Name)
+		for _, v := range container.Mounts {
+			if strings.Contains(v.Source, container.Name) {
+				path := filepath.Join(strings.Split(v.Source, container.Name)[0], container.Name)
 				if err := file.RMDir(path); err != nil {
+					publishEventWrapper(c.Request.Context(), common.EventTypeContainerAppUninstallFailed, map[string]string{
+						common.PropertyTypeAppID.Name:   containerID,
+						common.PropertyTypeAppName.Name: container.Config.Image,
+						common.PropertyTypeMessage.Name: err.Error(),
+					})
+
 					c.JSON(http.StatusInternalServerError, modelCommon.Result{Success: common_err.UNINSTALL_APP_ERROR, Message: err.Error()})
 					return
 				}
@@ -353,18 +460,26 @@ func UnInstallApp(c *gin.Context) {
 	}
 	config.CasaOSGlobalVariables.AppChange = true
 
+	properties := map[string]string{
+		common.PropertyTypeAppID.Name:   containerID,
+		common.PropertyTypeAppName.Name: container.Config.Image,
+	}
+
 	notify := notify.Application{
-		Icon:     info.Config.Labels["icon"],
-		Name:     strings.ReplaceAll(info.Name, "/", ""),
-		State:    "FINISHED",
-		Type:     "UNINSTALL",
-		Success:  true,
-		Finished: true,
+		Icon:       container.Config.Labels["icon"],
+		Name:       strings.ReplaceAll(container.Name, "/", ""),
+		State:      "FINISHED",
+		Type:       "UNINSTALL",
+		Success:    true,
+		Finished:   true,
+		Properties: properties,
 	}
 
 	if err := service.MyService.Notify().SendUninstallAppBySocket(notify); err != nil {
 		logger.Error("send uninstall app notify error", zap.Error(err), zap.Any("notify", notify))
 	}
+
+	publishEventWrapper(c.Request.Context(), common.EventTypeContainerAppUninstalled, properties)
 
 	c.JSON(http.StatusOK, modelCommon.Result{Success: common_err.SUCCESS, Message: common_err.GetMsg(common_err.SUCCESS)})
 }
@@ -400,23 +515,23 @@ func ChangAppState(c *gin.Context) {
 	switch state {
 
 	case "start":
-		if err := service.MyService.Docker().DockerContainerStart(appID); err != nil {
+		if err := service.MyService.Docker().StartContainer(appID); err != nil {
 			c.JSON(http.StatusInternalServerError, modelCommon.Result{Success: common_err.SERVICE_ERROR, Message: err.Error()})
 			return
 		}
 	case "restart":
-		if err := service.MyService.Docker().DockerContainerStop(appID); err != nil {
+		if err := service.MyService.Docker().StopContainer(appID); err != nil {
 			c.JSON(http.StatusInternalServerError, modelCommon.Result{Success: common_err.SERVICE_ERROR, Message: err.Error()})
 			return
 		}
 
-		if err := service.MyService.Docker().DockerContainerStart(appID); err != nil {
+		if err := service.MyService.Docker().StartContainer(appID); err != nil {
 			c.JSON(http.StatusInternalServerError, modelCommon.Result{Success: common_err.SERVICE_ERROR, Message: err.Error()})
 			return
 		}
 
 	case "stop":
-		if err := service.MyService.Docker().DockerContainerStop(appID); err != nil {
+		if err := service.MyService.Docker().StopContainer(appID); err != nil {
 			c.JSON(http.StatusInternalServerError, modelCommon.Result{Success: common_err.SERVICE_ERROR, Message: err.Error()})
 			return
 		}
@@ -425,7 +540,7 @@ func ChangAppState(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, modelCommon.Result{Success: common_err.INVALID_PARAMS, Message: "`state` should be start, stop or restart"})
 	}
 
-	info, err := service.MyService.App().GetContainerInfo(appID)
+	info, err := service.MyService.Docker().GetContainer(appID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, modelCommon.Result{Success: common_err.SERVICE_ERROR, Message: err.Error()})
 		return
@@ -445,7 +560,7 @@ func ChangAppState(c *gin.Context) {
 func ContainerLog(c *gin.Context) {
 	appID := c.Param("id")
 
-	log, err := service.MyService.Docker().DockerContainerLog(appID)
+	log, err := service.MyService.Docker().GetContainerLog(appID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, modelCommon.Result{Success: common_err.SERVICE_ERROR, Message: err.Error()})
 		return
@@ -466,7 +581,7 @@ func ContainerLog(c *gin.Context) {
 func GetContainerState(c *gin.Context) {
 	id := c.Param("id")
 	// t := c.DefaultQuery("type", "0")
-	containerInfo, e := service.MyService.App().GetSimpleContainerInfo(id)
+	containerInfo, e := service.MyService.Docker().GetContainer(id)
 	if e != nil {
 		c.JSON(http.StatusInternalServerError, modelCommon.Result{Success: common_err.SERVICE_ERROR, Message: e.Error()})
 		return
@@ -505,66 +620,31 @@ func UpdateSetting(c *gin.Context) {
 		return
 	}
 
-	portMap, err := strconv.Atoi(m.PortMap)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, modelCommon.Result{Success: common_err.INVALID_PARAMS, Message: err.Error()})
-		return
-	}
-
-	if err := service.MyService.Docker().DockerContainerStop(id); err != nil {
+	if err := service.MyService.Docker().StopContainer(id); err != nil {
 		c.JSON(http.StatusInternalServerError, modelCommon.Result{Success: common_err.SERVICE_ERROR, Message: err.Error()})
-		return
-	}
-
-	if !port.IsPortAvailable(portMap, "tcp") {
-		if err := service.MyService.Docker().DockerContainerStart(id); err != nil {
-			c.JSON(http.StatusInternalServerError, modelCommon.Result{Success: common_err.SERVICE_ERROR, Message: err.Error()})
-			return
-		}
-
-		c.JSON(http.StatusInternalServerError, modelCommon.Result{Success: common_err.SERVICE_ERROR, Message: "Duplicate port:" + m.PortMap})
 		return
 	}
 
 	for _, u := range m.Ports {
-		t, err := strconv.Atoi(u.CommendPort)
-		if err != nil {
-			logger.Info("host port is not number - will pick port number randomly", zap.String("port", u.CommendPort))
-		}
+		protocol := strings.ToLower(u.Protocol)
 
-		if !lo.Contains([]string{"tcp", "udp", "both"}, u.Protocol) {
+		if !lo.Contains([]string{"tcp", "udp", "both"}, protocol) {
 			c.JSON(http.StatusBadRequest, modelCommon.Result{Success: common_err.INVALID_PARAMS, Message: "protocol should be tcp, udp or both"})
 			return
 		}
-
-		protocols := strings.Replace(u.Protocol, "both", "tcp,udp", -1)
-
-		for _, p := range strings.Split(protocols, ",") {
-			if !port.IsPortAvailable(t, p) {
-				if err := service.MyService.Docker().DockerContainerStart(id); err != nil {
-					c.JSON(http.StatusInternalServerError, modelCommon.Result{Success: common_err.SERVICE_ERROR, Message: err.Error()})
-					return
-				}
-
-				c.JSON(http.StatusInternalServerError, modelCommon.Result{Success: common_err.SERVICE_ERROR, Message: "Duplicate port:" + u.CommendPort})
-				return
-			}
-		}
 	}
 
-	if err := service.MyService.Docker().DockerContainerUpdateName(id, id); err != nil {
-		c.JSON(http.StatusInternalServerError, modelCommon.Result{Success: common_err.SERVICE_ERROR, Message: err.Error()})
-		return
+	if err := service.MyService.Docker().RenameContainer(id, id); err != nil {
+		logger.Error("rename container error: ", zap.Error(err))
 	}
 
-	containerID, err := service.MyService.Docker().DockerContainerCreate(m, id)
+	containerID, err := service.MyService.Docker().CreateContainer(m, id)
 	if err != nil {
-		if err := service.MyService.Docker().DockerContainerUpdateName(m.ContainerName, id); err != nil {
-			c.JSON(http.StatusInternalServerError, modelCommon.Result{Success: common_err.SERVICE_ERROR, Message: err.Error()})
-			return
+		if err := service.MyService.Docker().RenameContainer(m.ContainerName, id); err != nil {
+			logger.Error("rename container error: ", zap.Error(err))
 		}
 
-		if err := service.MyService.Docker().DockerContainerStart(id); err != nil {
+		if err := service.MyService.Docker().StartContainer(id); err != nil {
 			c.JSON(http.StatusInternalServerError, modelCommon.Result{Success: common_err.SERVICE_ERROR, Message: err.Error()})
 			return
 		}
@@ -574,12 +654,12 @@ func UpdateSetting(c *gin.Context) {
 	}
 
 	// step：启动容器
-	if err = service.MyService.Docker().DockerContainerStart(containerID); err != nil {
+	if err = service.MyService.Docker().StartContainer(containerID); err != nil {
 		c.JSON(http.StatusInternalServerError, modelCommon.Result{Success: common_err.SERVICE_ERROR, Message: err.Error()})
 		return
 	}
 
-	if err := service.MyService.Docker().DockerContainerRemove(id, true); err != nil {
+	if err := service.MyService.Docker().RemoveContainer(id, true); err != nil {
 		c.JSON(http.StatusInternalServerError, modelCommon.Result{Success: common_err.SERVICE_ERROR, Message: err.Error()})
 		return
 	}
@@ -602,7 +682,7 @@ func PutAppUpdate(c *gin.Context) {
 		return
 	}
 
-	inspect, err := service.MyService.Docker().DockerContainerInfo(id)
+	inspect, err := service.MyService.Docker().DescribeContainer(id)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, modelCommon.Result{Success: common_err.SERVICE_ERROR, Message: err.Error()})
 		return
@@ -610,33 +690,31 @@ func PutAppUpdate(c *gin.Context) {
 	}
 
 	imageLatest := strings.Split(inspect.Config.Image, ":")[0] + ":latest"
-	if err := service.MyService.Docker().DockerPullImage(imageLatest, "", ""); err != nil {
+	if err := service.MyService.Docker().PullImage(imageLatest, "", ""); err != nil {
 		c.JSON(http.StatusInternalServerError, modelCommon.Result{Success: common_err.SERVICE_ERROR, Message: err.Error()})
 		return
 
 	}
 
-	if err := service.MyService.Docker().DockerContainerStop(id); err != nil {
+	if err := service.MyService.Docker().StopContainer(id); err != nil {
 		c.JSON(http.StatusInternalServerError, modelCommon.Result{Success: common_err.SERVICE_ERROR, Message: err.Error()})
 		return
 	}
 
-	if err := service.MyService.Docker().DockerContainerUpdateName(id, id); err != nil {
-		c.JSON(http.StatusInternalServerError, modelCommon.Result{Success: common_err.SERVICE_ERROR, Message: err.Error()})
-		return
+	if err := service.MyService.Docker().RenameContainer(id, id); err != nil {
+		logger.Error("rename container error: ", zap.Error(err))
 	}
 
 	inspect.Image = imageLatest
 	inspect.Config.Image = imageLatest
 
-	containerID, err := service.MyService.Docker().DockerContainerCopyCreate(inspect)
+	containerID, err := service.MyService.Docker().CloneContainer(inspect)
 	if err != nil {
-		if err := service.MyService.Docker().DockerContainerUpdateName(inspect.Name, id); err != nil {
-			c.JSON(http.StatusInternalServerError, modelCommon.Result{Success: common_err.SERVICE_ERROR, Message: err.Error()})
-			return
+		if err := service.MyService.Docker().RenameContainer(inspect.Name, id); err != nil {
+			logger.Error("rename container error: ", zap.Error(err))
 		}
 
-		if err := service.MyService.Docker().DockerContainerStart(id); err != nil {
+		if err := service.MyService.Docker().StartContainer(id); err != nil {
 			c.JSON(http.StatusInternalServerError, modelCommon.Result{Success: common_err.SERVICE_ERROR, Message: err.Error()})
 			return
 		}
@@ -646,12 +724,12 @@ func PutAppUpdate(c *gin.Context) {
 	}
 
 	// step：启动容器
-	if err := service.MyService.Docker().DockerContainerStart(containerID); err != nil {
+	if err := service.MyService.Docker().StartContainer(containerID); err != nil {
 		c.JSON(http.StatusInternalServerError, modelCommon.Result{Success: common_err.SERVICE_ERROR, Message: err.Error()})
 		return
 	}
 
-	if err := service.MyService.Docker().DockerContainerRemove(id, true); err != nil {
+	if err := service.MyService.Docker().RemoveContainer(id, true); err != nil {
 		c.JSON(http.StatusInternalServerError, modelCommon.Result{Success: common_err.SERVICE_ERROR, Message: err.Error()})
 		return
 	}
@@ -662,7 +740,7 @@ func PutAppUpdate(c *gin.Context) {
 }
 
 func GetDockerNetworks(c *gin.Context) {
-	networks := service.MyService.Docker().DockerNetworkModelList()
+	networks := service.MyService.Docker().GetNetworkList()
 	list := []map[string]string{}
 	for _, network := range networks {
 		if network.Driver != "null" {
@@ -682,7 +760,7 @@ func GetDockerNetworks(c *gin.Context) {
 // @Router /app/update/{id}/info [get]
 func ContainerUpdateInfo(c *gin.Context) {
 	appID := c.Param("id")
-	info, err := service.MyService.Docker().DockerContainerInfo(appID)
+	info, err := service.MyService.Docker().DescribeContainer(appID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, modelCommon.Result{Success: common_err.SUCCESS, Message: common_err.GetMsg(common_err.SUCCESS), Data: err.Error()})
 		return
@@ -695,7 +773,7 @@ func ContainerUpdateInfo(c *gin.Context) {
 			CommendPort:   v[0].HostPort,
 			ContainerPort: k.Port(),
 
-			Protocol: k.Proto(),
+			Protocol: strings.ToLower(k.Proto()),
 		}
 		port = append(port, temp)
 	}
@@ -793,4 +871,136 @@ func ContainerUpdateInfo(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, modelCommon.Result{Success: common_err.SUCCESS, Message: common_err.GetMsg(common_err.SUCCESS), Data: m})
+}
+
+// @Summary 我的应用列表
+// @Produce  application/json
+// @Accept application/json
+// @Tags app
+// @Security ApiKeyAuth
+// @Param  index query int false "index"
+// @Param  size query int false "size"
+// @Param  position query bool false "是否是首页应用"
+// @Success 200 {string} string "ok"
+// @Router /app/my/list [get]
+func MyAppList(c *gin.Context) {
+	name := c.Query("name")
+	image := c.Query("image")
+	state := c.Query("state")
+
+	casaOSApps, localApps := service.MyService.Docker().GetContainerAppList(&name, &image, &state)
+	data := make(map[string]interface{}, 2)
+	data["casaos_apps"] = casaOSApps
+	data["local_apps"] = localApps
+
+	c.JSON(common_err.SUCCESS, &modelCommon.Result{Success: common_err.SUCCESS, Message: common_err.GetMsg(common_err.SUCCESS), Data: data})
+}
+
+// @Summary my app hardware usage list
+// @Produce  application/json
+// @Accept application/json
+// @Tags app
+// @Security ApiKeyAuth
+// @Success 200 {string} string "ok"
+// @Router /app/usage [get]
+func AppUsageList(c *gin.Context) {
+	list := service.MyService.Docker().GetContainerStats()
+	c.JSON(common_err.SUCCESS, &modelCommon.Result{Success: common_err.SUCCESS, Message: common_err.GetMsg(common_err.SUCCESS), Data: list})
+	// c.JSON(common_err.SUCCESS, &modelCommon.Result{Success: common_err.SUCCESS, Message: common_err.GetMsg(common_err.SUCCESS), Data: nil})
+}
+
+func GetDockerDaemonConfiguration(c *gin.Context) {
+	// info, err := service.MyService.Docker().GetServerInfo()
+	// if err != nil {
+	// 	c.JSON(common_err.SERVICE_ERROR, &modelCommon.Result{Success: common_err.SERVICE_ERROR, Message: common_err.GetMsg(common_err.SERVICE_ERROR), Data: err.Error()})
+	// 	return
+	// }
+	data := make(map[string]interface{})
+
+	if file.Exists(dockerRootDirFilePath) {
+		buf := file.ReadFullFile(dockerRootDirFilePath)
+		err := json.Unmarshal(buf, &data)
+		if err != nil {
+			c.JSON(common_err.CLIENT_ERROR, &modelCommon.Result{Success: common_err.CLIENT_ERROR, Message: common_err.GetMsg(common_err.INVALID_PARAMS), Data: err})
+			return
+		}
+	}
+	c.JSON(common_err.SUCCESS, &modelCommon.Result{Success: common_err.SUCCESS, Message: common_err.GetMsg(common_err.SUCCESS), Data: data})
+}
+
+func PutDockerDaemonConfiguration(c *gin.Context) {
+	request := make(map[string]interface{})
+	if err := c.BindJSON(&request); err != nil {
+		c.JSON(http.StatusBadRequest, &modelCommon.Result{Success: common_err.CLIENT_ERROR, Message: common_err.GetMsg(common_err.INVALID_PARAMS), Data: err})
+		return
+	}
+
+	value, ok := request["docker_root_dir"]
+	if !ok {
+		c.JSON(http.StatusBadRequest, &modelCommon.Result{Success: common_err.CLIENT_ERROR, Message: common_err.GetMsg(common_err.INVALID_PARAMS), Data: "`docker_root_dir` should not empty"})
+		return
+	}
+
+	dockerConfig := model.DockerDaemonConfigurationModel{}
+	if file.Exists(dockerDaemonConfigurationFilePath) {
+		byteResult := file.ReadFullFile(dockerDaemonConfigurationFilePath)
+		err := json.Unmarshal(byteResult, &dockerConfig)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, &modelCommon.Result{Success: common_err.SERVICE_ERROR, Message: "error when trying to deserialize " + dockerDaemonConfigurationFilePath, Data: err})
+			return
+		}
+	}
+
+	dockerRootDir := value.(string)
+	if dockerRootDir == "/" {
+		dockerConfig.Root = "" // omitempty - empty string will not be serialized
+	} else {
+		if !file.Exists(dockerRootDir) {
+			c.JSON(http.StatusBadRequest, &modelCommon.Result{Success: common_err.CLIENT_ERROR, Message: common_err.GetMsg(common_err.DIR_NOT_EXISTS), Data: common_err.GetMsg(common_err.DIR_NOT_EXISTS)})
+			return
+		}
+
+		dockerConfig.Root = filepath.Join(dockerRootDir, "docker")
+
+		if err := file.IsNotExistMkDir(dockerConfig.Root); err != nil {
+			c.JSON(http.StatusInternalServerError, &modelCommon.Result{Success: common_err.SERVICE_ERROR, Message: "error when trying to create " + dockerConfig.Root, Data: err})
+			return
+		}
+	}
+
+	buf, err := json.Marshal(request)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, &modelCommon.Result{Success: common_err.CLIENT_ERROR, Message: "error when trying to serialize docker root json", Data: err})
+		return
+	}
+
+	if err := file.WriteToFullPath(buf, dockerRootDirFilePath, 0o644); err != nil {
+		c.JSON(http.StatusInternalServerError, &modelCommon.Result{Success: common_err.SERVICE_ERROR, Message: "error when trying to write " + dockerRootDirFilePath, Data: err})
+		return
+	}
+
+	buf, err = json.Marshal(dockerConfig)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, &modelCommon.Result{Success: common_err.CLIENT_ERROR, Message: "error when trying to serialize docker config", Data: dockerConfig})
+		return
+	}
+
+	if err := file.WriteToFullPath(buf, dockerDaemonConfigurationFilePath, 0o644); err != nil {
+		c.JSON(http.StatusInternalServerError, &modelCommon.Result{Success: common_err.SERVICE_ERROR, Message: "error when trying to write to " + dockerDaemonConfigurationFilePath, Data: err})
+		return
+	}
+
+	if err := systemctl.ReloadDaemon(); err != nil {
+		c.JSON(http.StatusInternalServerError, &modelCommon.Result{Success: common_err.SERVICE_ERROR, Message: "error when trying to reload systemd daemon"})
+	}
+
+	if err := systemctl.StopService("docker"); err != nil {
+		c.JSON(http.StatusInternalServerError, &modelCommon.Result{Success: common_err.SERVICE_ERROR, Message: "error when trying to stop docker service"})
+	}
+
+	if err := systemctl.StartService("docker"); err != nil {
+		c.JSON(http.StatusInternalServerError, &modelCommon.Result{Success: common_err.SERVICE_ERROR, Message: "error when trying to start docker service"})
+	}
+
+	c.JSON(http.StatusOK, &modelCommon.Result{Success: common_err.SUCCESS, Message: common_err.GetMsg(common_err.SUCCESS), Data: request})
 }

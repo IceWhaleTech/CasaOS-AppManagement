@@ -11,15 +11,17 @@ builds:
   - id: casaos-app-management-amd64
     binary: build/sysroot/usr/bin/casaos-app-management
     env:
-      - CGO_ENABLED=1
       - CC=x86_64-linux-gnu-gcc
     ldflags:
+      - -X main.commit={{.Commit}}
+      - -X main.date={{.Date}}
       - -s
       - -w
       - -extldflags "-static"
     tags:
       - musl
       - netgo
+      - osusergo
     goos:
       - linux
     goarch:
@@ -27,15 +29,17 @@ builds:
   - id: casaos-app-management-arm64
     binary: build/sysroot/usr/bin/casaos-app-management
     env:
-      - CGO_ENABLED=1
       - CC=aarch64-linux-gnu-gcc
     ldflags:
+      - -X main.commit={{.Commit}}
+      - -X main.date={{.Date}}
       - -s
       - -w
       - -extldflags "-static"
     tags:
       - musl
       - netgo
+      - osusergo
     goos:
       - linux
     goarch:
@@ -43,15 +47,17 @@ builds:
   - id: casaos-app-management-arm-7
     binary: build/sysroot/usr/bin/casaos-app-management
     env:
-      - CGO_ENABLED=1
       - CC=arm-linux-gnueabihf-gcc
     ldflags:
+      - -X main.commit={{.Commit}}
+      - -X main.date={{.Date}}
       - -s
       - -w
       - -extldflags "-static"
     tags:
       - musl
       - netgo
+      - osusergo
     goos:
       - linux
     goarch:
@@ -62,15 +68,17 @@ builds:
     binary: build/sysroot/usr/bin/casaos-app-management-migration-tool
     main: ./cmd/migration-tool
     env:
-      - CGO_ENABLED=1
       - CC=x86_64-linux-gnu-gcc
     ldflags:
+      - -X main.commit={{.Commit}}
+      - -X main.date={{.Date}}
       - -s
       - -w
       - -extldflags "-static"
     tags:
       - musl
       - netgo
+      - osusergo
     goos:
       - linux
     goarch:
@@ -79,15 +87,17 @@ builds:
     binary: build/sysroot/usr/bin/casaos-app-management-migration-tool
     main: ./cmd/migration-tool
     env:
-      - CGO_ENABLED=1
       - CC=aarch64-linux-gnu-gcc
     ldflags:
+      - -X main.commit={{.Commit}}
+      - -X main.date={{.Date}}
       - -s
       - -w
       - -extldflags "-static"
     tags:
       - musl
       - netgo
+      - osusergo
     goos:
       - linux
     goarch:
@@ -96,15 +106,17 @@ builds:
     binary: build/sysroot/usr/bin/casaos-app-management-migration-tool
     main: ./cmd/migration-tool
     env:
-      - CGO_ENABLED=1
       - CC=arm-linux-gnueabihf-gcc
     ldflags:
+      - -X main.commit={{.Commit}}
+      - -X main.date={{.Date}}
       - -s
       - -w
       - -extldflags "-static"
     tags:
       - musl
       - netgo
+      - osusergo
     goos:
       - linux
     goarch:
@@ -135,7 +147,7 @@ archives:
 checksum:
   name_template: "checksums.txt"
 snapshot:
-  name_template: "{{ incpatch .Version }}-snapshot"
+  name_template: "{{ incpatch .Version }}"
 changelog:
   sort: asc
   filters:

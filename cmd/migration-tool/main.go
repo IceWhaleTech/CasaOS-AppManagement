@@ -13,8 +13,6 @@ import (
 )
 
 const (
-	tableName = "o_container"
-
 	appManagementConfigDirPath  = "/etc/casaos"
 	appManagementConfigFilePath = "/etc/casaos/app-management.conf"
 	appManagementName           = "casaos-app-management.service"
@@ -24,9 +22,13 @@ const (
 //go:embedded ../../build/sysroot/etc/casaos/app-management.conf.sample
 var _appManagementConfigFileSample string
 
-var _logger *Logger
+var (
+	_logger *Logger
+	_status *version.GlobalMigrationStatus
 
-var _status *version.GlobalMigrationStatus
+	commit = "private build"
+	date   = "private build"
+)
 
 func main() {
 	versionFlag := flag.Bool("v", false, "version")
@@ -38,6 +40,9 @@ func main() {
 		fmt.Printf("v%s\n", common.AppManagementVersion)
 		os.Exit(0)
 	}
+
+	println("git commit:", commit)
+	println("build date:", date)
 
 	_logger = NewLogger()
 
