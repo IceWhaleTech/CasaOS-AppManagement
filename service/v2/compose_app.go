@@ -6,6 +6,7 @@ import (
 	"github.com/IceWhaleTech/CasaOS-AppManagement/codegen"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/common"
 	"github.com/compose-spec/compose-go/loader"
+	"github.com/compose-spec/compose-go/types"
 )
 
 type ComposeApp codegen.ComposeApp
@@ -75,4 +76,43 @@ func (a *ComposeApp) Apps() map[string]*App {
 	}
 
 	return apps
+}
+
+func (a *ComposeApp) Install() (*ComposeApp, error) {
+	// TODO - get workdir
+
+	// TODO - update working dir
+
+	// TODO - generate project name
+
+	// TODO - save to workdir
+
+	// TODO - pull
+
+	// TODO - create
+
+	// TODO - start
+
+	return nil, nil
+}
+
+func NewComposeAppFromYAML(yaml []byte) (*ComposeApp, error) {
+	project, err := loader.Load(
+		types.ConfigDetails{
+			ConfigFiles: []types.ConfigFile{
+				{
+					Content: []byte(yaml),
+				},
+			},
+			Environment: map[string]string{},
+		},
+		func(o *loader.Options) { o.SkipInterpolation = true },
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	project.Extensions["yaml"] = &SampleComposeAppYAML
+
+	return (*ComposeApp)(project), nil
 }
