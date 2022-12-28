@@ -1,17 +1,25 @@
 package v2
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/IceWhaleTech/CasaOS-AppManagement/codegen"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/common"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/pkg/config"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/file"
+	"github.com/IceWhaleTech/CasaOS-Common/utils/logger"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/random"
 	"github.com/compose-spec/compose-go/loader"
 	"github.com/compose-spec/compose-go/types"
+	"github.com/docker/cli/cli/command"
+	"github.com/docker/cli/cli/flags"
+	"github.com/docker/compose/v2/pkg/api"
+	"github.com/docker/compose/v2/pkg/compose"
+	"go.uber.org/zap"
 	"gopkg.in/yaml.v3"
 )
 
@@ -109,13 +117,32 @@ func (a *ComposeApp) Install() (*ComposeApp, error) {
 		return nil, err
 	}
 
-	// TODO - pull
+	ctx, cancel := context.WithTimeout(context.Background(), 300*time.Second) // 5 minutes
 
-	// TODO - create
+	go func(ctx context.Context, cancel context.CancelFunc) {
+		defer cancel()
 
-	// TODO - start
+		// pull
+		if err := a.Pull(ctx, cancel); err != nil {
+			logger.Error("failed to pull images for compose app", zap.Error(err))
+			return
+		}
 
-	return nil, nil
+		// TODO - create
+
+		// TODO - start
+	}(ctx, cancel)
+
+	return a, nil
+}
+
+func (a *ComposeApp) Pull(ctx context.Context, cancel context.CancelFunc) error {
+	service, err := apiService()
+	if err != nil {
+		return err
+	}
+
+	return service.Pull(ctx, (*codegen.ComposeApp)(a), api.PullOptions{})
 }
 
 func NewComposeAppFromYAML(yaml []byte) (*ComposeApp, error) {
@@ -160,4 +187,19 @@ func fixProjectName(project *codegen.ComposeApp) error {
 	}
 
 	return nil
+}
+
+func apiService() (api.Service, error) {
+	dockerCli, err := command.NewDockerCli()
+	if err != nil {
+		return nil, err
+	}
+
+	if err := dockerCli.Initialize(&flags.ClientOptions{
+		Common: &flags.CommonOptions{},
+	}); err != nil {
+		return nil, err
+	}
+
+	return compose.NewComposeService(dockerCli), nil
 }
