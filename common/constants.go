@@ -8,7 +8,8 @@ const (
 
 	ContainerLabelV1AppStoreID = "io.casaos.v1.app.store.id"
 
-	ComposeYamlExtensionName = "x-casaos"
+	ComposeExtensionNameXCasaOS = "x-casaos"
+	ComposeYAMLFileName         = "docker-compose.yml"
 
 	MIMEApplicationYAML = "application/yaml"
 )

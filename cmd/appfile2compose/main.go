@@ -41,7 +41,7 @@ func main() {
 	}
 
 	if *outputFlag == "" {
-		outputFlag = utils.Ptr("docker-compose.yml")
+		outputFlag = utils.Ptr(common.ComposeYAMLFileName)
 	}
 
 	logger = NewLogger()

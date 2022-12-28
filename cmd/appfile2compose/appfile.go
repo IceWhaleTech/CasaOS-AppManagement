@@ -225,7 +225,7 @@ func (a *AppFile) ComposeApp() *v2.ComposeApp {
 		MemReservation: types.UnitBytes(a.Container.Constraints.MinMemory * 1024 * 1024),
 		Restart:        a.Container.RestartPolicy,
 		Extensions: map[string]interface{}{
-			common.ComposeYamlExtensionName: a.AppStoreInfo(),
+			common.ComposeExtensionNameXCasaOS: a.AppStoreInfo(),
 		},
 	}}
 
@@ -233,7 +233,7 @@ func (a *AppFile) ComposeApp() *v2.ComposeApp {
 		Name:     a.Name,
 		Services: services,
 		Extensions: map[string]interface{}{
-			common.ComposeYamlExtensionName: a.ComposeAppStoreInfo(),
+			common.ComposeExtensionNameXCasaOS: a.ComposeAppStoreInfo(),
 		},
 	})
 
