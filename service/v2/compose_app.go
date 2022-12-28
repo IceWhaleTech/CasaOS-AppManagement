@@ -13,6 +13,7 @@ import (
 	"github.com/IceWhaleTech/CasaOS-Common/utils/file"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/logger"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/random"
+	"github.com/compose-spec/compose-go/cli"
 	"github.com/compose-spec/compose-go/loader"
 	"github.com/compose-spec/compose-go/types"
 	"github.com/docker/cli/cli/command"
@@ -98,8 +99,9 @@ func (a *ComposeApp) Apps() map[string]*App {
 	return apps
 }
 
-func (a *ComposeApp) Install() (*ComposeApp, error) {
+func (a *ComposeApp) PrepareInstall() (*ComposeApp, error) {
 	if err := fixProjectName((*codegen.ComposeApp)(a)); err != nil {
+		logger.Error("failed to fix project name", zap.Error(err))
 		return nil, err
 	}
 
@@ -108,15 +110,25 @@ func (a *ComposeApp) Install() (*ComposeApp, error) {
 	a.WorkingDir = filepath.Join(config.AppInfo.AppsPath, a.Name)
 
 	if err := file.IsNotExistMkDir(a.WorkingDir); err != nil {
+		logger.Error("failed to create working dir", zap.Error(err), zap.String("path", a.WorkingDir))
 		return nil, err
 	}
 
 	// save to workdir
 	path := filepath.Join(a.WorkingDir, common.ComposeYAMLFileName)
 	if err := os.WriteFile(path, []byte(*a.YAML()), 0o600); err != nil {
+		logger.Error("failed to save compose file", zap.Error(err), zap.String("path", path))
+
+		if err := file.RMDir(a.WorkingDir); err != nil {
+			logger.Error("failed to cleanup working dir after failing to save compose file", zap.Error(err), zap.String("path", a.WorkingDir))
+		}
 		return nil, err
 	}
 
+	return a, nil
+}
+
+func (a *ComposeApp) Install() (*ComposeApp, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 300*time.Second) // 5 minutes
 
 	go func(ctx context.Context, cancel context.CancelFunc) {
@@ -125,6 +137,12 @@ func (a *ComposeApp) Install() (*ComposeApp, error) {
 		// pull
 		if err := a.Pull(ctx, cancel); err != nil {
 			logger.Error("failed to pull images for compose app", zap.Error(err))
+			return
+		}
+
+		// prepare install
+		if _, err := a.PrepareInstall(); err != nil {
+			logger.Error("failed to prepare install compose app", zap.Error(err))
 			return
 		}
 
@@ -146,6 +164,10 @@ func (a *ComposeApp) Pull(ctx context.Context, cancel context.CancelFunc) error 
 }
 
 func NewComposeAppFromYAML(yaml []byte) (*ComposeApp, error) {
+	cli.NewProjectOptions(
+		[]string{},
+	)
+
 	project, err := loader.Load(
 		types.ConfigDetails{
 			ConfigFiles: []types.ConfigFile{
