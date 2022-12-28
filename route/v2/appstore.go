@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/IceWhaleTech/CasaOS-AppManagement/codegen"
+	"github.com/IceWhaleTech/CasaOS-AppManagement/common"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/service"
 	"github.com/IceWhaleTech/CasaOS-Common/utils"
 	"github.com/compose-spec/compose-go/types"
@@ -67,7 +68,7 @@ func (*AppManagement) ComposeApp(ctx echo.Context, id codegen.AppStoreID) error 
 	}
 
 	accept := ctx.Request().Header.Get(echo.HeaderAccept)
-	if accept == MIMEApplicationYAML {
+	if accept == common.MIMEApplicationYAML {
 		yaml := composeApp.YAML()
 		if yaml == nil {
 			return ctx.JSON(http.StatusInternalServerError, codegen.ResponseInternalServerError{
