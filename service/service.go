@@ -24,6 +24,7 @@ type Services interface {
 	V2AppStore() *v2.AppStore
 
 	Git() *GitService
+	Compose() *v2.ComposeService
 	Docker() DockerService
 	Gateway() external.ManagementService
 	Notify() external.NotifyService
@@ -47,6 +48,7 @@ func NewService(RuntimePath string) Services {
 
 		v1appStore: v1.NewAppService(),
 		v2appStore: v2appStore,
+		compose:    v2.NewComposeService(),
 		docker:     NewDockerService(),
 		git:        NewGitService(),
 	}
@@ -57,6 +59,7 @@ type store struct {
 	v2appStore *v2.AppStore
 
 	git     *GitService
+	compose *v2.ComposeService
 	docker  DockerService
 	gateway external.ManagementService
 	notify  external.NotifyService
@@ -80,6 +83,10 @@ func (c *store) V2AppStore() *v2.AppStore {
 
 func (c *store) Git() *GitService {
 	return c.git
+}
+
+func (c *store) Compose() *v2.ComposeService {
+	return c.compose
 }
 
 func (c *store) Docker() DockerService {

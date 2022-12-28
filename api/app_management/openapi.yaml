@@ -169,6 +169,14 @@ paths:
       operationId: installComposeApp
       tags:
         - Compose methods
+      parameters:
+        - name: name
+          in: query
+          description: |
+            The name of the project. If not specified, the project name will be the same as the `id` of the compose app.
+          required: false
+          schema:
+            type: string
       requestBody:
         $ref: "#/components/requestBodies/RequestComposeApp"
       responses:
