@@ -162,6 +162,23 @@ paths:
         "500":
           $ref: "#/components/responses/ResponseInternalServerError"
 
+    post:
+      summary: Install a compose app
+      description: |
+        TODO
+      operationId: installComposeApp
+      tags:
+        - Compose methods
+      requestBody:
+        $ref: "#/components/requestBodies/RequestComposeApp"
+      responses:
+        "200":
+          $ref: "#/components/responses/ComposeAppOK"
+        "400":
+          $ref: "#/components/responses/ResponseBadRequest"
+        "500":
+          $ref: "#/components/responses/ResponseInternalServerError"
+
   /container/{id}/healthcheck:
     get:
       summary: Check if an app is running healthy
@@ -205,6 +222,22 @@ components:
       schema:
         type: string
       example: 09e70f4a7dd3fc43de6a1bc40d45c79f857544e13679e5b1a47409034a7ce621
+
+  requestBodies:
+    RequestComposeApp:
+      description: Compose app YAML content
+      required: true
+      content:
+        application/yaml:
+          schema:
+            $ref: "#/components/schemas/ComposeApp"
+          example: |
+            # docker compose YAML content
+            services:
+              ...
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ComposeApp"
 
   responses:
     ResponseInternalServerError:

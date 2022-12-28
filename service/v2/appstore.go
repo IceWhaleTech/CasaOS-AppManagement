@@ -6,8 +6,6 @@ import (
 	_ "embed"
 
 	"github.com/IceWhaleTech/CasaOS-AppManagement/common"
-	"github.com/compose-spec/compose-go/loader"
-	"github.com/compose-spec/compose-go/types"
 )
 
 type AppStore struct {
@@ -45,31 +43,10 @@ func NewAppStore() (*AppStore, error) {
 	}, nil
 }
 
-func LoadComposeApp(yaml []byte) (*ComposeApp, error) {
-	project, err := loader.Load(
-		types.ConfigDetails{
-			ConfigFiles: []types.ConfigFile{
-				{
-					Content: []byte(yaml),
-				},
-			},
-			Environment: map[string]string{},
-		},
-		func(o *loader.Options) { o.SkipInterpolation = true },
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	project.Extensions["yaml"] = &SampleComposeAppYAML
-
-	return (*ComposeApp)(project), nil
-}
-
 func tempStoreForTest() (map[string]*ComposeApp, error) {
 	store := map[string]*ComposeApp{}
 
-	composeApp, err := LoadComposeApp([]byte(SampleComposeAppYAML))
+	composeApp, err := NewComposeAppFromYAML([]byte(SampleComposeAppYAML))
 	if err != nil {
 		return nil, err
 	}
