@@ -16,8 +16,8 @@ var (
 	//go:embed fixtures/sample.docker-compose.yaml
 	SampleComposeAppYAML string
 
-	ErrYAMLExtensionNotFound = fmt.Errorf("extension `%s` not found", common.ComposeYamlExtensionName)
-	ErrMainAppNotFound       = fmt.Errorf("main app not found")
+	ErrComposeExtensionNameXCasaOSNotFound = fmt.Errorf("extension `%s` not found", common.ComposeExtensionNameXCasaOS)
+	ErrMainAppNotFound                     = fmt.Errorf("main app not found")
 )
 
 func (s *AppStore) Catalog() map[string]*ComposeApp {

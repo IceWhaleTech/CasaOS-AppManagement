@@ -1,7 +1,7 @@
 package v2
 
 import (
-	"io/ioutil"
+	"io"
 	"net/http"
 
 	"github.com/IceWhaleTech/CasaOS-AppManagement/codegen"
@@ -22,7 +22,7 @@ func (a *AppManagement) InstallComposeApp(ctx echo.Context) error {
 	switch ctx.Request().Header.Get(echo.HeaderContentType) {
 	case common.MIMEApplicationYAML:
 
-		buf, err := ioutil.ReadAll(ctx.Request().Body)
+		buf, err := io.ReadAll(ctx.Request().Body)
 		if err != nil {
 			message := err.Error()
 			logger.Error("failed to read body from the request", zap.Error(err))

@@ -2,33 +2,39 @@ package v2
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
 
 	"github.com/IceWhaleTech/CasaOS-AppManagement/codegen"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/common"
+	"github.com/IceWhaleTech/CasaOS-AppManagement/pkg/config"
+	"github.com/IceWhaleTech/CasaOS-Common/utils/file"
+	"github.com/IceWhaleTech/CasaOS-Common/utils/random"
 	"github.com/compose-spec/compose-go/loader"
 	"github.com/compose-spec/compose-go/types"
+	"gopkg.in/yaml.v3"
 )
 
 type ComposeApp codegen.ComposeApp
 
 func (a *ComposeApp) StoreInfo() (*codegen.ComposeAppStoreInfo, error) {
-	if ex, ok := a.Extensions[common.ComposeYamlExtensionName]; ok {
+	if ex, ok := a.Extensions[common.ComposeExtensionNameXCasaOS]; ok {
 		var storeInfo codegen.ComposeAppStoreInfo
 		if err := loader.Transform(ex, &storeInfo); err != nil {
 			return nil, err
 		}
 
 		// locate main app
-		mainApp := a.App(*storeInfo.MainApp)
-		if mainApp == nil {
+		if storeInfo.MainApp == nil || *storeInfo.MainApp == "" {
 			for _, app := range a.Apps() {
-				mainApp = app
+				storeInfo.MainApp = &app.Name
 				break
 			}
 		}
 
-		if a.Name == "" {
-			a.Name = mainApp.Name
+		mainApp := a.App(*storeInfo.MainApp)
+		if mainApp == nil {
+			return nil, ErrMainAppNotFound
 		}
 
 		appStoreInfo, err := mainApp.StoreInfo()
@@ -44,14 +50,20 @@ func (a *ComposeApp) StoreInfo() (*codegen.ComposeAppStoreInfo, error) {
 		return &storeInfo, nil
 	}
 
-	return nil, ErrYAMLExtensionNotFound
+	return nil, ErrComposeExtensionNameXCasaOSNotFound
 }
 
 func (a *ComposeApp) YAML() *string {
-	if yaml, ok := a.Extensions["yaml"]; ok {
-		return yaml.(*string)
+	if _, ok := a.Extensions["yaml"]; !ok {
+		out, err := yaml.Marshal(a)
+		if err != nil {
+			return nil
+		}
+
+		a.Extensions["yaml"] = out
 	}
-	return nil
+
+	return a.Extensions["yaml"].(*string)
 }
 
 func (a *ComposeApp) App(name string) *App {
@@ -79,13 +91,23 @@ func (a *ComposeApp) Apps() map[string]*App {
 }
 
 func (a *ComposeApp) Install() (*ComposeApp, error) {
-	// TODO - get workdir
+	if err := fixProjectName((*codegen.ComposeApp)(a)); err != nil {
+		return nil, err
+	}
 
-	// TODO - update working dir
+	a.Name = a.Name + "-" + random.RandomString(4, true)
 
-	// TODO - generate project name
+	a.WorkingDir = filepath.Join(config.AppInfo.AppsPath, a.Name)
 
-	// TODO - save to workdir
+	if err := file.IsNotExistMkDir(a.WorkingDir); err != nil {
+		return nil, err
+	}
+
+	// save to workdir
+	path := filepath.Join(a.WorkingDir, common.ComposeYAMLFileName)
+	if err := os.WriteFile(path, []byte(*a.YAML()), 0o600); err != nil {
+		return nil, err
+	}
 
 	// TODO - pull
 
@@ -112,7 +134,30 @@ func NewComposeAppFromYAML(yaml []byte) (*ComposeApp, error) {
 		return nil, err
 	}
 
+	// populate yaml in extensions
+	if project.Extensions == nil {
+		project.Extensions = make(map[string]interface{})
+	}
+
 	project.Extensions["yaml"] = &SampleComposeAppYAML
 
+	// fix name
+	if err := fixProjectName(project); err != nil {
+		return nil, err
+	}
+
 	return (*ComposeApp)(project), nil
+}
+
+func fixProjectName(project *codegen.ComposeApp) error {
+	if project.Name == "" {
+		composeApp := (*ComposeApp)(project)
+		storeInfo, err := composeApp.StoreInfo()
+		if err != nil {
+			return err
+		}
+		project.Name = *storeInfo.MainApp
+	}
+
+	return nil
 }

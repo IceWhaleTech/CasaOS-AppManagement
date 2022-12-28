@@ -10,14 +10,14 @@ import (
 type App types.ServiceConfig
 
 func (a *App) StoreInfo() (*codegen.AppStoreInfo, error) {
-	if ex, ok := a.Extensions[common.ComposeYamlExtensionName]; ok {
+	if ex, ok := a.Extensions[common.ComposeExtensionNameXCasaOS]; ok {
 		var storeInfo codegen.AppStoreInfo
 		if err := loader.Transform(ex, &storeInfo); err != nil {
 			return nil, err
 		}
 		return &storeInfo, nil
 	}
-	return nil, ErrYAMLExtensionNotFound
+	return nil, ErrComposeExtensionNameXCasaOSNotFound
 }
 
 func (a *App) State() error {
