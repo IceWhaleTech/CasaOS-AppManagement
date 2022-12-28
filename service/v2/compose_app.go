@@ -13,7 +13,6 @@ import (
 	"github.com/IceWhaleTech/CasaOS-Common/utils/file"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/logger"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/random"
-	"github.com/compose-spec/compose-go/cli"
 	"github.com/compose-spec/compose-go/loader"
 	"github.com/compose-spec/compose-go/types"
 	"github.com/docker/cli/cli/command"
@@ -164,10 +163,6 @@ func (a *ComposeApp) Pull(ctx context.Context, cancel context.CancelFunc) error 
 }
 
 func NewComposeAppFromYAML(yaml []byte) (*ComposeApp, error) {
-	cli.NewProjectOptions(
-		[]string{},
-	)
-
 	project, err := loader.Load(
 		types.ConfigDetails{
 			ConfigFiles: []types.ConfigFile{
