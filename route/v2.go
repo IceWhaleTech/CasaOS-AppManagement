@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/IceWhaleTech/CasaOS-AppManagement/codegen"
+	"github.com/IceWhaleTech/CasaOS-AppManagement/common"
 
 	v2Route "github.com/IceWhaleTech/CasaOS-AppManagement/route/v2"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/common_err"
@@ -81,7 +82,27 @@ func InitV2Router() http.Handler {
 		},
 	}))
 
-	e.Use(middleware.OapiRequestValidatorWithOptions(_swagger, &middleware.Options{Options: openapi3filter.Options{AuthenticationFunc: openapi3filter.NoopAuthenticationFunc}}))
+	e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error {
+			switch c.Request().Header.Get(echo.HeaderContentType) {
+			case common.MIMEApplicationYAML: // in case request contains a compose content in YAML
+				return middleware.OapiRequestValidatorWithOptions(_swagger, &middleware.Options{
+					Options: openapi3filter.Options{
+						AuthenticationFunc:  openapi3filter.NoopAuthenticationFunc,
+						ExcludeRequestBody:  true,
+						ExcludeResponseBody: true,
+					},
+				})(next)(c)
+
+			default:
+				return middleware.OapiRequestValidatorWithOptions(_swagger, &middleware.Options{
+					Options: openapi3filter.Options{
+						AuthenticationFunc: openapi3filter.NoopAuthenticationFunc,
+					},
+				})(next)(c)
+			}
+		}
+	})
 
 	codegen.RegisterHandlersWithBaseURL(e, appManagement, V2APIPath)
 
