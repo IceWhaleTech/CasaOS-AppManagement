@@ -12,18 +12,14 @@ package service
 import (
 	"github.com/IceWhaleTech/CasaOS-AppManagement/codegen/message_bus"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/pkg/config"
+	v1 "github.com/IceWhaleTech/CasaOS-AppManagement/service/v1"
 	"github.com/IceWhaleTech/CasaOS-Common/external"
-	"github.com/patrickmn/go-cache"
 )
 
-var (
-	Cache         *cache.Cache
-	MyService     Services
-	NewVersionApp map[string]string
-)
+var MyService Services
 
 type Services interface {
-	AppStore() AppStore
+	V1AppStore() v1.AppStore
 	Docker() DockerService
 	Gateway() external.ManagementService
 	Notify() external.NotifyService
@@ -40,16 +36,16 @@ func NewService(RuntimePath string) Services {
 		gateway: gatewayManagement,
 		notify:  external.NewNotifyService(RuntimePath),
 
-		appStore: NewAppService(),
-		docker:   NewDockerService(),
+		v1appStore: v1.NewAppService(),
+		docker:     NewDockerService(),
 	}
 }
 
 type store struct {
-	appStore AppStore
-	docker   DockerService
-	gateway  external.ManagementService
-	notify   external.NotifyService
+	v1appStore v1.AppStore
+	docker     DockerService
+	gateway    external.ManagementService
+	notify     external.NotifyService
 }
 
 func (c *store) Gateway() external.ManagementService {
@@ -60,8 +56,8 @@ func (c *store) Notify() external.NotifyService {
 	return c.notify
 }
 
-func (c *store) AppStore() AppStore {
-	return c.appStore
+func (c *store) V1AppStore() v1.AppStore {
+	return c.v1appStore
 }
 
 func (c *store) Docker() DockerService {

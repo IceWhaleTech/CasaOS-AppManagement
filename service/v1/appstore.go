@@ -1,8 +1,8 @@
-package service
+package v1
 
 import (
 	"fmt"
-	"io/ioutil"
+	"io"
 	"path/filepath"
 	"sort"
 	"strconv"
@@ -14,6 +14,7 @@ import (
 	httpUtil "github.com/IceWhaleTech/CasaOS-Common/utils/http"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/logger"
 	jsoniter "github.com/json-iterator/go"
+	"github.com/patrickmn/go-cache"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 )
@@ -28,7 +29,11 @@ type AppStore interface {
 
 type appStore struct{}
 
-var json = jsoniter.ConfigCompatibleWithStandardLibrary
+var (
+	json = jsoniter.ConfigCompatibleWithStandardLibrary
+
+	Cache *cache.Cache
+)
 
 func (o *appStore) GetServerList(index, size, tp, categoryID, key string) (model.ServerAppListCollection, error) {
 	collection := model.ServerAppListCollection{}
@@ -143,7 +148,7 @@ func (o *appStore) AsyncGetServerList() (model.ServerAppListCollection, error) {
 	}
 	defer resp.Body.Close()
 
-	list, err := ioutil.ReadAll(resp.Body)
+	list, err := io.ReadAll(resp.Body)
 	if err != nil {
 		logger.Error("error when reading from response body after calling url with header", zap.Any("err", err), zap.Any("url", url), zap.Any("head", headers))
 		return collection, err
@@ -200,7 +205,7 @@ func (o *appStore) GetServerAppInfo(id, t string, language string) (model.Server
 		return info, err
 	}
 
-	infoB, err := ioutil.ReadAll(resp.Body)
+	infoB, err := io.ReadAll(resp.Body)
 	if err != nil {
 		logger.Error("error when reading from response body after calling url with header", zap.Any("err", err), zap.Any("url", url), zap.Any("head", head))
 		return info, err
@@ -252,7 +257,7 @@ func (o *appStore) AsyncGetServerCategoryList() ([]model.CategoryList, error) {
 		return item, err
 	}
 
-	listB, err := ioutil.ReadAll(resp.Body)
+	listB, err := io.ReadAll(resp.Body)
 	if err != nil {
 		logger.Error("error when reading from response body after calling url with header", zap.Any("err", err), zap.Any("url", url), zap.Any("head", head))
 		return item, err
@@ -292,7 +297,7 @@ func (o *appStore) ShareAppFile(body []byte) string {
 		return ""
 	}
 
-	contentB, err := ioutil.ReadAll(resp.Body)
+	contentB, err := io.ReadAll(resp.Body)
 	if err != nil {
 		logger.Error("error when reading from response body after calling url with header", zap.Any("err", err), zap.Any("url", url), zap.Any("head", head))
 		return ""
@@ -327,7 +332,7 @@ func GetToken() string {
 			return
 		}
 
-		buf, err := ioutil.ReadAll(resp.Body)
+		buf, err := io.ReadAll(resp.Body)
 		if err != nil {
 			logger.Error("error when reading from response body after calling url", zap.Any("err", err), zap.Any("url", url))
 			t <- ""
