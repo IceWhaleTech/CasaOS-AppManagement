@@ -715,7 +715,7 @@ func (ds *dockerService) StopContainer(id string) error {
 		return err
 	}
 	defer cli.Close()
-	err = cli.ContainerStop(context.Background(), id, nil)
+	err = cli.ContainerStop(context.Background(), id, container.StopOptions{})
 	return err
 }
 
