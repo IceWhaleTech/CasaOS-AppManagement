@@ -18,6 +18,7 @@ import (
 	"github.com/IceWhaleTech/CasaOS-AppManagement/pkg/config"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/route"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/service"
+	v1 "github.com/IceWhaleTech/CasaOS-AppManagement/service/v1"
 	"github.com/IceWhaleTech/CasaOS-Common/model"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/logger"
 	"github.com/coreos/go-systemd/daemon"
@@ -67,9 +68,8 @@ func main() {
 
 	service.MyService = service.NewService(config.CommonInfo.RuntimePath)
 
-	service.Cache = cache.New(5*time.Minute, 60*time.Second)
-
-	service.GetToken()
+	v1.Cache = cache.New(5*time.Minute, 60*time.Second)
+	v1.GetToken()
 
 	service.NewVersionApp = make(map[string]string)
 
@@ -116,6 +116,7 @@ func main() {
 	}
 
 	v1Router := route.InitV1Router()
+
 	v2Router := route.InitV2Router()
 	v2DocRouter := route.InitV2DocRouter(_docHTML, _docYAML)
 
