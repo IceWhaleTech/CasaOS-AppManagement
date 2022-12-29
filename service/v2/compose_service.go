@@ -60,7 +60,10 @@ func (s *ComposeService) Install(projectName string, composeYAML []byte) (*codeg
 	}
 
 	options := composeCmd.ProjectOptions{
-		WorkDir: filepath.Dir(yamlFilePath),
+		ConfigPaths: []string{yamlFilePath},
+		WorkDir:     filepath.Dir(yamlFilePath),
+		ProjectDir:  filepath.Dir(yamlFilePath),
+		ProjectName: projectName,
 	}
 
 	composeApp, err := options.ToProject(nil)
