@@ -10,6 +10,9 @@ before:
 builds:
   - id: casaos-app-management-amd64
     binary: build/sysroot/usr/bin/casaos-app-management
+    hooks:
+      post:
+        - upx --best --lzma -v --no-progress "{{ .Path }}"
     env:
       - CC=x86_64-linux-gnu-gcc
     ldflags:
@@ -28,6 +31,9 @@ builds:
       - amd64
   - id: casaos-app-management-arm64
     binary: build/sysroot/usr/bin/casaos-app-management
+    hooks:
+      post:
+        - upx --best --lzma -v --no-progress "{{ .Path }}"
     env:
       - CC=aarch64-linux-gnu-gcc
     ldflags:
@@ -46,6 +52,9 @@ builds:
       - arm64
   - id: casaos-app-management-arm-7
     binary: build/sysroot/usr/bin/casaos-app-management
+    hooks:
+      post:
+        - upx --best --lzma -v --no-progress "{{ .Path }}"
     env:
       - CC=arm-linux-gnueabihf-gcc
     ldflags:
@@ -66,6 +75,9 @@ builds:
       - "7"
   - id: casaos-app-management-migration-tool-amd64
     binary: build/sysroot/usr/bin/casaos-app-management-migration-tool
+    hooks:
+      post:
+        - upx --best --lzma -v --no-progress "{{ .Path }}"
     main: ./cmd/migration-tool
     env:
       - CC=x86_64-linux-gnu-gcc
@@ -85,6 +97,9 @@ builds:
       - amd64
   - id: casaos-app-management-migration-tool-arm64
     binary: build/sysroot/usr/bin/casaos-app-management-migration-tool
+    hooks:
+      post:
+        - upx --best --lzma -v --no-progress "{{ .Path }}"
     main: ./cmd/migration-tool
     env:
       - CC=aarch64-linux-gnu-gcc
@@ -104,6 +119,9 @@ builds:
       - arm64
   - id: casaos-app-management-migration-tool-arm-7
     binary: build/sysroot/usr/bin/casaos-app-management-migration-tool
+    hooks:
+      post:
+        - upx --best --lzma -v --no-progress "{{ .Path }}"
     main: ./cmd/migration-tool
     env:
       - CC=arm-linux-gnueabihf-gcc
