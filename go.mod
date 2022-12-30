@@ -55,7 +55,7 @@ require (
 	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
 	go.uber.org/atomic v1.10.0 // indirect
 	go.uber.org/multierr v1.9.0 // indirect
-	golang.org/x/exp v0.0.0-20221229185413-b6b61370dfa8 // indirect
+	golang.org/x/exp v0.0.0-20221229233502-02c3fc3b3eb4 // indirect
 	golang.org/x/mod v0.7.0 // indirect
 	golang.org/x/time v0.3.0 // indirect
 	golang.org/x/tools v0.4.0 // indirect
