@@ -189,21 +189,56 @@ paths:
 
   /container/{id}/healthcheck:
     get:
-      summary: Check if an app is running healthy
+      summary: Check if the container app is running healthy
       description: |
         By default this method simply check if the WebUI port of the app returns `200 OK` status code.
 
         Custom health check procedure will be implemented in the future.
-      operationId: checkApp
+      operationId: checkContainerHealthByID
       tags:
         - Container methods
       parameters:
         - $ref: "#/components/parameters/ContainerID"
       responses:
         "200":
-          $ref: "#/components/responses/AppHealthCheckOK"
+          $ref: "#/components/responses/ContainerHealthCheckOK"
         "503":
           $ref: "#/components/responses/ResponseServiceUnavailable"
+
+  /container/{id}/update:
+    get:
+      summary: Check if the container app has update
+      description: |
+        TODO
+      operationId: checkContainerUpdateByID
+      tags:
+        - Container methods
+      parameters:
+        - $ref: "#/components/parameters/ContainerID"
+      responses:
+        "200":
+          $ref: "#/components/responses/ContainerUpdateCheckOK"
+        "404":
+          $ref: "#/components/responses/ResponseNotFound"
+        "500":
+          $ref: "#/components/responses/ResponseInternalServerError"
+
+    post:
+      summary: Update the container app
+      description: |
+        TODO
+      operationId: updateContainerByID
+      tags:
+        - Container methods
+      parameters:
+        - $ref: "#/components/parameters/ContainerID"
+      responses:
+        "200":
+          $ref: "#/components/responses/ContainerUpdateOK"
+        "404":
+          $ref: "#/components/responses/ResponseNotFound"
+        "500":
+          $ref: "#/components/responses/ResponseInternalServerError"
 
 components:
   securitySchemes:
@@ -333,7 +368,7 @@ components:
           schema:
             type: string
 
-    AppHealthCheckOK:
+    ContainerHealthCheckOK:
       description: OK
       content:
         application/json:
@@ -341,6 +376,26 @@ components:
             $ref: "#/components/schemas/BaseResponse"
           example:
             message: "pong"
+
+    ContainerUpdateCheckOK:
+      description: OK
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: "#/components/schemas/BaseResponse"
+              - properties:
+                  data:
+                    type: boolean
+
+    ContainerUpdateOK:
+      description: OK
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/BaseResponse"
+          example:
+            message: "Container has begun updating"
 
   schemas:
     BaseResponse:

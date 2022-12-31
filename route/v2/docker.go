@@ -8,7 +8,7 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-func (a *AppManagement) CheckApp(ctx echo.Context, id codegen.ContainerID) error {
+func (a *AppManagement) CheckContainerHealthByID(ctx echo.Context, id codegen.ContainerID) error {
 	result, err := service.MyService.Docker().CheckContainerHealth(id)
 	if err != nil {
 		message := err.Error()
@@ -19,5 +19,13 @@ func (a *AppManagement) CheckApp(ctx echo.Context, id codegen.ContainerID) error
 		return ctx.JSON(http.StatusServiceUnavailable, codegen.ResponseServiceUnavailable{})
 	}
 
-	return ctx.JSON(http.StatusOK, codegen.AppHealthCheckOK{})
+	return ctx.JSON(http.StatusOK, codegen.ContainerHealthCheckOK{})
+}
+
+func (a *AppManagement) CheckContainerUpdateByID(ctx echo.Context, id codegen.ContainerID) error {
+	panic("implement me")
+}
+
+func (a *AppManagement) UpdateContainerByID(ctx echo.Context, id codegen.ContainerID) error {
+	panic("implement me")
 }
