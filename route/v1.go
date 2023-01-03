@@ -18,13 +18,9 @@ func InitV1Router() *gin.Engine {
 	}
 	gin.SetMode(ginMode)
 
-	r := gin.New()
-	r.Use(gin.Recovery())
+	r := gin.Default()
 	r.Use(middleware.Cors())
 	r.Use(gzip.Gzip(gzip.DefaultCompression))
-	if ginMode != gin.ReleaseMode {
-		r.Use(middleware.WriteLog())
-	}
 
 	v1Group := r.Group("/v1")
 
