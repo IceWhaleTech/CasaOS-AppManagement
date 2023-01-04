@@ -49,7 +49,6 @@ type DockerService interface {
 	// image
 	IsExistImage(imageName string) bool
 	PullImage(imageName string, icon, name string) error
-	PullNewImage(id string) error
 	RemoveImage(name string) error
 
 	// container
@@ -67,7 +66,6 @@ type DockerService interface {
 	RenameContainer(name, id string) (err error)
 	StartContainer(name string) error
 	StopContainer(id string) error
-	UpdateContainer(id string) error
 
 	// network
 	GetNetworkList() []types.NetworkResource
@@ -813,49 +811,6 @@ func (ds *dockerService) GetServerInfo() (types.Info, error) {
 	defer cli.Close()
 
 	return cli.Info(context.Background())
-}
-
-// credit: https://github.com/containrrr/watchtower
-func (ds *dockerService) IsContainerStale(id string) error {
-	panic("implement me")
-}
-
-// credit: https://github.com/containrrr/watchtower
-func (ds *dockerService) PullNewImage(imageName string) error {
-	cli, err := client2.NewClientWithOpts(client2.FromEnv)
-	if err != nil {
-		return err
-	}
-	defer cli.Close()
-
-	image, _, err := cli.ImageInspectWithRaw(context.Background(), imageName)
-	if err == nil {
-		return err
-	}
-
-	if strings.HasPrefix(imageName, "sha256:") {
-		return fmt.Errorf("container uses a pinned image, and cannot be updated")
-	}
-
-	opts, err := docker.GetPullOptions(imageName)
-	if err != nil {
-		return err
-	}
-
-	if match, err := docker.CompareDigest(imageName, &image, opts.RegistryAuth); err != nil {
-		// do nothing
-	} else if match {
-		return nil
-	}
-
-	// TODO - pull image
-
-	panic("implement me")
-}
-
-// credit: https://github.com/containrrr/watchtower
-func (ds *dockerService) UpdateContainer(id string) error {
-	panic("implement me")
 }
 
 func NewDockerService() DockerService {

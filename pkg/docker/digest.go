@@ -13,8 +13,6 @@ import (
 	"net/http"
 	"strings"
 	"time"
-
-	"github.com/docker/docker/api/types"
 )
 
 // RegistryCredentials is a credential pair used for basic auth
@@ -27,7 +25,7 @@ type RegistryCredentials struct {
 const ContentDigestHeader = "Docker-Content-Digest"
 
 // CompareDigest ...
-func CompareDigest(imageName string, image *types.ImageInspect, registryAuth string) (bool, error) {
+func CompareDigest(imageName string, repoDigests []string, registryAuth string) (bool, error) {
 	var digest string
 
 	registryAuth = TransformAuth(registryAuth)
@@ -45,7 +43,7 @@ func CompareDigest(imageName string, image *types.ImageInspect, registryAuth str
 		return false, err
 	}
 
-	for _, dig := range image.RepoDigests {
+	for _, dig := range repoDigests {
 		localDigest := strings.Split(dig, "@")[1]
 
 		if localDigest == digest {
