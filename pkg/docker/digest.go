@@ -27,16 +27,16 @@ type RegistryCredentials struct {
 const ContentDigestHeader = "Docker-Content-Digest"
 
 // CompareDigest ...
-func CompareDigest(container *types.ContainerJSON, image *types.ImageInspect, registryAuth string) (bool, error) {
+func CompareDigest(imageName string, image *types.ImageInspect, registryAuth string) (bool, error) {
 	var digest string
 
 	registryAuth = TransformAuth(registryAuth)
-	token, err := GetToken(container, registryAuth)
+	token, err := GetToken(imageName, registryAuth)
 	if err != nil {
 		return false, err
 	}
 
-	digestURL, err := BuildManifestURL(container)
+	digestURL, err := BuildManifestURL(imageName)
 	if err != nil {
 		return false, err
 	}
@@ -83,11 +83,11 @@ func GetDigest(url string, token string) (string, error) {
 		IdleConnTimeout:       90 * time.Second,
 		TLSHandshakeTimeout:   10 * time.Second,
 		ExpectContinueTimeout: 1 * time.Second,
-		TLSClientConfig:       &tls.Config{InsecureSkipVerify: true},
+		TLSClientConfig:       &tls.Config{InsecureSkipVerify: true}, // nolint:gosec
 	}
 	client := &http.Client{Transport: tr}
 
-	req, _ := http.NewRequest("HEAD", url, nil)
+	req, _ := http.NewRequest(http.MethodHead, url, nil)
 	// req.Header.Set("User-Agent", userAgent) - confirm if this is needed
 
 	if token == "" {
@@ -105,7 +105,7 @@ func GetDigest(url string, token string) (string, error) {
 	}
 	defer res.Body.Close()
 
-	if res.StatusCode != 200 {
+	if res.StatusCode != http.StatusOK {
 		wwwAuthHeader := res.Header.Get("www-authenticate")
 		if wwwAuthHeader == "" {
 			wwwAuthHeader = "not present"

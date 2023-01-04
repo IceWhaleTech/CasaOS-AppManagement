@@ -10,18 +10,17 @@ import (
 	url2 "net/url"
 
 	ref "github.com/docker/distribution/reference"
-	"github.com/docker/docker/api/types"
 )
 
 // BuildManifestURL from raw image data
-func BuildManifestURL(container *types.ContainerJSON) (string, error) {
-	normalizedName, err := ref.ParseNormalizedNamed(ImageName(container))
+func BuildManifestURL(imageName string) (string, error) {
+	normalizedName, err := ref.ParseNormalizedNamed(imageName)
 	if err != nil {
 		return "", err
 	}
 
 	host, err := NormalizeRegistry(normalizedName.String())
-	img, tag := ExtractImageAndTag(strings.TrimPrefix(ImageName(container), host+"/"))
+	img, tag := ExtractImageAndTag(strings.TrimPrefix(imageName, host+"/"))
 
 	if err != nil {
 		return "", err

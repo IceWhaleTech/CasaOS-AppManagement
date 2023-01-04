@@ -13,7 +13,6 @@ import (
 	"strings"
 
 	"github.com/docker/distribution/reference"
-	"github.com/docker/docker/api/types"
 )
 
 type TokenResponse struct {
@@ -24,11 +23,11 @@ type TokenResponse struct {
 const ChallengeHeader = "WWW-Authenticate"
 
 // GetToken fetches a token for the registry hosting the provided image
-func GetToken(container *types.ContainerJSON, registryAuth string) (string, error) {
+func GetToken(imageName string, registryAuth string) (string, error) {
 	var err error
 	var URL url.URL
 
-	if URL, err = GetChallengeURL(ImageName(container)); err != nil {
+	if URL, err = GetChallengeURL(imageName); err != nil {
 		return "", err
 	}
 
@@ -54,7 +53,7 @@ func GetToken(container *types.ContainerJSON, registryAuth string) (string, erro
 		return fmt.Sprintf("Basic %s", registryAuth), nil
 	}
 	if strings.HasPrefix(challenge, "bearer") {
-		return GetBearerHeader(challenge, ImageName(container), registryAuth)
+		return GetBearerHeader(challenge, imageName, registryAuth)
 	}
 
 	return "", errors.New("unsupported challenge type from registry")

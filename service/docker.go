@@ -49,6 +49,7 @@ type DockerService interface {
 	// image
 	IsExistImage(imageName string) bool
 	PullImage(imageName string, icon, name string) error
+	PullNewImage(id string) error
 	RemoveImage(name string) error
 
 	// container
@@ -816,19 +817,21 @@ func (ds *dockerService) GetServerInfo() (types.Info, error) {
 
 // credit: https://github.com/containrrr/watchtower
 func (ds *dockerService) IsContainerStale(id string) error {
+	panic("implement me")
+}
+
+// credit: https://github.com/containrrr/watchtower
+func (ds *dockerService) PullNewImage(imageName string) error {
 	cli, err := client2.NewClientWithOpts(client2.FromEnv)
 	if err != nil {
 		return err
 	}
 	defer cli.Close()
 
-	containerInfo, err := cli.ContainerInspect(context.Background(), id)
-	if err != nil {
+	image, _, err := cli.ImageInspectWithRaw(context.Background(), imageName)
+	if err == nil {
 		return err
 	}
-
-	containerName := containerInfo.Name
-	imageName := docker.ImageName(&containerInfo)
 
 	if strings.HasPrefix(imageName, "sha256:") {
 		return fmt.Errorf("container uses a pinned image, and cannot be updated")
@@ -838,6 +841,14 @@ func (ds *dockerService) IsContainerStale(id string) error {
 	if err != nil {
 		return err
 	}
+
+	if match, err := docker.CompareDigest(imageName, &image, opts.RegistryAuth); err != nil {
+		// do nothing
+	} else if match {
+		return nil
+	}
+
+	// TODO - pull image
 
 	panic("implement me")
 }
