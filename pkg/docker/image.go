@@ -6,9 +6,11 @@ package docker
 import (
 	"context"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"strings"
 
+	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/client"
 )
 
@@ -20,6 +22,34 @@ func IsImageStale(imageName string, currentImageID string) (bool, string, error)
 	}
 
 	return HasNewImage(ctx, imageName, currentImageID)
+}
+
+func PullImage(imageName string, handleOut func(io.ReadCloser) error) error {
+	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+	if err != nil {
+		return err
+	}
+	defer cli.Close()
+	out, err := cli.ImagePull(context.Background(), imageName, types.ImagePullOptions{})
+	if err != nil {
+		return err
+	}
+	defer out.Close()
+	if err != nil {
+		return err
+	}
+
+	if handleOut != nil {
+		if err := handleOut(out); err != nil {
+			return err
+		}
+	} else {
+		if _, err := ioutil.ReadAll(out); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func PullNewImage(ctx context.Context, imageName string) error {
@@ -63,7 +93,7 @@ func PullNewImage(ctx context.Context, imageName string) error {
 }
 
 func HasNewImage(ctx context.Context, imageName string, currentImageID string) (bool, string, error) {
-	cli, err := client.NewClientWithOpts(client.FromEnv)
+	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
 		return false, currentImageID, err
 	}
@@ -75,7 +105,7 @@ func HasNewImage(ctx context.Context, imageName string, currentImageID string) (
 	}
 
 	newImageID := newImageInfo.ID
-	if newImageID != currentImageID {
+	if newImageID == currentImageID {
 		return false, currentImageID, nil
 	}
 

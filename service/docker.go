@@ -370,48 +370,36 @@ func (ds *dockerService) IsExistImage(imageName string) bool {
 
 // 安装镜像
 func (ds *dockerService) PullImage(imageName string, icon, name string) error {
-	cli, err := client2.NewClientWithOpts(client2.FromEnv)
-	if err != nil {
-		return err
-	}
-	defer cli.Close()
-	out, err := cli.ImagePull(context.Background(), imageName, types.ImagePullOptions{})
-	if err != nil {
-		return err
-	}
-	defer out.Close()
-	if err != nil {
-		return err
-	}
-	// io.Copy()
-	buf := make([]byte, 2048*4)
-	for {
-		n, err := out.Read(buf)
-		if err != nil {
-			if err != io.EOF {
-				fmt.Println("read error:", err)
+	return docker.PullImage(imageName, func(out io.ReadCloser) error {
+		buf := make([]byte, 2048*4)
+		for {
+			n, err := out.Read(buf)
+			if err != nil {
+				if err != io.EOF {
+					fmt.Println("read error:", err)
+				}
+				break
 			}
-			break
-		}
-		if len(icon) > 0 && len(name) > 0 {
-			notify := notify.Application{
-				Icon:     icon,
-				Name:     name,
-				State:    "PULLING",
-				Type:     "INSTALL",
-				Finished: false,
-				Success:  true,
-				Message:  string(buf[:n]),
-			}
+			if len(icon) > 0 && len(name) > 0 {
+				notify := notify.Application{
+					Icon:     icon,
+					Name:     name,
+					State:    "PULLING",
+					Type:     "INSTALL",
+					Finished: false,
+					Success:  true,
+					Message:  string(buf[:n]),
+				}
 
-			if err := MyService.Notify().SendInstallAppBySocket(notify); err != nil {
-				logger.Error("send install app by socket error: ", zap.Error(err), zap.Any("notify", notify))
-				return err
+				if err := MyService.Notify().SendInstallAppBySocket(notify); err != nil {
+					logger.Error("send install app by socket error: ", zap.Error(err), zap.Any("notify", notify))
+					return err
+				}
 			}
 		}
 
-	}
-	return err
+		return nil
+	})
 }
 
 func (ds *dockerService) CloneContainer(info *types.ContainerJSON) (containerID string, err error) {
