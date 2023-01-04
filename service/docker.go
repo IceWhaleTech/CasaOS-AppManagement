@@ -66,6 +66,7 @@ type DockerService interface {
 	RenameContainer(name, id string) (err error)
 	StartContainer(name string) error
 	StopContainer(id string) error
+	UpdateContainer(id string) error
 
 	// network
 	GetNetworkList() []types.NetworkResource
@@ -811,6 +812,39 @@ func (ds *dockerService) GetServerInfo() (types.Info, error) {
 	defer cli.Close()
 
 	return cli.Info(context.Background())
+}
+
+// credit: https://github.com/containrrr/watchtower
+func (ds *dockerService) IsContainerStale(id string) error {
+	cli, err := client2.NewClientWithOpts(client2.FromEnv)
+	if err != nil {
+		return err
+	}
+	defer cli.Close()
+
+	containerInfo, err := cli.ContainerInspect(context.Background(), id)
+	if err != nil {
+		return err
+	}
+
+	containerName := containerInfo.Name
+	imageName := docker.ImageName(&containerInfo)
+
+	if strings.HasPrefix(imageName, "sha256:") {
+		return fmt.Errorf("container uses a pinned image, and cannot be updated")
+	}
+
+	opts, err := docker.GetPullOptions(imageName)
+	if err != nil {
+		return err
+	}
+
+	panic("implement me")
+}
+
+// credit: https://github.com/containrrr/watchtower
+func (ds *dockerService) UpdateContainer(id string) error {
+	panic("implement me")
 }
 
 func NewDockerService() DockerService {
