@@ -21,7 +21,7 @@ func ImageName(containerInfo *types.ContainerJSON) string {
 	return imageName
 }
 
-func UpdateContainer(id string, pullAndCheck bool) error {
+func UpdateContainerWithNewImage(id string, pull bool) error {
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
 		return err
@@ -35,20 +35,17 @@ func UpdateContainer(id string, pullAndCheck bool) error {
 		return err
 	}
 
-	if pullAndCheck {
+	if pull {
 		imageName := ImageName(&containerInfo)
 
 		if err := PullNewImage(ctx, imageName); err != nil {
 			return err
 		}
-
-		currentImageID := containerInfo.ContainerJSONBase.Image
-
-		_, _, err := HasNewImage(ctx, imageName, currentImageID)
-		if err != nil {
-			return err
-		}
 	}
+
+	// TODO - stopStaleContainer
+
+	// TODO - restartStaleContainer
 
 	return nil
 }
