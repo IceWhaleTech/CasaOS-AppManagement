@@ -11,11 +11,11 @@ require (
 	github.com/gin-gonic/gin v1.8.2
 	github.com/go-git/go-git/v5 v5.5.1
 	github.com/google/go-cmp v0.5.9
-	github.com/labstack/echo/v4 v4.9.1
+	github.com/labstack/echo/v4 v4.10.0
 	github.com/samber/lo v1.37.0
 	gopkg.in/yaml.v3 v3.0.1
 	gotest.tools/v3 v3.4.0
-	modernc.org/sqlite v1.20.0
+	modernc.org/sqlite v1.20.1
 )
 
 require (

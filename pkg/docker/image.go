@@ -32,7 +32,7 @@ func PullNewImage(ctx context.Context, imageName string) error {
 		return err
 	}
 
-	cli, err := client.NewClientWithOpts(client.FromEnv)
+	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
 		return err
 	}
