@@ -14,16 +14,6 @@ import (
 	"github.com/docker/docker/client"
 )
 
-func IsImageStale(imageName string, currentImageID string) (bool, string, error) {
-	ctx := context.Background()
-
-	if err := PullNewImage(ctx, imageName); err != nil {
-		return false, currentImageID, err
-	}
-
-	return HasNewImage(ctx, imageName, currentImageID)
-}
-
 func PullImage(imageName string, handleOut func(io.ReadCloser) error) error {
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
