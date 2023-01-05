@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/IceWhaleTech/CasaOS-Common/utils"
+	"github.com/IceWhaleTech/CasaOS-Common/utils/random"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/network"
@@ -46,17 +47,110 @@ func UpdateContainerWithNewImage(ctx context.Context, id string, pull bool) erro
 		}
 	}
 
-	// TODO - StopContainer
+	// StopContainer
 	if err := StopContainer(ctx, id); err != nil {
 		return err
 	}
 
-	// TODO - restartContainer
+	// RenameContainer
+	tempName := containerInfo.Name + "-casaos-temp-" + random.RandomString(4, false)
+	if err := RenameContainer(ctx, id, tempName); err != nil {
+		return err
+	}
+
+	// RecreateContainer
+	newID, err := RecreateContainer(ctx, id, containerInfo.Name)
+	if err != nil {
+		// RenameContainer back if failed to recreate
+		if err := RenameContainer(ctx, id, containerInfo.Name); err != nil {
+			return err
+		}
+
+		if containerInfo.State.Running {
+			if err := StartContainer(ctx, id); err != nil {
+				return err
+			}
+		}
+	}
+
+	// StartContainer
+	if err := StartContainer(ctx, newID); err != nil {
+		return err
+	}
+
+	// RemoveContainer
+	if err := RemoveContainer(ctx, containerInfo.ID); err != nil {
+		return err
+	}
 
 	return nil
 }
 
-func RecreateContainer(ctx context.Context, id string) error {
+func RecreateContainer(ctx context.Context, id string, name string) (string, error) {
+	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+	if err != nil {
+		return "", err
+	}
+	defer cli.Close()
+
+	containerInfo, err := cli.ContainerInspect(ctx, id)
+	if err != nil {
+		return "", err
+	}
+
+	imageInfo, _, err := cli.ImageInspectWithRaw(ctx, containerInfo.Image)
+	if err != nil {
+		return "", err
+	}
+
+	config := runtimeConfig(&containerInfo, &imageInfo)
+	hostConfig := hostConfig(&containerInfo)
+	networkConfig := &network.NetworkingConfig{EndpointsConfig: containerInfo.NetworkSettings.Networks}
+	simpleNetworkConfig := simpleNetworkConfig(networkConfig)
+
+	newContainer, err := cli.ContainerCreate(ctx, config, hostConfig, simpleNetworkConfig, nil, name)
+	if err != nil {
+		return "", err
+	}
+
+	if !(hostConfig.NetworkMode.IsHost()) {
+		for k := range simpleNetworkConfig.EndpointsConfig {
+			if err := cli.NetworkDisconnect(ctx, k, newContainer.ID, true); err != nil {
+				return newContainer.ID, err
+			}
+		}
+
+		for k, v := range networkConfig.EndpointsConfig {
+			if err := cli.NetworkConnect(ctx, k, newContainer.ID, v); err != nil {
+				return newContainer.ID, err
+			}
+		}
+	}
+
+	return newContainer.ID, nil
+}
+
+func RemoveContainer(ctx context.Context, id string) error {
+	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+	if err != nil {
+		return err
+	}
+	defer cli.Close()
+
+	return cli.ContainerRemove(ctx, id, types.ContainerRemoveOptions{Force: true})
+}
+
+func RenameContainer(ctx context.Context, id string, name string) error {
+	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+	if err != nil {
+		return err
+	}
+	defer cli.Close()
+
+	return cli.ContainerRename(ctx, id, name)
+}
+
+func StartContainer(ctx context.Context, id string) error {
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
 		return err
@@ -68,38 +162,17 @@ func RecreateContainer(ctx context.Context, id string) error {
 		return err
 	}
 
-	imageInfo, _, err := cli.ImageInspectWithRaw(ctx, containerInfo.Image)
-	if err != nil {
-		return err
-	}
-
-	config := runtimeConfig(&containerInfo, &imageInfo)
-	hostConfig := hostConfig(&containerInfo)
-	networkConfig := &network.NetworkingConfig{EndpointsConfig: containerInfo.NetworkSettings.Networks}
-	simpleNetworkConfig := simpleNetworkConfig(networkConfig)
-
-	name := containerInfo.Name
-
-	createdContainer, err := cli.ContainerCreate(ctx, config, hostConfig, simpleNetworkConfig, nil, name)
-	if err != nil {
-		return err
-	}
-
-	if !(hostConfig.NetworkMode.IsHost()) {
-		for k := range simpleNetworkConfig.EndpointsConfig {
-			if err := cli.NetworkDisconnect(ctx, k, createdContainer.ID, true); err != nil {
-				return err
-			}
+	if !containerInfo.State.Running {
+		if err := cli.ContainerStart(ctx, id, types.ContainerStartOptions{}); err != nil {
+			return err
 		}
 
-		for k, v := range networkConfig.EndpointsConfig {
-			if err := cli.NetworkConnect(ctx, k, createdContainer.ID, v); err != nil {
-				return err
-			}
+		if err := WaitContainer(ctx, id, container.WaitConditionNextExit); err != nil {
+			return err
 		}
 	}
 
-	return cli.ContainerStart(ctx, createdContainer.ID, types.ContainerStartOptions{})
+	return nil
 }
 
 func StopContainer(ctx context.Context, id string) error {
@@ -124,13 +197,7 @@ func StopContainer(ctx context.Context, id string) error {
 		}
 	}
 
-	if !containerInfo.HostConfig.AutoRemove {
-		if err := cli.ContainerRemove(ctx, id, types.ContainerRemoveOptions{Force: true}); err != nil {
-			return err
-		}
-	}
-
-	return WaitContainer(ctx, id, container.WaitConditionRemoved)
+	return nil
 }
 
 func WaitContainer(ctx context.Context, id string, condition container.WaitCondition) error {
