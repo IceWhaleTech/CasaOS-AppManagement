@@ -12,17 +12,10 @@ import (
 	"gotest.tools/v3/assert"
 )
 
-func TestRecreateContainer(t *testing.T) {
-	if !IsDaemonRunning() {
-		t.Skip("Docker daemon is not running")
-	}
-
-	// setup
+func setupTestContainer(ctx context.Context, t *testing.T) *container.CreateResponse {
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	assert.NilError(t, err)
 	defer cli.Close()
-
-	ctx := context.Background()
 
 	config := &container.Config{
 		Image: "alpine",
@@ -34,6 +27,23 @@ func TestRecreateContainer(t *testing.T) {
 
 	response, err := cli.ContainerCreate(ctx, config, hostConfig, networkingConfig, nil, "test-"+random.RandomString(4, false))
 	assert.NilError(t, err)
+
+	return &response
+}
+
+func TestRecreateContainer(t *testing.T) {
+	if !IsDaemonRunning() {
+		t.Skip("Docker daemon is not running")
+	}
+
+	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+	assert.NilError(t, err)
+	defer cli.Close()
+
+	ctx := context.Background()
+
+	// setup
+	response := setupTestContainer(ctx, t)
 
 	defer func() {
 		err = cli.ContainerRemove(ctx, response.ID, types.ContainerRemoveOptions{})
@@ -64,4 +74,36 @@ func TestRecreateContainer(t *testing.T) {
 		err := StopContainer(ctx, newID)
 		assert.NilError(t, err)
 	}()
+}
+
+func TestUpdateContainerWithNewImage(t *testing.T) {
+	if !IsDaemonRunning() {
+		t.Skip("Docker daemon is not running")
+	}
+
+	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+	assert.NilError(t, err)
+	defer cli.Close()
+
+	ctx := context.Background()
+
+	// setup
+	response := setupTestContainer(ctx, t)
+
+	defer func() {
+		err = cli.ContainerRemove(ctx, response.ID, types.ContainerRemoveOptions{})
+		assert.NilError(t, err)
+	}()
+
+	err = StartContainer(ctx, response.ID)
+	assert.NilError(t, err)
+
+	defer func() {
+		err = StopContainer(ctx, response.ID)
+		assert.NilError(t, err)
+	}()
+
+	// update
+	err = UpdateContainerWithNewImage(ctx, response.ID, true)
+	assert.NilError(t, err)
 }
