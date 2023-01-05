@@ -24,7 +24,6 @@ type AppStore interface {
 	GetServerAppInfo(id, t string, language string) (model.ServerAppList, error)
 	GetServerCategoryList() (list []model.CategoryList, err error)
 	AsyncGetServerCategoryList() ([]model.CategoryList, error)
-	ShareAppFile(body []byte) string
 }
 
 type appStore struct{}
@@ -283,28 +282,6 @@ func (o *appStore) AsyncGetServerCategoryList() ([]model.CategoryList, error) {
 		}
 	}
 	return item, nil
-}
-
-func (o *appStore) ShareAppFile(body []byte) string {
-	head := make(map[string]string)
-
-	head["Authorization"] = GetToken()
-
-	url := config.ServerInfo.ServerAPI + "/v1/community/add"
-	resp, err := httpUtil.PostWithHeader(url, body, 30*time.Second, head)
-	if err != nil {
-		logger.Error("error when calling url with header", zap.Any("err", err), zap.Any("url", url), zap.Any("head", head))
-		return ""
-	}
-
-	contentB, err := io.ReadAll(resp.Body)
-	if err != nil {
-		logger.Error("error when reading from response body after calling url with header", zap.Any("err", err), zap.Any("url", url), zap.Any("head", head))
-		return ""
-	}
-
-	content := string(contentB)
-	return content
 }
 
 func NewAppService() AppStore {

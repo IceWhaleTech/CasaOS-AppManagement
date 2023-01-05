@@ -614,28 +614,21 @@ func (ds *dockerService) CreateContainer(m model.CustomizationPostData, id strin
 
 // 删除容器
 func (ds *dockerService) RemoveContainer(name string, update bool) error {
-	cli, err := client2.NewClientWithOpts(client2.FromEnv)
-	if err != nil {
+	ctx := context.Background()
+	if err := docker.RemoveContainer(ctx, name); err != nil {
 		return err
 	}
-	defer cli.Close()
-	err = cli.ContainerRemove(context.Background(), name, types.ContainerRemoveOptions{})
+
+	if update {
+		return nil
+	}
 
 	// 路径处理
-	if !update {
-		path := docker.GetDir(name, "/config")
-		if !file.CheckNotExist(path) {
-			if err := file.RMDir(path); err != nil {
-				return err
-			}
-		}
+	if path := docker.GetDir(name, "/config"); !file.CheckNotExist(path) {
+		return file.RMDir(path)
 	}
 
-	if err != nil {
-		return err
-	}
-
-	return err
+	return nil
 }
 
 // 删除镜像
@@ -696,24 +689,14 @@ Loop:
 
 // 停止镜像
 func (ds *dockerService) StopContainer(id string) error {
-	cli, err := client2.NewClientWithOpts(client2.FromEnv)
-	if err != nil {
-		return err
-	}
-	defer cli.Close()
-	err = cli.ContainerStop(context.Background(), id, container.StopOptions{})
-	return err
+	ctx := context.Background()
+	return docker.StopContainer(ctx, id)
 }
 
 // 启动容器
 func (ds *dockerService) StartContainer(name string) error {
-	cli, err := client2.NewClientWithOpts(client2.FromEnv)
-	if err != nil {
-		return err
-	}
-	defer cli.Close()
-	err = cli.ContainerStart(context.Background(), name, types.ContainerStartOptions{})
-	return err
+	ctx := context.Background()
+	return docker.StartContainer(ctx, name)
 }
 
 // 查看日志

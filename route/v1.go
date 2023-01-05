@@ -52,10 +52,7 @@ func InitV1Router() *gin.Engine {
 
 			v1ContainerGroup.PUT("/:id/state", v1.ChangAppState) // /app/state/:id
 			v1ContainerGroup.DELETE("/:id", v1.UnInstallApp)     // app/uninstall/:id
-			// Not used
-			v1ContainerGroup.PUT("/:id/latest", v1.PutAppUpdate)
-			// Not used
-			v1ContainerGroup.POST("/share", v1.ShareAppFile)
+
 			v1ContainerGroup.GET("/info", v1.GetDockerDaemonConfiguration)
 			v1ContainerGroup.PUT("/info", v1.PutDockerDaemonConfiguration)
 
