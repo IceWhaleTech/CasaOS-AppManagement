@@ -1,6 +1,6 @@
-LEGACY_WITHOUT_VERSION https://github.com/IceWhaleTech/CasaOS-AppManagement/releases/download/v0.4.0-alpha7/linux-${ARCH}-casaos-app-management-migration-tool-v0.4.0-alpha7.tar.gz
-v0.3.5 https://github.com/IceWhaleTech/CasaOS-AppManagement/releases/download/v0.4.0-alpha7/linux-${ARCH}-casaos-app-management-migration-tool-v0.4.0-alpha7.tar.gz
-v0.3.5.1 https://github.com/IceWhaleTech/CasaOS-AppManagement/releases/download/v0.4.0-alpha7/linux-${ARCH}-casaos-app-management-migration-tool-v0.4.0-alpha7.tar.gz
-v0.3.6 https://github.com/IceWhaleTech/CasaOS-AppManagement/releases/download/v0.4.0-alpha7/linux-${ARCH}-casaos-app-management-migration-tool-v0.4.0-alpha7.tar.gz
-v0.3.7 https://github.com/IceWhaleTech/CasaOS-AppManagement/releases/download/v0.4.0-alpha7/linux-${ARCH}-casaos-app-management-migration-tool-v0.4.0-alpha7.tar.gz
-v0.3.8 https://github.com/IceWhaleTech/CasaOS-AppManagement/releases/download/v0.4.0-alpha7/linux-${ARCH}-casaos-app-management-migration-tool-v0.4.0-alpha7.tar.gz
+LEGACY_WITHOUT_VERSION ${DOWNLOAD_DOMAIN}IceWhaleTech/CasaOS-AppManagement/releases/download/v0.4.0-alpha7/linux-${ARCH}-casaos-app-management-migration-tool-v0.4.0-alpha7.tar.gz
+v0.3.5 ${DOWNLOAD_DOMAIN}IceWhaleTech/CasaOS-AppManagement/releases/download/v0.4.0-alpha7/linux-${ARCH}-casaos-app-management-migration-tool-v0.4.0-alpha7.tar.gz
+v0.3.5.1 ${DOWNLOAD_DOMAIN}IceWhaleTech/CasaOS-AppManagement/releases/download/v0.4.0-alpha7/linux-${ARCH}-casaos-app-management-migration-tool-v0.4.0-alpha7.tar.gz
+v0.3.6 ${DOWNLOAD_DOMAIN}IceWhaleTech/CasaOS-AppManagement/releases/download/v0.4.0-alpha7/linux-${ARCH}-casaos-app-management-migration-tool-v0.4.0-alpha7.tar.gz
+v0.3.7 ${DOWNLOAD_DOMAIN}IceWhaleTech/CasaOS-AppManagement/releases/download/v0.4.0-alpha7/linux-${ARCH}-casaos-app-management-migration-tool-v0.4.0-alpha7.tar.gz
+v0.3.8 ${DOWNLOAD_DOMAIN}IceWhaleTech/CasaOS-AppManagement/releases/download/v0.4.0-alpha7/linux-${ARCH}-casaos-app-management-migration-tool-v0.4.0-alpha7.tar.gz
