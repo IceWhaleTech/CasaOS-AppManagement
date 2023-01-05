@@ -53,7 +53,7 @@ func UpdateContainerWithNewImage(ctx context.Context, id string, pull bool) erro
 	}
 
 	// RenameContainer
-	tempName := containerInfo.Name + "-casaos-temp-" + random.RandomString(4, false)
+	tempName := fmt.Sprintf("%s-%s", containerInfo.Name, random.RandomString(4, false))
 	if err := RenameContainer(ctx, id, tempName); err != nil {
 		return err
 	}
@@ -79,11 +79,7 @@ func UpdateContainerWithNewImage(ctx context.Context, id string, pull bool) erro
 	}
 
 	// RemoveContainer
-	if err := RemoveContainer(ctx, containerInfo.ID); err != nil {
-		return err
-	}
-
-	return nil
+	return RemoveContainer(ctx, containerInfo.ID)
 }
 
 func RecreateContainer(ctx context.Context, id string, name string) (string, error) {
@@ -163,13 +159,7 @@ func StartContainer(ctx context.Context, id string) error {
 	}
 
 	if !containerInfo.State.Running {
-		if err := cli.ContainerStart(ctx, id, types.ContainerStartOptions{}); err != nil {
-			return err
-		}
-
-		if err := WaitContainer(ctx, id, container.WaitConditionNextExit); err != nil {
-			return err
-		}
+		return cli.ContainerStart(ctx, id, types.ContainerStartOptions{})
 	}
 
 	return nil

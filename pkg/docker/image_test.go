@@ -8,6 +8,10 @@ import (
 )
 
 func TestIsImageStale_NoSuchImage(t *testing.T) {
+	if !IsDaemonRunning() {
+		t.Skip("Docker daemon is not running")
+	}
+
 	imageName := "test"
 
 	ctx := context.Background()
@@ -21,6 +25,10 @@ func TestIsImageStale_NoSuchImage(t *testing.T) {
 }
 
 func TestIsImageStale(t *testing.T) {
+	if !IsDaemonRunning() {
+		t.Skip("Docker daemon is not running")
+	}
+
 	imageName := "hello-world"
 
 	ctx := context.Background()
