@@ -71,10 +71,23 @@ func UpdateContainerWithNewImage(ctx context.Context, id string, pull bool) erro
 				return err
 			}
 		}
+
+		return err
 	}
 
 	// StartContainer
 	if err := StartContainer(ctx, newID); err != nil {
+		// RenameContainer back if failed to recreate
+		if err := RenameContainer(ctx, id, containerInfo.Name); err != nil {
+			return err
+		}
+
+		if containerInfo.State.Running {
+			if err := StartContainer(ctx, id); err != nil {
+				return err
+			}
+		}
+
 		return err
 	}
 
