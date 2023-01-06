@@ -22,10 +22,6 @@ func (a *AppManagement) CheckContainerHealthByID(ctx echo.Context, id codegen.Co
 	return ctx.JSON(http.StatusOK, codegen.ContainerHealthCheckOK{})
 }
 
-func (a *AppManagement) CheckContainerUpdateByID(ctx echo.Context, id codegen.ContainerID) error {
-	panic("implement me")
-}
-
 func (a *AppManagement) UpdateContainerByID(ctx echo.Context, id codegen.ContainerID) error {
 	panic("implement me")
 }

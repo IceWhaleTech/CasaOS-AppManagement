@@ -28,7 +28,11 @@ tags:
 
   - name: Container methods
     description: |-
-      methods for managing app lifecycle
+      methods for managing container app lifecycle
+  
+  - name: Image methods
+    description: |-
+      methods for managing container app images
 
   - name: AppStoreInfo
     description: |-
@@ -72,6 +76,7 @@ x-tagGroups:
       - AppStore methods
       - Compose methods
       - Container methods
+      - Image methods
 
   - name: Schemas
     tags:
@@ -187,6 +192,24 @@ paths:
         "500":
           $ref: "#/components/responses/ResponseInternalServerError"
 
+  /container/{id}:
+    post:
+      summary: Update the container app
+      description: |
+        TODO
+      operationId: updateContainerByID
+      tags:
+        - Container methods
+      parameters:
+        - $ref: "#/components/parameters/ContainerID"
+      responses:
+        "200":
+          $ref: "#/components/responses/ContainerUpdateOK"
+        "404":
+          $ref: "#/components/responses/ResponseNotFound"
+        "500":
+          $ref: "#/components/responses/ResponseInternalServerError"
+
   /container/{id}/healthcheck:
     get:
       summary: Check if the container app is running healthy
@@ -205,38 +228,22 @@ paths:
         "503":
           $ref: "#/components/responses/ResponseServiceUnavailable"
 
-  /container/{id}/update:
-    get:
-      summary: Check if the container app has update
-      description: |
-        TODO
-      operationId: checkContainerUpdateByID
-      tags:
-        - Container methods
-      parameters:
-        - $ref: "#/components/parameters/ContainerID"
-      responses:
-        "200":
-          $ref: "#/components/responses/ContainerUpdateCheckOK"
-        "404":
-          $ref: "#/components/responses/ResponseNotFound"
-        "500":
-          $ref: "#/components/responses/ResponseInternalServerError"
-
+  /image:
     post:
-      summary: Update the container app
+      summary: Post a batch pull request specified images
       description: |
-        TODO
-      operationId: updateContainerByID
+        Pull one or more images with or without specific query
+
+        - by `container_ids` - pull images with the specific container IDs
+        - by `names` - pull images with the specific image names (not implemented yet)
+      operationId: pullImages
       tags:
-        - Container methods
+        - Image methods
       parameters:
-        - $ref: "#/components/parameters/ContainerID"
+        - $ref: "#/components/parameters/ContainerIDs"
       responses:
         "200":
-          $ref: "#/components/responses/ContainerUpdateOK"
-        "404":
-          $ref: "#/components/responses/ResponseNotFound"
+          $ref: "#/components/responses/PullImagesOK"
         "500":
           $ref: "#/components/responses/ResponseInternalServerError"
 
@@ -253,6 +260,14 @@ components:
       description: App ID in the AppStore
       in: path
       required: true
+      schema:
+        type: string
+        example: "e4380876-d759-4b26-af1f-968a4606d399"
+
+    ContainerIDs:
+      name: container_ids
+      description: a list of comma separated container IDs
+      in: query
       schema:
         type: string
         example: "e4380876-d759-4b26-af1f-968a4606d399"
@@ -377,7 +392,16 @@ components:
           example:
             message: "pong"
 
-    ContainerUpdateCheckOK:
+    ContainerUpdateOK:
+      description: OK
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/BaseResponse"
+          example:
+            message: "Container has begun updating"
+
+    PullImagesOK:
       description: OK
       content:
         application/json:
@@ -387,15 +411,8 @@ components:
               - properties:
                   data:
                     type: boolean
-
-    ContainerUpdateOK:
-      description: OK
-      content:
-        application/json:
-          schema:
-            $ref: "#/components/schemas/BaseResponse"
-          example:
-            message: "Container has begun updating"
+                    description: |
+                      `true` if different images are pulled successfully, otherwise `false`
 
   schemas:
     BaseResponse:
