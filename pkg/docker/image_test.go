@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/docker/docker/api/types"
 	"go.uber.org/goleak"
 	"gotest.tools/v3/assert"
 )
@@ -19,7 +20,7 @@ func TestIsImageStale_NoSuchImage(t *testing.T) {
 
 	ctx := context.Background()
 
-	err := PullNewImage(ctx, imageName)
+	err := PullNewImage(ctx, imageName, nil)
 	assert.ErrorContains(t, err, "no such image")
 
 	stale, latestImage, _ := HasNewImage(ctx, imageName, "123")
@@ -38,10 +39,10 @@ func TestIsImageStale(t *testing.T) {
 
 	ctx := context.Background()
 
-	err := PullImage(ctx, imageName, nil)
+	err := PullImage(ctx, imageName, types.ImagePullOptions{}, nil)
 	assert.NilError(t, err)
 
-	err = PullNewImage(ctx, imageName)
+	err = PullNewImage(ctx, imageName, nil)
 	assert.NilError(t, err)
 
 	stale1, latestImage1, err1 := HasNewImage(ctx, imageName, "123")

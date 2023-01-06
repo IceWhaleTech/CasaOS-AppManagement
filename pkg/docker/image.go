@@ -13,20 +13,18 @@ import (
 	"github.com/docker/docker/client"
 )
 
-func PullImage(ctx context.Context, imageName string, handleOut func(io.ReadCloser) error) error {
+func PullImage(ctx context.Context, imageName string, opts types.ImagePullOptions, handleOut func(io.ReadCloser) error) error {
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
 		return err
 	}
 	defer cli.Close()
-	out, err := cli.ImagePull(ctx, imageName, types.ImagePullOptions{})
+
+	out, err := cli.ImagePull(ctx, imageName, opts)
 	if err != nil {
 		return err
 	}
 	defer out.Close()
-	if err != nil {
-		return err
-	}
 
 	if handleOut != nil {
 		if err := handleOut(out); err != nil {
@@ -41,7 +39,7 @@ func PullImage(ctx context.Context, imageName string, handleOut func(io.ReadClos
 	return nil
 }
 
-func PullNewImage(ctx context.Context, imageName string) error {
+func PullNewImage(ctx context.Context, imageName string, handleOut func(io.ReadCloser) error) error {
 	if strings.HasPrefix(imageName, "sha256:") {
 		return fmt.Errorf("container uses a pinned image, and cannot be updated")
 	}
@@ -68,17 +66,7 @@ func PullNewImage(ctx context.Context, imageName string) error {
 		return nil
 	}
 
-	response, err := cli.ImagePull(ctx, imageName, opts)
-	if err != nil {
-		return err
-	}
-	defer response.Close()
-
-	if _, err := io.ReadAll(response); err != nil {
-		return err
-	}
-
-	return nil
+	return PullImage(ctx, imageName, opts, handleOut)
 }
 
 func HasNewImage(ctx context.Context, imageName string, currentImageID string) (bool, string, error) {

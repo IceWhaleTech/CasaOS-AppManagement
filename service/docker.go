@@ -372,7 +372,7 @@ func (ds *dockerService) IsExistImage(imageName string) bool {
 func (ds *dockerService) PullImage(imageName string, icon, name string) error {
 	ctx := context.Background()
 
-	return docker.PullImage(ctx, imageName, func(out io.ReadCloser) error {
+	return docker.PullImage(ctx, imageName, types.ImagePullOptions{}, func(out io.ReadCloser) error {
 		buf := make([]byte, 2048*4)
 		for {
 			n, err := out.Read(buf)

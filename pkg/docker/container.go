@@ -42,7 +42,7 @@ func UpdateContainerWithNewImage(ctx context.Context, id string, pull bool) erro
 	if pull {
 		imageName := ImageName(&containerInfo)
 
-		if err := PullNewImage(ctx, imageName); err != nil {
+		if err := PullNewImage(ctx, imageName, nil); err != nil {
 			return err
 		}
 	}
