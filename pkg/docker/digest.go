@@ -76,17 +76,18 @@ func TransformAuth(registryAuth string) string {
 // GetDigest from registry using a HEAD request to prevent rate limiting
 func GetDigest(url string, token string) (string, error) {
 	tr := &http.Transport{
-		Proxy: http.ProxyFromEnvironment,
 		DialContext: (&net.Dialer{
 			Timeout:   30 * time.Second,
 			KeepAlive: 30 * time.Second,
 		}).DialContext,
-		ForceAttemptHTTP2:     true,
-		MaxIdleConns:          100,
-		IdleConnTimeout:       90 * time.Second,
-		TLSHandshakeTimeout:   10 * time.Second,
+		DisableKeepAlives:     true,
 		ExpectContinueTimeout: 1 * time.Second,
+		ForceAttemptHTTP2:     true,
+		IdleConnTimeout:       90 * time.Second,
+		MaxIdleConns:          100,
+		Proxy:                 http.ProxyFromEnvironment,
 		TLSClientConfig:       &tls.Config{InsecureSkipVerify: true}, // nolint:gosec
+		TLSHandshakeTimeout:   10 * time.Second,
 	}
 	client := &http.Client{Transport: tr}
 

@@ -36,7 +36,7 @@ func GetChallenge(imageName string) (string, error) {
 		return "", err
 	}
 
-	client := &http.Client{}
+	client := http.Client{Transport: &http.Transport{DisableKeepAlives: true}}
 	var res *http.Response
 	if res, err = client.Do(req); err != nil {
 		return "", err
@@ -77,7 +77,7 @@ func GetChallengeRequest(URL url.URL) (*http.Request, error) {
 
 // GetBearerHeader tries to fetch a bearer token from the registry based on the challenge instructions
 func GetBearerHeader(challenge string, img string, registryAuth string) (string, error) {
-	client := http.Client{}
+	client := http.Client{Transport: &http.Transport{DisableKeepAlives: true}}
 	if strings.Contains(img, ":") {
 		img = strings.Split(img, ":")[0]
 	}
