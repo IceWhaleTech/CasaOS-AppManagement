@@ -772,7 +772,7 @@ func (ds *dockerService) GetContainerByName(name string) (*types.Container, erro
 	defer cli.Close()
 	filter := filters.NewArgs()
 	filter.Add("name", name)
-	containers, err := cli.ContainerList(context.Background(), types.ContainerListOptions{Filters: filter})
+	containers, err := cli.ContainerList(context.Background(), types.ContainerListOptions{All: true, Filters: filter})
 	if err != nil {
 		return &types.Container{}, err
 	}
