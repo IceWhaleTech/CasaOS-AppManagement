@@ -212,6 +212,7 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/satori/go.uuid v1.2.0
 	github.com/ugorji/go/codec v1.2.8 // indirect
+	go.uber.org/goleak v1.2.0
 	go.uber.org/zap v1.24.0
 	golang.org/x/crypto v0.4.0 // indirect
 	golang.org/x/net v0.4.0 // indirect

@@ -29,7 +29,12 @@ func CompareDigest(imageName string, repoDigests []string, registryAuth string) 
 	var digest string
 
 	registryAuth = TransformAuth(registryAuth)
-	token, err := GetToken(imageName, registryAuth)
+	challenge, err := GetChallenge(imageName)
+	if err != nil {
+		return false, err
+	}
+
+	token, err := GetToken(challenge, registryAuth, imageName)
 	if err != nil {
 		return false, err
 	}

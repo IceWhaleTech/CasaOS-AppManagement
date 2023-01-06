@@ -7,7 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 	"strings"
@@ -22,8 +22,8 @@ type TokenResponse struct {
 // ChallengeHeader is the HTTP Header containing challenge instructions
 const ChallengeHeader = "WWW-Authenticate"
 
-// GetToken fetches a token for the registry hosting the provided image
-func GetToken(imageName string, registryAuth string) (string, error) {
+// GetChallenge fetches a challenge for the registry hosting the provided image
+func GetChallenge(imageName string) (string, error) {
 	var err error
 	var URL url.URL
 
@@ -42,9 +42,13 @@ func GetToken(imageName string, registryAuth string) (string, error) {
 		return "", err
 	}
 	defer res.Body.Close()
+
 	v := res.Header.Get(ChallengeHeader)
 
-	challenge := strings.ToLower(v)
+	return strings.ToLower(v), nil
+}
+
+func GetToken(challenge string, registryAuth string, imageName string) (string, error) {
 	if strings.HasPrefix(challenge, "basic") {
 		if registryAuth == "" {
 			return "", fmt.Errorf("no credentials available")
@@ -52,6 +56,7 @@ func GetToken(imageName string, registryAuth string) (string, error) {
 
 		return fmt.Sprintf("Basic %s", registryAuth), nil
 	}
+
 	if strings.HasPrefix(challenge, "bearer") {
 		return GetBearerHeader(challenge, imageName, registryAuth)
 	}
@@ -76,6 +81,7 @@ func GetBearerHeader(challenge string, img string, registryAuth string) (string,
 	if strings.Contains(img, ":") {
 		img = strings.Split(img, ":")[0]
 	}
+
 	authURL, err := GetAuthURL(challenge, img)
 	if err != nil {
 		return "", err
@@ -94,9 +100,14 @@ func GetBearerHeader(challenge string, img string, registryAuth string) (string,
 	if authResponse, err = client.Do(r); err != nil {
 		return "", err
 	}
+	defer authResponse.Body.Close()
 
-	body, _ := ioutil.ReadAll(authResponse.Body)
 	tokenResponse := &TokenResponse{}
+
+	body, err := io.ReadAll(authResponse.Body)
+	if err != nil {
+		return "", err
+	}
 
 	err = json.Unmarshal(body, tokenResponse)
 	if err != nil {

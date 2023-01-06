@@ -7,20 +7,19 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"strings"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/client"
 )
 
-func PullImage(imageName string, handleOut func(io.ReadCloser) error) error {
+func PullImage(ctx context.Context, imageName string, handleOut func(io.ReadCloser) error) error {
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
 		return err
 	}
 	defer cli.Close()
-	out, err := cli.ImagePull(context.Background(), imageName, types.ImagePullOptions{})
+	out, err := cli.ImagePull(ctx, imageName, types.ImagePullOptions{})
 	if err != nil {
 		return err
 	}
@@ -34,7 +33,7 @@ func PullImage(imageName string, handleOut func(io.ReadCloser) error) error {
 			return err
 		}
 	} else {
-		if _, err := ioutil.ReadAll(out); err != nil {
+		if _, err := io.ReadAll(out); err != nil {
 			return err
 		}
 	}
@@ -75,7 +74,7 @@ func PullNewImage(ctx context.Context, imageName string) error {
 	}
 	defer response.Close()
 
-	if _, err := ioutil.ReadAll(response); err != nil {
+	if _, err := io.ReadAll(response); err != nil {
 		return err
 	}
 

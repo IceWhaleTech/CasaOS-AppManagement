@@ -4,10 +4,13 @@ import (
 	"context"
 	"testing"
 
+	"go.uber.org/goleak"
 	"gotest.tools/v3/assert"
 )
 
 func TestIsImageStale_NoSuchImage(t *testing.T) {
+	defer goleak.VerifyNone(t)
+
 	if !IsDaemonRunning() {
 		t.Skip("Docker daemon is not running")
 	}
@@ -25,6 +28,8 @@ func TestIsImageStale_NoSuchImage(t *testing.T) {
 }
 
 func TestIsImageStale(t *testing.T) {
+	defer goleak.VerifyNone(t)
+
 	if !IsDaemonRunning() {
 		t.Skip("Docker daemon is not running")
 	}
@@ -33,7 +38,10 @@ func TestIsImageStale(t *testing.T) {
 
 	ctx := context.Background()
 
-	err := PullNewImage(ctx, imageName)
+	err := PullImage(ctx, imageName, nil)
+	assert.NilError(t, err)
+
+	err = PullNewImage(ctx, imageName)
 	assert.NilError(t, err)
 
 	stale1, latestImage1, err1 := HasNewImage(ctx, imageName, "123")
