@@ -79,7 +79,7 @@ type DockerService interface {
 type dockerService struct{}
 
 func getContainerStats() {
-	cli, err := client2.NewClientWithOpts(client2.FromEnv)
+	cli, err := client2.NewClientWithOpts(client2.FromEnv, client2.WithAPIVersionNegotiation())
 	if err != nil {
 		return
 	}
@@ -210,7 +210,7 @@ func (ds *dockerService) CheckContainerHealth(id string) (bool, error) {
 // 获取我的应用列表
 func (ds *dockerService) GetContainer(id string) (types.Container, error) {
 	// 获取docker应用
-	cli, err := client2.NewClientWithOpts(client2.FromEnv)
+	cli, err := client2.NewClientWithOpts(client2.FromEnv, client2.WithAPIVersionNegotiation())
 	if err != nil {
 		logger.Error("Failed to init client", zap.Any("err", err))
 		return types.Container{}, err
@@ -233,7 +233,7 @@ func (ds *dockerService) GetContainer(id string) (types.Container, error) {
 
 // 获取我的应用列表
 func (ds *dockerService) GetContainerAppList(name, image, state *string) (*[]model.MyAppList, *[]model.MyAppList) {
-	cli, err := client2.NewClientWithOpts(client2.FromEnv, client2.WithTimeout(time.Second*5))
+	cli, err := client2.NewClientWithOpts(client2.FromEnv, client2.WithAPIVersionNegotiation(), client2.WithTimeout(time.Second*5))
 	if err != nil {
 		logger.Error("Failed to init client", zap.Any("err", err))
 	}
@@ -327,7 +327,7 @@ func (ds *dockerService) GetContainerAppList(name, image, state *string) (*[]mod
 }
 
 func (ds *dockerService) CreateContainerShellSession(container, row, col string) (hr types.HijackedResponse, err error) {
-	cli, err := client2.NewClientWithOpts(client2.FromEnv)
+	cli, err := client2.NewClientWithOpts(client2.FromEnv, client2.WithAPIVersionNegotiation())
 	ctx := context.Background()
 	// 执行/bin/bash命令
 	ir, err := cli.ContainerExecCreate(ctx, container, types.ExecConfig{
@@ -353,7 +353,7 @@ func (ds *dockerService) CreateContainerShellSession(container, row, col string)
 
 // 检查镜像是否存在
 func (ds *dockerService) IsExistImage(imageName string) bool {
-	cli, err := client2.NewClientWithOpts(client2.FromEnv)
+	cli, err := client2.NewClientWithOpts(client2.FromEnv, client2.WithAPIVersionNegotiation())
 	if err != nil {
 		return false
 	}
@@ -388,7 +388,7 @@ func (ds *dockerService) PullNewImage(imageName, icon, name string, notification
 }
 
 func (ds *dockerService) CloneContainer(info *types.ContainerJSON) (containerID string, err error) {
-	cli, err := client2.NewClientWithOpts(client2.FromEnv)
+	cli, err := client2.NewClientWithOpts(client2.FromEnv, client2.WithAPIVersionNegotiation())
 	if err != nil {
 		return "", err
 	}
@@ -414,7 +414,7 @@ func (ds *dockerService) CreateContainer(m model.CustomizationPostData, id strin
 		m.NetworkModel = "bridge"
 	}
 
-	cli, err := client2.NewClientWithOpts(client2.FromEnv)
+	cli, err := client2.NewClientWithOpts(client2.FromEnv, client2.WithAPIVersionNegotiation())
 	if err != nil {
 		return "", err
 	}
@@ -618,7 +618,7 @@ func (ds *dockerService) RemoveContainer(name string, update bool) error {
 
 // 删除镜像
 func (ds *dockerService) RemoveImage(name string) error {
-	cli, err := client2.NewClientWithOpts(client2.FromEnv)
+	cli, err := client2.NewClientWithOpts(client2.FromEnv, client2.WithAPIVersionNegotiation())
 	if err != nil {
 		return err
 	}
@@ -644,7 +644,7 @@ Loop:
 }
 
 func RemoveImage(name string) error {
-	cli, err := client2.NewClientWithOpts(client2.FromEnv)
+	cli, err := client2.NewClientWithOpts(client2.FromEnv, client2.WithAPIVersionNegotiation())
 	if err != nil {
 		return err
 	}
@@ -686,7 +686,7 @@ func (ds *dockerService) StartContainer(name string) error {
 
 // 查看日志
 func (ds *dockerService) GetContainerLog(name string) ([]byte, error) {
-	cli, err := client2.NewClientWithOpts(client2.FromEnv)
+	cli, err := client2.NewClientWithOpts(client2.FromEnv, client2.WithAPIVersionNegotiation())
 	if err != nil {
 		return []byte(""), err
 	}
@@ -706,7 +706,7 @@ func (ds *dockerService) GetContainerLog(name string) ([]byte, error) {
 }
 
 func (ds *dockerService) GetContainerByName(name string) (*types.Container, error) {
-	cli, _ := client2.NewClientWithOpts(client2.FromEnv)
+	cli, _ := client2.NewClientWithOpts(client2.FromEnv, client2.WithAPIVersionNegotiation())
 	defer cli.Close()
 	filter := filters.NewArgs()
 	filter.Add("name", name)
@@ -722,7 +722,7 @@ func (ds *dockerService) GetContainerByName(name string) (*types.Container, erro
 
 // 获取容器详情
 func (ds *dockerService) DescribeContainer(nameOrID string) (*types.ContainerJSON, error) {
-	cli, err := client2.NewClientWithOpts(client2.FromEnv)
+	cli, err := client2.NewClientWithOpts(client2.FromEnv, client2.WithAPIVersionNegotiation())
 	if err != nil {
 		return &types.ContainerJSON{}, err
 	}
@@ -738,7 +738,7 @@ func (ds *dockerService) DescribeContainer(nameOrID string) (*types.ContainerJSO
 // param name 容器名称
 // param id 老的容器名称
 func (ds *dockerService) RenameContainer(name, id string) (err error) {
-	cli, err := client2.NewClientWithOpts(client2.FromEnv)
+	cli, err := client2.NewClientWithOpts(client2.FromEnv, client2.WithAPIVersionNegotiation())
 	if err != nil {
 		return err
 	}
@@ -753,14 +753,14 @@ func (ds *dockerService) RenameContainer(name, id string) (err error) {
 
 // 获取网络列表
 func (ds *dockerService) GetNetworkList() []types.NetworkResource {
-	cli, _ := client2.NewClientWithOpts(client2.FromEnv)
+	cli, _ := client2.NewClientWithOpts(client2.FromEnv, client2.WithAPIVersionNegotiation())
 	defer cli.Close()
 	networks, _ := cli.NetworkList(context.Background(), types.NetworkListOptions{})
 	return networks
 }
 
 func (ds *dockerService) GetServerInfo() (types.Info, error) {
-	cli, err := client2.NewClientWithOpts(client2.FromEnv)
+	cli, err := client2.NewClientWithOpts(client2.FromEnv, client2.WithAPIVersionNegotiation())
 	if err != nil {
 		return types.Info{}, err
 	}
