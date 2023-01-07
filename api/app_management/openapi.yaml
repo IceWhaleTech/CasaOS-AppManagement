@@ -241,6 +241,7 @@ paths:
         - Image methods
       parameters:
         - $ref: "#/components/parameters/ContainerIDs"
+        - $ref: "#/components/parameters/NotificationType"
       responses:
         "200":
           $ref: "#/components/responses/PullImagesOK"
@@ -280,6 +281,18 @@ components:
       schema:
         type: string
       example: 09e70f4a7dd3fc43de6a1bc40d45c79f857544e13679e5b1a47409034a7ce621
+
+    NotificationType:
+      name: notification_type
+      description: Notification type
+      in: query
+      schema:
+        type: string
+        enum:
+          - "install"
+          - "uninstall"
+          - "update"
+        default: "install"
 
   requestBodies:
     RequestComposeApp:
@@ -410,9 +423,11 @@ components:
               - $ref: "#/components/schemas/BaseResponse"
               - properties:
                   data:
-                    type: boolean
-                    description: |
-                      `true` if different images are pulled successfully, otherwise `false`
+                    description: a list of image names pulled
+                    type: array
+                    items:
+                      type: string
+                      example: "hello-world:latest"
 
   schemas:
     BaseResponse:

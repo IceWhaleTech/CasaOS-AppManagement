@@ -8,11 +8,13 @@ import (
 	"strings"
 	"time"
 
+	"github.com/IceWhaleTech/CasaOS-AppManagement/codegen"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/codegen/message_bus"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/common"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/model"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/pkg/config"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/service"
+	v1 "github.com/IceWhaleTech/CasaOS-AppManagement/service/v1"
 	modelCommon "github.com/IceWhaleTech/CasaOS-Common/model"
 	"github.com/IceWhaleTech/CasaOS-Common/model/notify"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/common_err"
@@ -52,7 +54,7 @@ func publishEventWrapper(ctx context.Context, eventType message_bus.EventType, p
 	}
 }
 
-func pullAndCreate(imageName string, m *model.CustomizationPostData) {
+func pullAndInstall(imageName string, m *model.CustomizationPostData) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -62,7 +64,7 @@ func pullAndCreate(imageName string, m *model.CustomizationPostData) {
 	})
 
 	// step：下载镜像
-	if err := service.MyService.Docker().PullImage(imageName, m.Icon, m.Label); err != nil {
+	if err := service.MyService.Docker().PullImage(imageName, m.Icon, m.Label, codegen.NotificationTypeInstall); err != nil {
 		properties := map[string]string{
 			common.PropertyTypeAppName.Name: imageName,
 			common.PropertyTypeMessage.Name: err.Error(),
@@ -356,7 +358,7 @@ func InstallApp(c *gin.Context) {
 	id := uuid.NewV4().String()
 	m.CustomID = id
 
-	go pullAndCreate(dockerImage+":"+dockerImageVersion, &m)
+	go pullAndInstall(dockerImage+":"+dockerImageVersion, &m)
 
 	c.JSON(http.StatusOK, modelCommon.Result{Success: common_err.SUCCESS, Message: common_err.GetMsg(common_err.SUCCESS), Data: m.Label})
 }
@@ -466,7 +468,7 @@ func UnInstallApp(c *gin.Context) {
 	}
 
 	notify := notify.Application{
-		Icon:       container.Config.Labels["icon"],
+		Icon:       v1.AppIcon(container),
 		Name:       strings.ReplaceAll(container.Name, "/", ""),
 		State:      "FINISHED",
 		Type:       "UNINSTALL",
@@ -753,7 +755,7 @@ func ContainerUpdateInfo(c *gin.Context) {
 		driver = append(driver, temp)
 	}
 
-	name := info.Config.Labels["name"]
+	name := v1.AppName(info)
 	if len(name) == 0 {
 		name = strings.ReplaceAll(info.Name, "/", "")
 	}
@@ -770,7 +772,7 @@ func ContainerUpdateInfo(c *gin.Context) {
 		Envs:          envs,
 		Host:          info.Config.Labels["host"],
 		HostName:      info.Config.Hostname,
-		Icon:          info.Config.Labels["icon"],
+		Icon:          v1.AppIcon(info),
 		Image:         info.Config.Image,
 		Index:         info.Config.Labels["index"],
 		Label:         name,

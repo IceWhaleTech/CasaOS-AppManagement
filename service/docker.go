@@ -16,6 +16,7 @@ import (
 	"github.com/samber/lo"
 	"go.uber.org/zap"
 
+	"github.com/IceWhaleTech/CasaOS-AppManagement/codegen"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/common"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/model"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/pkg/config"
@@ -48,7 +49,8 @@ var (
 type DockerService interface {
 	// image
 	IsExistImage(imageName string) bool
-	PullImage(imageName string, icon, name string) error
+	PullImage(imageName, icon, name string, notifyType codegen.NotificationType) error
+	PullNewImage(imageName, icon, name string, notifyType codegen.NotificationType) error
 	RemoveImage(name string) error
 
 	// container
@@ -369,38 +371,19 @@ func (ds *dockerService) IsExistImage(imageName string) bool {
 }
 
 // 安装镜像
-func (ds *dockerService) PullImage(imageName string, icon, name string) error {
+func (ds *dockerService) PullImage(imageName, icon, name string, notificationType codegen.NotificationType) error {
 	ctx := context.Background()
 
 	return docker.PullImage(ctx, imageName, types.ImagePullOptions{}, func(out io.ReadCloser) error {
-		buf := make([]byte, 2048*4)
-		for {
-			n, err := out.Read(buf)
-			if err != nil {
-				if err != io.EOF {
-					fmt.Println("read error:", err)
-				}
-				break
-			}
-			if len(icon) > 0 && len(name) > 0 {
-				notify := notify.Application{
-					Icon:     icon,
-					Name:     name,
-					State:    "PULLING",
-					Type:     "INSTALL",
-					Finished: false,
-					Success:  true,
-					Message:  string(buf[:n]),
-				}
+		return progress(out, icon, name, notificationType)
+	})
+}
 
-				if err := MyService.Notify().SendInstallAppBySocket(notify); err != nil {
-					logger.Error("send install app by socket error: ", zap.Error(err), zap.Any("notify", notify))
-					return err
-				}
-			}
-		}
+func (ds *dockerService) PullNewImage(imageName, icon, name string, notificationType codegen.NotificationType) error {
+	ctx := context.Background()
 
-		return nil
+	return docker.PullNewImage(ctx, imageName, func(out io.ReadCloser) error {
+		return progress(out, icon, name, notificationType)
 	})
 }
 
@@ -806,4 +789,35 @@ func getV1AppStoreID(m *types.Container) uint {
 
 	logger.Info("the container does not have a v1 app store id", zap.String("containerID", m.ID), zap.String("containerName", m.Names[0]))
 	return 0
+}
+
+func progress(out io.ReadCloser, icon, name string, notificationType codegen.NotificationType) error {
+	buf := make([]byte, 2048*4)
+	for {
+		n, err := out.Read(buf)
+		if err != nil {
+			if err != io.EOF {
+				fmt.Println("read error:", err)
+			}
+			break
+		}
+		if len(icon) > 0 && len(name) > 0 {
+			notify := notify.Application{
+				Icon:     icon,
+				Name:     name,
+				State:    "PULLING",
+				Type:     strings.ToUpper((string)(notificationType)),
+				Finished: false,
+				Success:  true,
+				Message:  string(buf[:n]),
+			}
+
+			if err := MyService.Notify().SendInstallAppBySocket(notify); err != nil {
+				logger.Error("send install app by socket error: ", zap.Error(err), zap.Any("notify", notify))
+				return err
+			}
+		}
+	}
+
+	return nil
 }

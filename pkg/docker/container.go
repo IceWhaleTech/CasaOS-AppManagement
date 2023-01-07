@@ -27,6 +27,21 @@ func ImageName(containerInfo *types.ContainerJSON) string {
 	return imageName
 }
 
+func Container(ctx context.Context, id string) (*types.ContainerJSON, error) {
+	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+	if err != nil {
+		return nil, err
+	}
+	defer cli.Close()
+
+	containerInfo, err := cli.ContainerInspect(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	return &containerInfo, nil
+}
+
 func UpdateContainerWithNewImage(ctx context.Context, id string, pull bool) error {
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
