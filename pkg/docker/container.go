@@ -42,7 +42,7 @@ func Container(ctx context.Context, id string) (*types.ContainerJSON, error) {
 	return &containerInfo, nil
 }
 
-func UpdateContainerWithNewImage(ctx context.Context, id string, pull bool) error {
+func RecreateContainer(ctx context.Context, id string) error {
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
 		return err
@@ -54,27 +54,17 @@ func UpdateContainerWithNewImage(ctx context.Context, id string, pull bool) erro
 		return err
 	}
 
-	if pull {
-		imageName := ImageName(&containerInfo)
-
-		if err := PullNewImage(ctx, imageName, nil); err != nil {
-			return err
-		}
-	}
-
 	// StopContainer
 	if err := StopContainer(ctx, id); err != nil {
 		return err
 	}
 
-	// RenameContainer
 	tempName := fmt.Sprintf("%s-%s", containerInfo.Name, random.RandomString(4, false))
 	if err := RenameContainer(ctx, id, tempName); err != nil {
 		return err
 	}
 
-	// RecreateContainer
-	newID, err := RecreateContainer(ctx, id, containerInfo.Name)
+	newID, err := CloneContainer(ctx, id, containerInfo.Name)
 	if err != nil {
 		// RenameContainer back if failed to recreate
 		if err := RenameContainer(ctx, id, containerInfo.Name); err != nil {
@@ -110,7 +100,7 @@ func UpdateContainerWithNewImage(ctx context.Context, id string, pull bool) erro
 	return RemoveContainer(ctx, containerInfo.ID)
 }
 
-func RecreateContainer(ctx context.Context, id string, name string) (string, error) {
+func CloneContainer(ctx context.Context, id string, newName string) (string, error) {
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
 		return "", err
@@ -132,7 +122,7 @@ func RecreateContainer(ctx context.Context, id string, name string) (string, err
 	networkConfig := &network.NetworkingConfig{EndpointsConfig: containerInfo.NetworkSettings.Networks}
 	simpleNetworkConfig := simpleNetworkConfig(networkConfig)
 
-	newContainer, err := cli.ContainerCreate(ctx, config, hostConfig, simpleNetworkConfig, nil, name)
+	newContainer, err := cli.ContainerCreate(ctx, config, hostConfig, simpleNetworkConfig, nil, newName)
 	if err != nil {
 		return "", err
 	}

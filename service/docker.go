@@ -643,35 +643,6 @@ Loop:
 	return err
 }
 
-func RemoveImage(name string) error {
-	cli, err := client2.NewClientWithOpts(client2.FromEnv, client2.WithAPIVersionNegotiation())
-	if err != nil {
-		return err
-	}
-	defer cli.Close()
-
-	imageList, err := cli.ImageList(context.Background(), types.ImageListOptions{})
-	if err != nil {
-		return err
-	}
-
-	imageID := ""
-
-Loop:
-	for _, ig := range imageList {
-		fmt.Println(ig.RepoDigests)
-		fmt.Println(ig.Containers)
-		for _, i := range ig.RepoTags {
-			if i == name {
-				imageID = ig.ID
-				break Loop
-			}
-		}
-	}
-	_, err = cli.ImageRemove(context.Background(), imageID, types.ImageRemoveOptions{})
-	return err
-}
-
 // 停止镜像
 func (ds *dockerService) StopContainer(id string) error {
 	ctx := context.Background()
@@ -738,17 +709,8 @@ func (ds *dockerService) DescribeContainer(nameOrID string) (*types.ContainerJSO
 // param name 容器名称
 // param id 老的容器名称
 func (ds *dockerService) RenameContainer(name, id string) (err error) {
-	cli, err := client2.NewClientWithOpts(client2.FromEnv, client2.WithAPIVersionNegotiation())
-	if err != nil {
-		return err
-	}
-	defer cli.Close()
-
-	err = cli.ContainerRename(context.Background(), id, name)
-	if err != nil {
-		return err
-	}
-	return
+	ctx := context.Background()
+	return docker.RenameContainer(ctx, id, name)
 }
 
 // 获取网络列表

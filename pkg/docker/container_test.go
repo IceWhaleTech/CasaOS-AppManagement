@@ -63,7 +63,7 @@ func TestRecreateContainer(t *testing.T) {
 	}()
 
 	// recreate
-	newID, err := RecreateContainer(ctx, response.ID, "test-"+random.RandomString(4, false))
+	newID, err := CloneContainer(ctx, response.ID, "test-"+random.RandomString(4, false))
 	assert.NilError(t, err)
 
 	defer func() {
@@ -100,7 +100,7 @@ func TestUpdateContainerWithNewImage(t *testing.T) {
 	assert.NilError(t, err)
 
 	// update
-	err = UpdateContainerWithNewImage(ctx, response.ID, true)
+	err = RecreateContainer(ctx, response.ID)
 	assert.NilError(t, err)
 
 	containers, err := cli.ContainerList(ctx, types.ContainerListOptions{})
