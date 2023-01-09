@@ -29,7 +29,7 @@ tags:
   - name: Container methods
     description: |-
       methods for managing container app lifecycle
-  
+
   - name: Image methods
     description: |-
       methods for managing container app images
@@ -193,11 +193,11 @@ paths:
           $ref: "#/components/responses/ResponseInternalServerError"
 
   /container/{id}:
-    post:
-      summary: Update the container app
+    patch:
+      summary: Recreate the container app
       description: |
         TODO
-      operationId: updateContainerByID
+      operationId: recreateContainerByID
       tags:
         - Container methods
       parameters:
