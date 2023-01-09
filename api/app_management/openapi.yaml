@@ -204,7 +204,7 @@ paths:
         - $ref: "#/components/parameters/ContainerID"
       responses:
         "200":
-          $ref: "#/components/responses/ContainerUpdateOK"
+          $ref: "#/components/responses/ContainerRecreateOK"
         "404":
           $ref: "#/components/responses/ResponseNotFound"
         "500":
@@ -405,14 +405,19 @@ components:
           example:
             message: "pong"
 
-    ContainerUpdateOK:
+    ContainerRecreateOK:
       description: OK
       content:
         application/json:
           schema:
-            $ref: "#/components/schemas/BaseResponse"
-          example:
-            message: "Container has begun updating"
+            allOf:
+              - $ref: "#/components/schemas/BaseResponse"
+              - properties:
+                  data:
+                    description: ID of the container recreated
+                    type: string
+                    example: 09e70f4a7dd3fc43de6a1bc40d45c79f857544e13679e5b1a47409034a7ce621
+
 
     PullImagesOK:
       description: OK

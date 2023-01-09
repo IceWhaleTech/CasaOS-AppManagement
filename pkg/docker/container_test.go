@@ -77,3 +77,9 @@ func TestCloneContainer(t *testing.T) {
 		assert.NilError(t, err)
 	}()
 }
+
+func TestNonExistingContainer(t *testing.T) {
+	containerInfo, err := Container(context.Background(), "non-existing-container")
+	assert.ErrorContains(t, err, "non-existing-container")
+	assert.Assert(t, containerInfo == nil)
+}
