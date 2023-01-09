@@ -9,7 +9,6 @@ import (
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/network"
 	"github.com/docker/docker/client"
-	"github.com/samber/lo"
 	"go.uber.org/goleak"
 	"gotest.tools/v3/assert"
 )
@@ -77,45 +76,4 @@ func TestCloneContainer(t *testing.T) {
 		err := StopContainer(ctx, newID)
 		assert.NilError(t, err)
 	}()
-}
-
-func TestRecreateContainer(t *testing.T) {
-	defer goleak.VerifyNone(t)
-
-	if !IsDaemonRunning() {
-		t.Skip("Docker daemon is not running")
-	}
-
-	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
-	assert.NilError(t, err)
-	defer cli.Close()
-
-	ctx := context.Background()
-
-	// setup
-	response := setupTestContainer(ctx, t)
-
-	err = StartContainer(ctx, response.ID)
-	assert.NilError(t, err)
-
-	// update
-	newID, err := RecreateContainer(ctx, response.ID)
-	assert.NilError(t, err)
-
-	defer func() {
-		err := RemoveContainer(ctx, newID)
-		assert.NilError(t, err)
-	}()
-
-	defer func() {
-		err := StopContainer(ctx, newID)
-		assert.NilError(t, err)
-	}()
-
-	containers, err := cli.ContainerList(ctx, types.ContainerListOptions{})
-	assert.NilError(t, err)
-
-	assert.Assert(t, !lo.ContainsBy(containers, func(c types.Container) bool {
-		return c.ID == response.ID
-	}))
 }

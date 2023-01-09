@@ -26,6 +26,7 @@ import (
 	"github.com/IceWhaleTech/CasaOS-Common/utils/file"
 	httpUtil "github.com/IceWhaleTech/CasaOS-Common/utils/http"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/logger"
+	"github.com/IceWhaleTech/CasaOS-Common/utils/random"
 	timeutils "github.com/IceWhaleTech/CasaOS-Common/utils/time"
 
 	//"github.com/containerd/containerd/oci"
@@ -63,6 +64,7 @@ type DockerService interface {
 	GetContainerByName(name string) (*types.Container, error)
 	GetContainerLog(name string) ([]byte, error)
 	GetContainerStats() []model.DockerStatsModel
+	RecreateContainer(id string) (string, error)
 	RemoveContainer(name string, update bool) error
 	RenameContainer(name, id string) (err error)
 	StartContainer(name string) error
@@ -578,6 +580,51 @@ func (ds *dockerService) CreateContainer(m model.CustomizationPostData, id strin
 		return "", err
 	}
 	return containerDb.ID, err
+}
+
+func (ds *dockerService) RecreateContainer(id string) (string, error) {
+	ctx := context.Background()
+
+	containerInfo, err := docker.Container(ctx, id)
+	if err != nil {
+		return "", err
+	}
+
+	// Clone the old container
+	tempName := fmt.Sprintf("%s-%s", containerInfo.Name, random.RandomString(4, false))
+	newID, err := docker.CloneContainer(ctx, id, tempName)
+	if err != nil {
+		return "", err
+	}
+
+	// stop old container if it is running
+	if containerInfo.State.Running {
+		if err := docker.StopContainer(ctx, id); err != nil {
+			return newID, err
+		}
+	}
+
+	// start new container
+	if err := docker.StartContainer(ctx, newID); err != nil {
+
+		// if failed to start new container and old container was running...
+		if containerInfo.State.Running {
+			// start the old container
+			if err := docker.StartContainer(ctx, id); err != nil {
+				return newID, err
+			}
+		}
+
+		// remove the new container
+		if err := docker.RemoveContainer(ctx, newID); err != nil {
+			return newID, err
+		}
+
+		return newID, err
+	}
+
+	// remove the old container if new container started successfully
+	return newID, docker.RemoveContainer(ctx, containerInfo.ID)
 }
 
 // 删除容器

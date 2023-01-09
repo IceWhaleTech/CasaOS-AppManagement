@@ -9,7 +9,6 @@ import (
 	"strings"
 
 	"github.com/IceWhaleTech/CasaOS-Common/utils"
-	"github.com/IceWhaleTech/CasaOS-Common/utils/random"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/network"
@@ -42,76 +41,27 @@ func Container(ctx context.Context, id string) (*types.ContainerJSON, error) {
 	return &containerInfo, nil
 }
 
-func RecreateContainer(ctx context.Context, id string) (string, error) {
-	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
-	if err != nil {
-		return "", err
-	}
-	defer cli.Close()
-
-	containerInfo, err := cli.ContainerInspect(ctx, id)
-	if err != nil {
-		return "", err
-	}
-
-	// Clone the old container
-	tempName := fmt.Sprintf("%s-%s", containerInfo.Name, random.RandomString(4, false))
-	newID, err := CloneContainer(ctx, id, tempName)
-	if err != nil {
-		return "", err
-	}
-
-	// stop old container if it is running
-	if containerInfo.State.Running {
-		if err := StopContainer(ctx, id); err != nil {
-			return newID, err
-		}
-	}
-
-	// start new container
-	if err := StartContainer(ctx, newID); err != nil {
-
-		// if failed to start new container and old container was running...
-		if containerInfo.State.Running {
-			// start the old container
-			if err := StartContainer(ctx, id); err != nil {
-				return newID, err
-			}
-		}
-
-		// remove the new container
-		if err := RemoveContainer(ctx, newID); err != nil {
-			return newID, err
-		}
-
-		return newID, err
-	}
-
-	// remove the old container if new container started successfully
-	return newID, RemoveContainer(ctx, containerInfo.ID)
-}
-
 func CloneContainer(ctx context.Context, id string, newName string) (string, error) {
-	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
-	if err != nil {
-		return "", err
-	}
-	defer cli.Close()
-
-	containerInfo, err := cli.ContainerInspect(ctx, id)
+	containerInfo, err := Container(ctx, id)
 	if err != nil {
 		return "", err
 	}
 
-	imageInfo, _, err := cli.ImageInspectWithRaw(ctx, containerInfo.Image)
+	imageInfo, err := Image(ctx, containerInfo.Image)
 	if err != nil {
 		return "", err
 	}
 
-	config := runtimeConfig(&containerInfo, &imageInfo)
-	hostConfig := hostConfig(&containerInfo)
+	config := runtimeConfig(containerInfo, imageInfo)
+	hostConfig := hostConfig(containerInfo)
 	networkConfig := &network.NetworkingConfig{EndpointsConfig: containerInfo.NetworkSettings.Networks}
 	simpleNetworkConfig := simpleNetworkConfig(networkConfig)
+
+	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+	if err != nil {
+		return "", err
+	}
+	defer cli.Close()
 
 	newContainer, err := cli.ContainerCreate(ctx, config, hostConfig, simpleNetworkConfig, nil, newName)
 	if err != nil {

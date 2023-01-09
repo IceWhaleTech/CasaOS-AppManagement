@@ -13,6 +13,21 @@ import (
 	"github.com/docker/docker/client"
 )
 
+func Image(ctx context.Context, imageName string) (*types.ImageInspect, error) {
+	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+	if err != nil {
+		return nil, err
+	}
+	defer cli.Close()
+
+	imageInfo, _, err := cli.ImageInspectWithRaw(ctx, imageName)
+	if err != nil {
+		return nil, err
+	}
+
+	return &imageInfo, nil
+}
+
 func PullImage(ctx context.Context, imageName string, opts types.ImagePullOptions, handleOut func(io.ReadCloser) error) error {
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
