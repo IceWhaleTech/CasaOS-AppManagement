@@ -42,62 +42,53 @@ func Container(ctx context.Context, id string) (*types.ContainerJSON, error) {
 	return &containerInfo, nil
 }
 
-func RecreateContainer(ctx context.Context, id string) error {
+func RecreateContainer(ctx context.Context, id string) (string, error) {
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
-		return err
+		return "", err
 	}
 	defer cli.Close()
 
 	containerInfo, err := cli.ContainerInspect(ctx, id)
 	if err != nil {
-		return err
+		return "", err
 	}
 
-	// StopContainer
-	if err := StopContainer(ctx, id); err != nil {
-		return err
-	}
-
+	// Clone the old container
 	tempName := fmt.Sprintf("%s-%s", containerInfo.Name, random.RandomString(4, false))
-	if err := RenameContainer(ctx, id, tempName); err != nil {
-		return err
-	}
-
-	newID, err := CloneContainer(ctx, id, containerInfo.Name)
+	newID, err := CloneContainer(ctx, id, tempName)
 	if err != nil {
-		// RenameContainer back if failed to recreate
-		if err := RenameContainer(ctx, id, containerInfo.Name); err != nil {
-			return err
-		}
-
-		if containerInfo.State.Running {
-			if err := StartContainer(ctx, id); err != nil {
-				return err
-			}
-		}
-
-		return err
+		return "", err
 	}
 
-	// StartContainer
+	// stop old container if it is running
+	if containerInfo.State.Running {
+		if err := StopContainer(ctx, id); err != nil {
+			return newID, err
+		}
+	}
+
+	// start new container
 	if err := StartContainer(ctx, newID); err != nil {
-		// RenameContainer back if failed to recreate
-		if err := RenameContainer(ctx, id, containerInfo.Name); err != nil {
-			return err
-		}
 
+		// if failed to start new container and old container was running...
 		if containerInfo.State.Running {
+			// start the old container
 			if err := StartContainer(ctx, id); err != nil {
-				return err
+				return newID, err
 			}
 		}
 
-		return err
+		// remove the new container
+		if err := RemoveContainer(ctx, newID); err != nil {
+			return newID, err
+		}
+
+		return newID, err
 	}
 
-	// RemoveContainer
-	return RemoveContainer(ctx, containerInfo.ID)
+	// remove the old container if new container started successfully
+	return newID, RemoveContainer(ctx, containerInfo.ID)
 }
 
 func CloneContainer(ctx context.Context, id string, newName string) (string, error) {

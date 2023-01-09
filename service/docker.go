@@ -55,7 +55,6 @@ type DockerService interface {
 
 	// container
 	CheckContainerHealth(id string) (bool, error)
-	CloneContainer(info *types.ContainerJSON) (containerID string, err error)
 	CreateContainer(m model.CustomizationPostData, id string) (containerID string, err error)
 	CreateContainerShellSession(container, row, col string) (hr types.HijackedResponse, err error)
 	DescribeContainer(name string) (*types.ContainerJSON, error)
@@ -385,22 +384,6 @@ func (ds *dockerService) PullNewImage(imageName, icon, name string, notification
 	return docker.PullNewImage(ctx, imageName, func(out io.ReadCloser) error {
 		return progress(out, icon, name, notificationType)
 	})
-}
-
-func (ds *dockerService) CloneContainer(info *types.ContainerJSON) (containerID string, err error) {
-	cli, err := client2.NewClientWithOpts(client2.FromEnv, client2.WithAPIVersionNegotiation())
-	if err != nil {
-		return "", err
-	}
-	defer cli.Close()
-
-	config := &network.NetworkingConfig{EndpointsConfig: info.NetworkSettings.Networks}
-
-	container, err := cli.ContainerCreate(context.Background(), info.Config, info.HostConfig, config, nil, info.Name)
-	if err != nil {
-		return "", err
-	}
-	return container.ID, err
 }
 
 // param imageName 镜像名称

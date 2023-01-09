@@ -33,7 +33,7 @@ func setupTestContainer(ctx context.Context, t *testing.T) *container.CreateResp
 	return &response
 }
 
-func TestRecreateContainer(t *testing.T) {
+func TestCloneContainer(t *testing.T) {
 	defer goleak.VerifyNone(t)
 
 	if !IsDaemonRunning() {
@@ -62,7 +62,6 @@ func TestRecreateContainer(t *testing.T) {
 		assert.NilError(t, err)
 	}()
 
-	// recreate
 	newID, err := CloneContainer(ctx, response.ID, "test-"+random.RandomString(4, false))
 	assert.NilError(t, err)
 
@@ -80,7 +79,7 @@ func TestRecreateContainer(t *testing.T) {
 	}()
 }
 
-func TestUpdateContainerWithNewImage(t *testing.T) {
+func TestRecreateContainer(t *testing.T) {
 	defer goleak.VerifyNone(t)
 
 	if !IsDaemonRunning() {
@@ -100,8 +99,18 @@ func TestUpdateContainerWithNewImage(t *testing.T) {
 	assert.NilError(t, err)
 
 	// update
-	err = RecreateContainer(ctx, response.ID)
+	newID, err := RecreateContainer(ctx, response.ID)
 	assert.NilError(t, err)
+
+	defer func() {
+		err := RemoveContainer(ctx, newID)
+		assert.NilError(t, err)
+	}()
+
+	defer func() {
+		err := StopContainer(ctx, newID)
+		assert.NilError(t, err)
+	}()
 
 	containers, err := cli.ContainerList(ctx, types.ContainerListOptions{})
 	assert.NilError(t, err)
