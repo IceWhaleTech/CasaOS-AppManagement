@@ -799,7 +799,7 @@ func getV1AppStoreID(m *types.Container) uint {
 }
 
 func sendNotification(icon, name, message, state string, finished, success bool, notificationType codegen.NotificationType) {
-	if len(icon) == 0 || len(name) == 0 {
+	if len(icon) == 0 || len(name) == 0 || notificationType == codegen.NotificationTypeNone {
 		return
 	}
 
