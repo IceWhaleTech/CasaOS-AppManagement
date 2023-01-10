@@ -70,21 +70,7 @@ func pullAndInstall(imageName string, m *model.CustomizationPostData) {
 			common.PropertyTypeMessage.Name: err.Error(),
 		}
 
-		app := notify.Application{
-			Icon:       m.Icon,
-			Name:       m.Label,
-			State:      "PULLING",
-			Type:       "INSTALL",
-			Success:    false,
-			Finished:   false,
-			Message:    err.Error(),
-			Properties: properties,
-		}
-
-		if err := service.MyService.Notify().SendInstallAppBySocket(app); err != nil {
-			logger.Error("send install app notify error", zap.Error(err), zap.Any("app", app))
-		}
-
+		service.SendNotification(m.Icon, m.Label, err.Error(), "PULLING", false, false, codegen.NotificationTypeInstall)
 		publishEventWrapper(ctx, common.EventTypeContainerAppInstallFailed, properties)
 		return
 	}
@@ -99,70 +85,23 @@ func pullAndInstall(imageName string, m *model.CustomizationPostData) {
 			common.PropertyTypeMessage.Name: err.Error(),
 		}
 
-		app := notify.Application{
-			Icon:       m.Icon,
-			Name:       m.Label,
-			State:      "STARTING",
-			Type:       "INSTALL",
-			Success:    false,
-			Finished:   false,
-			Message:    err.Error(),
-			Properties: properties,
-		}
-
-		if err := service.MyService.Notify().SendInstallAppBySocket(app); err != nil {
-			logger.Error("send install app notify error", zap.Error(err), zap.Any("app", app))
-		}
-
+		service.SendNotification(m.Icon, m.Label, err.Error(), "STARTING", false, false, codegen.NotificationTypeInstall)
 		publishEventWrapper(ctx, common.EventTypeContainerAppInstallFailed, properties)
 		return
 	}
 
-	app := notify.Application{
-		Icon:     m.Icon,
-		Name:     m.Label,
-		State:    "STARTING",
-		Type:     "INSTALL",
-		Success:  true,
-		Finished: false,
-	}
-
-	if err := service.MyService.Notify().SendInstallAppBySocket(app); err != nil {
-		logger.Error("send install app notify error", zap.Error(err), zap.Any("app", app))
-	}
-
 	// step：启动容器
+	service.SendNotification(m.Icon, m.Label, "Starting container...", "STARTING", false, true, codegen.NotificationTypeInstall)
 	if err := service.MyService.Docker().StartContainer(m.ContainerName); err != nil {
 		properties := map[string]string{
 			common.PropertyTypeAppName.Name: imageName,
 			common.PropertyTypeMessage.Name: err.Error(),
 		}
 
-		app := notify.Application{
-			Icon:       m.Icon,
-			Name:       m.Label,
-			State:      "STARTING",
-			Type:       "INSTALL",
-			Success:    false,
-			Finished:   false,
-			Message:    err.Error(),
-			Properties: properties,
-		}
-
-		if err := service.MyService.Notify().SendInstallAppBySocket(app); err != nil {
-			logger.Error("send install app notify error", zap.Error(err), zap.Any("app", app))
-		}
-
+		service.SendNotification(m.Icon, m.Label, err.Error(), "STARTING", false, false, codegen.NotificationTypeInstall)
 		publishEventWrapper(ctx, common.EventTypeContainerAppInstallFailed, properties)
 		return
 	}
-
-	// if m.Origin != CUSTOM {
-	// 	installLog.Message = "setting upnp"
-	// } else {
-	// 	installLog.Message = "nearing completion"
-	// }
-	// service.MyService.Notify().UpdateLog(installLog)
 
 	// step: 启动成功     检查容器状态确认启动成功
 	container, err := service.MyService.Docker().DescribeContainer(m.ContainerName)
@@ -173,21 +112,7 @@ func pullAndInstall(imageName string, m *model.CustomizationPostData) {
 			common.PropertyTypeMessage.Name: err.Error(),
 		}
 
-		app := notify.Application{
-			Icon:       m.Icon,
-			Name:       m.Label,
-			State:      "INSTALLED",
-			Type:       "INSTALL",
-			Success:    false,
-			Finished:   true,
-			Message:    err.Error(),
-			Properties: properties,
-		}
-
-		if err := service.MyService.Notify().SendInstallAppBySocket(app); err != nil {
-			logger.Error("send install app notify error", zap.Error(err), zap.Any("app", app))
-		}
-
+		service.SendNotification(m.Icon, m.Label, err.Error(), "INSTALLED", true, false, codegen.NotificationTypeInstall)
 		publishEventWrapper(ctx, common.EventTypeContainerAppInstallFailed, properties)
 		return
 	}
@@ -197,20 +122,7 @@ func pullAndInstall(imageName string, m *model.CustomizationPostData) {
 		common.PropertyTypeAppName.Name: imageName,
 	}
 
-	app = notify.Application{
-		Icon:       m.Icon,
-		Name:       m.Label,
-		State:      "INSTALLED",
-		Type:       "INSTALL",
-		Success:    true,
-		Finished:   true,
-		Properties: properties,
-	}
-
-	if err := service.MyService.Notify().SendInstallAppBySocket(app); err != nil {
-		logger.Error("send install app notify error", zap.Error(err), zap.Any("app", app))
-	}
-
+	service.SendNotification(m.Icon, m.Label, "Installed successfully", "INSTALLED", true, true, codegen.NotificationTypeInstall)
 	publishEventWrapper(ctx, common.EventTypeContainerAppInstalled, properties)
 
 	config.CasaOSGlobalVariables.AppChange = true
@@ -426,18 +338,6 @@ func UnInstallApp(c *gin.Context) {
 		return
 	}
 
-	// step：remove image
-
-	// if err := service.MyService.Docker().RemoveImage(info.Config.Image); err != nil {
-	// 	publishEventWrapper(c.Request.Context(), common.EventTypeContainerAppUninstallFailed, map[string]string{
-	// 		common.PropertyTypeAppID.Name:   appID,
-	// 		common.PropertyTypeAppName.Name: info.Config.Image,
-	// 		common.PropertyTypeMessage.Name: err.Error(),
-	// 	})
-
-	// 	c.JSON(http.StatusInternalServerError, modelCommon.Result{Success: common_err.UNINSTALL_APP_ERROR, Message: common_err.GetMsg(common_err.UNINSTALL_APP_ERROR), Data: err.Error()})
-	// 	return
-	// }
 	if err := service.MyService.Docker().RemoveImage(container.Config.Image); err != nil {
 		logger.Error("error when trying to remove docker image", zap.Error(err), zap.String("image", container.Config.Image))
 	}

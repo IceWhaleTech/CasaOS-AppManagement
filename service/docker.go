@@ -600,7 +600,7 @@ func (ds *dockerService) RecreateContainer(id string, notificationType codegen.N
 	// Clone the old container
 	tempName := fmt.Sprintf("%s-%s", containerInfo.Name, random.RandomString(4, false))
 
-	sendNotification(appIcon, appName, "Creating a new container...", "CREATING", false, false, notificationType)
+	SendNotification(appIcon, appName, "Creating a new container...", "CREATING", false, false, notificationType)
 	newID, err := docker.CloneContainer(ctx, id, tempName)
 	if err != nil {
 		return "", err
@@ -608,31 +608,31 @@ func (ds *dockerService) RecreateContainer(id string, notificationType codegen.N
 
 	// stop old container if it is running
 	if containerInfo.State.Running {
-		sendNotification(appIcon, appName, "Stopping the existing container...", "STOPPING", false, false, notificationType)
+		SendNotification(appIcon, appName, "Stopping the existing container...", "STOPPING", false, false, notificationType)
 		if err := docker.StopContainer(ctx, id); err != nil {
-			sendNotification(appIcon, appName, "Failed to stop existing container...", "STOPPING", true, false, notificationType)
+			SendNotification(appIcon, appName, "Failed to stop existing container...", "STOPPING", true, false, notificationType)
 			return newID, err
 		}
 	}
 
 	// start new container
-	sendNotification(appIcon, appName, "Starting the new container...", "STARTING", false, false, notificationType)
+	SendNotification(appIcon, appName, "Starting the new container...", "STARTING", false, false, notificationType)
 	if err := docker.StartContainer(ctx, newID); err != nil {
 
 		// if failed to start new container and old container was running...
 		if containerInfo.State.Running {
 			// start the old container
-			sendNotification(appIcon, appName, "Failed to start the new container. Restarting the old container...", "STARTING", false, false, notificationType)
+			SendNotification(appIcon, appName, "Failed to start the new container. Restarting the old container...", "STARTING", false, false, notificationType)
 			if err := docker.StartContainer(ctx, id); err != nil {
-				sendNotification(appIcon, appName, "Failed to start either the new container and the old container...", "STARTING", true, false, notificationType)
+				SendNotification(appIcon, appName, "Failed to start either the new container and the old container...", "STARTING", true, false, notificationType)
 				return newID, err
 			}
 		}
 
 		// remove the new container
-		sendNotification(appIcon, appName, "Failed to start the new container. Removing the new container...", "REMOVING", false, false, notificationType)
+		SendNotification(appIcon, appName, "Failed to start the new container. Removing the new container...", "REMOVING", false, false, notificationType)
 		if err := docker.RemoveContainer(ctx, newID); err != nil {
-			sendNotification(appIcon, appName, "Failed to start the new container and failed to remove the new container...", "REMOVING", true, false, notificationType)
+			SendNotification(appIcon, appName, "Failed to start the new container and failed to remove the new container...", "REMOVING", true, false, notificationType)
 			return newID, err
 		}
 
@@ -640,20 +640,20 @@ func (ds *dockerService) RecreateContainer(id string, notificationType codegen.N
 	}
 
 	// remove the old container if new container started successfully
-	sendNotification(appIcon, appName, "Removing the old container...", "REMOVING", false, false, notificationType)
+	SendNotification(appIcon, appName, "Removing the old container...", "REMOVING", false, false, notificationType)
 	if err := docker.RemoveContainer(ctx, containerInfo.ID); err != nil {
-		sendNotification(appIcon, appName, "Failed to remove the old container...", "REMOVING", true, false, notificationType)
+		SendNotification(appIcon, appName, "Failed to remove the old container...", "REMOVING", true, false, notificationType)
 		return newID, err
 	}
 
 	// rename the new container
-	sendNotification(appIcon, appName, "Renaming the new container...", "RENAMING", false, false, notificationType)
+	SendNotification(appIcon, appName, "Renaming the new container...", "RENAMING", false, false, notificationType)
 	if err := docker.RenameContainer(ctx, newID, containerInfo.Name); err != nil {
-		sendNotification(appIcon, appName, "Failed to rename the new container...", "RENAMING", true, false, notificationType)
+		SendNotification(appIcon, appName, "Failed to rename the new container...", "RENAMING", true, false, notificationType)
 		return newID, err
 	}
 
-	sendNotification(appIcon, appName, "Successfully recreated a new container...", "DONE", true, true, notificationType)
+	SendNotification(appIcon, appName, "Successfully recreated a new container...", "DONE", true, true, notificationType)
 	return newID, nil
 }
 
@@ -805,7 +805,7 @@ func getV1AppStoreID(m *types.Container) uint {
 	return 0
 }
 
-func sendNotification(icon, name, message, state string, finished, success bool, notificationType codegen.NotificationType) {
+func SendNotification(icon, name, message, state string, finished, success bool, notificationType codegen.NotificationType) {
 	if len(icon) == 0 || len(name) == 0 || notificationType == codegen.NotificationTypeNone {
 		return
 	}
@@ -836,6 +836,6 @@ func progress(out io.ReadCloser, icon, name string, notificationType codegen.Not
 			break
 		}
 
-		sendNotification(icon, name, string(buf[:n]), "PULLING", false, true, notificationType)
+		SendNotification(icon, name, string(buf[:n]), "PULLING", false, true, notificationType)
 	}
 }
