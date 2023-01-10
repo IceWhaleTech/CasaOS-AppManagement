@@ -39,7 +39,7 @@ func (a *AppManagement) PullImages(ctx echo.Context, params codegen.PullImagesPa
 
 			notificationType := lo.
 				If(params.NotificationType != nil, codegen.NotificationType(*params.NotificationType)).
-				Else(codegen.NotificationTypeInstall)
+				Else(codegen.NotificationTypeNone)
 
 			if err := service.MyService.Docker().PullNewImage(imageName, appIcon, appName, notificationType); err != nil {
 				logger.Error("pull new image failed", zap.Error(err), zap.String("image", imageName))

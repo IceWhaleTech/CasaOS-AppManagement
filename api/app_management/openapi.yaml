@@ -202,6 +202,7 @@ paths:
         - Container methods
       parameters:
         - $ref: "#/components/parameters/ContainerID"
+        - $ref: "#/components/parameters/NotificationType"
       responses:
         "200":
           $ref: "#/components/responses/ContainerRecreateOK"
@@ -292,7 +293,8 @@ components:
           - "install"
           - "uninstall"
           - "update"
-        default: "install"
+          - "none"
+        default: "none"
 
   requestBodies:
     RequestComposeApp:
