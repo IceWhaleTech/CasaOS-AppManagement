@@ -646,6 +646,13 @@ func (ds *dockerService) RecreateContainer(id string, notificationType codegen.N
 		return newID, err
 	}
 
+	// rename the new container
+	sendNotification(appIcon, appName, "Renaming the new container...", "RENAMING", false, false, notificationType)
+	if err := docker.RenameContainer(ctx, newID, containerInfo.Name); err != nil {
+		sendNotification(appIcon, appName, "Failed to rename the new container...", "RENAMING", true, false, notificationType)
+		return newID, err
+	}
+
 	sendNotification(appIcon, appName, "Successfully recreated a new container...", "DONE", true, true, notificationType)
 	return newID, nil
 }
