@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/IceWhaleTech/CasaOS-AppManagement/codegen"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/pkg/docker"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/random"
 	"github.com/docker/docker/api/types"
@@ -39,7 +40,7 @@ func TestRecreateContainer(t *testing.T) {
 	assert.NilError(t, err)
 
 	// update
-	newID, err := NewDockerService().RecreateContainer(response.ID)
+	newID, err := NewDockerService().RecreateContainer(response.ID, codegen.NotificationTypeNone)
 	assert.NilError(t, err)
 
 	defer func() {

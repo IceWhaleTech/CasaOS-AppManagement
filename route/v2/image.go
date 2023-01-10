@@ -16,9 +16,13 @@ import (
 )
 
 func (a *AppManagement) PullImages(ctx echo.Context, params codegen.PullImagesParams) error {
-	backgroundCtx := context.Background()
+	notificationType := lo.
+		If(params.NotificationType != nil, codegen.NotificationType(*params.NotificationType)).
+		Else(codegen.NotificationTypeNone)
 
 	processedImages := []string{}
+
+	backgroundCtx := context.Background()
 
 	if params.ContainerIds != nil {
 		for _, containerID := range strings.Split(*params.ContainerIds, ",") {
@@ -36,10 +40,6 @@ func (a *AppManagement) PullImages(ctx echo.Context, params codegen.PullImagesPa
 
 			appName := v1.AppName(containerInfo)
 			appIcon := v1.AppIcon(containerInfo)
-
-			notificationType := lo.
-				If(params.NotificationType != nil, codegen.NotificationType(*params.NotificationType)).
-				Else(codegen.NotificationTypeNone)
 
 			if err := service.MyService.Docker().PullNewImage(imageName, appIcon, appName, notificationType); err != nil {
 				logger.Error("pull new image failed", zap.Error(err), zap.String("image", imageName))

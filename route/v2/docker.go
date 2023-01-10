@@ -6,6 +6,7 @@ import (
 	"github.com/IceWhaleTech/CasaOS-AppManagement/codegen"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/service"
 	"github.com/labstack/echo/v4"
+	"github.com/samber/lo"
 	"gotest.tools/v3/assert/cmp"
 )
 
@@ -23,7 +24,11 @@ func (a *AppManagement) CheckContainerHealthByID(ctx echo.Context, id codegen.Co
 	return ctx.JSON(http.StatusOK, codegen.ContainerHealthCheckOK{})
 }
 
-func (a *AppManagement) RecreateContainerByID(ctx echo.Context, id codegen.ContainerID) error {
+func (a *AppManagement) RecreateContainerByID(ctx echo.Context, id codegen.ContainerID, params codegen.RecreateContainerByIDParams) error {
+	notificationType := lo.
+		If(params.NotificationType != nil, codegen.NotificationType(*params.NotificationType)).
+		Else(codegen.NotificationTypeNone)
+
 	if _, err := service.MyService.Docker().DescribeContainer(id); err != nil {
 		message := err.Error()
 
@@ -34,7 +39,7 @@ func (a *AppManagement) RecreateContainerByID(ctx echo.Context, id codegen.Conta
 		return ctx.JSON(http.StatusInternalServerError, codegen.ResponseNotFound{Message: &message})
 	}
 
-	result, err := service.MyService.Docker().RecreateContainer(id)
+	result, err := service.MyService.Docker().RecreateContainer(id, notificationType)
 	if err != nil {
 		message := err.Error()
 		return ctx.JSON(http.StatusInternalServerError, codegen.ResponseInternalServerError{Message: &message})

@@ -28,7 +28,7 @@ func Image(ctx context.Context, imageName string) (*types.ImageInspect, error) {
 	return &imageInfo, nil
 }
 
-func PullImage(ctx context.Context, imageName string, opts types.ImagePullOptions, handleOut func(io.ReadCloser) error) error {
+func PullImage(ctx context.Context, imageName string, opts types.ImagePullOptions, handleOut func(io.ReadCloser)) error {
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
 		return err
@@ -42,9 +42,7 @@ func PullImage(ctx context.Context, imageName string, opts types.ImagePullOption
 	defer out.Close()
 
 	if handleOut != nil {
-		if err := handleOut(out); err != nil {
-			return err
-		}
+		handleOut(out)
 	} else {
 		if _, err := io.ReadAll(out); err != nil {
 			return err
@@ -54,7 +52,7 @@ func PullImage(ctx context.Context, imageName string, opts types.ImagePullOption
 	return nil
 }
 
-func PullNewImage(ctx context.Context, imageName string, handleOut func(io.ReadCloser) error) error {
+func PullNewImage(ctx context.Context, imageName string, handleOut func(io.ReadCloser)) error {
 	if strings.HasPrefix(imageName, "sha256:") {
 		return fmt.Errorf("container uses a pinned image, and cannot be updated")
 	}

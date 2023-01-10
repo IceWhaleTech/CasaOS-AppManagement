@@ -22,6 +22,7 @@ import (
 	"github.com/IceWhaleTech/CasaOS-AppManagement/pkg/config"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/pkg/docker"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/pkg/utils/envHelper"
+	v1 "github.com/IceWhaleTech/CasaOS-AppManagement/service/v1"
 	"github.com/IceWhaleTech/CasaOS-Common/model/notify"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/file"
 	httpUtil "github.com/IceWhaleTech/CasaOS-Common/utils/http"
@@ -64,7 +65,7 @@ type DockerService interface {
 	GetContainerByName(name string) (*types.Container, error)
 	GetContainerLog(name string) ([]byte, error)
 	GetContainerStats() []model.DockerStatsModel
-	RecreateContainer(id string) (string, error)
+	RecreateContainer(id string, notifyType codegen.NotificationType) (string, error)
 	RemoveContainer(name string, update bool) error
 	RenameContainer(name, id string) (err error)
 	StartContainer(name string) error
@@ -375,17 +376,20 @@ func (ds *dockerService) IsExistImage(imageName string) bool {
 func (ds *dockerService) PullImage(imageName, icon, name string, notificationType codegen.NotificationType) error {
 	ctx := context.Background()
 
-	return docker.PullImage(ctx, imageName, types.ImagePullOptions{}, func(out io.ReadCloser) error {
-		return progress(out, icon, name, notificationType)
-	})
+	return docker.PullImage(ctx, imageName, types.ImagePullOptions{}, func(out io.ReadCloser) { progress(out, icon, name, notificationType) })
 }
 
 func (ds *dockerService) PullNewImage(imageName, icon, name string, notificationType codegen.NotificationType) error {
 	ctx := context.Background()
 
-	return docker.PullNewImage(ctx, imageName, func(out io.ReadCloser) error {
-		return progress(out, icon, name, notificationType)
-	})
+	switch notificationType {
+
+	case codegen.NotificationTypeNone:
+		return docker.PullNewImage(ctx, imageName, nil)
+
+	default:
+		return docker.PullNewImage(ctx, imageName, func(out io.ReadCloser) { progress(out, icon, name, notificationType) })
+	}
 }
 
 // param imageName 镜像名称
@@ -582,7 +586,7 @@ func (ds *dockerService) CreateContainer(m model.CustomizationPostData, id strin
 	return containerDb.ID, err
 }
 
-func (ds *dockerService) RecreateContainer(id string) (string, error) {
+func (ds *dockerService) RecreateContainer(id string, notificationType codegen.NotificationType) (string, error) {
 	ctx := context.Background()
 
 	containerInfo, err := docker.Container(ctx, id)
@@ -590,8 +594,13 @@ func (ds *dockerService) RecreateContainer(id string) (string, error) {
 		return "", err
 	}
 
+	appName := v1.AppName(containerInfo)
+	appIcon := v1.AppIcon(containerInfo)
+
 	// Clone the old container
 	tempName := fmt.Sprintf("%s-%s", containerInfo.Name, random.RandomString(4, false))
+
+	sendNotification(appIcon, appName, "Creating a new container...", "CREATING", false, false, notificationType)
 	newID, err := docker.CloneContainer(ctx, id, tempName)
 	if err != nil {
 		return "", err
@@ -599,24 +608,31 @@ func (ds *dockerService) RecreateContainer(id string) (string, error) {
 
 	// stop old container if it is running
 	if containerInfo.State.Running {
+		sendNotification(appIcon, appName, "Stopping the existing container...", "STOPPING", false, false, notificationType)
 		if err := docker.StopContainer(ctx, id); err != nil {
+			sendNotification(appIcon, appName, "Failed to stop existing container...", "STOPPING", true, false, notificationType)
 			return newID, err
 		}
 	}
 
 	// start new container
+	sendNotification(appIcon, appName, "Starting the new container...", "STARTING", false, false, notificationType)
 	if err := docker.StartContainer(ctx, newID); err != nil {
 
 		// if failed to start new container and old container was running...
 		if containerInfo.State.Running {
 			// start the old container
+			sendNotification(appIcon, appName, "Failed to start the new container. Restarting the old container...", "STARTING", false, false, notificationType)
 			if err := docker.StartContainer(ctx, id); err != nil {
+				sendNotification(appIcon, appName, "Failed to start either the new container and the old container...", "STARTING", true, false, notificationType)
 				return newID, err
 			}
 		}
 
 		// remove the new container
+		sendNotification(appIcon, appName, "Failed to start the new container. Removing the new container...", "REMOVING", false, false, notificationType)
 		if err := docker.RemoveContainer(ctx, newID); err != nil {
+			sendNotification(appIcon, appName, "Failed to start the new container and failed to remove the new container...", "REMOVING", true, false, notificationType)
 			return newID, err
 		}
 
@@ -624,7 +640,14 @@ func (ds *dockerService) RecreateContainer(id string) (string, error) {
 	}
 
 	// remove the old container if new container started successfully
-	return newID, docker.RemoveContainer(ctx, containerInfo.ID)
+	sendNotification(appIcon, appName, "Removing the old container...", "REMOVING", false, false, notificationType)
+	if err := docker.RemoveContainer(ctx, containerInfo.ID); err != nil {
+		sendNotification(appIcon, appName, "Failed to remove the old container...", "REMOVING", true, false, notificationType)
+		return newID, err
+	}
+
+	sendNotification(appIcon, appName, "Successfully recreated a new container...", "DONE", true, true, notificationType)
+	return newID, nil
 }
 
 // 删除容器
@@ -775,7 +798,27 @@ func getV1AppStoreID(m *types.Container) uint {
 	return 0
 }
 
-func progress(out io.ReadCloser, icon, name string, notificationType codegen.NotificationType) error {
+func sendNotification(icon, name, message, state string, finished, success bool, notificationType codegen.NotificationType) {
+	if len(icon) == 0 || len(name) == 0 {
+		return
+	}
+
+	notify := notify.Application{
+		Icon:     icon,
+		Name:     name,
+		State:    state,
+		Type:     strings.ToUpper(string(notificationType)),
+		Finished: finished,
+		Success:  success,
+		Message:  message,
+	}
+
+	if err := MyService.Notify().SendInstallAppBySocket(notify); err != nil {
+		logger.Error("send install app by socket error: ", zap.Error(err), zap.Any("notify", notify))
+	}
+}
+
+func progress(out io.ReadCloser, icon, name string, notificationType codegen.NotificationType) {
 	buf := make([]byte, 2048*4)
 	for {
 		n, err := out.Read(buf)
@@ -785,23 +828,7 @@ func progress(out io.ReadCloser, icon, name string, notificationType codegen.Not
 			}
 			break
 		}
-		if len(icon) > 0 && len(name) > 0 {
-			notify := notify.Application{
-				Icon:     icon,
-				Name:     name,
-				State:    "PULLING",
-				Type:     strings.ToUpper((string)(notificationType)),
-				Finished: false,
-				Success:  true,
-				Message:  string(buf[:n]),
-			}
 
-			if err := MyService.Notify().SendInstallAppBySocket(notify); err != nil {
-				logger.Error("send install app by socket error: ", zap.Error(err), zap.Any("notify", notify))
-				return err
-			}
-		}
+		sendNotification(icon, name, string(buf[:n]), "PULLING", false, true, notificationType)
 	}
-
-	return nil
 }
