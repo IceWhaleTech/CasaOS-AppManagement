@@ -9,6 +9,7 @@ import (
 	"github.com/IceWhaleTech/CasaOS-AppManagement/pkg/docker"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/service"
 	v1 "github.com/IceWhaleTech/CasaOS-AppManagement/service/v1"
+	"github.com/IceWhaleTech/CasaOS-Common/utils"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/logger"
 	"github.com/labstack/echo/v4"
 	"github.com/samber/lo"
@@ -19,8 +20,6 @@ func (a *AppManagement) PullImages(ctx echo.Context, params codegen.PullImagesPa
 	notificationType := lo.
 		If(params.NotificationType != nil, codegen.NotificationType(*params.NotificationType)).
 		Else(codegen.NotificationTypeNone)
-
-	processedImages := []string{}
 
 	backgroundCtx := context.Background()
 
@@ -41,14 +40,15 @@ func (a *AppManagement) PullImages(ctx echo.Context, params codegen.PullImagesPa
 			appName := v1.AppName(containerInfo)
 			appIcon := v1.AppIcon(containerInfo)
 
-			if err := service.MyService.Docker().PullNewImage(imageName, appIcon, appName, notificationType); err != nil {
-				logger.Error("pull new image failed", zap.Error(err), zap.String("image", imageName))
-				continue
-			}
-
-			processedImages = append(processedImages, imageName)
+			go func() {
+				if err := service.MyService.Docker().PullNewImage(imageName, appIcon, appName, notificationType); err != nil {
+					logger.Error("pull new image failed", zap.Error(err), zap.String("image", imageName))
+				}
+			}()
 		}
 	}
 
-	return ctx.JSON(http.StatusOK, codegen.PullImagesOK{Data: &processedImages})
+	return ctx.JSON(http.StatusOK, codegen.PullImagesOK{
+		Message: utils.Ptr("Images are being pulled asynchronously"),
+	})
 }

@@ -233,7 +233,7 @@ paths:
     post:
       summary: Post a batch pull request specified images
       description: |
-        Pull one or more images with or without specific query
+        Post a request to pull one or more images asynchronously
 
         - by `container_ids` - pull images with the specific container IDs
         - by `names` - pull images with the specific image names (not implemented yet)
@@ -420,21 +420,12 @@ components:
                     type: string
                     example: 09e70f4a7dd3fc43de6a1bc40d45c79f857544e13679e5b1a47409034a7ce621
 
-
     PullImagesOK:
       description: OK
       content:
         application/json:
           schema:
-            allOf:
-              - $ref: "#/components/schemas/BaseResponse"
-              - properties:
-                  data:
-                    description: a list of image names pulled
-                    type: array
-                    items:
-                      type: string
-                      example: "hello-world:latest"
+            $ref: "#/components/schemas/BaseResponse"
 
   schemas:
     BaseResponse:
