@@ -14,14 +14,17 @@ var (
 	}
 
 	AppInfo = &model.APPModel{
-		DBPath:      "/var/lib/casaos",
-		LogPath:     "/var/log/casaos",
-		LogSaveName: common.AppManagementServiceName,
-		LogFileExt:  "log",
+		DBPath:       "/var/lib/casaos",
+		AppStorePath: "/var/lib/casaos/appstore",
+		AppsPath:     "/var/lib/casaos/apps",
+		LogPath:      "/var/log/casaos",
+		LogSaveName:  common.AppManagementServiceName,
+		LogFileExt:   "log",
 	}
 
 	ServerInfo = &model.ServerModel{
-		ServerAPI: "https://api.casaos.io/casaos-api",
+		ServerAPI:    "https://api.casaos.io/casaos-api",
+		AppStoreList: []string{"https://github.com/IceWhaleTech/CasaOS-AppStore.git"},
 	}
 
 	CasaOSGlobalVariables = &model.CasaOSGlobalVariables{}
@@ -38,7 +41,7 @@ func InitSetup(config string) {
 
 	var err error
 
-	Cfg, err = ini.LoadSources(ini.LoadOptions{Insensitive: true}, ConfigFilePath)
+	Cfg, err = ini.LoadSources(ini.LoadOptions{Insensitive: true, AllowShadows: true}, ConfigFilePath)
 	if err != nil {
 		panic(err)
 	}

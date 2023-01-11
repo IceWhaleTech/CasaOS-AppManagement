@@ -2,9 +2,9 @@ package service
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"runtime"
 	"strconv"
 	"strings"
@@ -41,6 +41,8 @@ import (
 var (
 	dataStats = &sync.Map{}
 	isFinish  bool
+
+	NewVersionApp map[string]string
 )
 
 type DockerService interface {
@@ -711,7 +713,7 @@ func (ds *dockerService) StopContainer(id string) error {
 		return err
 	}
 	defer cli.Close()
-	err = cli.ContainerStop(context.Background(), id, nil)
+	err = cli.ContainerStop(context.Background(), id, container.StopOptions{})
 	return err
 }
 
@@ -740,31 +742,11 @@ func (ds *dockerService) GetContainerLog(name string) ([]byte, error) {
 	}
 
 	defer body.Close()
-	content, err := ioutil.ReadAll(body)
-	// content, err := ioutil.ReadAll(body)
+	content, err := io.ReadAll(body)
 	if err != nil {
 		return []byte(""), err
 	}
 	return content, nil
-}
-
-func DockerContainerStats1() error {
-	cli, err := client2.NewClientWithOpts(client2.FromEnv)
-	if err != nil {
-		return err
-	}
-	defer cli.Close()
-	dss, err := cli.ContainerStats(context.Background(), "dockermysql", false)
-	if err != nil {
-		return err
-	}
-	defer dss.Body.Close()
-	sts, err := ioutil.ReadAll(dss.Body)
-	if err != nil {
-		return err
-	}
-	fmt.Println(string(sts))
-	return nil
 }
 
 func (ds *dockerService) GetContainerByName(name string) (*types.Container, error) {

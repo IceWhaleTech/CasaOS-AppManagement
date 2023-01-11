@@ -1,6 +1,8 @@
 package v2
 
-import "github.com/IceWhaleTech/CasaOS-AppManagement/codegen"
+import (
+	"github.com/IceWhaleTech/CasaOS-AppManagement/codegen"
+)
 
 type AppManagement struct{}
 
