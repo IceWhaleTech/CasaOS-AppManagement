@@ -38,7 +38,7 @@ func InitSetup(config string) {
 
 	var err error
 
-	Cfg, err = ini.Load(ConfigFilePath)
+	Cfg, err = ini.LoadSources(ini.LoadOptions{Insensitive: true}, ConfigFilePath)
 	if err != nil {
 		panic(err)
 	}
