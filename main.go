@@ -13,7 +13,6 @@ import (
 	"os"
 	"time"
 
-	"github.com/IceWhaleTech/CasaOS-AppManagement/codegen/message_bus"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/common"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/pkg/config"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/route"
@@ -97,16 +96,7 @@ func main() {
 	}
 
 	// register at message bus
-	eventTypes := []message_bus.EventType{
-		common.EventTypeContainerAppInstalling,
-		common.EventTypeContainerAppInstalled,
-		common.EventTypeContainerAppInstallFailed,
-		common.EventTypeContainerAppUninstalling,
-		common.EventTypeContainerAppUninstalled,
-		common.EventTypeContainerAppUninstallFailed,
-	}
-
-	response, err := service.MyService.MessageBus().RegisterEventTypesWithResponse(ctx, eventTypes)
+	response, err := service.MyService.MessageBus().RegisterEventTypesWithResponse(ctx, common.EventTypes)
 	if err != nil {
 		logger.Error("error when trying to register one or more event types - some event type will not be discoverable", zap.Error(err))
 	}
