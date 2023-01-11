@@ -2,12 +2,14 @@ package common
 
 import (
 	"fmt"
+	"strings"
 
+	"github.com/IceWhaleTech/CasaOS-AppManagement/codegen"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/codegen/message_bus"
 	"github.com/IceWhaleTech/CasaOS-Common/utils"
 )
 
-// common properties
+// app management properties
 var (
 	PropertyTypeAppID = message_bus.PropertyType{
 		Name:        fmt.Sprintf("%s:app:id", AppManagementServiceName),
@@ -21,17 +23,32 @@ var (
 		Example:     utils.Ptr("hello-world:latest (this is the name of a container image"),
 	}
 
+	PropertyTypeAppIcon = message_bus.PropertyType{
+		Name:        fmt.Sprintf("%s:app:icon", AppManagementServiceName),
+		Description: utils.Ptr("url of app icon"),
+		Example:     utils.Ptr("https://cdn.jsdelivr.net/gh/IceWhaleTech/CasaOS-AppStore@main/Apps/Syncthing/icon.png"),
+	}
+
 	PropertyTypeMessage = message_bus.PropertyType{
 		Name:        fmt.Sprintf("%s:message", AppManagementServiceName),
 		Description: utils.Ptr("message at different levels, typically for error"),
 	}
+)
 
+// ui properties
+var (
 	PropertyTypeNotificationType = message_bus.PropertyType{
-		Name:        fmt.Sprintf("%s:notification:type", "casaos-ui"),
+		Name:        fmt.Sprintf("%s:notification:type", namespaceUI),
 		Description: utils.Ptr("type of the notification"),
-		Example:     utils.Ptr("install, uninstall, update"),
+		Example: utils.Ptr(strings.Join([]string{
+			string(codegen.NotificationTypeInstall),
+			string(codegen.NotificationTypeUninstall),
+			string(codegen.NotificationTypeUpdate),
+		}, ", ")),
 	}
 )
+
+const namespaceUI = "casaos-ui"
 
 var EventTypes = []message_bus.EventType{
 	// app

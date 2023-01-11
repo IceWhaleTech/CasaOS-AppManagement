@@ -10,11 +10,17 @@
 package service
 
 import (
+	"context"
+	"net/http"
+
 	"github.com/IceWhaleTech/CasaOS-AppManagement/codegen/message_bus"
+	"github.com/IceWhaleTech/CasaOS-AppManagement/common"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/pkg/config"
 	v1 "github.com/IceWhaleTech/CasaOS-AppManagement/service/v1"
 	v2 "github.com/IceWhaleTech/CasaOS-AppManagement/service/v2"
 	"github.com/IceWhaleTech/CasaOS-Common/external"
+	"github.com/IceWhaleTech/CasaOS-Common/utils/logger"
+	"go.uber.org/zap"
 )
 
 var MyService Services
@@ -111,4 +117,16 @@ func (c *store) MessageBus() *message_bus.ClientWithResponses {
 	})
 
 	return client
+}
+
+func PublishEventWrapper(ctx context.Context, eventType message_bus.EventType, properties map[string]string) {
+	response, err := MyService.MessageBus().PublishEventWithResponse(ctx, common.AppManagementServiceName, eventType.Name, properties)
+	if err != nil {
+		logger.Error("failed to publish event", zap.Error(err))
+	}
+	defer response.HTTPResponse.Body.Close()
+
+	if response.StatusCode() != http.StatusOK {
+		logger.Error("failed to publish event", zap.String("status code", response.Status()))
+	}
 }
