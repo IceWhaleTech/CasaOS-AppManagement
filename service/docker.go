@@ -380,7 +380,27 @@ func (ds *dockerService) PullImage(imageName, icon, name, ref string, notificati
 }
 
 func (ds *dockerService) PullNewImage(imageName, icon, name, ref string, notificationType codegen.NotificationType) error {
+	if strings.HasPrefix(imageName, "sha256:") {
+		return fmt.Errorf("container uses a pinned image, and cannot be updated")
+	}
+
+	opts, err := docker.GetPullOptions(imageName)
+	if err != nil {
+		return err
+	}
+
 	ctx := context.Background()
+
+	imageInfo, err := docker.Image(ctx, imageName)
+	if err != nil {
+		return err
+	}
+
+	if match, err := docker.CompareDigest(imageName, imageInfo.RepoDigests, opts.RegistryAuth); err != nil {
+		// do nothing
+	} else if match {
+		return nil
+	}
 
 	go PublishEventWrapper(ctx, common.EventTypeImagePullBegin, map[string]string{
 		common.PropertyTypeImageName.Name:        imageName,
@@ -388,18 +408,13 @@ func (ds *dockerService) PullNewImage(imageName, icon, name, ref string, notific
 		common.PropertyTypeNotificationType.Name: string(notificationType),
 	})
 
-	var err error
+	defer PublishEventWrapper(ctx, common.EventTypeImagePullEnd, map[string]string{
+		common.PropertyTypeImageName.Name:        imageName,
+		common.PropertyTypeImageReference.Name:   ref,
+		common.PropertyTypeNotificationType.Name: string(notificationType),
+	})
 
-	switch notificationType {
-
-	case codegen.NotificationTypeNone:
-		err = docker.PullNewImage(ctx, imageName, nil)
-
-	default:
-		err = docker.PullNewImage(ctx, imageName, func(out io.ReadCloser) { progress(out, icon, name, ref, notificationType) })
-	}
-
-	if err != nil {
+	if err = docker.PullImage(ctx, imageName, opts, func(out io.ReadCloser) { progress(out, icon, name, ref, notificationType) }); err != nil {
 		go PublishEventWrapper(ctx, common.EventTypeImagePullError, map[string]string{
 			common.PropertyTypeImageName.Name:        imageName,
 			common.PropertyTypeImageReference.Name:   ref,
@@ -408,12 +423,6 @@ func (ds *dockerService) PullNewImage(imageName, icon, name, ref string, notific
 		})
 		return err
 	}
-
-	go PublishEventWrapper(ctx, common.EventTypeImagePullOK, map[string]string{
-		common.PropertyTypeImageName.Name:        imageName,
-		common.PropertyTypeImageReference.Name:   ref,
-		common.PropertyTypeNotificationType.Name: string(notificationType),
-	})
 
 	return nil
 }

@@ -68,18 +68,18 @@ const namespaceUI = "casaos-ui"
 
 var EventTypes = []message_bus.EventType{
 	// app
-	EventTypeAppInstallBegin, EventTypeAppInstallOK, EventTypeAppInstallError,
-	EventTypeAppUninstallBegin, EventTypeAppUninstallOK, EventTypeAppUninstallError,
+	EventTypeAppInstallBegin, EventTypeAppInstallEnd, EventTypeAppInstallError,
+	EventTypeAppUninstallBegin, EventTypeAppUninstallEnd, EventTypeAppUninstallError,
 
 	// image
-	EventTypeImagePullBegin, EventTypeImagePullProgress, EventTypeImagePullOK, EventTypeImagePullError,
+	EventTypeImagePullBegin, EventTypeImagePullProgress, EventTypeImagePullEnd, EventTypeImagePullError,
 
 	// container
-	EventTypeContainerCreateBegin, EventTypeContainerCreateOK, EventTypeContainerCreateError,
-	EventTypeContainerStartBegin, EventTypeContainerStartOK, EventTypeContainerStartError,
-	EventTypeContainerStopBegin, EventTypeContainerStopOK, EventTypeContainerStopError,
-	EventTypeContainerRenameBegin, EventTypeContainerRenameOK, EventTypeContainerRenameError,
-	EventTypeContainerRemoveBegin, EventTypeContainerRemoveOK, EventTypeContainerRemoveError,
+	EventTypeContainerCreateBegin, EventTypeContainerCreateEnd, EventTypeContainerCreateError,
+	EventTypeContainerStartBegin, EventTypeContainerStartEnd, EventTypeContainerStartError,
+	EventTypeContainerStopBegin, EventTypeContainerStopEnd, EventTypeContainerStopError,
+	EventTypeContainerRenameBegin, EventTypeContainerRenameEnd, EventTypeContainerRenameError,
+	EventTypeContainerRemoveBegin, EventTypeContainerRemoveEnd, EventTypeContainerRemoveError,
 }
 
 // event types for app
@@ -92,9 +92,9 @@ var (
 		},
 	}
 
-	EventTypeAppInstallOK = message_bus.EventType{
+	EventTypeAppInstallEnd = message_bus.EventType{
 		SourceID: AppManagementServiceName,
-		Name:     fmt.Sprintf("%s:app:install-ok", AppManagementServiceName),
+		Name:     fmt.Sprintf("%s:app:install-end", AppManagementServiceName),
 		PropertyTypeList: []message_bus.PropertyType{
 			PropertyTypeAppName,
 		},
@@ -117,9 +117,9 @@ var (
 		},
 	}
 
-	EventTypeAppUninstallOK = message_bus.EventType{
+	EventTypeAppUninstallEnd = message_bus.EventType{
 		SourceID: AppManagementServiceName,
-		Name:     fmt.Sprintf("%s:app:uninstall-ok", AppManagementServiceName),
+		Name:     fmt.Sprintf("%s:app:uninstall-end", AppManagementServiceName),
 		PropertyTypeList: []message_bus.PropertyType{
 			PropertyTypeAppName,
 		},
@@ -158,9 +158,9 @@ var (
 		},
 	}
 
-	EventTypeImagePullOK = message_bus.EventType{
+	EventTypeImagePullEnd = message_bus.EventType{
 		SourceID: AppManagementServiceName,
-		Name:     fmt.Sprintf("%s:image:pull-ok", AppManagementServiceName),
+		Name:     fmt.Sprintf("%s:image:pull-end", AppManagementServiceName),
 		PropertyTypeList: []message_bus.PropertyType{
 			PropertyTypeImageName,
 			PropertyTypeImageReference,
@@ -191,9 +191,9 @@ var (
 		},
 	}
 
-	EventTypeContainerCreateOK = message_bus.EventType{
+	EventTypeContainerCreateEnd = message_bus.EventType{
 		SourceID: AppManagementServiceName,
-		Name:     fmt.Sprintf("%s:container:create-ok", AppManagementServiceName),
+		Name:     fmt.Sprintf("%s:container:create-end", AppManagementServiceName),
 		PropertyTypeList: []message_bus.PropertyType{
 			PropertyTypeContainerID,
 			PropertyTypeImageName,
@@ -221,9 +221,9 @@ var (
 		},
 	}
 
-	EventTypeContainerStartOK = message_bus.EventType{
+	EventTypeContainerStartEnd = message_bus.EventType{
 		SourceID: AppManagementServiceName,
-		Name:     fmt.Sprintf("%s:container:start-ok", AppManagementServiceName),
+		Name:     fmt.Sprintf("%s:container:start-end", AppManagementServiceName),
 		PropertyTypeList: []message_bus.PropertyType{
 			PropertyTypeContainerID,
 			PropertyTypeImageName,
@@ -250,9 +250,9 @@ var (
 		},
 	}
 
-	EventTypeContainerStopOK = message_bus.EventType{
+	EventTypeContainerStopEnd = message_bus.EventType{
 		SourceID: AppManagementServiceName,
-		Name:     fmt.Sprintf("%s:container:stop-ok", AppManagementServiceName),
+		Name:     fmt.Sprintf("%s:container:stop-end", AppManagementServiceName),
 		PropertyTypeList: []message_bus.PropertyType{
 			PropertyTypeNotificationType,
 		},
@@ -275,9 +275,9 @@ var (
 		},
 	}
 
-	EventTypeContainerRenameOK = message_bus.EventType{
+	EventTypeContainerRenameEnd = message_bus.EventType{
 		SourceID: AppManagementServiceName,
-		Name:     fmt.Sprintf("%s:container:rename-ok", AppManagementServiceName),
+		Name:     fmt.Sprintf("%s:container:rename-end", AppManagementServiceName),
 		PropertyTypeList: []message_bus.PropertyType{
 			PropertyTypeNotificationType,
 		},
@@ -300,9 +300,9 @@ var (
 		},
 	}
 
-	EventTypeContainerRemoveOK = message_bus.EventType{
+	EventTypeContainerRemoveEnd = message_bus.EventType{
 		SourceID: AppManagementServiceName,
-		Name:     fmt.Sprintf("%s:container:remove-ok", AppManagementServiceName),
+		Name:     fmt.Sprintf("%s:container:remove-end", AppManagementServiceName),
 		PropertyTypeList: []message_bus.PropertyType{
 			PropertyTypeNotificationType,
 		},
