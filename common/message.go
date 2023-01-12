@@ -9,14 +9,13 @@ import (
 	"github.com/IceWhaleTech/CasaOS-Common/utils"
 )
 
-// app management properties
-var (
-	PropertyTypeAppID = message_bus.PropertyType{
-		Name:        fmt.Sprintf("%s:app:id", AppManagementServiceName),
-		Description: utils.Ptr("id of the app which could be a container id, a snap id or the id of any other forms of app"),
-		Example:     utils.Ptr("855084f79fc89bea4de5111c69621b3329ecf0a1106863a7a83bbdef01d33b9e (this is a container id)"),
-	}
+var PropertyTypeMessage = message_bus.PropertyType{
+	Name:        fmt.Sprintf("%s:message", AppManagementServiceName),
+	Description: utils.Ptr("message at different levels, typically for error"),
+}
 
+// app properties
+var (
 	PropertyTypeAppName = message_bus.PropertyType{
 		Name:        fmt.Sprintf("%s:app:name", AppManagementServiceName),
 		Description: utils.Ptr("name of the app which could be a container image name including version, a snap name or the name of any other forms of app"),
@@ -28,10 +27,27 @@ var (
 		Description: utils.Ptr("url of app icon"),
 		Example:     utils.Ptr("https://cdn.jsdelivr.net/gh/IceWhaleTech/CasaOS-AppStore@main/Apps/Syncthing/icon.png"),
 	}
+)
 
-	PropertyTypeMessage = message_bus.PropertyType{
-		Name:        fmt.Sprintf("%s:message", AppManagementServiceName),
-		Description: utils.Ptr("message at different levels, typically for error"),
+// container properties
+var PropertyTypeContainerID = message_bus.PropertyType{
+	Name:        fmt.Sprintf("%s:container:id", AppManagementServiceName),
+	Description: utils.Ptr("ID of the container"),
+	Example:     utils.Ptr("855084f79fc89bea4de5111c69621b3329ecf0a1106863a7a83bbdef01d33b9e"),
+}
+
+// image properties
+var (
+	PropertyTypeImageName = message_bus.PropertyType{
+		Name:        fmt.Sprintf("%s:image:name", AppManagementServiceName),
+		Description: utils.Ptr("name of the image"),
+		Example:     utils.Ptr("hello-world:latest"),
+	}
+
+	PropertyTypeImageReference = message_bus.PropertyType{
+		Name:        fmt.Sprintf("%s:image:ref", AppManagementServiceName),
+		Description: utils.Ptr("Any information can assoicate with the image, e.g. ID of the container using the image"),
+		Example:     utils.Ptr("855084f79fc89bea4de5111c69621b3329ecf0a1106863a7a83bbdef01d33b9e"),
 	}
 )
 
@@ -80,7 +96,6 @@ var (
 		SourceID: AppManagementServiceName,
 		Name:     fmt.Sprintf("%s:app:install-ok", AppManagementServiceName),
 		PropertyTypeList: []message_bus.PropertyType{
-			PropertyTypeAppID,
 			PropertyTypeAppName,
 		},
 	}
@@ -98,7 +113,6 @@ var (
 		SourceID: AppManagementServiceName,
 		Name:     fmt.Sprintf("%s:app:uninstal-begin", AppManagementServiceName),
 		PropertyTypeList: []message_bus.PropertyType{
-			PropertyTypeAppID,
 			PropertyTypeAppName,
 		},
 	}
@@ -107,7 +121,6 @@ var (
 		SourceID: AppManagementServiceName,
 		Name:     fmt.Sprintf("%s:app:uninstall-ok", AppManagementServiceName),
 		PropertyTypeList: []message_bus.PropertyType{
-			PropertyTypeAppID,
 			PropertyTypeAppName,
 		},
 	}
@@ -116,7 +129,6 @@ var (
 		SourceID: AppManagementServiceName,
 		Name:     fmt.Sprintf("%s:app:uninstall-error", AppManagementServiceName),
 		PropertyTypeList: []message_bus.PropertyType{
-			PropertyTypeAppID,
 			PropertyTypeAppName,
 			PropertyTypeMessage,
 		},
@@ -129,6 +141,8 @@ var (
 		SourceID: AppManagementServiceName,
 		Name:     fmt.Sprintf("%s:image:pull-begin", AppManagementServiceName),
 		PropertyTypeList: []message_bus.PropertyType{
+			PropertyTypeImageName,
+			PropertyTypeImageReference,
 			PropertyTypeNotificationType,
 		},
 	}
@@ -137,6 +151,8 @@ var (
 		SourceID: AppManagementServiceName,
 		Name:     fmt.Sprintf("%s:image:pull-progress", AppManagementServiceName),
 		PropertyTypeList: []message_bus.PropertyType{
+			PropertyTypeImageName,
+			PropertyTypeImageReference,
 			PropertyTypeMessage,
 			PropertyTypeNotificationType,
 		},
@@ -146,6 +162,8 @@ var (
 		SourceID: AppManagementServiceName,
 		Name:     fmt.Sprintf("%s:image:pull-ok", AppManagementServiceName),
 		PropertyTypeList: []message_bus.PropertyType{
+			PropertyTypeImageName,
+			PropertyTypeImageReference,
 			PropertyTypeNotificationType,
 		},
 	}
@@ -154,6 +172,8 @@ var (
 		SourceID: AppManagementServiceName,
 		Name:     fmt.Sprintf("%s:image:pull-error", AppManagementServiceName),
 		PropertyTypeList: []message_bus.PropertyType{
+			PropertyTypeImageName,
+			PropertyTypeImageReference,
 			PropertyTypeMessage,
 			PropertyTypeNotificationType,
 		},
@@ -166,6 +186,7 @@ var (
 		SourceID: AppManagementServiceName,
 		Name:     fmt.Sprintf("%s:container:create-begin", AppManagementServiceName),
 		PropertyTypeList: []message_bus.PropertyType{
+			PropertyTypeImageName,
 			PropertyTypeNotificationType,
 		},
 	}
@@ -174,6 +195,8 @@ var (
 		SourceID: AppManagementServiceName,
 		Name:     fmt.Sprintf("%s:container:create-ok", AppManagementServiceName),
 		PropertyTypeList: []message_bus.PropertyType{
+			PropertyTypeContainerID,
+			PropertyTypeImageName,
 			PropertyTypeNotificationType,
 		},
 	}
@@ -182,6 +205,7 @@ var (
 		SourceID: AppManagementServiceName,
 		Name:     fmt.Sprintf("%s:container:create-error", AppManagementServiceName),
 		PropertyTypeList: []message_bus.PropertyType{
+			PropertyTypeImageName,
 			PropertyTypeMessage,
 			PropertyTypeNotificationType,
 		},
@@ -191,6 +215,8 @@ var (
 		SourceID: AppManagementServiceName,
 		Name:     fmt.Sprintf("%s:container:start-begin", AppManagementServiceName),
 		PropertyTypeList: []message_bus.PropertyType{
+			PropertyTypeContainerID,
+			PropertyTypeImageName,
 			PropertyTypeNotificationType,
 		},
 	}
@@ -199,6 +225,8 @@ var (
 		SourceID: AppManagementServiceName,
 		Name:     fmt.Sprintf("%s:container:start-ok", AppManagementServiceName),
 		PropertyTypeList: []message_bus.PropertyType{
+			PropertyTypeContainerID,
+			PropertyTypeImageName,
 			PropertyTypeNotificationType,
 		},
 	}
@@ -207,6 +235,8 @@ var (
 		SourceID: AppManagementServiceName,
 		Name:     fmt.Sprintf("%s:container:start-error", AppManagementServiceName),
 		PropertyTypeList: []message_bus.PropertyType{
+			PropertyTypeContainerID,
+			PropertyTypeImageName,
 			PropertyTypeMessage,
 			PropertyTypeNotificationType,
 		},

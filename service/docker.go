@@ -51,8 +51,8 @@ var (
 type DockerService interface {
 	// image
 	IsExistImage(imageName string) bool
-	PullImage(imageName, icon, name string, notifyType codegen.NotificationType) error
-	PullNewImage(imageName, icon, name string, notifyType codegen.NotificationType) error
+	PullImage(imageName, icon, name, ref string, notifyType codegen.NotificationType) error
+	PullNewImage(imageName, icon, name, ref string, notifyType codegen.NotificationType) error
 	RemoveImage(name string) error
 
 	// container
@@ -373,13 +373,13 @@ func (ds *dockerService) IsExistImage(imageName string) bool {
 }
 
 // 安装镜像
-func (ds *dockerService) PullImage(imageName, icon, name string, notificationType codegen.NotificationType) error {
+func (ds *dockerService) PullImage(imageName, icon, name, ref string, notificationType codegen.NotificationType) error {
 	ctx := context.Background()
 
-	return docker.PullImage(ctx, imageName, types.ImagePullOptions{}, func(out io.ReadCloser) { progress(out, icon, name, notificationType) })
+	return docker.PullImage(ctx, imageName, types.ImagePullOptions{}, func(out io.ReadCloser) { progress(out, icon, name, ref, notificationType) })
 }
 
-func (ds *dockerService) PullNewImage(imageName, icon, name string, notificationType codegen.NotificationType) error {
+func (ds *dockerService) PullNewImage(imageName, icon, name, ref string, notificationType codegen.NotificationType) error {
 	ctx := context.Background()
 
 	switch notificationType {
@@ -388,7 +388,7 @@ func (ds *dockerService) PullNewImage(imageName, icon, name string, notification
 		return docker.PullNewImage(ctx, imageName, nil)
 
 	default:
-		return docker.PullNewImage(ctx, imageName, func(out io.ReadCloser) { progress(out, icon, name, notificationType) })
+		return docker.PullNewImage(ctx, imageName, func(out io.ReadCloser) { progress(out, icon, name, ref, notificationType) })
 	}
 }
 
@@ -805,6 +805,7 @@ func getV1AppStoreID(m *types.Container) uint {
 	return 0
 }
 
+// Deprecated: Use PublishEventWrapper(...) for message bus instead.
 func SendNotification(icon, name, message, state string, finished, success bool, notificationType codegen.NotificationType) {
 	if len(icon) == 0 || len(name) == 0 || notificationType == codegen.NotificationTypeNone {
 		return
@@ -825,7 +826,7 @@ func SendNotification(icon, name, message, state string, finished, success bool,
 	}
 }
 
-func progress(out io.ReadCloser, icon, name string, notificationType codegen.NotificationType) {
+func progress(out io.ReadCloser, icon, name, ref string, notificationType codegen.NotificationType) {
 	buf := make([]byte, 2048*4)
 	for {
 		n, err := out.Read(buf)
@@ -836,6 +837,9 @@ func progress(out io.ReadCloser, icon, name string, notificationType codegen.Not
 			break
 		}
 
-		SendNotification(icon, name, string(buf[:n]), "PULLING", false, true, notificationType)
+		go PublishEventWrapper(context.Background(), common.EventTypeImagePullProgress, map[string]string{
+			common.PropertyTypeImageReference.Name: ref,
+		})
+		go SendNotification(icon, name, string(buf[:n]), "PULLING", false, true, notificationType)
 	}
 }
