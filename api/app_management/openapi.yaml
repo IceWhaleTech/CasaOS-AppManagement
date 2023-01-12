@@ -202,7 +202,7 @@ paths:
         - Container methods
       parameters:
         - $ref: "#/components/parameters/ContainerID"
-        - $ref: "#/components/parameters/NotificationType"
+        - $ref: "#/components/parameters/PullLatestImage"
       responses:
         "200":
           $ref: "#/components/responses/ContainerRecreateOK"
@@ -242,7 +242,6 @@ paths:
         - Image methods
       parameters:
         - $ref: "#/components/parameters/ContainerIDs"
-        - $ref: "#/components/parameters/NotificationType"
       responses:
         "200":
           $ref: "#/components/responses/PullImagesOK"
@@ -283,18 +282,13 @@ components:
         type: string
       example: 09e70f4a7dd3fc43de6a1bc40d45c79f857544e13679e5b1a47409034a7ce621
 
-    NotificationType:
-      name: notification_type
-      description: Notification type
+    PullLatestImage:
+      name: pull
+      description: Try to pull the latest image from the registry
       in: query
       schema:
-        type: string
-        enum:
-          - "install"
-          - "uninstall"
-          - "update"
-          - "none"
-        default: "none"
+        type: boolean
+        default: false
 
   requestBodies:
     RequestComposeApp:

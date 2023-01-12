@@ -16,7 +16,6 @@ import (
 	"github.com/samber/lo"
 	"go.uber.org/zap"
 
-	"github.com/IceWhaleTech/CasaOS-AppManagement/codegen"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/common"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/model"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/pkg/config"
@@ -50,8 +49,8 @@ var (
 type DockerService interface {
 	// image
 	IsExistImage(imageName string) bool
-	PullImage(imageName, icon, name, ref string, notifyType codegen.NotificationType) error
-	PullNewImage(ctx context.Context, imageName, icon, name, ref string, notifyType codegen.NotificationType) error
+	PullImage(ctx context.Context, imageName, appName string) error
+	PullLatestImage(ctx context.Context, imageName, appName string) error
 	RemoveImage(name string) error
 
 	// container
@@ -64,7 +63,7 @@ type DockerService interface {
 	GetContainerByName(name string) (*types.Container, error)
 	GetContainerLog(name string) ([]byte, error)
 	GetContainerStats() []model.DockerStatsModel
-	RecreateContainer(ctx context.Context, id string, notifyType codegen.NotificationType) (string, error)
+	RecreateContainer(ctx context.Context, id string) (string, error)
 	RemoveContainer(name string, update bool) error
 	RenameContainer(name, id string) (err error)
 	StartContainer(name string) error
@@ -372,34 +371,29 @@ func (ds *dockerService) IsExistImage(imageName string) bool {
 }
 
 // 安装镜像
-func (ds *dockerService) PullImage(imageName, icon, name, ref string, notificationType codegen.NotificationType) error {
-	ctx := context.Background()
-
+func (ds *dockerService) PullImage(ctx context.Context, imageName, appName string) error {
 	go PublishEventWrapper(ctx, common.EventTypeImagePullBegin, map[string]string{
-		common.PropertyTypeImageName.Name:        imageName,
-		common.PropertyTypeImageReference.Name:   ref,
-		common.PropertyTypeNotificationType.Name: string(notificationType),
+		common.PropertyTypeImageName.Name: imageName,
 	})
 
 	defer PublishEventWrapper(ctx, common.EventTypeImagePullEnd, map[string]string{
-		common.PropertyTypeImageName.Name:        imageName,
-		common.PropertyTypeImageReference.Name:   ref,
-		common.PropertyTypeNotificationType.Name: string(notificationType),
+		common.PropertyTypeImageName.Name: imageName,
 	})
 
-	if err := docker.PullImage(ctx, imageName, types.ImagePullOptions{}, func(out io.ReadCloser) { progress(out, icon, name, ref, notificationType) }); err != nil {
+	if err := docker.PullImage(ctx, imageName, types.ImagePullOptions{}, func(out io.ReadCloser) {
+		pullImageProgress(ctx, out, appName, "INSTALL")
+	}); err != nil {
 		go PublishEventWrapper(ctx, common.EventTypeImagePullError, map[string]string{
-			common.PropertyTypeImageName.Name:        imageName,
-			common.PropertyTypeImageReference.Name:   ref,
-			common.PropertyTypeNotificationType.Name: string(notificationType),
-			common.PropertyTypeMessage.Name:          err.Error(),
+			common.PropertyTypeImageName.Name: imageName,
+
+			common.PropertyTypeMessage.Name: err.Error(),
 		})
 	}
 
 	return nil
 }
 
-func (ds *dockerService) PullNewImage(ctx context.Context, imageName, icon, name, ref string, notificationType codegen.NotificationType) error {
+func (ds *dockerService) PullLatestImage(ctx context.Context, imageName, appName string) error {
 	if strings.HasPrefix(imageName, "sha256:") {
 		return fmt.Errorf("container uses a pinned image, and cannot be updated")
 	}
@@ -421,23 +415,20 @@ func (ds *dockerService) PullNewImage(ctx context.Context, imageName, icon, name
 	}
 
 	go PublishEventWrapper(ctx, common.EventTypeImagePullBegin, map[string]string{
-		common.PropertyTypeImageName.Name:        imageName,
-		common.PropertyTypeImageReference.Name:   ref,
-		common.PropertyTypeNotificationType.Name: string(notificationType),
+		common.PropertyTypeImageName.Name: imageName,
 	})
 
 	defer PublishEventWrapper(ctx, common.EventTypeImagePullEnd, map[string]string{
-		common.PropertyTypeImageName.Name:        imageName,
-		common.PropertyTypeImageReference.Name:   ref,
-		common.PropertyTypeNotificationType.Name: string(notificationType),
+		common.PropertyTypeImageName.Name: imageName,
 	})
 
-	if err = docker.PullImage(ctx, imageName, opts, func(out io.ReadCloser) { progress(out, icon, name, ref, notificationType) }); err != nil {
+	if err = docker.PullImage(ctx, imageName, opts, func(out io.ReadCloser) {
+		pullImageProgress(ctx, out, appName, "UPDATE")
+	}); err != nil {
 		go PublishEventWrapper(ctx, common.EventTypeImagePullError, map[string]string{
-			common.PropertyTypeImageName.Name:        imageName,
-			common.PropertyTypeImageReference.Name:   ref,
-			common.PropertyTypeNotificationType.Name: string(notificationType),
-			common.PropertyTypeMessage.Name:          err.Error(),
+			common.PropertyTypeImageName.Name: imageName,
+
+			common.PropertyTypeMessage.Name: err.Error(),
 		})
 		return err
 	}
@@ -639,7 +630,7 @@ func (ds *dockerService) CreateContainer(m model.CustomizationPostData, id strin
 	return containerDb.ID, err
 }
 
-func (ds *dockerService) RecreateContainer(ctx context.Context, id string, notificationType codegen.NotificationType) (string, error) {
+func (ds *dockerService) RecreateContainer(ctx context.Context, id string) (string, error) {
 	containerInfo, err := docker.Container(ctx, id)
 	if err != nil {
 		return "", err
@@ -651,22 +642,20 @@ func (ds *dockerService) RecreateContainer(ctx context.Context, id string, notif
 		tempName := fmt.Sprintf("%s-%s", containerInfo.Name, random.RandomString(4, false))
 
 		go PublishEventWrapper(ctx, common.EventTypeContainerCreateBegin, map[string]string{
-			common.PropertyTypeContainerName.Name:    tempName,
-			common.PropertyTypeNotificationType.Name: string(notificationType),
+			common.PropertyTypeContainerName.Name: tempName,
 		})
 
 		defer PublishEventWrapper(ctx, common.EventTypeContainerCreateEnd, map[string]string{
-			common.PropertyTypeContainerID.Name:      newID,
-			common.PropertyTypeContainerName.Name:    tempName,
-			common.PropertyTypeNotificationType.Name: string(notificationType),
+			common.PropertyTypeContainerID.Name:   newID,
+			common.PropertyTypeContainerName.Name: tempName,
 		})
 
 		_newID, err := docker.CloneContainer(ctx, id, tempName)
 		if err != nil {
 			go PublishEventWrapper(ctx, common.EventTypeContainerCreateError, map[string]string{
-				common.PropertyTypeContainerName.Name:    tempName,
-				common.PropertyTypeNotificationType.Name: string(notificationType),
-				common.PropertyTypeMessage.Name:          err.Error(),
+				common.PropertyTypeContainerName.Name: tempName,
+
+				common.PropertyTypeMessage.Name: err.Error(),
 			})
 			return err
 		}
@@ -681,20 +670,18 @@ func (ds *dockerService) RecreateContainer(ctx context.Context, id string, notif
 	if containerInfo.State.Running {
 		if err := func() error {
 			go PublishEventWrapper(ctx, common.EventTypeContainerStopBegin, map[string]string{
-				common.PropertyTypeContainerID.Name:      id,
-				common.PropertyTypeNotificationType.Name: string(notificationType),
+				common.PropertyTypeContainerID.Name: id,
 			})
 
 			defer PublishEventWrapper(ctx, common.EventTypeContainerStopEnd, map[string]string{
-				common.PropertyTypeContainerID.Name:      id,
-				common.PropertyTypeNotificationType.Name: string(notificationType),
+				common.PropertyTypeContainerID.Name: id,
 			})
 
 			if err := docker.StopContainer(ctx, id); err != nil {
 				go PublishEventWrapper(ctx, common.EventTypeContainerStopError, map[string]string{
-					common.PropertyTypeContainerID.Name:      id,
-					common.PropertyTypeNotificationType.Name: string(notificationType),
-					common.PropertyTypeMessage.Name:          err.Error(),
+					common.PropertyTypeContainerID.Name: id,
+
+					common.PropertyTypeMessage.Name: err.Error(),
 				})
 				return err
 			}
@@ -707,20 +694,18 @@ func (ds *dockerService) RecreateContainer(ctx context.Context, id string, notif
 	// start new container
 	if err := func() error {
 		go PublishEventWrapper(ctx, common.EventTypeContainerStartBegin, map[string]string{
-			common.PropertyTypeContainerID.Name:      newID,
-			common.PropertyTypeNotificationType.Name: string(notificationType),
+			common.PropertyTypeContainerID.Name: newID,
 		})
 
 		defer PublishEventWrapper(ctx, common.EventTypeContainerStartEnd, map[string]string{
-			common.PropertyTypeContainerID.Name:      newID,
-			common.PropertyTypeNotificationType.Name: string(notificationType),
+			common.PropertyTypeContainerID.Name: newID,
 		})
 
 		if err := docker.StartContainer(ctx, newID); err != nil {
 			go PublishEventWrapper(ctx, common.EventTypeContainerStartError, map[string]string{
-				common.PropertyTypeContainerID.Name:      newID,
-				common.PropertyTypeNotificationType.Name: string(notificationType),
-				common.PropertyTypeMessage.Name:          err.Error(),
+				common.PropertyTypeContainerID.Name: newID,
+
+				common.PropertyTypeMessage.Name: err.Error(),
 			})
 			return err
 		}
@@ -731,20 +716,18 @@ func (ds *dockerService) RecreateContainer(ctx context.Context, id string, notif
 			// start the old container
 			if err := func() error {
 				go PublishEventWrapper(ctx, common.EventTypeContainerStartBegin, map[string]string{
-					common.PropertyTypeContainerID.Name:      id,
-					common.PropertyTypeNotificationType.Name: string(notificationType),
+					common.PropertyTypeContainerID.Name: id,
 				})
 
 				defer PublishEventWrapper(ctx, common.EventTypeContainerStartEnd, map[string]string{
-					common.PropertyTypeContainerID.Name:      id,
-					common.PropertyTypeNotificationType.Name: string(notificationType),
+					common.PropertyTypeContainerID.Name: id,
 				})
 
 				if err := docker.StartContainer(ctx, id); err != nil {
 					go PublishEventWrapper(ctx, common.EventTypeContainerStartError, map[string]string{
-						common.PropertyTypeContainerID.Name:      id,
-						common.PropertyTypeNotificationType.Name: string(notificationType),
-						common.PropertyTypeMessage.Name:          err.Error(),
+						common.PropertyTypeContainerID.Name: id,
+
+						common.PropertyTypeMessage.Name: err.Error(),
 					})
 					return err
 				}
@@ -756,20 +739,18 @@ func (ds *dockerService) RecreateContainer(ctx context.Context, id string, notif
 			// remove the new container
 			if err := func() error {
 				go PublishEventWrapper(ctx, common.EventTypeContainerRemoveBegin, map[string]string{
-					common.PropertyTypeContainerID.Name:      newID,
-					common.PropertyTypeNotificationType.Name: string(notificationType),
+					common.PropertyTypeContainerID.Name: newID,
 				})
 
 				defer PublishEventWrapper(ctx, common.EventTypeContainerRemoveEnd, map[string]string{
-					common.PropertyTypeContainerID.Name:      newID,
-					common.PropertyTypeNotificationType.Name: string(notificationType),
+					common.PropertyTypeContainerID.Name: newID,
 				})
 
 				if err := docker.RemoveContainer(ctx, newID); err != nil {
 					go PublishEventWrapper(ctx, common.EventTypeContainerRemoveError, map[string]string{
-						common.PropertyTypeContainerID.Name:      newID,
-						common.PropertyTypeNotificationType.Name: string(notificationType),
-						common.PropertyTypeMessage.Name:          err.Error(),
+						common.PropertyTypeContainerID.Name: newID,
+
+						common.PropertyTypeMessage.Name: err.Error(),
 					})
 					return err
 				}
@@ -783,20 +764,18 @@ func (ds *dockerService) RecreateContainer(ctx context.Context, id string, notif
 	// remove the old container if new container started successfully
 	if err := func() error {
 		go PublishEventWrapper(ctx, common.EventTypeContainerRemoveBegin, map[string]string{
-			common.PropertyTypeContainerID.Name:      containerInfo.ID,
-			common.PropertyTypeNotificationType.Name: string(notificationType),
+			common.PropertyTypeContainerID.Name: containerInfo.ID,
 		})
 
 		defer PublishEventWrapper(ctx, common.EventTypeContainerRemoveEnd, map[string]string{
-			common.PropertyTypeContainerID.Name:      containerInfo.ID,
-			common.PropertyTypeNotificationType.Name: string(notificationType),
+			common.PropertyTypeContainerID.Name: containerInfo.ID,
 		})
 
 		if err := docker.RemoveContainer(ctx, containerInfo.ID); err != nil {
 			go PublishEventWrapper(ctx, common.EventTypeContainerRemoveError, map[string]string{
-				common.PropertyTypeContainerID.Name:      containerInfo.ID,
-				common.PropertyTypeNotificationType.Name: string(notificationType),
-				common.PropertyTypeMessage.Name:          err.Error(),
+				common.PropertyTypeContainerID.Name: containerInfo.ID,
+
+				common.PropertyTypeMessage.Name: err.Error(),
 			})
 			return err
 		}
@@ -808,23 +787,21 @@ func (ds *dockerService) RecreateContainer(ctx context.Context, id string, notif
 	// rename the new container
 	if err := func() error {
 		go PublishEventWrapper(ctx, common.EventTypeContainerRenameBegin, map[string]string{
-			common.PropertyTypeContainerID.Name:      newID,
-			common.PropertyTypeContainerName.Name:    containerInfo.Name,
-			common.PropertyTypeNotificationType.Name: string(notificationType),
+			common.PropertyTypeContainerID.Name:   newID,
+			common.PropertyTypeContainerName.Name: containerInfo.Name,
 		})
 
 		defer PublishEventWrapper(ctx, common.EventTypeContainerRenameEnd, map[string]string{
-			common.PropertyTypeContainerID.Name:      newID,
-			common.PropertyTypeContainerName.Name:    containerInfo.Name,
-			common.PropertyTypeNotificationType.Name: string(notificationType),
+			common.PropertyTypeContainerID.Name:   newID,
+			common.PropertyTypeContainerName.Name: containerInfo.Name,
 		})
 
 		if err := docker.RenameContainer(ctx, newID, containerInfo.Name); err != nil {
 			go PublishEventWrapper(ctx, common.EventTypeContainerRenameError, map[string]string{
-				common.PropertyTypeContainerID.Name:      newID,
-				common.PropertyTypeContainerName.Name:    containerInfo.Name,
-				common.PropertyTypeNotificationType.Name: string(notificationType),
-				common.PropertyTypeMessage.Name:          err.Error(),
+				common.PropertyTypeContainerID.Name:   newID,
+				common.PropertyTypeContainerName.Name: containerInfo.Name,
+
+				common.PropertyTypeMessage.Name: err.Error(),
 			})
 
 			return err
@@ -985,16 +962,16 @@ func getV1AppStoreID(m *types.Container) uint {
 }
 
 // Deprecated: Use PublishEventWrapper(...) for message bus instead.
-func SendNotification(icon, name, message, state string, finished, success bool, notificationType codegen.NotificationType) {
-	if len(icon) == 0 || len(name) == 0 || notificationType == codegen.NotificationTypeNone {
+func SendNotification(label, message, state string, finished, success bool, notificationType string) {
+	if len(label) == 0 {
 		return
 	}
 
 	notify := notify.Application{
-		Icon:     icon,
-		Name:     name,
+		Icon:     "icon",
+		Name:     label,
 		State:    state,
-		Type:     strings.ToUpper(string(notificationType)),
+		Type:     strings.ToUpper(notificationType),
 		Finished: finished,
 		Success:  success,
 		Message:  message,
@@ -1005,7 +982,7 @@ func SendNotification(icon, name, message, state string, finished, success bool,
 	}
 }
 
-func progress(out io.ReadCloser, icon, name, ref string, notificationType codegen.NotificationType) {
+func pullImageProgress(ctx context.Context, out io.ReadCloser, appName, notificationType string) {
 	buf := make([]byte, 2048*4)
 	for {
 		n, err := out.Read(buf)
@@ -1016,9 +993,7 @@ func progress(out io.ReadCloser, icon, name, ref string, notificationType codege
 			break
 		}
 
-		go PublishEventWrapper(context.Background(), common.EventTypeImagePullProgress, map[string]string{
-			common.PropertyTypeImageReference.Name: ref,
-		})
-		go SendNotification(icon, name, string(buf[:n]), "PULLING", false, true, notificationType)
+		go PublishEventWrapper(ctx, common.EventTypeImagePullProgress, map[string]string{})
+		go SendNotification(appName, string(buf[:n]), "PULLING", false, true, notificationType)
 	}
 }

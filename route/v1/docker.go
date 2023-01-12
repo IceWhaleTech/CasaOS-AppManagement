@@ -8,7 +8,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/IceWhaleTech/CasaOS-AppManagement/codegen"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/common"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/model"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/pkg/config"
@@ -45,23 +44,21 @@ func pullAndInstall(ctx context.Context, imageName string, m *model.Customizatio
 	// step：下载镜像
 	func() {
 		go service.PublishEventWrapper(ctx, common.EventTypeImagePullBegin, map[string]string{
-			common.PropertyTypeImageName.Name:        imageName,
-			common.PropertyTypeNotificationType.Name: string(codegen.NotificationTypeInstall),
+			common.PropertyTypeImageName.Name: imageName,
 		})
 
 		defer service.PublishEventWrapper(ctx, common.EventTypeImagePullEnd, map[string]string{
-			common.PropertyTypeImageName.Name:        imageName,
-			common.PropertyTypeNotificationType.Name: string(codegen.NotificationTypeInstall),
+			common.PropertyTypeImageName.Name: imageName,
 		})
 
-		if err := service.MyService.Docker().PullImage(imageName, m.Icon, m.Label, "", codegen.NotificationTypeInstall); err != nil {
+		if err := service.MyService.Docker().PullImage(ctx, imageName, m.Label); err != nil {
 
-			go service.SendNotification(m.Icon, m.Label, err.Error(), "PULLING", false, false, codegen.NotificationTypeInstall)
+			go service.SendNotification(m.Label, err.Error(), "PULLING", false, false, "INSTALL")
 
 			go service.PublishEventWrapper(ctx, common.EventTypeImagePullError, map[string]string{
-				common.PropertyTypeImageName.Name:        imageName,
-				common.PropertyTypeNotificationType.Name: string(codegen.NotificationTypeInstall),
-				common.PropertyTypeMessage.Name:          err.Error(),
+				common.PropertyTypeImageName.Name: imageName,
+
+				common.PropertyTypeMessage.Name: err.Error(),
 			})
 
 			return
@@ -76,24 +73,22 @@ func pullAndInstall(ctx context.Context, imageName string, m *model.Customizatio
 
 	func() {
 		go service.PublishEventWrapper(ctx, common.EventTypeContainerCreateBegin, map[string]string{
-			common.PropertyTypeImageName.Name:        imageName,
-			common.PropertyTypeNotificationType.Name: string(codegen.NotificationTypeInstall),
+			common.PropertyTypeImageName.Name: imageName,
 		})
 
 		defer service.PublishEventWrapper(ctx, common.EventTypeContainerCreateEnd, map[string]string{
-			common.PropertyTypeContainerID.Name:      containerID,
-			common.PropertyTypeImageName.Name:        imageName,
-			common.PropertyTypeNotificationType.Name: string(codegen.NotificationTypeInstall),
+			common.PropertyTypeContainerID.Name: containerID,
+			common.PropertyTypeImageName.Name:   imageName,
 		})
 
 		_containerID, err := service.MyService.Docker().CreateContainer(*m, "")
 		if err != nil {
-			go service.SendNotification(m.Icon, m.Label, err.Error(), "STARTING", false, false, codegen.NotificationTypeInstall)
+			go service.SendNotification(m.Label, err.Error(), "STARTING", false, false, "INSTALL")
 
 			go service.PublishEventWrapper(ctx, common.EventTypeContainerCreateError, map[string]string{
-				common.PropertyTypeImageName.Name:        imageName,
-				common.PropertyTypeNotificationType.Name: string(codegen.NotificationTypeInstall),
-				common.PropertyTypeMessage.Name:          err.Error(),
+				common.PropertyTypeImageName.Name: imageName,
+
+				common.PropertyTypeMessage.Name: err.Error(),
 			})
 			return
 		}
@@ -104,26 +99,24 @@ func pullAndInstall(ctx context.Context, imageName string, m *model.Customizatio
 	// step：启动容器
 	func() {
 		go service.PublishEventWrapper(ctx, common.EventTypeContainerStartBegin, map[string]string{
-			common.PropertyTypeContainerID.Name:      containerID,
-			common.PropertyTypeImageName.Name:        imageName,
-			common.PropertyTypeNotificationType.Name: string(codegen.NotificationTypeInstall),
+			common.PropertyTypeContainerID.Name: containerID,
+			common.PropertyTypeImageName.Name:   imageName,
 		})
 
 		defer service.PublishEventWrapper(ctx, common.EventTypeContainerStartEnd, map[string]string{
-			common.PropertyTypeContainerID.Name:      containerID,
-			common.PropertyTypeImageName.Name:        imageName,
-			common.PropertyTypeNotificationType.Name: string(codegen.NotificationTypeInstall),
+			common.PropertyTypeContainerID.Name: containerID,
+			common.PropertyTypeImageName.Name:   imageName,
 		})
 
-		go service.SendNotification(m.Icon, m.Label, "Starting container...", "STARTING", false, true, codegen.NotificationTypeInstall)
+		go service.SendNotification(m.Label, "Starting container...", "STARTING", false, true, "INSTALL")
 		if err := service.MyService.Docker().StartContainer(m.ContainerName); err != nil {
-			go service.SendNotification(m.Icon, m.Label, err.Error(), "STARTING", false, false, codegen.NotificationTypeInstall)
+			go service.SendNotification(m.Label, err.Error(), "STARTING", false, false, "INSTALL")
 
 			go service.PublishEventWrapper(ctx, common.EventTypeContainerStartError, map[string]string{
-				common.PropertyTypeContainerID.Name:      containerID,
-				common.PropertyTypeImageName.Name:        imageName,
-				common.PropertyTypeNotificationType.Name: string(codegen.NotificationTypeInstall),
-				common.PropertyTypeMessage.Name:          err.Error(),
+				common.PropertyTypeContainerID.Name: containerID,
+				common.PropertyTypeImageName.Name:   imageName,
+
+				common.PropertyTypeMessage.Name: err.Error(),
 			})
 			return
 		}
@@ -131,11 +124,11 @@ func pullAndInstall(ctx context.Context, imageName string, m *model.Customizatio
 		// step: 启动成功     检查容器状态确认启动成功
 		container, err := service.MyService.Docker().DescribeContainer(ctx, m.ContainerName)
 		if err != nil && container.ContainerJSONBase.State.Running {
-			go service.SendNotification(m.Icon, m.Label, err.Error(), "INSTALLED", true, false, codegen.NotificationTypeInstall)
+			go service.SendNotification(m.Label, err.Error(), "INSTALLED", true, false, "INSTALL")
 			return
 		}
 
-		go service.SendNotification(m.Icon, m.Label, "Installed successfully", "INSTALLED", true, true, codegen.NotificationTypeInstall)
+		go service.SendNotification(m.Label, "Installed successfully", "INSTALLED", true, true, "INSTALL")
 	}()
 	config.CasaOSGlobalVariables.AppChange = true
 }

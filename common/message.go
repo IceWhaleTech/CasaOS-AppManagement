@@ -2,17 +2,18 @@ package common
 
 import (
 	"fmt"
-	"strings"
 
-	"github.com/IceWhaleTech/CasaOS-AppManagement/codegen"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/codegen/message_bus"
 	"github.com/IceWhaleTech/CasaOS-Common/utils"
 )
 
-var PropertyTypeMessage = message_bus.PropertyType{
-	Name:        fmt.Sprintf("%s:message", AppManagementServiceName),
-	Description: utils.Ptr("message at different levels, typically for error"),
-}
+// common properties
+var (
+	PropertyTypeMessage = message_bus.PropertyType{
+		Name:        fmt.Sprintf("%s:message", AppManagementServiceName),
+		Description: utils.Ptr("message at different levels, typically for error"),
+	}
+)
 
 // app properties
 var (
@@ -51,28 +52,7 @@ var (
 		Description: utils.Ptr("name of the image"),
 		Example:     utils.Ptr("hello-world:latest"),
 	}
-
-	PropertyTypeImageReference = message_bus.PropertyType{
-		Name:        fmt.Sprintf("%s:image:ref", AppManagementServiceName),
-		Description: utils.Ptr("Any information can assoicate with the image, e.g. ID of the container using the image"),
-		Example:     utils.Ptr("855084f79fc89bea4de5111c69621b3329ecf0a1106863a7a83bbdef01d33b9e"),
-	}
 )
-
-// ui properties
-var (
-	PropertyTypeNotificationType = message_bus.PropertyType{
-		Name:        fmt.Sprintf("%s:notification:type", namespaceUI),
-		Description: utils.Ptr("type of the notification"),
-		Example: utils.Ptr(strings.Join([]string{
-			string(codegen.NotificationTypeInstall),
-			string(codegen.NotificationTypeUninstall),
-			string(codegen.NotificationTypeUpdate),
-		}, ", ")),
-	}
-)
-
-const namespaceUI = "casaos-ui"
 
 var EventTypes = []message_bus.EventType{
 	// app
@@ -150,8 +130,6 @@ var (
 		Name:     fmt.Sprintf("%s:image:pull-begin", AppManagementServiceName),
 		PropertyTypeList: []message_bus.PropertyType{
 			PropertyTypeImageName,
-			PropertyTypeImageReference,
-			PropertyTypeNotificationType,
 		},
 	}
 
@@ -160,9 +138,8 @@ var (
 		Name:     fmt.Sprintf("%s:image:pull-progress", AppManagementServiceName),
 		PropertyTypeList: []message_bus.PropertyType{
 			PropertyTypeImageName,
-			PropertyTypeImageReference,
+
 			PropertyTypeMessage,
-			PropertyTypeNotificationType,
 		},
 	}
 
@@ -171,8 +148,6 @@ var (
 		Name:     fmt.Sprintf("%s:image:pull-end", AppManagementServiceName),
 		PropertyTypeList: []message_bus.PropertyType{
 			PropertyTypeImageName,
-			PropertyTypeImageReference,
-			PropertyTypeNotificationType,
 		},
 	}
 
@@ -181,9 +156,8 @@ var (
 		Name:     fmt.Sprintf("%s:image:pull-error", AppManagementServiceName),
 		PropertyTypeList: []message_bus.PropertyType{
 			PropertyTypeImageName,
-			PropertyTypeImageReference,
+
 			PropertyTypeMessage,
-			PropertyTypeNotificationType,
 		},
 	}
 )
@@ -195,7 +169,6 @@ var (
 		Name:     fmt.Sprintf("%s:container:create-begin", AppManagementServiceName),
 		PropertyTypeList: []message_bus.PropertyType{
 			PropertyTypeContainerName,
-			PropertyTypeNotificationType,
 		},
 	}
 
@@ -205,7 +178,6 @@ var (
 		PropertyTypeList: []message_bus.PropertyType{
 			PropertyTypeContainerID,
 			PropertyTypeContainerName,
-			PropertyTypeNotificationType,
 		},
 	}
 
@@ -215,7 +187,6 @@ var (
 		PropertyTypeList: []message_bus.PropertyType{
 			PropertyTypeContainerName,
 			PropertyTypeMessage,
-			PropertyTypeNotificationType,
 		},
 	}
 
@@ -224,7 +195,6 @@ var (
 		Name:     fmt.Sprintf("%s:container:start-begin", AppManagementServiceName),
 		PropertyTypeList: []message_bus.PropertyType{
 			PropertyTypeContainerID,
-			PropertyTypeNotificationType,
 		},
 	}
 
@@ -233,7 +203,6 @@ var (
 		Name:     fmt.Sprintf("%s:container:start-end", AppManagementServiceName),
 		PropertyTypeList: []message_bus.PropertyType{
 			PropertyTypeContainerID,
-			PropertyTypeNotificationType,
 		},
 	}
 
@@ -243,7 +212,6 @@ var (
 		PropertyTypeList: []message_bus.PropertyType{
 			PropertyTypeContainerID,
 			PropertyTypeMessage,
-			PropertyTypeNotificationType,
 		},
 	}
 
@@ -252,7 +220,6 @@ var (
 		Name:     fmt.Sprintf("%s:container:stop-begin", AppManagementServiceName),
 		PropertyTypeList: []message_bus.PropertyType{
 			PropertyTypeContainerID,
-			PropertyTypeNotificationType,
 		},
 	}
 
@@ -261,7 +228,6 @@ var (
 		Name:     fmt.Sprintf("%s:container:stop-end", AppManagementServiceName),
 		PropertyTypeList: []message_bus.PropertyType{
 			PropertyTypeContainerID,
-			PropertyTypeNotificationType,
 		},
 	}
 
@@ -271,7 +237,6 @@ var (
 		PropertyTypeList: []message_bus.PropertyType{
 			PropertyTypeContainerID,
 			PropertyTypeMessage,
-			PropertyTypeNotificationType,
 		},
 	}
 
@@ -281,7 +246,6 @@ var (
 		PropertyTypeList: []message_bus.PropertyType{
 			PropertyTypeContainerID,
 			PropertyTypeContainerName,
-			PropertyTypeNotificationType,
 		},
 	}
 
@@ -291,7 +255,6 @@ var (
 		PropertyTypeList: []message_bus.PropertyType{
 			PropertyTypeContainerID,
 			PropertyTypeContainerName,
-			PropertyTypeNotificationType,
 		},
 	}
 
@@ -302,7 +265,6 @@ var (
 			PropertyTypeContainerID,
 			PropertyTypeContainerName,
 			PropertyTypeMessage,
-			PropertyTypeNotificationType,
 		},
 	}
 
@@ -311,7 +273,6 @@ var (
 		Name:     fmt.Sprintf("%s:container:remove-begin", AppManagementServiceName),
 		PropertyTypeList: []message_bus.PropertyType{
 			PropertyTypeContainerID,
-			PropertyTypeNotificationType,
 		},
 	}
 
@@ -320,7 +281,6 @@ var (
 		Name:     fmt.Sprintf("%s:container:remove-end", AppManagementServiceName),
 		PropertyTypeList: []message_bus.PropertyType{
 			PropertyTypeContainerID,
-			PropertyTypeNotificationType,
 		},
 	}
 
@@ -330,7 +290,6 @@ var (
 		PropertyTypeList: []message_bus.PropertyType{
 			PropertyTypeContainerID,
 			PropertyTypeMessage,
-			PropertyTypeNotificationType,
 		},
 	}
 )

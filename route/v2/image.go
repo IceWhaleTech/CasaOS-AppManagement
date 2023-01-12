@@ -13,17 +13,12 @@ import (
 	"github.com/IceWhaleTech/CasaOS-Common/utils"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/logger"
 	"github.com/labstack/echo/v4"
-	"github.com/samber/lo"
 	"go.uber.org/zap"
 )
 
 func (a *AppManagement) PullImages(ctx echo.Context, params codegen.PullImagesParams) error {
 	// attach context key/value pairs from upstream
 	backgroundCtx := common.WithProperties(context.Background(), PropertiesFromQueryParams(ctx))
-
-	notificationType := lo.
-		If(params.NotificationType != nil, codegen.NotificationType(*params.NotificationType)).
-		Else(codegen.NotificationTypeNone)
 
 	if params.ContainerIds != nil {
 		containerIDs := strings.Split(*params.ContainerIds, ",")
@@ -41,13 +36,12 @@ func (a *AppManagement) PullImages(ctx echo.Context, params codegen.PullImagesPa
 			}
 
 			appName := v1.AppName(containerInfo)
-			appIcon := v1.AppIcon(containerInfo)
 
-			go func(containerID, imageName string, notificationType codegen.NotificationType) {
-				if err := service.MyService.Docker().PullNewImage(backgroundCtx, imageName, appIcon, appName, containerID, notificationType); err != nil {
+			go func(containerID, imageName string) {
+				if err := service.MyService.Docker().PullLatestImage(backgroundCtx, imageName, appName); err != nil {
 					logger.Error("pull new image failed", zap.Error(err), zap.String("image", imageName))
 				}
-			}(containerID, imageName, notificationType)
+			}(containerID, imageName)
 		}
 	}
 
