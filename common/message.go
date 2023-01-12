@@ -30,11 +30,19 @@ var (
 )
 
 // container properties
-var PropertyTypeContainerID = message_bus.PropertyType{
-	Name:        fmt.Sprintf("%s:container:id", AppManagementServiceName),
-	Description: utils.Ptr("ID of the container"),
-	Example:     utils.Ptr("855084f79fc89bea4de5111c69621b3329ecf0a1106863a7a83bbdef01d33b9e"),
-}
+var (
+	PropertyTypeContainerID = message_bus.PropertyType{
+		Name:        fmt.Sprintf("%s:container:id", AppManagementServiceName),
+		Description: utils.Ptr("ID of the container"),
+		Example:     utils.Ptr("855084f79fc89bea4de5111c69621b3329ecf0a1106863a7a83bbdef01d33b9e"),
+	}
+
+	PropertyTypeContainerName = message_bus.PropertyType{
+		Name:        fmt.Sprintf("%s:container:name", AppManagementServiceName),
+		Description: utils.Ptr("name of the container"),
+		Example:     utils.Ptr("hello-world"),
+	}
+)
 
 // image properties
 var (
@@ -186,7 +194,7 @@ var (
 		SourceID: AppManagementServiceName,
 		Name:     fmt.Sprintf("%s:container:create-begin", AppManagementServiceName),
 		PropertyTypeList: []message_bus.PropertyType{
-			PropertyTypeImageName,
+			PropertyTypeContainerName,
 			PropertyTypeNotificationType,
 		},
 	}
@@ -196,7 +204,7 @@ var (
 		Name:     fmt.Sprintf("%s:container:create-end", AppManagementServiceName),
 		PropertyTypeList: []message_bus.PropertyType{
 			PropertyTypeContainerID,
-			PropertyTypeImageName,
+			PropertyTypeContainerName,
 			PropertyTypeNotificationType,
 		},
 	}
@@ -205,7 +213,7 @@ var (
 		SourceID: AppManagementServiceName,
 		Name:     fmt.Sprintf("%s:container:create-error", AppManagementServiceName),
 		PropertyTypeList: []message_bus.PropertyType{
-			PropertyTypeImageName,
+			PropertyTypeContainerName,
 			PropertyTypeMessage,
 			PropertyTypeNotificationType,
 		},
@@ -216,7 +224,6 @@ var (
 		Name:     fmt.Sprintf("%s:container:start-begin", AppManagementServiceName),
 		PropertyTypeList: []message_bus.PropertyType{
 			PropertyTypeContainerID,
-			PropertyTypeImageName,
 			PropertyTypeNotificationType,
 		},
 	}
@@ -226,7 +233,6 @@ var (
 		Name:     fmt.Sprintf("%s:container:start-end", AppManagementServiceName),
 		PropertyTypeList: []message_bus.PropertyType{
 			PropertyTypeContainerID,
-			PropertyTypeImageName,
 			PropertyTypeNotificationType,
 		},
 	}
@@ -236,7 +242,6 @@ var (
 		Name:     fmt.Sprintf("%s:container:start-error", AppManagementServiceName),
 		PropertyTypeList: []message_bus.PropertyType{
 			PropertyTypeContainerID,
-			PropertyTypeImageName,
 			PropertyTypeMessage,
 			PropertyTypeNotificationType,
 		},
@@ -246,6 +251,7 @@ var (
 		SourceID: AppManagementServiceName,
 		Name:     fmt.Sprintf("%s:container:stop-begin", AppManagementServiceName),
 		PropertyTypeList: []message_bus.PropertyType{
+			PropertyTypeContainerID,
 			PropertyTypeNotificationType,
 		},
 	}
@@ -254,6 +260,7 @@ var (
 		SourceID: AppManagementServiceName,
 		Name:     fmt.Sprintf("%s:container:stop-end", AppManagementServiceName),
 		PropertyTypeList: []message_bus.PropertyType{
+			PropertyTypeContainerID,
 			PropertyTypeNotificationType,
 		},
 	}
@@ -262,6 +269,7 @@ var (
 		SourceID: AppManagementServiceName,
 		Name:     fmt.Sprintf("%s:container:stop-error", AppManagementServiceName),
 		PropertyTypeList: []message_bus.PropertyType{
+			PropertyTypeContainerID,
 			PropertyTypeMessage,
 			PropertyTypeNotificationType,
 		},
@@ -271,6 +279,8 @@ var (
 		SourceID: AppManagementServiceName,
 		Name:     fmt.Sprintf("%s:container:rename-begin", AppManagementServiceName),
 		PropertyTypeList: []message_bus.PropertyType{
+			PropertyTypeContainerID,
+			PropertyTypeContainerName,
 			PropertyTypeNotificationType,
 		},
 	}
@@ -279,6 +289,8 @@ var (
 		SourceID: AppManagementServiceName,
 		Name:     fmt.Sprintf("%s:container:rename-end", AppManagementServiceName),
 		PropertyTypeList: []message_bus.PropertyType{
+			PropertyTypeContainerID,
+			PropertyTypeContainerName,
 			PropertyTypeNotificationType,
 		},
 	}
@@ -287,6 +299,8 @@ var (
 		SourceID: AppManagementServiceName,
 		Name:     fmt.Sprintf("%s:container:rename-error", AppManagementServiceName),
 		PropertyTypeList: []message_bus.PropertyType{
+			PropertyTypeContainerID,
+			PropertyTypeContainerName,
 			PropertyTypeMessage,
 			PropertyTypeNotificationType,
 		},
@@ -296,6 +310,7 @@ var (
 		SourceID: AppManagementServiceName,
 		Name:     fmt.Sprintf("%s:container:remove-begin", AppManagementServiceName),
 		PropertyTypeList: []message_bus.PropertyType{
+			PropertyTypeContainerID,
 			PropertyTypeNotificationType,
 		},
 	}
@@ -304,6 +319,7 @@ var (
 		SourceID: AppManagementServiceName,
 		Name:     fmt.Sprintf("%s:container:remove-end", AppManagementServiceName),
 		PropertyTypeList: []message_bus.PropertyType{
+			PropertyTypeContainerID,
 			PropertyTypeNotificationType,
 		},
 	}
@@ -312,6 +328,7 @@ var (
 		SourceID: AppManagementServiceName,
 		Name:     fmt.Sprintf("%s:container:remove-error", AppManagementServiceName),
 		PropertyTypeList: []message_bus.PropertyType{
+			PropertyTypeContainerID,
 			PropertyTypeMessage,
 			PropertyTypeNotificationType,
 		},
