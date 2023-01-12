@@ -4,10 +4,8 @@ import (
 	"context"
 	"net/http"
 	"strings"
-	"time"
 
 	"github.com/IceWhaleTech/CasaOS-AppManagement/codegen"
-	"github.com/IceWhaleTech/CasaOS-AppManagement/common"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/pkg/docker"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/service"
 	v1 "github.com/IceWhaleTech/CasaOS-AppManagement/service/v1"
@@ -44,31 +42,9 @@ func (a *AppManagement) PullImages(ctx echo.Context, params codegen.PullImagesPa
 			appIcon := v1.AppIcon(containerInfo)
 
 			go func(containerID, imageName string, notificationType codegen.NotificationType) {
-				go service.PublishEventWrapper(backgroundCtx, common.EventTypeImagePullBegin, map[string]string{
-					common.PropertyTypeImageName.Name:        imageName,
-					common.PropertyTypeImageReference.Name:   containerID,
-					common.PropertyTypeNotificationType.Name: string(notificationType),
-				})
-
 				if err := service.MyService.Docker().PullNewImage(imageName, appIcon, appName, containerID, notificationType); err != nil {
-					go service.PublishEventWrapper(backgroundCtx, common.EventTypeImagePullError, map[string]string{
-						common.PropertyTypeImageName.Name:        imageName,
-						common.PropertyTypeImageReference.Name:   containerID,
-						common.PropertyTypeNotificationType.Name: string(notificationType),
-						common.PropertyTypeMessage.Name:          err.Error(),
-					})
 					logger.Error("pull new image failed", zap.Error(err), zap.String("image", imageName))
 				}
-
-				for !service.MyService.Docker().IsExistImage(imageName) {
-					time.Sleep(time.Second)
-				}
-
-				go service.PublishEventWrapper(backgroundCtx, common.EventTypeImagePullOK, map[string]string{
-					common.PropertyTypeImageName.Name:        imageName,
-					common.PropertyTypeImageReference.Name:   containerID,
-					common.PropertyTypeNotificationType.Name: string(notificationType),
-				})
 			}(containerID, imageName, notificationType)
 		}
 	}

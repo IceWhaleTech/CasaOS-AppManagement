@@ -382,14 +382,40 @@ func (ds *dockerService) PullImage(imageName, icon, name, ref string, notificati
 func (ds *dockerService) PullNewImage(imageName, icon, name, ref string, notificationType codegen.NotificationType) error {
 	ctx := context.Background()
 
+	go PublishEventWrapper(ctx, common.EventTypeImagePullBegin, map[string]string{
+		common.PropertyTypeImageName.Name:        imageName,
+		common.PropertyTypeImageReference.Name:   ref,
+		common.PropertyTypeNotificationType.Name: string(notificationType),
+	})
+
+	var err error
+
 	switch notificationType {
 
 	case codegen.NotificationTypeNone:
-		return docker.PullNewImage(ctx, imageName, nil)
+		err = docker.PullNewImage(ctx, imageName, nil)
 
 	default:
-		return docker.PullNewImage(ctx, imageName, func(out io.ReadCloser) { progress(out, icon, name, ref, notificationType) })
+		err = docker.PullNewImage(ctx, imageName, func(out io.ReadCloser) { progress(out, icon, name, ref, notificationType) })
 	}
+
+	if err != nil {
+		go PublishEventWrapper(ctx, common.EventTypeImagePullError, map[string]string{
+			common.PropertyTypeImageName.Name:        imageName,
+			common.PropertyTypeImageReference.Name:   ref,
+			common.PropertyTypeNotificationType.Name: string(notificationType),
+			common.PropertyTypeMessage.Name:          err.Error(),
+		})
+		return err
+	}
+
+	go PublishEventWrapper(ctx, common.EventTypeImagePullOK, map[string]string{
+		common.PropertyTypeImageName.Name:        imageName,
+		common.PropertyTypeImageReference.Name:   ref,
+		common.PropertyTypeNotificationType.Name: string(notificationType),
+	})
+
+	return nil
 }
 
 // param imageName 镜像名称
