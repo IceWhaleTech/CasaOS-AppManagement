@@ -11,6 +11,7 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 
 	"github.com/IceWhaleTech/CasaOS-AppManagement/codegen/message_bus"
@@ -120,6 +121,11 @@ func (c *store) MessageBus() *message_bus.ClientWithResponses {
 }
 
 func PublishEventWrapper(ctx context.Context, eventType message_bus.EventType, properties map[string]string) {
+	if MyService == nil {
+		fmt.Println("failed to publish event - messsage bus service not initialized")
+		return
+	}
+
 	response, err := MyService.MessageBus().PublishEventWithResponse(ctx, common.AppManagementServiceName, eventType.Name, properties)
 	if err != nil {
 		logger.Error("failed to publish event", zap.Error(err))
