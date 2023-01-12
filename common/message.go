@@ -1,8 +1,6 @@
 package common
 
 import (
-	"fmt"
-
 	"github.com/IceWhaleTech/CasaOS-AppManagement/codegen/message_bus"
 	"github.com/IceWhaleTech/CasaOS-Common/utils"
 )
@@ -10,7 +8,7 @@ import (
 // common properties
 var (
 	PropertyTypeMessage = message_bus.PropertyType{
-		Name:        fmt.Sprintf("%s:message", AppManagementServiceName),
+		Name:        "message",
 		Description: utils.Ptr("message at different levels, typically for error"),
 	}
 )
@@ -18,28 +16,22 @@ var (
 // app properties
 var (
 	PropertyTypeAppName = message_bus.PropertyType{
-		Name:        fmt.Sprintf("%s:app:name", AppManagementServiceName),
+		Name:        "app:name",
 		Description: utils.Ptr("name of the app which could be a container image name including version, a snap name or the name of any other forms of app"),
 		Example:     utils.Ptr("hello-world:latest (this is the name of a container image"),
-	}
-
-	PropertyTypeAppIcon = message_bus.PropertyType{
-		Name:        fmt.Sprintf("%s:app:icon", AppManagementServiceName),
-		Description: utils.Ptr("url of app icon"),
-		Example:     utils.Ptr("https://cdn.jsdelivr.net/gh/IceWhaleTech/CasaOS-AppStore@main/Apps/Syncthing/icon.png"),
 	}
 )
 
 // container properties
 var (
 	PropertyTypeContainerID = message_bus.PropertyType{
-		Name:        fmt.Sprintf("%s:container:id", AppManagementServiceName),
+		Name:        "docker:container:id",
 		Description: utils.Ptr("ID of the container"),
 		Example:     utils.Ptr("855084f79fc89bea4de5111c69621b3329ecf0a1106863a7a83bbdef01d33b9e"),
 	}
 
 	PropertyTypeContainerName = message_bus.PropertyType{
-		Name:        fmt.Sprintf("%s:container:name", AppManagementServiceName),
+		Name:        "docker:container:name",
 		Description: utils.Ptr("name of the container"),
 		Example:     utils.Ptr("hello-world"),
 	}
@@ -48,7 +40,7 @@ var (
 // image properties
 var (
 	PropertyTypeImageName = message_bus.PropertyType{
-		Name:        fmt.Sprintf("%s:image:name", AppManagementServiceName),
+		Name:        "docker:image:name",
 		Description: utils.Ptr("name of the image"),
 		Example:     utils.Ptr("hello-world:latest"),
 	}
@@ -74,7 +66,7 @@ var EventTypes = []message_bus.EventType{
 var (
 	EventTypeAppInstallBegin = message_bus.EventType{
 		SourceID: AppManagementServiceName,
-		Name:     fmt.Sprintf("%s:app:install-begin", AppManagementServiceName),
+		Name:     "app:install-begin",
 		PropertyTypeList: []message_bus.PropertyType{
 			PropertyTypeAppName,
 		},
@@ -82,7 +74,7 @@ var (
 
 	EventTypeAppInstallEnd = message_bus.EventType{
 		SourceID: AppManagementServiceName,
-		Name:     fmt.Sprintf("%s:app:install-end", AppManagementServiceName),
+		Name:     "app:install-end",
 		PropertyTypeList: []message_bus.PropertyType{
 			PropertyTypeAppName,
 		},
@@ -90,7 +82,7 @@ var (
 
 	EventTypeAppInstallError = message_bus.EventType{
 		SourceID: AppManagementServiceName,
-		Name:     fmt.Sprintf("%s:app:install-error", AppManagementServiceName),
+		Name:     "app:install-error",
 		PropertyTypeList: []message_bus.PropertyType{
 			PropertyTypeAppName,
 			PropertyTypeMessage,
@@ -99,7 +91,7 @@ var (
 
 	EventTypeAppUninstallBegin = message_bus.EventType{
 		SourceID: AppManagementServiceName,
-		Name:     fmt.Sprintf("%s:app:uninstal-begin", AppManagementServiceName),
+		Name:     "app:uninstal-begin",
 		PropertyTypeList: []message_bus.PropertyType{
 			PropertyTypeAppName,
 		},
@@ -107,7 +99,7 @@ var (
 
 	EventTypeAppUninstallEnd = message_bus.EventType{
 		SourceID: AppManagementServiceName,
-		Name:     fmt.Sprintf("%s:app:uninstall-end", AppManagementServiceName),
+		Name:     "app:uninstall-end",
 		PropertyTypeList: []message_bus.PropertyType{
 			PropertyTypeAppName,
 		},
@@ -115,7 +107,7 @@ var (
 
 	EventTypeAppUninstallError = message_bus.EventType{
 		SourceID: AppManagementServiceName,
-		Name:     fmt.Sprintf("%s:app:uninstall-error", AppManagementServiceName),
+		Name:     "app:uninstall-error",
 		PropertyTypeList: []message_bus.PropertyType{
 			PropertyTypeAppName,
 			PropertyTypeMessage,
@@ -127,7 +119,7 @@ var (
 var (
 	EventTypeImagePullBegin = message_bus.EventType{
 		SourceID: AppManagementServiceName,
-		Name:     fmt.Sprintf("%s:image:pull-begin", AppManagementServiceName),
+		Name:     "docker:image:pull-begin",
 		PropertyTypeList: []message_bus.PropertyType{
 			PropertyTypeImageName,
 		},
@@ -135,7 +127,7 @@ var (
 
 	EventTypeImagePullProgress = message_bus.EventType{
 		SourceID: AppManagementServiceName,
-		Name:     fmt.Sprintf("%s:image:pull-progress", AppManagementServiceName),
+		Name:     "docker:image:pull-progress",
 		PropertyTypeList: []message_bus.PropertyType{
 			PropertyTypeImageName,
 
@@ -145,7 +137,7 @@ var (
 
 	EventTypeImagePullEnd = message_bus.EventType{
 		SourceID: AppManagementServiceName,
-		Name:     fmt.Sprintf("%s:image:pull-end", AppManagementServiceName),
+		Name:     "docker:image:pull-end",
 		PropertyTypeList: []message_bus.PropertyType{
 			PropertyTypeImageName,
 		},
@@ -153,7 +145,7 @@ var (
 
 	EventTypeImagePullError = message_bus.EventType{
 		SourceID: AppManagementServiceName,
-		Name:     fmt.Sprintf("%s:image:pull-error", AppManagementServiceName),
+		Name:     "docker:image:pull-error",
 		PropertyTypeList: []message_bus.PropertyType{
 			PropertyTypeImageName,
 
@@ -166,7 +158,7 @@ var (
 var (
 	EventTypeContainerCreateBegin = message_bus.EventType{
 		SourceID: AppManagementServiceName,
-		Name:     fmt.Sprintf("%s:container:create-begin", AppManagementServiceName),
+		Name:     "docker:container:create-begin",
 		PropertyTypeList: []message_bus.PropertyType{
 			PropertyTypeContainerName,
 		},
@@ -174,7 +166,7 @@ var (
 
 	EventTypeContainerCreateEnd = message_bus.EventType{
 		SourceID: AppManagementServiceName,
-		Name:     fmt.Sprintf("%s:container:create-end", AppManagementServiceName),
+		Name:     "docker:container:create-end",
 		PropertyTypeList: []message_bus.PropertyType{
 			PropertyTypeContainerID,
 			PropertyTypeContainerName,
@@ -183,7 +175,7 @@ var (
 
 	EventTypeContainerCreateError = message_bus.EventType{
 		SourceID: AppManagementServiceName,
-		Name:     fmt.Sprintf("%s:container:create-error", AppManagementServiceName),
+		Name:     "docker:container:create-error",
 		PropertyTypeList: []message_bus.PropertyType{
 			PropertyTypeContainerName,
 			PropertyTypeMessage,
@@ -192,7 +184,7 @@ var (
 
 	EventTypeContainerStartBegin = message_bus.EventType{
 		SourceID: AppManagementServiceName,
-		Name:     fmt.Sprintf("%s:container:start-begin", AppManagementServiceName),
+		Name:     "docker:container:start-begin",
 		PropertyTypeList: []message_bus.PropertyType{
 			PropertyTypeContainerID,
 		},
@@ -200,7 +192,7 @@ var (
 
 	EventTypeContainerStartEnd = message_bus.EventType{
 		SourceID: AppManagementServiceName,
-		Name:     fmt.Sprintf("%s:container:start-end", AppManagementServiceName),
+		Name:     "docker:container:start-end",
 		PropertyTypeList: []message_bus.PropertyType{
 			PropertyTypeContainerID,
 		},
@@ -208,7 +200,7 @@ var (
 
 	EventTypeContainerStartError = message_bus.EventType{
 		SourceID: AppManagementServiceName,
-		Name:     fmt.Sprintf("%s:container:start-error", AppManagementServiceName),
+		Name:     "docker:container:start-error",
 		PropertyTypeList: []message_bus.PropertyType{
 			PropertyTypeContainerID,
 			PropertyTypeMessage,
@@ -217,7 +209,7 @@ var (
 
 	EventTypeContainerStopBegin = message_bus.EventType{
 		SourceID: AppManagementServiceName,
-		Name:     fmt.Sprintf("%s:container:stop-begin", AppManagementServiceName),
+		Name:     "docker:container:stop-begin",
 		PropertyTypeList: []message_bus.PropertyType{
 			PropertyTypeContainerID,
 		},
@@ -225,7 +217,7 @@ var (
 
 	EventTypeContainerStopEnd = message_bus.EventType{
 		SourceID: AppManagementServiceName,
-		Name:     fmt.Sprintf("%s:container:stop-end", AppManagementServiceName),
+		Name:     "docker:container:stop-end",
 		PropertyTypeList: []message_bus.PropertyType{
 			PropertyTypeContainerID,
 		},
@@ -233,7 +225,7 @@ var (
 
 	EventTypeContainerStopError = message_bus.EventType{
 		SourceID: AppManagementServiceName,
-		Name:     fmt.Sprintf("%s:container:stop-error", AppManagementServiceName),
+		Name:     "docker:container:stop-error",
 		PropertyTypeList: []message_bus.PropertyType{
 			PropertyTypeContainerID,
 			PropertyTypeMessage,
@@ -242,7 +234,7 @@ var (
 
 	EventTypeContainerRenameBegin = message_bus.EventType{
 		SourceID: AppManagementServiceName,
-		Name:     fmt.Sprintf("%s:container:rename-begin", AppManagementServiceName),
+		Name:     "docker:container:rename-begin",
 		PropertyTypeList: []message_bus.PropertyType{
 			PropertyTypeContainerID,
 			PropertyTypeContainerName,
@@ -251,7 +243,7 @@ var (
 
 	EventTypeContainerRenameEnd = message_bus.EventType{
 		SourceID: AppManagementServiceName,
-		Name:     fmt.Sprintf("%s:container:rename-end", AppManagementServiceName),
+		Name:     "docker:container:rename-end",
 		PropertyTypeList: []message_bus.PropertyType{
 			PropertyTypeContainerID,
 			PropertyTypeContainerName,
@@ -260,7 +252,7 @@ var (
 
 	EventTypeContainerRenameError = message_bus.EventType{
 		SourceID: AppManagementServiceName,
-		Name:     fmt.Sprintf("%s:container:rename-error", AppManagementServiceName),
+		Name:     "docker:container:rename-error",
 		PropertyTypeList: []message_bus.PropertyType{
 			PropertyTypeContainerID,
 			PropertyTypeContainerName,
@@ -270,7 +262,7 @@ var (
 
 	EventTypeContainerRemoveBegin = message_bus.EventType{
 		SourceID: AppManagementServiceName,
-		Name:     fmt.Sprintf("%s:container:remove-begin", AppManagementServiceName),
+		Name:     "docker:container:remove-begin",
 		PropertyTypeList: []message_bus.PropertyType{
 			PropertyTypeContainerID,
 		},
@@ -278,7 +270,7 @@ var (
 
 	EventTypeContainerRemoveEnd = message_bus.EventType{
 		SourceID: AppManagementServiceName,
-		Name:     fmt.Sprintf("%s:container:remove-end", AppManagementServiceName),
+		Name:     "docker:container:remove-end",
 		PropertyTypeList: []message_bus.PropertyType{
 			PropertyTypeContainerID,
 		},
@@ -286,7 +278,7 @@ var (
 
 	EventTypeContainerRemoveError = message_bus.EventType{
 		SourceID: AppManagementServiceName,
-		Name:     fmt.Sprintf("%s:container:remove-error", AppManagementServiceName),
+		Name:     "docker:container:remove-error",
 		PropertyTypeList: []message_bus.PropertyType{
 			PropertyTypeContainerID,
 			PropertyTypeMessage,

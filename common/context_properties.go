@@ -2,14 +2,16 @@ package common
 
 import "context"
 
-const KeyNameContext = "context"
+type contextKeyType int
+
+const contextKey contextKeyType = iota
 
 func WithProperties(ctx context.Context, properties map[string]string) context.Context {
-	return context.WithValue(ctx, []byte(KeyNameContext), properties)
+	return context.WithValue(ctx, contextKey, properties)
 }
 
 func PropertiesFromContext(ctx context.Context) map[string]string {
-	value := ctx.Value([]byte(KeyNameContext))
+	value := ctx.Value(contextKey)
 	if value == nil {
 		return map[string]string{}
 	}
