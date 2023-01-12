@@ -40,7 +40,7 @@ func TestRecreateContainer(t *testing.T) {
 	assert.NilError(t, err)
 
 	// update
-	newID, err := NewDockerService().RecreateContainer(response.ID, codegen.NotificationTypeNone)
+	newID, err := NewDockerService().RecreateContainer(ctx, response.ID, codegen.NotificationTypeNone)
 	assert.NilError(t, err)
 
 	defer func() {

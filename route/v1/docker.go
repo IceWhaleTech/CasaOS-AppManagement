@@ -41,10 +41,7 @@ var upgrader = websocket.Upgrader{
 	HandshakeTimeout: time.Duration(time.Second * 5),
 }
 
-func pullAndInstall(imageName string, m *model.CustomizationPostData) {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
+func pullAndInstall(ctx context.Context, imageName string, m *model.CustomizationPostData) {
 	// step：下载镜像
 	func() {
 		go service.PublishEventWrapper(ctx, common.EventTypeImagePullBegin, map[string]string{
@@ -132,7 +129,7 @@ func pullAndInstall(imageName string, m *model.CustomizationPostData) {
 		}
 
 		// step: 启动成功     检查容器状态确认启动成功
-		container, err := service.MyService.Docker().DescribeContainer(m.ContainerName)
+		container, err := service.MyService.Docker().DescribeContainer(ctx, m.ContainerName)
 		if err != nil && container.ContainerJSONBase.State.Running {
 			go service.SendNotification(m.Icon, m.Label, err.Error(), "INSTALLED", true, false, codegen.NotificationTypeInstall)
 			return
@@ -285,7 +282,8 @@ func InstallApp(c *gin.Context) {
 	id := uuid.NewV4().String()
 	m.CustomID = id
 
-	go pullAndInstall(dockerImage+":"+dockerImageVersion, &m)
+	ctx := common.WithProperties(context.Background(), PropertiesFromQueryParams(c))
+	go pullAndInstall(ctx, dockerImage+":"+dockerImageVersion, &m)
 
 	c.JSON(http.StatusOK, modelCommon.Result{Success: common_err.SUCCESS, Message: common_err.GetMsg(common_err.SUCCESS), Data: m.Label})
 }
@@ -316,7 +314,9 @@ func UnInstallApp(c *gin.Context) {
 		isDelete = false
 	}
 
-	container, err := service.MyService.Docker().DescribeContainer(containerID)
+	ctx := common.WithProperties(context.Background(), PropertiesFromQueryParams(c))
+
+	container, err := service.MyService.Docker().DescribeContainer(ctx, containerID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, modelCommon.Result{Success: common_err.SERVICE_ERROR, Message: err.Error()})
 		return
@@ -600,7 +600,10 @@ func GetDockerNetworks(c *gin.Context) {
 // @Router /app/update/{id}/info [get]
 func ContainerUpdateInfo(c *gin.Context) {
 	appID := c.Param("id")
-	info, err := service.MyService.Docker().DescribeContainer(appID)
+
+	ctx := common.WithProperties(context.Background(), PropertiesFromQueryParams(c))
+
+	info, err := service.MyService.Docker().DescribeContainer(ctx, appID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, modelCommon.Result{Success: common_err.SUCCESS, Message: common_err.GetMsg(common_err.SUCCESS), Data: err.Error()})
 		return

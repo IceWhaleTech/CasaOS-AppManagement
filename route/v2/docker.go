@@ -1,9 +1,11 @@
 package v2
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/IceWhaleTech/CasaOS-AppManagement/codegen"
+	"github.com/IceWhaleTech/CasaOS-AppManagement/common"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/service"
 	"github.com/labstack/echo/v4"
 	"github.com/samber/lo"
@@ -25,11 +27,14 @@ func (a *AppManagement) CheckContainerHealthByID(ctx echo.Context, id codegen.Co
 }
 
 func (a *AppManagement) RecreateContainerByID(ctx echo.Context, id codegen.ContainerID, params codegen.RecreateContainerByIDParams) error {
+	// attach context key/value pairs from upstream
+	backgroundCtx := common.WithProperties(context.Background(), PropertiesFromQueryParams(ctx))
+
 	notificationType := lo.
 		If(params.NotificationType != nil, codegen.NotificationType(*params.NotificationType)).
 		Else(codegen.NotificationTypeNone)
 
-	if _, err := service.MyService.Docker().DescribeContainer(id); err != nil {
+	if _, err := service.MyService.Docker().DescribeContainer(backgroundCtx, id); err != nil {
 		message := err.Error()
 
 		if cmp.ErrorContains(err, "non-existing-container")().Success() {
@@ -39,7 +44,7 @@ func (a *AppManagement) RecreateContainerByID(ctx echo.Context, id codegen.Conta
 		return ctx.JSON(http.StatusInternalServerError, codegen.ResponseNotFound{Message: &message})
 	}
 
-	result, err := service.MyService.Docker().RecreateContainer(id, notificationType)
+	result, err := service.MyService.Docker().RecreateContainer(backgroundCtx, id, notificationType)
 	if err != nil {
 		message := err.Error()
 		return ctx.JSON(http.StatusInternalServerError, codegen.ResponseInternalServerError{Message: &message})

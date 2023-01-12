@@ -18,12 +18,12 @@ import (
 )
 
 func (a *AppManagement) PullImages(ctx echo.Context, params codegen.PullImagesParams) error {
+	// attach context key/value pairs from upstream
+	backgroundCtx := common.WithProperties(context.Background(), PropertiesFromQueryParams(ctx))
+
 	notificationType := lo.
 		If(params.NotificationType != nil, codegen.NotificationType(*params.NotificationType)).
 		Else(codegen.NotificationTypeNone)
-
-	// attach context key/value pairs from upstream
-	backgroundCtx := common.WithProperties(context.Background(), ContextMapFromQueryParams(ctx))
 
 	if params.ContainerIds != nil {
 		containerIDs := strings.Split(*params.ContainerIds, ",")

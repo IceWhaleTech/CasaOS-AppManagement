@@ -58,13 +58,13 @@ type DockerService interface {
 	CheckContainerHealth(id string) (bool, error)
 	CreateContainer(m model.CustomizationPostData, id string) (containerID string, err error)
 	CreateContainerShellSession(container, row, col string) (hr types.HijackedResponse, err error)
-	DescribeContainer(name string) (*types.ContainerJSON, error)
+	DescribeContainer(ctx context.Context, name string) (*types.ContainerJSON, error)
 	GetContainer(id string) (types.Container, error)
 	GetContainerAppList(name, image, state *string) (*[]model.MyAppList, *[]model.MyAppList)
 	GetContainerByName(name string) (*types.Container, error)
 	GetContainerLog(name string) ([]byte, error)
 	GetContainerStats() []model.DockerStatsModel
-	RecreateContainer(id string, notifyType codegen.NotificationType) (string, error)
+	RecreateContainer(ctx context.Context, id string, notifyType codegen.NotificationType) (string, error)
 	RemoveContainer(name string, update bool) error
 	RenameContainer(name, id string) (err error)
 	StartContainer(name string) error
@@ -639,9 +639,7 @@ func (ds *dockerService) CreateContainer(m model.CustomizationPostData, id strin
 	return containerDb.ID, err
 }
 
-func (ds *dockerService) RecreateContainer(id string, notificationType codegen.NotificationType) (string, error) {
-	ctx := context.Background()
-
+func (ds *dockerService) RecreateContainer(ctx context.Context, id string, notificationType codegen.NotificationType) (string, error) {
 	containerInfo, err := docker.Container(ctx, id)
 	if err != nil {
 		return "", err
@@ -934,8 +932,7 @@ func (ds *dockerService) GetContainerByName(name string) (*types.Container, erro
 }
 
 // 获取容器详情
-func (ds *dockerService) DescribeContainer(nameOrID string) (*types.ContainerJSON, error) {
-	ctx := context.Background()
+func (ds *dockerService) DescribeContainer(ctx context.Context, nameOrID string) (*types.ContainerJSON, error) {
 	return docker.Container(ctx, nameOrID)
 }
 
