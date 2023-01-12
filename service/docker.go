@@ -51,7 +51,7 @@ type DockerService interface {
 	// image
 	IsExistImage(imageName string) bool
 	PullImage(imageName, icon, name, ref string, notifyType codegen.NotificationType) error
-	PullNewImage(imageName, icon, name, ref string, notifyType codegen.NotificationType) error
+	PullNewImage(ctx context.Context, imageName, icon, name, ref string, notifyType codegen.NotificationType) error
 	RemoveImage(name string) error
 
 	// container
@@ -399,7 +399,7 @@ func (ds *dockerService) PullImage(imageName, icon, name, ref string, notificati
 	return nil
 }
 
-func (ds *dockerService) PullNewImage(imageName, icon, name, ref string, notificationType codegen.NotificationType) error {
+func (ds *dockerService) PullNewImage(ctx context.Context, imageName, icon, name, ref string, notificationType codegen.NotificationType) error {
 	if strings.HasPrefix(imageName, "sha256:") {
 		return fmt.Errorf("container uses a pinned image, and cannot be updated")
 	}
@@ -408,8 +408,6 @@ func (ds *dockerService) PullNewImage(imageName, icon, name, ref string, notific
 	if err != nil {
 		return err
 	}
-
-	ctx := context.Background()
 
 	imageInfo, err := docker.Image(ctx, imageName)
 	if err != nil {

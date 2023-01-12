@@ -126,6 +126,11 @@ func PublishEventWrapper(ctx context.Context, eventType message_bus.EventType, p
 		return
 	}
 
+	// merge with properties from context
+	for k, v := range common.PropertiesFromContext(ctx) {
+		properties[k] = v
+	}
+
 	response, err := MyService.MessageBus().PublishEventWithResponse(ctx, common.AppManagementServiceName, eventType.Name, properties)
 	if err != nil {
 		logger.Error("failed to publish event", zap.Error(err))

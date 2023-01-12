@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/IceWhaleTech/CasaOS-AppManagement/codegen"
+	"github.com/IceWhaleTech/CasaOS-AppManagement/common"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/pkg/docker"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/service"
 	v1 "github.com/IceWhaleTech/CasaOS-AppManagement/service/v1"
@@ -21,7 +22,8 @@ func (a *AppManagement) PullImages(ctx echo.Context, params codegen.PullImagesPa
 		If(params.NotificationType != nil, codegen.NotificationType(*params.NotificationType)).
 		Else(codegen.NotificationTypeNone)
 
-	backgroundCtx := context.Background()
+	// attach context key/value pairs from upstream
+	backgroundCtx := common.WithProperties(context.Background(), ContextMapFromQueryParams(ctx))
 
 	if params.ContainerIds != nil {
 		containerIDs := strings.Split(*params.ContainerIds, ",")
@@ -42,7 +44,7 @@ func (a *AppManagement) PullImages(ctx echo.Context, params codegen.PullImagesPa
 			appIcon := v1.AppIcon(containerInfo)
 
 			go func(containerID, imageName string, notificationType codegen.NotificationType) {
-				if err := service.MyService.Docker().PullNewImage(imageName, appIcon, appName, containerID, notificationType); err != nil {
+				if err := service.MyService.Docker().PullNewImage(backgroundCtx, imageName, appIcon, appName, containerID, notificationType); err != nil {
 					logger.Error("pull new image failed", zap.Error(err), zap.String("image", imageName))
 				}
 			}(containerID, imageName, notificationType)
