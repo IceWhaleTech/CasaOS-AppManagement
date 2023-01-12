@@ -36,6 +36,7 @@ import (
 	"github.com/docker/docker/api/types/mount"
 	"github.com/docker/docker/api/types/network"
 	client2 "github.com/docker/docker/client"
+	"github.com/docker/docker/pkg/jsonmessage"
 	"github.com/docker/go-connections/nat"
 )
 
@@ -983,17 +984,29 @@ func SendNotification(label, message, state string, finished, success bool, noti
 }
 
 func pullImageProgress(ctx context.Context, out io.ReadCloser, appName, notificationType string) {
-	buf := make([]byte, 2048*4)
-	for {
-		n, err := out.Read(buf)
-		if err != nil {
-			if err != io.EOF {
-				fmt.Println("read error:", err)
-			}
-			break
+	decoder := json.NewDecoder(out)
+	if decoder == nil {
+		logger.Error("failed to create json decoder")
+		return
+	}
+
+	for decoder.More() {
+		var message jsonmessage.JSONMessage
+		if err := decoder.Decode(&message); err != nil {
+			logger.Error("failed to decode json message", zap.Error(err))
+			continue
 		}
 
-		go PublishEventWrapper(ctx, common.EventTypeImagePullProgress, map[string]string{})
-		go SendNotification(appName, string(buf[:n]), "PULLING", false, true, notificationType)
+		progressMessage := ""
+		if message.Progress != nil {
+			progressMessage = message.Progress.String()
+		}
+
+		go PublishEventWrapper(ctx, common.EventTypeImagePullProgress, map[string]string{
+			common.PropertyTypeAppName.Name: appName,
+			common.PropertyTypeMessage.Name: progressMessage,
+		})
+
+		go SendNotification(appName, progressMessage, "PULLING", false, true, notificationType)
 	}
 }

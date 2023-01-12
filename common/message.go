@@ -121,7 +121,7 @@ var (
 		SourceID: AppManagementServiceName,
 		Name:     "docker:image:pull-begin",
 		PropertyTypeList: []message_bus.PropertyType{
-			PropertyTypeImageName,
+			PropertyTypeAppName,
 		},
 	}
 
@@ -129,8 +129,7 @@ var (
 		SourceID: AppManagementServiceName,
 		Name:     "docker:image:pull-progress",
 		PropertyTypeList: []message_bus.PropertyType{
-			PropertyTypeImageName,
-
+			PropertyTypeAppName,
 			PropertyTypeMessage,
 		},
 	}
@@ -139,7 +138,7 @@ var (
 		SourceID: AppManagementServiceName,
 		Name:     "docker:image:pull-end",
 		PropertyTypeList: []message_bus.PropertyType{
-			PropertyTypeImageName,
+			PropertyTypeAppName,
 		},
 	}
 
@@ -147,8 +146,7 @@ var (
 		SourceID: AppManagementServiceName,
 		Name:     "docker:image:pull-error",
 		PropertyTypeList: []message_bus.PropertyType{
-			PropertyTypeImageName,
-
+			PropertyTypeAppName,
 			PropertyTypeMessage,
 		},
 	}
