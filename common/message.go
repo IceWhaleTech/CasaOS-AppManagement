@@ -50,6 +50,7 @@ var EventTypes = []message_bus.EventType{
 	// app
 	EventTypeAppInstallBegin, EventTypeAppInstallEnd, EventTypeAppInstallError,
 	EventTypeAppUninstallBegin, EventTypeAppUninstallEnd, EventTypeAppUninstallError,
+	EventTypeAppUpdateBegin, EventTypeAppUpdateEnd, EventTypeAppUpdateError,
 
 	// image
 	EventTypeImagePullBegin, EventTypeImagePullProgress, EventTypeImagePullEnd, EventTypeImagePullError,
@@ -110,6 +111,26 @@ var (
 		Name:     "app:uninstall-error",
 		PropertyTypeList: []message_bus.PropertyType{
 			PropertyTypeAppName,
+			PropertyTypeMessage,
+		},
+	}
+
+	EventTypeAppUpdateBegin = message_bus.EventType{
+		SourceID:         AppManagementServiceName,
+		Name:             "app:update-begin",
+		PropertyTypeList: []message_bus.PropertyType{},
+	}
+
+	EventTypeAppUpdateEnd = message_bus.EventType{
+		SourceID:         AppManagementServiceName,
+		Name:             "app:update-end",
+		PropertyTypeList: []message_bus.PropertyType{},
+	}
+
+	EventTypeAppUpdateError = message_bus.EventType{
+		SourceID: AppManagementServiceName,
+		Name:     "app:update-error",
+		PropertyTypeList: []message_bus.PropertyType{
 			PropertyTypeMessage,
 		},
 	}

@@ -48,7 +48,14 @@ func (a *AppManagement) RecreateContainerByID(ctx echo.Context, id codegen.Conta
 	}
 
 	go func() {
+		go service.PublishEventWrapper(backgroundCtx, common.EventTypeAppUpdateBegin, map[string]string{})
+
+		defer service.PublishEventWrapper(backgroundCtx, common.EventTypeAppUpdateEnd, map[string]string{})
+
 		if err := service.MyService.Docker().RecreateContainer(backgroundCtx, id, pullLatestImage); err != nil {
+			go service.PublishEventWrapper(backgroundCtx, common.EventTypeAppUpdateError, map[string]string{
+				common.PropertyTypeMessage.Name: err.Error(),
+			})
 			logger.Error("error when trying to recreate container", zap.Error(err), zap.String("containerID", string(id)), zap.Bool("pull", pullLatestImage))
 		}
 	}()
