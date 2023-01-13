@@ -316,18 +316,18 @@ func UnInstallApp(c *gin.Context) {
 	}
 
 	// publish app installing event
-	go service.PublishEventWrapper(c.Request.Context(), common.EventTypeAppUninstallBegin, map[string]string{
+	go service.PublishEventWrapper(ctx, common.EventTypeAppUninstallBegin, map[string]string{
 		common.PropertyTypeAppName.Name: container.Config.Image,
 	})
 
-	defer service.PublishEventWrapper(c.Request.Context(), common.EventTypeAppUninstallEnd, map[string]string{
+	defer service.PublishEventWrapper(ctx, common.EventTypeAppUninstallEnd, map[string]string{
 		common.PropertyTypeAppName.Name: container.Config.Image,
 	})
 
 	// step：停止容器
 	err = service.MyService.Docker().StopContainer(containerID)
 	if err != nil {
-		go service.PublishEventWrapper(c.Request.Context(), common.EventTypeAppUninstallError, map[string]string{
+		go service.PublishEventWrapper(ctx, common.EventTypeAppUninstallError, map[string]string{
 			common.PropertyTypeAppName.Name: container.Config.Image,
 			common.PropertyTypeMessage.Name: err.Error(),
 		})
@@ -338,7 +338,7 @@ func UnInstallApp(c *gin.Context) {
 
 	err = service.MyService.Docker().RemoveContainer(containerID, false)
 	if err != nil {
-		go service.PublishEventWrapper(c.Request.Context(), common.EventTypeAppUninstallError, map[string]string{
+		go service.PublishEventWrapper(ctx, common.EventTypeAppUninstallError, map[string]string{
 			common.PropertyTypeAppName.Name: container.Config.Image,
 			common.PropertyTypeMessage.Name: err.Error(),
 		})
@@ -357,7 +357,7 @@ func UnInstallApp(c *gin.Context) {
 			if strings.Contains(v.Source, container.Name) {
 				path := filepath.Join(strings.Split(v.Source, container.Name)[0], container.Name)
 				if err := file.RMDir(path); err != nil {
-					go service.PublishEventWrapper(c.Request.Context(), common.EventTypeAppUninstallError, map[string]string{
+					go service.PublishEventWrapper(ctx, common.EventTypeAppUninstallError, map[string]string{
 						common.PropertyTypeAppName.Name: container.Config.Image,
 						common.PropertyTypeMessage.Name: err.Error(),
 					})

@@ -382,7 +382,7 @@ func (ds *dockerService) PullImage(ctx context.Context, imageName, appName strin
 	})
 
 	if err := docker.PullImage(ctx, imageName, types.ImagePullOptions{}, func(out io.ReadCloser) {
-		pullImageProgress(ctx, out, appName, "INSTALL")
+		pullImageProgressOld(ctx, out, appName, "INSTALL")
 	}); err != nil {
 		go PublishEventWrapper(ctx, common.EventTypeImagePullError, map[string]string{
 			common.PropertyTypeImageName.Name: imageName,
@@ -983,6 +983,28 @@ func SendNotification(label, message, state string, finished, success bool, noti
 	}
 }
 
+// Deprecated: Use pullImageProgress(...) instead.
+func pullImageProgressOld(ctx context.Context, out io.ReadCloser, appName, notificationType string) {
+	buf := make([]byte, 2048*4)
+	for {
+		n, err := out.Read(buf)
+		if err != nil {
+			if err != io.EOF {
+				fmt.Println("read error:", err)
+			}
+			break
+		}
+
+		message := string(buf[:n])
+
+		go PublishEventWrapper(ctx, common.EventTypeImagePullProgress, map[string]string{
+			common.PropertyTypeAppName.Name: appName,
+			common.PropertyTypeMessage.Name: message,
+		})
+		go SendNotification(appName, message, "PULLING", false, true, notificationType)
+	}
+}
+
 func pullImageProgress(ctx context.Context, out io.ReadCloser, appName, notificationType string) {
 	decoder := json.NewDecoder(out)
 	if decoder == nil {
@@ -1006,7 +1028,7 @@ func pullImageProgress(ctx context.Context, out io.ReadCloser, appName, notifica
 			common.PropertyTypeAppName.Name: appName,
 			common.PropertyTypeMessage.Name: progressMessage,
 		})
-
 		go SendNotification(appName, progressMessage, "PULLING", false, true, notificationType)
+
 	}
 }

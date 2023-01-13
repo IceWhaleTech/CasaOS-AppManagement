@@ -134,6 +134,7 @@ func PublishEventWrapper(ctx context.Context, eventType message_bus.EventType, p
 	response, err := MyService.MessageBus().PublishEventWithResponse(ctx, common.AppManagementServiceName, eventType.Name, properties)
 	if err != nil {
 		logger.Error("failed to publish event", zap.Error(err))
+		return
 	}
 	defer response.HTTPResponse.Body.Close()
 
