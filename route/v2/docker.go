@@ -9,9 +9,9 @@ import (
 	"github.com/IceWhaleTech/CasaOS-AppManagement/service"
 	"github.com/IceWhaleTech/CasaOS-Common/utils"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/logger"
+	"github.com/docker/docker/errdefs"
 	"github.com/labstack/echo/v4"
 	"go.uber.org/zap"
-	"gotest.tools/v3/assert/cmp"
 )
 
 func (a *AppManagement) CheckContainerHealthByID(ctx echo.Context, id codegen.ContainerID) error {
@@ -33,9 +33,9 @@ func (a *AppManagement) RecreateContainerByID(ctx echo.Context, id codegen.Conta
 	backgroundCtx := common.WithProperties(context.Background(), PropertiesFromQueryParams(ctx))
 
 	if _, err := service.MyService.Docker().DescribeContainer(backgroundCtx, id); err != nil {
-		message := err.Error()
 
-		if cmp.ErrorContains(err, "non-existing-container")().Success() {
+		message := err.Error()
+		if _, ok := err.(errdefs.ErrNotFound); ok {
 			return ctx.JSON(http.StatusNotFound, codegen.ResponseNotFound{Message: &message})
 		}
 

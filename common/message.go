@@ -91,7 +91,7 @@ var (
 
 	EventTypeAppUninstallBegin = message_bus.EventType{
 		SourceID: AppManagementServiceName,
-		Name:     "app:uninstal-begin",
+		Name:     "app:uninstall-begin",
 		PropertyTypeList: []message_bus.PropertyType{
 			PropertyTypeAppName,
 		},

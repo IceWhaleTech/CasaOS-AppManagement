@@ -395,17 +395,39 @@ func (ds *dockerService) PullImage(ctx context.Context, imageName, appName strin
 }
 
 func (ds *dockerService) PullLatestImage(ctx context.Context, imageName, appName string) error {
+	go PublishEventWrapper(ctx, common.EventTypeImagePullBegin, map[string]string{
+		common.PropertyTypeImageName.Name: imageName,
+	})
+
+	defer PublishEventWrapper(ctx, common.EventTypeImagePullEnd, map[string]string{
+		common.PropertyTypeImageName.Name: imageName,
+	})
+
 	if strings.HasPrefix(imageName, "sha256:") {
-		return fmt.Errorf("container uses a pinned image, and cannot be updated")
+		message := "container uses a pinned image, and cannot be updated"
+		go PublishEventWrapper(ctx, common.EventTypeImagePullError, map[string]string{
+			common.PropertyTypeImageName.Name: imageName,
+			common.PropertyTypeMessage.Name:   message,
+		})
+
+		return fmt.Errorf(message)
 	}
 
 	opts, err := docker.GetPullOptions(imageName)
 	if err != nil {
+		go PublishEventWrapper(ctx, common.EventTypeImagePullError, map[string]string{
+			common.PropertyTypeImageName.Name: imageName,
+			common.PropertyTypeMessage.Name:   err.Error(),
+		})
 		return err
 	}
 
 	imageInfo, err := docker.Image(ctx, imageName)
 	if err != nil {
+		go PublishEventWrapper(ctx, common.EventTypeImagePullError, map[string]string{
+			common.PropertyTypeImageName.Name: imageName,
+			common.PropertyTypeMessage.Name:   err.Error(),
+		})
 		return err
 	}
 
@@ -415,21 +437,12 @@ func (ds *dockerService) PullLatestImage(ctx context.Context, imageName, appName
 		return nil
 	}
 
-	go PublishEventWrapper(ctx, common.EventTypeImagePullBegin, map[string]string{
-		common.PropertyTypeImageName.Name: imageName,
-	})
-
-	defer PublishEventWrapper(ctx, common.EventTypeImagePullEnd, map[string]string{
-		common.PropertyTypeImageName.Name: imageName,
-	})
-
 	if err = docker.PullImage(ctx, imageName, opts, func(out io.ReadCloser) {
 		pullImageProgress(ctx, out, appName, "UPDATE")
 	}); err != nil {
 		go PublishEventWrapper(ctx, common.EventTypeImagePullError, map[string]string{
 			common.PropertyTypeImageName.Name: imageName,
-
-			common.PropertyTypeMessage.Name: err.Error(),
+			common.PropertyTypeMessage.Name:   err.Error(),
 		})
 		return err
 	}
@@ -635,6 +648,15 @@ func (ds *dockerService) RecreateContainer(ctx context.Context, id string, pull 
 	containerInfo, err := docker.Container(ctx, id)
 	if err != nil {
 		return err
+	}
+
+	if pull {
+		imageName := docker.ImageName(containerInfo)
+		if imageName != "" {
+			if err := ds.PullLatestImage(ctx, imageName, ""); err != nil {
+				logger.Error("pull new image failed", zap.Error(err), zap.String("image", imageName))
+			}
+		}
 	}
 
 	// Clone the old container
