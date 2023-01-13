@@ -7,7 +7,10 @@ import (
 	"github.com/IceWhaleTech/CasaOS-AppManagement/codegen"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/common"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/service"
+	"github.com/IceWhaleTech/CasaOS-Common/utils"
+	"github.com/IceWhaleTech/CasaOS-Common/utils/logger"
 	"github.com/labstack/echo/v4"
+	"go.uber.org/zap"
 	"gotest.tools/v3/assert/cmp"
 )
 
@@ -39,13 +42,18 @@ func (a *AppManagement) RecreateContainerByID(ctx echo.Context, id codegen.Conta
 		return ctx.JSON(http.StatusInternalServerError, codegen.ResponseNotFound{Message: &message})
 	}
 
-	result, err := service.MyService.Docker().RecreateContainer(backgroundCtx, id)
-	if err != nil {
-		message := err.Error()
-		return ctx.JSON(http.StatusInternalServerError, codegen.ResponseInternalServerError{Message: &message})
+	pullLatestImage := false
+	if params.Pull != nil {
+		pullLatestImage = *params.Pull
 	}
 
+	go func() {
+		if err := service.MyService.Docker().RecreateContainer(backgroundCtx, id, pullLatestImage); err != nil {
+			logger.Error("error when trying to recreate container", zap.Error(err), zap.String("containerID", string(id)), zap.Bool("pull", pullLatestImage))
+		}
+	}()
+
 	return ctx.JSON(http.StatusOK, codegen.ContainerRecreateOK{
-		Data: &result,
+		Message: utils.Ptr("Container is being recreated asynchronously"),
 	})
 }

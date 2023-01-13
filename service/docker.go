@@ -64,7 +64,7 @@ type DockerService interface {
 	GetContainerByName(name string) (*types.Container, error)
 	GetContainerLog(name string) ([]byte, error)
 	GetContainerStats() []model.DockerStatsModel
-	RecreateContainer(ctx context.Context, id string) (string, error)
+	RecreateContainer(ctx context.Context, id string, pull bool) error
 	RemoveContainer(name string, update bool) error
 	RenameContainer(name, id string) (err error)
 	StartContainer(name string) error
@@ -631,10 +631,10 @@ func (ds *dockerService) CreateContainer(m model.CustomizationPostData, id strin
 	return containerDb.ID, err
 }
 
-func (ds *dockerService) RecreateContainer(ctx context.Context, id string) (string, error) {
+func (ds *dockerService) RecreateContainer(ctx context.Context, id string, pull bool) error {
 	containerInfo, err := docker.Container(ctx, id)
 	if err != nil {
-		return "", err
+		return err
 	}
 
 	// Clone the old container
@@ -664,7 +664,7 @@ func (ds *dockerService) RecreateContainer(ctx context.Context, id string) (stri
 
 		return nil
 	}(); err != nil {
-		return "", err
+		return err
 	}
 
 	// stop old container if it is running
@@ -688,7 +688,7 @@ func (ds *dockerService) RecreateContainer(ctx context.Context, id string) (stri
 			}
 			return nil
 		}(); err != nil {
-			return newID, err
+			return err
 		}
 	}
 
@@ -734,7 +734,7 @@ func (ds *dockerService) RecreateContainer(ctx context.Context, id string) (stri
 				}
 				return nil
 			}(); err != nil {
-				return newID, err
+				return err
 			}
 
 			// remove the new container
@@ -757,7 +757,7 @@ func (ds *dockerService) RecreateContainer(ctx context.Context, id string) (stri
 				}
 				return nil
 			}(); err != nil {
-				return newID, err
+				return err
 			}
 		}
 	}
@@ -782,7 +782,7 @@ func (ds *dockerService) RecreateContainer(ctx context.Context, id string) (stri
 		}
 		return nil
 	}(); err != nil {
-		return newID, err
+		return err
 	}
 
 	// rename the new container
@@ -809,10 +809,10 @@ func (ds *dockerService) RecreateContainer(ctx context.Context, id string) (stri
 		}
 		return nil
 	}(); err != nil {
-		return newID, err
+		return err
 	}
 
-	return newID, nil
+	return nil
 }
 
 // 删除容器
