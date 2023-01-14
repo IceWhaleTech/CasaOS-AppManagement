@@ -203,6 +203,7 @@ paths:
       parameters:
         - $ref: "#/components/parameters/ContainerID"
         - $ref: "#/components/parameters/PullLatestImage"
+        - $ref: "#/components/parameters/Force"
       responses:
         "200":
           $ref: "#/components/responses/ContainerRecreateOK"
@@ -285,6 +286,13 @@ components:
     PullLatestImage:
       name: pull
       description: Try to pull the latest image from the registry
+      in: query
+      schema:
+        type: boolean
+        default: false
+
+    Force:
+      name: force
       in: query
       schema:
         type: boolean

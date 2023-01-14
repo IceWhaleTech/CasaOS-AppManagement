@@ -51,7 +51,7 @@ type DockerService interface {
 	// image
 	IsExistImage(imageName string) bool
 	PullImage(ctx context.Context, imageName, appName string) error
-	PullLatestImage(ctx context.Context, imageName, appName string) error
+	PullLatestImage(ctx context.Context, imageName, appName string) (bool, error)
 	RemoveImage(name string) error
 
 	// container
@@ -64,7 +64,7 @@ type DockerService interface {
 	GetContainerByName(name string) (*types.Container, error)
 	GetContainerLog(name string) ([]byte, error)
 	GetContainerStats() []model.DockerStatsModel
-	RecreateContainer(ctx context.Context, id string, pull bool) error
+	RecreateContainer(ctx context.Context, id string, pull bool, force bool) error
 	RemoveContainer(name string, update bool) error
 	RenameContainer(name, id string) (err error)
 	StartContainer(name string) error
@@ -394,13 +394,19 @@ func (ds *dockerService) PullImage(ctx context.Context, imageName, appName strin
 	return nil
 }
 
-func (ds *dockerService) PullLatestImage(ctx context.Context, imageName, appName string) error {
+// Try to pull latest image.
+//
+// It returns `true` if the image is updated.
+func (ds *dockerService) PullLatestImage(ctx context.Context, imageName, appName string) (bool, error) {
+	isImageUpdated := false
+
 	go PublishEventWrapper(ctx, common.EventTypeImagePullBegin, map[string]string{
 		common.PropertyTypeImageName.Name: imageName,
 	})
 
 	defer PublishEventWrapper(ctx, common.EventTypeImagePullEnd, map[string]string{
-		common.PropertyTypeImageName.Name: imageName,
+		common.PropertyTypeImageName.Name:    imageName,
+		common.PropertyTypeImageUpdated.Name: fmt.Sprint(isImageUpdated),
 	})
 
 	if strings.HasPrefix(imageName, "sha256:") {
@@ -410,7 +416,7 @@ func (ds *dockerService) PullLatestImage(ctx context.Context, imageName, appName
 			common.PropertyTypeMessage.Name:   message,
 		})
 
-		return fmt.Errorf(message)
+		return false, fmt.Errorf(message)
 	}
 
 	opts, err := docker.GetPullOptions(imageName)
@@ -419,22 +425,22 @@ func (ds *dockerService) PullLatestImage(ctx context.Context, imageName, appName
 			common.PropertyTypeImageName.Name: imageName,
 			common.PropertyTypeMessage.Name:   err.Error(),
 		})
-		return err
+		return false, err
 	}
 
-	imageInfo, err := docker.Image(ctx, imageName)
+	imageInfo1, err := docker.Image(ctx, imageName)
 	if err != nil {
 		go PublishEventWrapper(ctx, common.EventTypeImagePullError, map[string]string{
 			common.PropertyTypeImageName.Name: imageName,
 			common.PropertyTypeMessage.Name:   err.Error(),
 		})
-		return err
+		return false, err
 	}
 
-	if match, err := docker.CompareDigest(imageName, imageInfo.RepoDigests, opts.RegistryAuth); err != nil {
+	if match, err := docker.CompareDigest(imageName, imageInfo1.RepoDigests, opts.RegistryAuth); err != nil {
 		// do nothing
 	} else if match {
-		return nil
+		return false, nil
 	}
 
 	if err = docker.PullImage(ctx, imageName, opts, func(out io.ReadCloser) {
@@ -444,10 +450,20 @@ func (ds *dockerService) PullLatestImage(ctx context.Context, imageName, appName
 			common.PropertyTypeImageName.Name: imageName,
 			common.PropertyTypeMessage.Name:   err.Error(),
 		})
-		return err
+		return false, err
 	}
 
-	return nil
+	imageInfo2, err := docker.Image(ctx, imageName)
+	if err != nil {
+		go PublishEventWrapper(ctx, common.EventTypeImagePullError, map[string]string{
+			common.PropertyTypeImageName.Name: imageName,
+			common.PropertyTypeMessage.Name:   err.Error(),
+		})
+		return false, err
+	}
+
+	isImageUpdated = imageInfo1.ID != imageInfo2.ID
+	return isImageUpdated, nil
 }
 
 // param imageName 镜像名称
@@ -644,19 +660,26 @@ func (ds *dockerService) CreateContainer(m model.CustomizationPostData, id strin
 	return containerDb.ID, err
 }
 
-func (ds *dockerService) RecreateContainer(ctx context.Context, id string, pull bool) error {
+func (ds *dockerService) RecreateContainer(ctx context.Context, id string, pull bool, force bool) error {
 	containerInfo, err := docker.Container(ctx, id)
 	if err != nil {
 		return err
 	}
 
+	isImageUpdated := false
 	if pull {
 		imageName := docker.ImageName(containerInfo)
 		if imageName != "" {
-			if err := ds.PullLatestImage(ctx, imageName, ""); err != nil {
+			_isImageUpdated, err := ds.PullLatestImage(ctx, imageName, "")
+			if err != nil {
 				logger.Error("pull new image failed", zap.Error(err), zap.String("image", imageName))
 			}
+			isImageUpdated = _isImageUpdated
 		}
+	}
+
+	if !force && !isImageUpdated {
+		return nil
 	}
 
 	// Clone the old container

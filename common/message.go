@@ -44,6 +44,11 @@ var (
 		Description: utils.Ptr("name of the image"),
 		Example:     utils.Ptr("hello-world:latest"),
 	}
+
+	PropertyTypeImageUpdated = message_bus.PropertyType{
+		Name:        "docker:image:updated",
+		Description: utils.Ptr("true if image is updated"),
+	}
 )
 
 var EventTypes = []message_bus.EventType{
@@ -160,6 +165,7 @@ var (
 		Name:     "docker:image:pull-end",
 		PropertyTypeList: []message_bus.PropertyType{
 			PropertyTypeAppName,
+			PropertyTypeImageUpdated,
 		},
 	}
 

@@ -38,7 +38,8 @@ func (a *AppManagement) PullImages(ctx echo.Context, params codegen.PullImagesPa
 			appName := v1.AppName(containerInfo)
 
 			go func(containerID, imageName string) {
-				if err := service.MyService.Docker().PullLatestImage(backgroundCtx, imageName, appName); err != nil {
+				_, err := service.MyService.Docker().PullLatestImage(backgroundCtx, imageName, appName)
+				if err != nil {
 					logger.Error("pull new image failed", zap.Error(err), zap.String("image", imageName))
 				}
 			}(containerID, imageName)

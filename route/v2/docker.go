@@ -47,12 +47,17 @@ func (a *AppManagement) RecreateContainerByID(ctx echo.Context, id codegen.Conta
 		pullLatestImage = *params.Pull
 	}
 
+	force := false
+	if params.Force != nil {
+		force = *params.Force
+	}
+
 	go func() {
 		go service.PublishEventWrapper(backgroundCtx, common.EventTypeAppUpdateBegin, map[string]string{})
 
 		defer service.PublishEventWrapper(backgroundCtx, common.EventTypeAppUpdateEnd, map[string]string{})
 
-		if err := service.MyService.Docker().RecreateContainer(backgroundCtx, id, pullLatestImage); err != nil {
+		if err := service.MyService.Docker().RecreateContainer(backgroundCtx, id, pullLatestImage, force); err != nil {
 			go service.PublishEventWrapper(backgroundCtx, common.EventTypeAppUpdateError, map[string]string{
 				common.PropertyTypeMessage.Name: err.Error(),
 			})
