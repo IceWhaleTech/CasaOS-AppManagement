@@ -1,7 +1,6 @@
 package v1
 
 import (
-	"io"
 	"strconv"
 	"strings"
 
@@ -143,19 +142,6 @@ func CategoryList(c *gin.Context) {
 	list = append(list[:0], model.CategoryList{Count: count, Name: "All", Font: "apps"})
 	list = append(list, rear...)
 	c.JSON(common_err.SUCCESS, &modelCommon.Result{Success: common_err.SUCCESS, Message: common_err.GetMsg(common_err.SUCCESS), Data: list})
-}
-
-// @Summary 分享该应用配置
-// @Produce  application/json
-// @Accept application/json
-// @Tags app
-// @Security ApiKeyAuth
-// @Success 200 {string} string "ok"
-// @Router /app/share [post]
-func ShareAppFile(c *gin.Context) {
-	str, _ := io.ReadAll(c.Request.Body)
-	content := service.MyService.V1AppStore().ShareAppFile(str)
-	c.JSON(common_err.SUCCESS, jsoniter.RawMessage(content))
 }
 
 func updateState(serverAppList *[]model.ServerAppList, myAppList *[]model.MyAppList) []model.ServerAppList {

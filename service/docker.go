@@ -26,6 +26,7 @@ import (
 	"github.com/IceWhaleTech/CasaOS-Common/utils/file"
 	httpUtil "github.com/IceWhaleTech/CasaOS-Common/utils/http"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/logger"
+	"github.com/IceWhaleTech/CasaOS-Common/utils/random"
 	timeutils "github.com/IceWhaleTech/CasaOS-Common/utils/time"
 
 	//"github.com/containerd/containerd/oci"
@@ -36,6 +37,7 @@ import (
 	"github.com/docker/docker/api/types/mount"
 	"github.com/docker/docker/api/types/network"
 	client2 "github.com/docker/docker/client"
+	"github.com/docker/docker/pkg/jsonmessage"
 	"github.com/docker/go-connections/nat"
 )
 
@@ -49,20 +51,21 @@ var (
 type DockerService interface {
 	// image
 	IsExistImage(imageName string) bool
-	PullImage(imageName string, icon, name string) error
+	PullImage(ctx context.Context, imageName, appName string) error
+	PullLatestImage(ctx context.Context, imageName, appName string) (bool, error)
 	RemoveImage(name string) error
 
 	// container
 	CheckContainerHealth(id string) (bool, error)
-	CloneContainer(info *types.ContainerJSON) (containerID string, err error)
 	CreateContainer(m model.CustomizationPostData, id string) (containerID string, err error)
 	CreateContainerShellSession(container, row, col string) (hr types.HijackedResponse, err error)
-	DescribeContainer(name string) (*types.ContainerJSON, error)
+	DescribeContainer(ctx context.Context, name string) (*types.ContainerJSON, error)
 	GetContainer(id string) (types.Container, error)
 	GetContainerAppList(name, image, state *string) (*[]model.MyAppList, *[]model.MyAppList)
 	GetContainerByName(name string) (*types.Container, error)
 	GetContainerLog(name string) ([]byte, error)
 	GetContainerStats() []model.DockerStatsModel
+	RecreateContainer(ctx context.Context, id string, pull bool, force bool) error
 	RemoveContainer(name string, update bool) error
 	RenameContainer(name, id string) (err error)
 	StartContainer(name string) error
@@ -78,7 +81,7 @@ type DockerService interface {
 type dockerService struct{}
 
 func getContainerStats() {
-	cli, err := client2.NewClientWithOpts(client2.FromEnv)
+	cli, err := client2.NewClientWithOpts(client2.FromEnv, client2.WithAPIVersionNegotiation())
 	if err != nil {
 		return
 	}
@@ -210,7 +213,7 @@ func (ds *dockerService) CheckContainerHealth(id string) (bool, error) {
 // 获取我的应用列表
 func (ds *dockerService) GetContainer(id string) (types.Container, error) {
 	// 获取docker应用
-	cli, err := client2.NewClientWithOpts(client2.FromEnv)
+	cli, err := client2.NewClientWithOpts(client2.FromEnv, client2.WithAPIVersionNegotiation())
 	if err != nil {
 		logger.Error("Failed to init client", zap.Any("err", err))
 		return types.Container{}, err
@@ -233,7 +236,7 @@ func (ds *dockerService) GetContainer(id string) (types.Container, error) {
 
 // 获取我的应用列表
 func (ds *dockerService) GetContainerAppList(name, image, state *string) (*[]model.MyAppList, *[]model.MyAppList) {
-	cli, err := client2.NewClientWithOpts(client2.FromEnv, client2.WithTimeout(time.Second*5))
+	cli, err := client2.NewClientWithOpts(client2.FromEnv, client2.WithAPIVersionNegotiation(), client2.WithTimeout(time.Second*5))
 	if err != nil {
 		logger.Error("Failed to init client", zap.Any("err", err))
 	}
@@ -327,7 +330,7 @@ func (ds *dockerService) GetContainerAppList(name, image, state *string) (*[]mod
 }
 
 func (ds *dockerService) CreateContainerShellSession(container, row, col string) (hr types.HijackedResponse, err error) {
-	cli, err := client2.NewClientWithOpts(client2.FromEnv)
+	cli, err := client2.NewClientWithOpts(client2.FromEnv, client2.WithAPIVersionNegotiation())
 	ctx := context.Background()
 	// 执行/bin/bash命令
 	ir, err := cli.ContainerExecCreate(ctx, container, types.ExecConfig{
@@ -353,7 +356,7 @@ func (ds *dockerService) CreateContainerShellSession(container, row, col string)
 
 // 检查镜像是否存在
 func (ds *dockerService) IsExistImage(imageName string) bool {
-	cli, err := client2.NewClientWithOpts(client2.FromEnv)
+	cli, err := client2.NewClientWithOpts(client2.FromEnv, client2.WithAPIVersionNegotiation())
 	if err != nil {
 		return false
 	}
@@ -371,65 +374,98 @@ func (ds *dockerService) IsExistImage(imageName string) bool {
 }
 
 // 安装镜像
-func (ds *dockerService) PullImage(imageName string, icon, name string) error {
-	cli, err := client2.NewClientWithOpts(client2.FromEnv)
-	if err != nil {
-		return err
-	}
-	defer cli.Close()
-	out, err := cli.ImagePull(context.Background(), imageName, types.ImagePullOptions{})
-	if err != nil {
-		return err
-	}
-	defer out.Close()
-	if err != nil {
-		return err
-	}
-	// io.Copy()
-	buf := make([]byte, 2048*4)
-	for {
-		n, err := out.Read(buf)
-		if err != nil {
-			if err != io.EOF {
-				fmt.Println("read error:", err)
-			}
-			break
-		}
-		if len(icon) > 0 && len(name) > 0 {
-			notify := notify.Application{
-				Icon:     icon,
-				Name:     name,
-				State:    "PULLING",
-				Type:     "INSTALL",
-				Finished: false,
-				Success:  true,
-				Message:  string(buf[:n]),
-			}
+func (ds *dockerService) PullImage(ctx context.Context, imageName, appName string) error {
+	go PublishEventWrapper(ctx, common.EventTypeImagePullBegin, map[string]string{
+		common.PropertyTypeImageName.Name: imageName,
+	})
 
-			if err := MyService.Notify().SendInstallAppBySocket(notify); err != nil {
-				logger.Error("send install app by socket error: ", zap.Error(err), zap.Any("notify", notify))
-				return err
-			}
-		}
+	defer PublishEventWrapper(ctx, common.EventTypeImagePullEnd, map[string]string{
+		common.PropertyTypeImageName.Name: imageName,
+	})
 
+	if err := docker.PullImage(ctx, imageName, types.ImagePullOptions{}, func(out io.ReadCloser) {
+		pullImageProgressOld(ctx, out, appName, "INSTALL")
+	}); err != nil {
+		go PublishEventWrapper(ctx, common.EventTypeImagePullError, map[string]string{
+			common.PropertyTypeImageName.Name: imageName,
+
+			common.PropertyTypeMessage.Name: err.Error(),
+		})
 	}
-	return err
+
+	return nil
 }
 
-func (ds *dockerService) CloneContainer(info *types.ContainerJSON) (containerID string, err error) {
-	cli, err := client2.NewClientWithOpts(client2.FromEnv)
-	if err != nil {
-		return "", err
-	}
-	defer cli.Close()
+// Try to pull latest image.
+//
+// It returns `true` if the image is updated.
+func (ds *dockerService) PullLatestImage(ctx context.Context, imageName, appName string) (bool, error) {
+	isImageUpdated := false
 
-	config := &network.NetworkingConfig{EndpointsConfig: info.NetworkSettings.Networks}
+	go PublishEventWrapper(ctx, common.EventTypeImagePullBegin, map[string]string{
+		common.PropertyTypeImageName.Name: imageName,
+	})
 
-	container, err := cli.ContainerCreate(context.Background(), info.Config, info.HostConfig, config, nil, info.Name)
-	if err != nil {
-		return "", err
+	defer PublishEventWrapper(ctx, common.EventTypeImagePullEnd, map[string]string{
+		common.PropertyTypeImageName.Name:    imageName,
+		common.PropertyTypeImageUpdated.Name: fmt.Sprint(isImageUpdated),
+	})
+
+	if strings.HasPrefix(imageName, "sha256:") {
+		message := "container uses a pinned image, and cannot be updated"
+		go PublishEventWrapper(ctx, common.EventTypeImagePullError, map[string]string{
+			common.PropertyTypeImageName.Name: imageName,
+			common.PropertyTypeMessage.Name:   message,
+		})
+
+		return false, fmt.Errorf(message)
 	}
-	return container.ID, err
+
+	opts, err := docker.GetPullOptions(imageName)
+	if err != nil {
+		go PublishEventWrapper(ctx, common.EventTypeImagePullError, map[string]string{
+			common.PropertyTypeImageName.Name: imageName,
+			common.PropertyTypeMessage.Name:   err.Error(),
+		})
+		return false, err
+	}
+
+	imageInfo1, err := docker.Image(ctx, imageName)
+	if err != nil {
+		go PublishEventWrapper(ctx, common.EventTypeImagePullError, map[string]string{
+			common.PropertyTypeImageName.Name: imageName,
+			common.PropertyTypeMessage.Name:   err.Error(),
+		})
+		return false, err
+	}
+
+	if match, err := docker.CompareDigest(imageName, imageInfo1.RepoDigests, opts.RegistryAuth); err != nil {
+		// do nothing
+	} else if match {
+		return false, nil
+	}
+
+	if err = docker.PullImage(ctx, imageName, opts, func(out io.ReadCloser) {
+		pullImageProgress(ctx, out, appName, "UPDATE")
+	}); err != nil {
+		go PublishEventWrapper(ctx, common.EventTypeImagePullError, map[string]string{
+			common.PropertyTypeImageName.Name: imageName,
+			common.PropertyTypeMessage.Name:   err.Error(),
+		})
+		return false, err
+	}
+
+	imageInfo2, err := docker.Image(ctx, imageName)
+	if err != nil {
+		go PublishEventWrapper(ctx, common.EventTypeImagePullError, map[string]string{
+			common.PropertyTypeImageName.Name: imageName,
+			common.PropertyTypeMessage.Name:   err.Error(),
+		})
+		return false, err
+	}
+
+	isImageUpdated = imageInfo1.ID != imageInfo2.ID
+	return isImageUpdated, nil
 }
 
 // param imageName 镜像名称
@@ -443,7 +479,7 @@ func (ds *dockerService) CreateContainer(m model.CustomizationPostData, id strin
 		m.NetworkModel = "bridge"
 	}
 
-	cli, err := client2.NewClientWithOpts(client2.FromEnv)
+	cli, err := client2.NewClientWithOpts(client2.FromEnv, client2.WithAPIVersionNegotiation())
 	if err != nil {
 		return "", err
 	}
@@ -626,35 +662,228 @@ func (ds *dockerService) CreateContainer(m model.CustomizationPostData, id strin
 	return containerDb.ID, err
 }
 
-// 删除容器
-func (ds *dockerService) RemoveContainer(name string, update bool) error {
-	cli, err := client2.NewClientWithOpts(client2.FromEnv)
+func (ds *dockerService) RecreateContainer(ctx context.Context, id string, pull bool, force bool) error {
+	containerInfo, err := docker.Container(ctx, id)
 	if err != nil {
 		return err
 	}
-	defer cli.Close()
-	err = cli.ContainerRemove(context.Background(), name, types.ContainerRemoveOptions{})
 
-	// 路径处理
-	if !update {
-		path := docker.GetDir(name, "/config")
-		if !file.CheckNotExist(path) {
-			if err := file.RMDir(path); err != nil {
+	isImageUpdated := false
+	if pull {
+		imageName := docker.ImageName(containerInfo)
+		if imageName != "" {
+			_isImageUpdated, err := ds.PullLatestImage(ctx, imageName, "")
+			if err != nil {
+				logger.Error("pull new image failed", zap.Error(err), zap.String("image", imageName))
+			}
+			isImageUpdated = _isImageUpdated
+		}
+	}
+
+	if !force && !isImageUpdated {
+		return nil
+	}
+
+	// Clone the old container
+	var newID string
+	if err := func() error {
+		tempName := fmt.Sprintf("%s-%s", containerInfo.Name, random.RandomString(4, false))
+
+		go PublishEventWrapper(ctx, common.EventTypeContainerCreateBegin, map[string]string{
+			common.PropertyTypeContainerName.Name: tempName,
+		})
+
+		defer PublishEventWrapper(ctx, common.EventTypeContainerCreateEnd, map[string]string{
+			common.PropertyTypeContainerID.Name:   newID,
+			common.PropertyTypeContainerName.Name: tempName,
+		})
+
+		_newID, err := docker.CloneContainer(ctx, id, tempName)
+		if err != nil {
+			go PublishEventWrapper(ctx, common.EventTypeContainerCreateError, map[string]string{
+				common.PropertyTypeContainerName.Name: tempName,
+
+				common.PropertyTypeMessage.Name: err.Error(),
+			})
+			return err
+		}
+		newID = _newID
+
+		return nil
+	}(); err != nil {
+		return err
+	}
+
+	// stop old container if it is running
+	if containerInfo.State.Running {
+		if err := func() error {
+			go PublishEventWrapper(ctx, common.EventTypeContainerStopBegin, map[string]string{
+				common.PropertyTypeContainerID.Name: id,
+			})
+
+			defer PublishEventWrapper(ctx, common.EventTypeContainerStopEnd, map[string]string{
+				common.PropertyTypeContainerID.Name: id,
+			})
+
+			if err := docker.StopContainer(ctx, id); err != nil {
+				go PublishEventWrapper(ctx, common.EventTypeContainerStopError, map[string]string{
+					common.PropertyTypeContainerID.Name: id,
+
+					common.PropertyTypeMessage.Name: err.Error(),
+				})
+				return err
+			}
+			return nil
+		}(); err != nil {
+			return err
+		}
+	}
+
+	// start new container
+	if err := func() error {
+		go PublishEventWrapper(ctx, common.EventTypeContainerStartBegin, map[string]string{
+			common.PropertyTypeContainerID.Name: newID,
+		})
+
+		defer PublishEventWrapper(ctx, common.EventTypeContainerStartEnd, map[string]string{
+			common.PropertyTypeContainerID.Name: newID,
+		})
+
+		if err := docker.StartContainer(ctx, newID); err != nil {
+			go PublishEventWrapper(ctx, common.EventTypeContainerStartError, map[string]string{
+				common.PropertyTypeContainerID.Name: newID,
+
+				common.PropertyTypeMessage.Name: err.Error(),
+			})
+			return err
+		}
+		return nil
+	}(); err != nil {
+		// if failed to start new container and old container was running...
+		if containerInfo.State.Running {
+			// start the old container
+			if err := func() error {
+				go PublishEventWrapper(ctx, common.EventTypeContainerStartBegin, map[string]string{
+					common.PropertyTypeContainerID.Name: id,
+				})
+
+				defer PublishEventWrapper(ctx, common.EventTypeContainerStartEnd, map[string]string{
+					common.PropertyTypeContainerID.Name: id,
+				})
+
+				if err := docker.StartContainer(ctx, id); err != nil {
+					go PublishEventWrapper(ctx, common.EventTypeContainerStartError, map[string]string{
+						common.PropertyTypeContainerID.Name: id,
+
+						common.PropertyTypeMessage.Name: err.Error(),
+					})
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return err
+			}
+
+			// remove the new container
+			if err := func() error {
+				go PublishEventWrapper(ctx, common.EventTypeContainerRemoveBegin, map[string]string{
+					common.PropertyTypeContainerID.Name: newID,
+				})
+
+				defer PublishEventWrapper(ctx, common.EventTypeContainerRemoveEnd, map[string]string{
+					common.PropertyTypeContainerID.Name: newID,
+				})
+
+				if err := docker.RemoveContainer(ctx, newID); err != nil {
+					go PublishEventWrapper(ctx, common.EventTypeContainerRemoveError, map[string]string{
+						common.PropertyTypeContainerID.Name: newID,
+
+						common.PropertyTypeMessage.Name: err.Error(),
+					})
+					return err
+				}
+				return nil
+			}(); err != nil {
 				return err
 			}
 		}
 	}
 
-	if err != nil {
+	// remove the old container if new container started successfully
+	if err := func() error {
+		go PublishEventWrapper(ctx, common.EventTypeContainerRemoveBegin, map[string]string{
+			common.PropertyTypeContainerID.Name: containerInfo.ID,
+		})
+
+		defer PublishEventWrapper(ctx, common.EventTypeContainerRemoveEnd, map[string]string{
+			common.PropertyTypeContainerID.Name: containerInfo.ID,
+		})
+
+		if err := docker.RemoveContainer(ctx, containerInfo.ID); err != nil {
+			go PublishEventWrapper(ctx, common.EventTypeContainerRemoveError, map[string]string{
+				common.PropertyTypeContainerID.Name: containerInfo.ID,
+
+				common.PropertyTypeMessage.Name: err.Error(),
+			})
+			return err
+		}
+		return nil
+	}(); err != nil {
 		return err
 	}
 
-	return err
+	// rename the new container
+	if err := func() error {
+		go PublishEventWrapper(ctx, common.EventTypeContainerRenameBegin, map[string]string{
+			common.PropertyTypeContainerID.Name:   newID,
+			common.PropertyTypeContainerName.Name: containerInfo.Name,
+		})
+
+		defer PublishEventWrapper(ctx, common.EventTypeContainerRenameEnd, map[string]string{
+			common.PropertyTypeContainerID.Name:   newID,
+			common.PropertyTypeContainerName.Name: containerInfo.Name,
+		})
+
+		if err := docker.RenameContainer(ctx, newID, containerInfo.Name); err != nil {
+			go PublishEventWrapper(ctx, common.EventTypeContainerRenameError, map[string]string{
+				common.PropertyTypeContainerID.Name:   newID,
+				common.PropertyTypeContainerName.Name: containerInfo.Name,
+
+				common.PropertyTypeMessage.Name: err.Error(),
+			})
+
+			return err
+		}
+		return nil
+	}(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// 删除容器
+func (ds *dockerService) RemoveContainer(name string, update bool) error {
+	ctx := context.Background()
+	if err := docker.RemoveContainer(ctx, name); err != nil {
+		return err
+	}
+
+	if update {
+		return nil
+	}
+
+	// 路径处理
+	if path := docker.GetDir(name, "/config"); !file.CheckNotExist(path) {
+		return file.RMDir(path)
+	}
+
+	return nil
 }
 
 // 删除镜像
 func (ds *dockerService) RemoveImage(name string) error {
-	cli, err := client2.NewClientWithOpts(client2.FromEnv)
+	cli, err := client2.NewClientWithOpts(client2.FromEnv, client2.WithAPIVersionNegotiation())
 	if err != nil {
 		return err
 	}
@@ -668,35 +897,6 @@ func (ds *dockerService) RemoveImage(name string) error {
 
 Loop:
 	for _, ig := range imageList {
-		for _, i := range ig.RepoTags {
-			if i == name {
-				imageID = ig.ID
-				break Loop
-			}
-		}
-	}
-	_, err = cli.ImageRemove(context.Background(), imageID, types.ImageRemoveOptions{})
-	return err
-}
-
-func RemoveImage(name string) error {
-	cli, err := client2.NewClientWithOpts(client2.FromEnv)
-	if err != nil {
-		return err
-	}
-	defer cli.Close()
-
-	imageList, err := cli.ImageList(context.Background(), types.ImageListOptions{})
-	if err != nil {
-		return err
-	}
-
-	imageID := ""
-
-Loop:
-	for _, ig := range imageList {
-		fmt.Println(ig.RepoDigests)
-		fmt.Println(ig.Containers)
 		for _, i := range ig.RepoTags {
 			if i == name {
 				imageID = ig.ID
@@ -710,29 +910,19 @@ Loop:
 
 // 停止镜像
 func (ds *dockerService) StopContainer(id string) error {
-	cli, err := client2.NewClientWithOpts(client2.FromEnv)
-	if err != nil {
-		return err
-	}
-	defer cli.Close()
-	err = cli.ContainerStop(context.Background(), id, container.StopOptions{})
-	return err
+	ctx := context.Background()
+	return docker.StopContainer(ctx, id)
 }
 
 // 启动容器
 func (ds *dockerService) StartContainer(name string) error {
-	cli, err := client2.NewClientWithOpts(client2.FromEnv)
-	if err != nil {
-		return err
-	}
-	defer cli.Close()
-	err = cli.ContainerStart(context.Background(), name, types.ContainerStartOptions{})
-	return err
+	ctx := context.Background()
+	return docker.StartContainer(ctx, name)
 }
 
 // 查看日志
 func (ds *dockerService) GetContainerLog(name string) ([]byte, error) {
-	cli, err := client2.NewClientWithOpts(client2.FromEnv)
+	cli, err := client2.NewClientWithOpts(client2.FromEnv, client2.WithAPIVersionNegotiation())
 	if err != nil {
 		return []byte(""), err
 	}
@@ -752,7 +942,7 @@ func (ds *dockerService) GetContainerLog(name string) ([]byte, error) {
 }
 
 func (ds *dockerService) GetContainerByName(name string) (*types.Container, error) {
-	cli, _ := client2.NewClientWithOpts(client2.FromEnv)
+	cli, _ := client2.NewClientWithOpts(client2.FromEnv, client2.WithAPIVersionNegotiation())
 	defer cli.Close()
 	filter := filters.NewArgs()
 	filter.Add("name", name)
@@ -767,46 +957,28 @@ func (ds *dockerService) GetContainerByName(name string) (*types.Container, erro
 }
 
 // 获取容器详情
-func (ds *dockerService) DescribeContainer(nameOrID string) (*types.ContainerJSON, error) {
-	cli, err := client2.NewClientWithOpts(client2.FromEnv)
-	if err != nil {
-		return &types.ContainerJSON{}, err
-	}
-	defer cli.Close()
-	d, err := cli.ContainerInspect(context.Background(), nameOrID)
-	if err != nil {
-		return &types.ContainerJSON{}, err
-	}
-	return &d, nil
+func (ds *dockerService) DescribeContainer(ctx context.Context, nameOrID string) (*types.ContainerJSON, error) {
+	return docker.Container(ctx, nameOrID)
 }
 
 // 更新容器名称
 // param name 容器名称
 // param id 老的容器名称
 func (ds *dockerService) RenameContainer(name, id string) (err error) {
-	cli, err := client2.NewClientWithOpts(client2.FromEnv)
-	if err != nil {
-		return err
-	}
-	defer cli.Close()
-
-	err = cli.ContainerRename(context.Background(), id, name)
-	if err != nil {
-		return err
-	}
-	return
+	ctx := context.Background()
+	return docker.RenameContainer(ctx, id, name)
 }
 
 // 获取网络列表
 func (ds *dockerService) GetNetworkList() []types.NetworkResource {
-	cli, _ := client2.NewClientWithOpts(client2.FromEnv)
+	cli, _ := client2.NewClientWithOpts(client2.FromEnv, client2.WithAPIVersionNegotiation())
 	defer cli.Close()
 	networks, _ := cli.NetworkList(context.Background(), types.NetworkListOptions{})
 	return networks
 }
 
 func (ds *dockerService) GetServerInfo() (types.Info, error) {
-	cli, err := client2.NewClientWithOpts(client2.FromEnv)
+	cli, err := client2.NewClientWithOpts(client2.FromEnv, client2.WithAPIVersionNegotiation())
 	if err != nil {
 		return types.Info{}, err
 	}
@@ -835,4 +1007,75 @@ func getV1AppStoreID(m *types.Container) uint {
 
 	logger.Info("the container does not have a v1 app store id", zap.String("containerID", m.ID), zap.String("containerName", m.Names[0]))
 	return 0
+}
+
+// Deprecated: Use PublishEventWrapper(...) for message bus instead.
+func SendNotification(label, message, state string, finished, success bool, notificationType string) {
+	if len(label) == 0 {
+		return
+	}
+
+	notify := notify.Application{
+		Icon:     "icon",
+		Name:     label,
+		State:    state,
+		Type:     strings.ToUpper(notificationType),
+		Finished: finished,
+		Success:  success,
+		Message:  message,
+	}
+
+	if err := MyService.Notify().SendInstallAppBySocket(notify); err != nil {
+		logger.Error("send install app by socket error: ", zap.Error(err), zap.Any("notify", notify))
+	}
+}
+
+// Deprecated: Use pullImageProgress(...) instead.
+func pullImageProgressOld(ctx context.Context, out io.ReadCloser, appName, notificationType string) {
+	buf := make([]byte, 2048*4)
+	for {
+		n, err := out.Read(buf)
+		if err != nil {
+			if err != io.EOF {
+				fmt.Println("read error:", err)
+			}
+			break
+		}
+
+		message := string(buf[:n])
+
+		go PublishEventWrapper(ctx, common.EventTypeImagePullProgress, map[string]string{
+			common.PropertyTypeAppName.Name: appName,
+			common.PropertyTypeMessage.Name: message,
+		})
+		go SendNotification(appName, message, "PULLING", false, true, notificationType)
+	}
+}
+
+func pullImageProgress(ctx context.Context, out io.ReadCloser, appName, notificationType string) {
+	decoder := json.NewDecoder(out)
+	if decoder == nil {
+		logger.Error("failed to create json decoder")
+		return
+	}
+
+	for decoder.More() {
+		var message jsonmessage.JSONMessage
+		if err := decoder.Decode(&message); err != nil {
+			logger.Error("failed to decode json message", zap.Error(err))
+			continue
+		}
+
+		progressMessage := ""
+		if message.Progress != nil {
+			progressMessage = message.Progress.String()
+		}
+
+		go PublishEventWrapper(ctx, common.EventTypeImagePullProgress, map[string]string{
+			common.PropertyTypeAppName.Name: appName,
+			common.PropertyTypeMessage.Name: progressMessage,
+		})
+		go SendNotification(appName, progressMessage, "PULLING", false, true, notificationType)
+
+	}
 }

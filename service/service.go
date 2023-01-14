@@ -10,11 +10,18 @@
 package service
 
 import (
+	"context"
+	"fmt"
+	"net/http"
+
 	"github.com/IceWhaleTech/CasaOS-AppManagement/codegen/message_bus"
+	"github.com/IceWhaleTech/CasaOS-AppManagement/common"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/pkg/config"
 	v1 "github.com/IceWhaleTech/CasaOS-AppManagement/service/v1"
 	v2 "github.com/IceWhaleTech/CasaOS-AppManagement/service/v2"
 	"github.com/IceWhaleTech/CasaOS-Common/external"
+	"github.com/IceWhaleTech/CasaOS-Common/utils/logger"
+	"go.uber.org/zap"
 )
 
 var MyService Services
@@ -23,7 +30,7 @@ type Services interface {
 	V1AppStore() v1.AppStore
 	V2AppStore() *v2.AppStore
 
-	Git() *GitService
+	// Git() *GitService
 	Compose() *v2.ComposeService
 	Docker() DockerService
 	Gateway() external.ManagementService
@@ -50,7 +57,7 @@ func NewService(RuntimePath string) Services {
 		v2appStore: v2appStore,
 		compose:    v2.NewComposeService(),
 		docker:     NewDockerService(),
-		git:        NewGitService(),
+		// git:        NewGitService(),
 	}
 }
 
@@ -58,7 +65,7 @@ type store struct {
 	v1appStore v1.AppStore
 	v2appStore *v2.AppStore
 
-	git     *GitService
+	// git     *GitService
 	compose *v2.ComposeService
 	docker  DockerService
 	gateway external.ManagementService
@@ -81,9 +88,9 @@ func (c *store) V2AppStore() *v2.AppStore {
 	return c.v2appStore
 }
 
-func (c *store) Git() *GitService {
-	return c.git
-}
+// func (c *store) Git() *GitService {
+// 	return c.git
+// }
 
 func (c *store) Compose() *v2.ComposeService {
 	return c.compose
@@ -111,4 +118,27 @@ func (c *store) MessageBus() *message_bus.ClientWithResponses {
 	})
 
 	return client
+}
+
+func PublishEventWrapper(ctx context.Context, eventType message_bus.EventType, properties map[string]string) {
+	if MyService == nil {
+		fmt.Println("failed to publish event - messsage bus service not initialized")
+		return
+	}
+
+	// merge with properties from context
+	for k, v := range common.PropertiesFromContext(ctx) {
+		properties[k] = v
+	}
+
+	response, err := MyService.MessageBus().PublishEventWithResponse(ctx, common.AppManagementServiceName, eventType.Name, properties)
+	if err != nil {
+		logger.Error("failed to publish event", zap.Error(err))
+		return
+	}
+	defer response.HTTPResponse.Body.Close()
+
+	if response.StatusCode() != http.StatusOK {
+		logger.Error("failed to publish event", zap.String("status code", response.Status()))
+	}
 }
