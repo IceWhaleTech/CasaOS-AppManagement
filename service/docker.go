@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"net/http"
 	"runtime"
 	"strconv"
 	"strings"
@@ -190,7 +191,8 @@ func (ds *dockerService) CheckContainerHealth(id string) (bool, error) {
 			return false, err
 		}
 
-		if response.StatusCode >= 200 && response.StatusCode < 300 {
+		if (response.StatusCode == http.StatusUnauthorized) || // we treat Unauthroized as a success because it means the container is up and running
+			(response.StatusCode >= 200 && response.StatusCode < 300) {
 			logger.Info("container health check passed at the specified web port", zap.Any("name", container.Names), zap.String("id", id), zap.Any("url", url))
 			return true, nil
 		}
