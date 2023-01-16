@@ -45,7 +45,7 @@ var (
 	dataStats = &sync.Map{}
 	isFinish  bool
 
-	NewVersionApp map[string]string
+	NewVersionApp map[string]string // TODO - make use of this
 )
 
 type DockerService interface {

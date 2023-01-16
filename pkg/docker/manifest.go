@@ -4,13 +4,19 @@ credit: https://github.com/containrrr/watchtower
 package docker
 
 import (
+	"context"
+	"encoding/json"
 	"fmt"
 	"strings"
 
 	url2 "net/url"
 
 	ref "github.com/docker/distribution/reference"
+	"github.com/google/go-containerregistry/pkg/crane"
+	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 )
+
+type Manifests v1.Index
 
 // BuildManifestURL from raw image data
 func BuildManifestURL(imageName string) (string, error) {
@@ -57,4 +63,18 @@ func ExtractImageAndTag(imageName string) (string, string) {
 		tag = "latest"
 	}
 	return img, tag
+}
+
+func RemoteManifest(ctx context.Context, imageName string) (*Manifests, error) {
+	buf, err := crane.Manifest(imageName, crane.WithContext(ctx))
+	if err != nil {
+		return nil, err
+	}
+
+	var result Manifests
+	if err := json.Unmarshal(buf, &result); err != nil {
+		return nil, err
+	}
+
+	return &result, nil
 }

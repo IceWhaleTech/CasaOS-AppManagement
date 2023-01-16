@@ -22,6 +22,7 @@ import (
 	"github.com/IceWhaleTech/CasaOS-Common/utils/logger"
 	"github.com/coreos/go-systemd/daemon"
 	"github.com/patrickmn/go-cache"
+	"github.com/robfig/cron/v3"
 	"go.uber.org/zap"
 
 	util_http "github.com/IceWhaleTech/CasaOS-Common/utils/http"
@@ -70,7 +71,24 @@ func main() {
 	v1.Cache = cache.New(5*time.Minute, 60*time.Second)
 	v1.GetToken()
 
-	service.NewVersionApp = make(map[string]string)
+	// schedule async job to get appstore list
+	job := func() {
+		if _, err := service.MyService.V1AppStore().AsyncGetServerList(true); err != nil {
+			logger.Error("error when trying to get appstore list", zap.Error(err))
+		}
+	}
+
+	crontab := cron.New(cron.WithSeconds())
+	if _, err := crontab.AddFunc("@every 1h", job); err != nil {
+		panic(err)
+	}
+
+	crontab.Start()
+	defer crontab.Stop()
+
+	go job() // run once at startup
+
+	// setup listener
 
 	listener, err := net.Listen("tcp", net.JoinHostPort(common.Localhost, "0"))
 	if err != nil {

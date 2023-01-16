@@ -65,6 +65,8 @@ type ServerAppList struct {
 	Privileged     bool      `json:"privileged"`
 	CapAdd         Strings   `json:"cap_add"`
 	Cmd            Strings   `json:"cmd"`
+	Architectures  Strings   `json:"architectures"`
+	LatestDigest   Strings   `json:"latest_digests"`
 }
 
 type MyAppList struct {
