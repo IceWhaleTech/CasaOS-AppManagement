@@ -18,6 +18,10 @@ servers:
   - url: /v2/app_management
 
 tags:
+  - name: Common methods
+    description: |-
+      methods for common usage
+
   - name: AppStore methods
     description: |-
       methods for accessing local app store
@@ -73,6 +77,7 @@ tags:
 x-tagGroups:
   - name: Methods
     tags:
+      - Common methods
       - AppStore methods
       - Compose methods
       - Container methods
@@ -94,6 +99,18 @@ security:
   - access_token: []
 
 paths:
+  /info:
+    get:
+      summary: Get certain common information
+      operationId: info
+      tags:
+        - Common methods
+      responses:
+        "200":
+          $ref: "#/components/responses/InfoOK"
+        "500":
+          $ref: "#/components/responses/ResponseInternalServerError"
+
   /apps:
     get:
       summary: Get app list from AppStore
@@ -351,6 +368,13 @@ components:
           example:
             message: "Service Unavailable"
 
+    InfoOK:
+      description: OK
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Info"
+
     ComposeAppStoreInfoListsOK:
       description: OK
       content:
@@ -431,6 +455,13 @@ components:
           description: message returned by server side if there is any
           type: string
           example: ""
+
+    Info:
+      properties:
+        architecture:
+          type: string
+          readOnly: true
+          example: "amd64"
 
     ComposeAppStoreInfoLists:
       properties:
