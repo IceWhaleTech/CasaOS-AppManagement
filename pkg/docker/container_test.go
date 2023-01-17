@@ -2,6 +2,7 @@ package docker
 
 import (
 	"context"
+	"io"
 	"testing"
 
 	"github.com/IceWhaleTech/CasaOS-Common/utils/random"
@@ -18,13 +19,21 @@ func setupTestContainer(ctx context.Context, t *testing.T) *container.CreateResp
 	assert.NilError(t, err)
 	defer cli.Close()
 
+	imageName := "alpine:latest"
+
 	config := &container.Config{
-		Image: "alpine",
+		Image: imageName,
 		Cmd:   []string{"tail", "-f", "/dev/null"},
 	}
 
 	hostConfig := &container.HostConfig{}
 	networkingConfig := &network.NetworkingConfig{}
+
+	out, err := cli.ImagePull(ctx, imageName, types.ImagePullOptions{})
+	assert.NilError(t, err)
+
+	_, err = io.ReadAll(out)
+	assert.NilError(t, err)
 
 	response, err := cli.ContainerCreate(ctx, config, hostConfig, networkingConfig, nil, "test-"+random.RandomString(4, false))
 	assert.NilError(t, err)
