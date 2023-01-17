@@ -19,7 +19,6 @@ import (
 	jsoniter "github.com/json-iterator/go"
 	"github.com/patrickmn/go-cache"
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/conc/pool"
 	"go.uber.org/zap"
 )
 
@@ -27,7 +26,7 @@ type AppStore interface {
 	GetServerList(index, size, tp, categoryID, key string) (*model.ServerAppListCollection, error)
 	GetServerAppInfo(id, t string, language string) (model.ServerAppList, error)
 	GetServerCategoryList() (list []model.CategoryList, err error)
-	AsyncGetServerList(checkArchitectures bool) (*model.ServerAppListCollection, error)
+	AsyncGetServerList() (*model.ServerAppListCollection, error)
 	AsyncGetServerCategoryList() ([]model.CategoryList, error)
 }
 
@@ -62,7 +61,7 @@ func (o *appStore) GetServerList(index, size, tp, categoryID, key string) (*mode
 	collectionBytes := file.ReadFullFile(path)
 	if err := json.Unmarshal(collectionBytes, &collection); err != nil {
 		logger.Info("app list collection from local file is either empty or broken - getting from online...", zap.String("path", path), zap.String("content", string(collectionBytes)))
-		collection, err = o.AsyncGetServerList(false)
+		collection, err = o.AsyncGetServerList()
 		if err != nil {
 			return nil, err
 		}
@@ -125,7 +124,7 @@ func (o *appStore) GetServerList(index, size, tp, categoryID, key string) (*mode
 	return collection, nil
 }
 
-func (o *appStore) AsyncGetServerList(checkArchitectures bool) (*model.ServerAppListCollection, error) {
+func (o *appStore) AsyncGetServerList() (*model.ServerAppListCollection, error) {
 	mutex.Lock()
 	defer mutex.Unlock()
 
@@ -166,6 +165,10 @@ func (o *appStore) AsyncGetServerList(checkArchitectures bool) (*model.ServerApp
 		return collection, err
 	}
 
+	if len(listModel) == 0 {
+		return collection, nil
+	}
+
 	if err := json.Unmarshal([]byte(jsoniter.Get(list, "data", "recommend").ToString()), &recommendModel); err != nil {
 		logger.Error("error when deserializing", zap.Any("err", err), zap.Any("content", string(list)), zap.Any("property", "data.recommend"))
 		return collection, err
@@ -176,17 +179,9 @@ func (o *appStore) AsyncGetServerList(checkArchitectures bool) (*model.ServerApp
 		return collection, err
 	}
 
-	if len(listModel) == 0 {
-		return collection, nil
-	}
-
 	collection.Community = communityModel
 	collection.List = listModel
 	collection.Recommend = recommendModel
-
-	if checkArchitectures {
-		collection = updateArchitectures(collection)
-	}
 
 	var by []byte
 	by, err = json.Marshal(collection)
@@ -228,6 +223,13 @@ func (o *appStore) GetServerAppInfo(id, t string, language string) (model.Server
 	if err := json.Unmarshal([]byte(jsoniter.Get(infoB, "data").ToString()), &info); err != nil {
 		fmt.Println(string(infoB))
 		return info, err
+	}
+
+	// get architectures
+	imageName := fmt.Sprintf("%s:%s", info.Image, info.ImageVersion)
+	info.Architectures, err = getArchitectures(imageName, false)
+	if err != nil {
+		logger.Error("error when getting architectures", zap.Error(err), zap.Any("image", info.Image), zap.Any("version", info.ImageVersion))
 	}
 
 	return info, nil
@@ -335,58 +337,16 @@ func GetToken() string {
 	return auth
 }
 
-func updateArchitectures(collection *model.ServerAppListCollection) *model.ServerAppListCollection {
-	result := model.ServerAppListCollection{
-		List:      make([]model.ServerAppList, len(collection.List)),
-		Recommend: make([]model.ServerAppList, len(collection.Recommend)),
-		Community: make([]model.ServerAppList, len(collection.Community)),
-	}
-
-	p := pool.New().WithMaxGoroutines(3)
-
-	for i, app := range collection.List {
-		p.Go(func() {
-			result.List[i] = app
-
-			archs, err := getArchitectures(fmt.Sprintf("%s:%s", app.Image, app.ImageVersion))
-			if err != nil {
-				logger.Error("error when getting architectures for apps in list", zap.Error(err), zap.Any("image", app.Image))
-				return
+func getArchitectures(imageName string, noCache bool) ([]string, error) {
+	cacheKey := imageName + ":architectures"
+	if !noCache {
+		if cached, ok := Cache.Get(cacheKey); ok {
+			if archs, ok := cached.([]string); ok {
+				return archs, nil
 			}
-			result.List[i].Architectures = archs
-		})
+		}
 	}
 
-	for i, app := range collection.Recommend {
-		p.Go(func() {
-			result.Recommend[i] = app
-			archs, err := getArchitectures(app.Image)
-			if err != nil {
-				logger.Error("error when getting architectures for apps in recommend list", zap.Error(err), zap.Any("image", app.Image))
-				return
-			}
-			result.Recommend[i].Architectures = archs
-		})
-	}
-
-	for i, app := range collection.Community {
-		p.Go(func() {
-			result.Community[i] = app
-			archs, err := getArchitectures(app.Image)
-			if err != nil {
-				logger.Error("error when getting architectures for apps in community list", zap.Error(err), zap.Any("image", app.Image))
-				return
-			}
-			result.Community[i].Architectures = archs
-		})
-	}
-
-	p.Wait()
-
-	return &result
-}
-
-func getArchitectures(imageName string) ([]string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
@@ -398,6 +358,8 @@ func getArchitectures(imageName string) ([]string, error) {
 	for _, platform := range index.Manifests {
 		architectures = append(architectures, platform.Platform.Architecture)
 	}
+
+	Cache.Set(cacheKey, architectures, 4*time.Hour)
 
 	return architectures, nil
 }

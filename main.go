@@ -73,7 +73,7 @@ func main() {
 
 	// schedule async job to get appstore list
 	job := func() {
-		if _, err := service.MyService.V1AppStore().AsyncGetServerList(true); err != nil {
+		if _, err := service.MyService.V1AppStore().AsyncGetServerList(); err != nil {
 			logger.Error("error when trying to get appstore list", zap.Error(err))
 		}
 	}
