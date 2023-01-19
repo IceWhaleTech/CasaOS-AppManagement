@@ -13,15 +13,16 @@ import (
 	"os"
 	"time"
 
-	"github.com/IceWhaleTech/CasaOS-AppManagement/codegen/message_bus"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/common"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/pkg/config"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/route"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/service"
+	v1 "github.com/IceWhaleTech/CasaOS-AppManagement/service/v1"
 	"github.com/IceWhaleTech/CasaOS-Common/model"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/logger"
 	"github.com/coreos/go-systemd/daemon"
 	"github.com/patrickmn/go-cache"
+	"github.com/robfig/cron/v3"
 	"go.uber.org/zap"
 
 	util_http "github.com/IceWhaleTech/CasaOS-Common/utils/http"
@@ -67,11 +68,27 @@ func main() {
 
 	service.MyService = service.NewService(config.CommonInfo.RuntimePath)
 
-	service.Cache = cache.New(5*time.Minute, 60*time.Second)
+	v1.Cache = cache.New(5*time.Minute, 60*time.Second)
+	v1.GetToken()
 
-	service.GetToken()
+	// schedule async job to get appstore list
+	job := func() {
+		if _, err := service.MyService.V1AppStore().AsyncGetServerList(); err != nil {
+			logger.Error("error when trying to get appstore list", zap.Error(err))
+		}
+	}
 
-	service.NewVersionApp = make(map[string]string)
+	crontab := cron.New(cron.WithSeconds())
+	if _, err := crontab.AddFunc("@every 1h", job); err != nil {
+		panic(err)
+	}
+
+	crontab.Start()
+	defer crontab.Stop()
+
+	go job() // run once at startup
+
+	// setup listener
 
 	listener, err := net.Listen("tcp", net.JoinHostPort(common.Localhost, "0"))
 	if err != nil {
@@ -97,16 +114,7 @@ func main() {
 	}
 
 	// register at message bus
-	eventTypes := []message_bus.EventType{
-		common.EventTypeContainerAppInstalling,
-		common.EventTypeContainerAppInstalled,
-		common.EventTypeContainerAppInstallFailed,
-		common.EventTypeContainerAppUninstalling,
-		common.EventTypeContainerAppUninstalled,
-		common.EventTypeContainerAppUninstallFailed,
-	}
-
-	response, err := service.MyService.MessageBus().RegisterEventTypesWithResponse(ctx, eventTypes)
+	response, err := service.MyService.MessageBus().RegisterEventTypesWithResponse(ctx, common.EventTypes)
 	if err != nil {
 		logger.Error("error when trying to register one or more event types - some event type will not be discoverable", zap.Error(err))
 	}
@@ -116,6 +124,7 @@ func main() {
 	}
 
 	v1Router := route.InitV1Router()
+
 	v2Router := route.InitV2Router()
 	v2DocRouter := route.InitV2DocRouter(_docHTML, _docYAML)
 

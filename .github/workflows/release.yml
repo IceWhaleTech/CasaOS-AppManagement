@@ -12,32 +12,27 @@ jobs:
   goreleaser:
     runs-on: ubuntu-22.04
     steps:
-      -
-        name: Install dependencies for cross-compiling
+      - name: Install dependencies for cross-compiling
         run: |
           sudo apt update 
           sudo apt-get --no-install-recommends --yes install \
             upx libc6-dev-amd64-cross \
             gcc-aarch64-linux-gnu libc6-dev-arm64-cross \
             gcc-arm-linux-gnueabihf libc6-dev-armhf-cross
-      -
-        name: Checkout
+      - name: Checkout
         uses: actions/checkout@v2
         with:
           fetch-depth: 0
-      -
-        name: Fetch all tags
+      - name: Fetch all tags
         run: git fetch --force --tags
       - name: Get version
         id: get_version
         run: echo ::set-output name=VERSION::${GITHUB_REF/refs\/tags\//}
-      -
-        name: Set up Go
+      - name: Set up Go
         uses: actions/setup-go@v2
         with:
           go-version: 1.19
-      -
-        name: Run GoReleaser
+      - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v2
         with:
           # either 'goreleaser' (default) or 'goreleaser-pro'
@@ -57,7 +52,7 @@ jobs:
           region: oss-cn-shanghai
           bucket: casaos
           assets: |
-            dist/checksums.txt:/IceWhaleTech/CasaOS/releases/download/${{ steps.get_version.outputs.VERSION }}/checksums.txt
+            dist/checksums.txt:/IceWhaleTech/CasaOS-AppManagement/releases/download/${{ steps.get_version.outputs.VERSION }}/checksums.txt
             dist/linux-arm-7-casaos-app-management-${{ steps.get_version.outputs.VERSION }}.tar.gz:/IceWhaleTech/CasaOS-AppManagement/releases/download/${{ steps.get_version.outputs.VERSION }}/linux-arm-7-casaos-app-management-${{ steps.get_version.outputs.VERSION }}.tar.gz
             dist/linux-arm64-casaos-app-management-${{ steps.get_version.outputs.VERSION }}.tar.gz:/IceWhaleTech/CasaOS-AppManagement/releases/download/${{ steps.get_version.outputs.VERSION }}/linux-arm64-casaos-app-management-${{ steps.get_version.outputs.VERSION }}.tar.gz
             dist/linux-amd64-casaos-app-management-${{ steps.get_version.outputs.VERSION }}.tar.gz:/IceWhaleTech/CasaOS-AppManagement/releases/download/${{ steps.get_version.outputs.VERSION }}/linux-amd64-casaos-app-management-${{ steps.get_version.outputs.VERSION }}.tar.gz

@@ -18,13 +18,9 @@ func InitV1Router() *gin.Engine {
 	}
 	gin.SetMode(ginMode)
 
-	r := gin.New()
-	r.Use(gin.Recovery())
+	r := gin.Default()
 	r.Use(middleware.Cors())
 	r.Use(gzip.Gzip(gzip.DefaultCompression))
-	if ginMode != gin.ReleaseMode {
-		r.Use(middleware.WriteLog())
-	}
 
 	v1Group := r.Group("/v1")
 
@@ -55,11 +51,8 @@ func InitV1Router() *gin.Engine {
 			v1ContainerGroup.PUT("/:id", v1.UpdateSetting) ///update/:id/setting
 
 			v1ContainerGroup.PUT("/:id/state", v1.ChangAppState) // /app/state/:id
-			v1ContainerGroup.DELETE("/:id", v1.UnInstallApp)     // app/uninstall/:id
-			// Not used
-			v1ContainerGroup.PUT("/:id/latest", v1.PutAppUpdate)
-			// Not used
-			v1ContainerGroup.POST("/share", v1.ShareAppFile)
+			v1ContainerGroup.DELETE("/:id", v1.UninstallApp)     // app/uninstall/:id
+
 			v1ContainerGroup.GET("/info", v1.GetDockerDaemonConfiguration)
 			v1ContainerGroup.PUT("/info", v1.PutDockerDaemonConfiguration)
 

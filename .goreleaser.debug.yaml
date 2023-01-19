@@ -6,7 +6,7 @@ before:
     - go generate
     - go run github.com/google/go-licenses@latest check . --disallowed_types=restricted
     - go mod tidy
-    - go test -v ./...
+    - go test -race -v ./... -timeout 30m
 builds:
   - id: casaos-app-management-amd64
     binary: build/sysroot/usr/bin/casaos-app-management
@@ -123,6 +123,65 @@ builds:
       - arm
     goarm:
       - "7"
+  - id: casaos-appfile2compose-amd64
+    binary: build/sysroot/usr/bin/casaos-appfile2compose
+    main: ./cmd/appfile2compose
+    env:
+      - CC=x86_64-linux-gnu-gcc
+    gcflags:
+      - all=-N -l
+    ldflags:
+      - -X main.commit={{.Commit}}
+      - -X main.date={{.Date}}
+      - -extldflags "-static"
+    tags:
+      - musl
+      - netgo
+      - osusergo
+    goos:
+      - linux
+    goarch:
+      - amd64
+  - id: casaos-appfile2compose-arm64
+    binary: build/sysroot/usr/bin/casaos-appfile2compose
+    main: ./cmd/appfile2compose
+    env:
+      - CC=aarch64-linux-gnu-gcc
+    gcflags:
+      - all=-N -l
+    ldflags:
+      - -X main.commit={{.Commit}}
+      - -X main.date={{.Date}}
+      - -extldflags "-static"
+    tags:
+      - musl
+      - netgo
+      - osusergo
+    goos:
+      - linux
+    goarch:
+      - arm64
+  - id: casaos-appfile2compose-arm-7
+    binary: build/sysroot/usr/bin/casaos-appfile2compose
+    main: ./cmd/appfile2compose
+    env:
+      - CC=arm-linux-gnueabihf-gcc
+    gcflags:
+      - all=-N -l
+    ldflags:
+      - -X main.commit={{.Commit}}
+      - -X main.date={{.Date}}
+      - -extldflags "-static"
+    tags:
+      - musl
+      - netgo
+      - osusergo
+    goos:
+      - linux
+    goarch:
+      - arm
+    goarm:
+      - "7"
 archives:
   - name_template: "{{ .Os }}-{{ .Arch }}-{{ .ProjectName }}-v{{ .Version }}"
     id: casaos-app-management
@@ -140,6 +199,16 @@ archives:
       - casaos-app-management-migration-tool-amd64
       - casaos-app-management-migration-tool-arm64
       - casaos-app-management-migration-tool-arm-7
+    replacements:
+      arm: arm-7
+    files:
+      - build/sysroot/etc/**/*
+  - name_template: "{{ .Os }}-{{ .Arch }}-appfile2compose-v{{ .Version }}"
+    id: casaos-appfile2compose
+    builds:
+      - casaos-appfile2compose-amd64
+      - casaos-appfile2compose-arm64
+      - casaos-appfile2compose-arm-7
     replacements:
       arm: arm-7
     files:

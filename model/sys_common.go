@@ -5,14 +5,17 @@ type CommonModel struct {
 }
 
 type APPModel struct {
-	LogPath     string
-	LogSaveName string
-	LogFileExt  string
-	DBPath      string
+	LogPath      string
+	LogSaveName  string
+	LogFileExt   string
+	DBPath       string
+	AppStorePath string
+	AppsPath     string
 }
 
 type ServerModel struct {
-	ServerAPI string
+	ServerAPI    string
+	AppStoreList []string `ini:"appstore,,allowshadow"`
 }
 
 type CasaOSGlobalVariables struct {

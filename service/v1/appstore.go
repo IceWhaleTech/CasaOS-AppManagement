@@ -1,37 +1,47 @@
-package service
+package v1
 
 import (
+	"context"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"path/filepath"
 	"sort"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/IceWhaleTech/CasaOS-AppManagement/model"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/pkg/config"
+	"github.com/IceWhaleTech/CasaOS-AppManagement/pkg/docker"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/file"
 	httpUtil "github.com/IceWhaleTech/CasaOS-Common/utils/http"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/logger"
 	jsoniter "github.com/json-iterator/go"
+	"github.com/patrickmn/go-cache"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 )
 
 type AppStore interface {
-	GetServerList(index, size, tp, categoryID, key string) (model.ServerAppListCollection, error)
+	GetServerList(index, size, tp, categoryID, key string) (*model.ServerAppListCollection, error)
 	GetServerAppInfo(id, t string, language string) (model.ServerAppList, error)
 	GetServerCategoryList() (list []model.CategoryList, err error)
+	AsyncGetServerList() (*model.ServerAppListCollection, error)
 	AsyncGetServerCategoryList() ([]model.CategoryList, error)
-	ShareAppFile(body []byte) string
 }
 
 type appStore struct{}
 
-var json = jsoniter.ConfigCompatibleWithStandardLibrary
+var (
+	json = jsoniter.ConfigCompatibleWithStandardLibrary
 
-func (o *appStore) GetServerList(index, size, tp, categoryID, key string) (model.ServerAppListCollection, error) {
-	collection := model.ServerAppListCollection{}
+	Cache *cache.Cache
+
+	mutex = sync.Mutex{}
+)
+
+func (o *appStore) GetServerList(index, size, tp, categoryID, key string) (*model.ServerAppListCollection, error) {
+	collection := &model.ServerAppListCollection{}
 
 	keyName := fmt.Sprintf("list_%s_%s_%s_%s_%s", index, size, tp, categoryID, "en")
 	logger.Info("getting app list collection from cache...", zap.String("key", keyName))
@@ -39,7 +49,7 @@ func (o *appStore) GetServerList(index, size, tp, categoryID, key string) (model
 		if collectionBytes, ok := result.([]byte); ok {
 			if err := json.Unmarshal(collectionBytes, &collection); err != nil {
 				logger.Error("error when deserializing app list collection from cache", zap.Any("err", err), zap.Any("content", collectionBytes))
-				return collection, err
+				return nil, err
 			}
 
 			return collection, nil
@@ -53,15 +63,9 @@ func (o *appStore) GetServerList(index, size, tp, categoryID, key string) (model
 		logger.Info("app list collection from local file is either empty or broken - getting from online...", zap.String("path", path), zap.String("content", string(collectionBytes)))
 		collection, err = o.AsyncGetServerList()
 		if err != nil {
-			return collection, err
+			return nil, err
 		}
 	}
-
-	go func() {
-		if _, err := o.AsyncGetServerList(); err != nil {
-			logger.Error("error when getting app list collection from online", zap.Any("err", err))
-		}
-	}()
 
 	if categoryID != "0" {
 		categoryInt, _ := strconv.Atoi(categoryID)
@@ -120,8 +124,11 @@ func (o *appStore) GetServerList(index, size, tp, categoryID, key string) (model
 	return collection, nil
 }
 
-func (o *appStore) AsyncGetServerList() (model.ServerAppListCollection, error) {
-	collection := model.ServerAppListCollection{}
+func (o *appStore) AsyncGetServerList() (*model.ServerAppListCollection, error) {
+	mutex.Lock()
+	defer mutex.Unlock()
+
+	collection := &model.ServerAppListCollection{}
 
 	path := filepath.Join(config.AppInfo.DBPath, "/app_list.json")
 
@@ -143,7 +150,7 @@ func (o *appStore) AsyncGetServerList() (model.ServerAppListCollection, error) {
 	}
 	defer resp.Body.Close()
 
-	list, err := ioutil.ReadAll(resp.Body)
+	list, err := io.ReadAll(resp.Body)
 	if err != nil {
 		logger.Error("error when reading from response body after calling url with header", zap.Any("err", err), zap.Any("url", url), zap.Any("head", headers))
 		return collection, err
@@ -158,6 +165,10 @@ func (o *appStore) AsyncGetServerList() (model.ServerAppListCollection, error) {
 		return collection, err
 	}
 
+	if len(listModel) == 0 {
+		return collection, nil
+	}
+
 	if err := json.Unmarshal([]byte(jsoniter.Get(list, "data", "recommend").ToString()), &recommendModel); err != nil {
 		logger.Error("error when deserializing", zap.Any("err", err), zap.Any("content", string(list)), zap.Any("property", "data.recommend"))
 		return collection, err
@@ -168,21 +179,20 @@ func (o *appStore) AsyncGetServerList() (model.ServerAppListCollection, error) {
 		return collection, err
 	}
 
-	if len(listModel) > 0 {
-		collection.Community = communityModel
-		collection.List = listModel
-		collection.Recommend = recommendModel
+	collection.Community = communityModel
+	collection.List = listModel
+	collection.Recommend = recommendModel
 
-		var by []byte
-		by, err = json.Marshal(collection)
-		if err != nil {
-			logger.Error("marshal error", zap.Any("err", err))
-		}
-
-		if err := file.WriteToPath(by, config.AppInfo.DBPath, "app_list.json"); err != nil {
-			logger.Error("error when writing to file", zap.Error(err), zap.Any("path", filepath.Join(config.AppInfo.DBPath, "app_list.json")))
-		}
+	var by []byte
+	by, err = json.Marshal(collection)
+	if err != nil {
+		logger.Error("marshal error", zap.Any("err", err))
 	}
+
+	if err := file.WriteToPath(by, config.AppInfo.DBPath, "app_list.json"); err != nil {
+		logger.Error("error when writing to file", zap.Error(err), zap.Any("path", filepath.Join(config.AppInfo.DBPath, "app_list.json")))
+	}
+
 	return collection, nil
 }
 
@@ -200,7 +210,7 @@ func (o *appStore) GetServerAppInfo(id, t string, language string) (model.Server
 		return info, err
 	}
 
-	infoB, err := ioutil.ReadAll(resp.Body)
+	infoB, err := io.ReadAll(resp.Body)
 	if err != nil {
 		logger.Error("error when reading from response body after calling url with header", zap.Any("err", err), zap.Any("url", url), zap.Any("head", head))
 		return info, err
@@ -213,6 +223,13 @@ func (o *appStore) GetServerAppInfo(id, t string, language string) (model.Server
 	if err := json.Unmarshal([]byte(jsoniter.Get(infoB, "data").ToString()), &info); err != nil {
 		fmt.Println(string(infoB))
 		return info, err
+	}
+
+	// get architectures
+	imageName := fmt.Sprintf("%s:%s", info.Image, info.ImageVersion)
+	info.Architectures, err = getArchitectures(imageName, false)
+	if err != nil {
+		logger.Error("error when getting architectures", zap.Error(err), zap.Any("image", info.Image), zap.Any("version", info.ImageVersion))
 	}
 
 	return info, nil
@@ -252,7 +269,7 @@ func (o *appStore) AsyncGetServerCategoryList() ([]model.CategoryList, error) {
 		return item, err
 	}
 
-	listB, err := ioutil.ReadAll(resp.Body)
+	listB, err := io.ReadAll(resp.Body)
 	if err != nil {
 		logger.Error("error when reading from response body after calling url with header", zap.Any("err", err), zap.Any("url", url), zap.Any("head", head))
 		return item, err
@@ -280,28 +297,6 @@ func (o *appStore) AsyncGetServerCategoryList() ([]model.CategoryList, error) {
 	return item, nil
 }
 
-func (o *appStore) ShareAppFile(body []byte) string {
-	head := make(map[string]string)
-
-	head["Authorization"] = GetToken()
-
-	url := config.ServerInfo.ServerAPI + "/v1/community/add"
-	resp, err := httpUtil.PostWithHeader(url, body, 30*time.Second, head)
-	if err != nil {
-		logger.Error("error when calling url with header", zap.Any("err", err), zap.Any("url", url), zap.Any("head", head))
-		return ""
-	}
-
-	contentB, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		logger.Error("error when reading from response body after calling url with header", zap.Any("err", err), zap.Any("url", url), zap.Any("head", head))
-		return ""
-	}
-
-	content := string(contentB)
-	return content
-}
-
 func NewAppService() AppStore {
 	return &appStore{}
 }
@@ -327,7 +322,7 @@ func GetToken() string {
 			return
 		}
 
-		buf, err := ioutil.ReadAll(resp.Body)
+		buf, err := io.ReadAll(resp.Body)
 		if err != nil {
 			logger.Error("error when reading from response body after calling url", zap.Any("err", err), zap.Any("url", url))
 			t <- ""
@@ -340,4 +335,31 @@ func GetToken() string {
 
 	Cache.SetDefault(keyName, auth)
 	return auth
+}
+
+func getArchitectures(imageName string, noCache bool) ([]string, error) {
+	cacheKey := imageName + ":architectures"
+	if !noCache {
+		if cached, ok := Cache.Get(cacheKey); ok {
+			if archs, ok := cached.([]string); ok {
+				return archs, nil
+			}
+		}
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	index, err := docker.RemoteManifest(ctx, imageName)
+	if err != nil {
+		return nil, err
+	}
+	architectures := []string{}
+	for _, platform := range index.Manifests {
+		architectures = append(architectures, platform.Platform.Architecture)
+	}
+
+	Cache.Set(cacheKey, architectures, 4*time.Hour)
+
+	return architectures, nil
 }
