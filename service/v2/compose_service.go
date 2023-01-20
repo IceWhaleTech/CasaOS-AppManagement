@@ -15,8 +15,6 @@ import (
 	"github.com/samber/lo"
 
 	"github.com/compose-spec/compose-go/cli"
-	"github.com/compose-spec/compose-go/loader"
-	"github.com/compose-spec/compose-go/types"
 	"github.com/docker/cli/cli/command"
 	"github.com/docker/cli/cli/flags"
 	composeCmd "github.com/docker/compose/v2/cmd/compose"
@@ -128,21 +126,27 @@ func (s *ComposeService) List(ctx context.Context) (map[string]*codegen.ComposeA
 	result := map[string]*codegen.ComposeApp{}
 
 	for _, stack := range stackList {
+
+		options := composeCmd.ProjectOptions{
+			ProjectDir:  filepath.Dir(stack.ConfigFiles),
+			ProjectName: stack.ID,
+		}
+
+		// update interpolation map in current context
 		interpolationMap := common.InterpolationMapFromContext(s.ctx)
 		interpolationMap["AppID"] = stack.ID
 
-		project, err := loader.Load(
-			types.ConfigDetails{
-				ConfigFiles: []types.ConfigFile{
-					{
-						Filename: stack.ConfigFiles,
-					},
-				},
-				Environment: interpolationMap,
-			},
-			func(o *loader.Options) {
-				o.SkipInterpolation = true
-			},
+		// load project
+		project, err := options.ToProject(
+			nil,
+			cli.WithWorkingDirectory(options.ProjectDir),
+			cli.WithOsEnv,
+			cli.WithEnvFile(options.EnvFile),
+			cli.WithDotEnv,
+			cli.WithConfigFileEnv,
+			cli.WithDefaultConfigPath,
+			cli.WithName(options.ProjectName),
+			cli.WithEnv(lo.MapToSlice(interpolationMap, func(k, v string) string { return k + "=" + v })),
 		)
 		if err != nil {
 			logger.Error("failed to load compose file", zap.Error(err), zap.String("path", stack.ConfigFiles))
