@@ -5,6 +5,7 @@ import (
 
 	"github.com/IceWhaleTech/CasaOS-AppManagement/codegen"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/common"
+	"github.com/IceWhaleTech/CasaOS-Common/utils"
 	"github.com/compose-spec/compose-go/loader"
 	"github.com/compose-spec/compose-go/types"
 	"gopkg.in/yaml.v3"
@@ -106,7 +107,7 @@ func NewComposeAppFromYAML(yaml []byte) (*ComposeApp, error) {
 		project.Extensions = make(map[string]interface{})
 	}
 
-	project.Extensions["yaml"] = &SampleComposeAppYAML
+	project.Extensions["yaml"] = utils.Ptr(string(yaml))
 
 	// fix name
 	if err := fixProjectName(project); err != nil {

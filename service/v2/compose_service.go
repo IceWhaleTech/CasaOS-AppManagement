@@ -11,7 +11,10 @@ import (
 	"github.com/IceWhaleTech/CasaOS-AppManagement/pkg/config"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/file"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/logger"
-	"github.com/IceWhaleTech/CasaOS-Common/utils/random"
+	timeutils "github.com/IceWhaleTech/CasaOS-Common/utils/time"
+	"github.com/samber/lo"
+
+	"github.com/compose-spec/compose-go/cli"
 	"github.com/compose-spec/compose-go/loader"
 	"github.com/compose-spec/compose-go/types"
 	"github.com/docker/cli/cli/command"
@@ -19,13 +22,15 @@ import (
 	composeCmd "github.com/docker/compose/v2/cmd/compose"
 	"github.com/docker/compose/v2/pkg/api"
 	"github.com/docker/compose/v2/pkg/compose"
+
 	"go.uber.org/zap"
 )
 
-type ComposeService struct{}
+type ComposeService struct {
+	ctx context.Context
+}
 
-func (s *ComposeService) PrepareWorkingDirectory(projectName string, composeYAML []byte) (string, error) {
-	name := projectName + "-" + random.RandomString(4, true)
+func (s *ComposeService) PrepareWorkingDirectory(name string, composeYAML []byte) (string, error) {
 	workingDirectory := filepath.Join(config.AppInfo.AppsPath, name)
 
 	if err := file.IsNotExistMkDir(workingDirectory); err != nil {
@@ -55,40 +60,59 @@ func (s *ComposeService) Pull(ctx context.Context, composeApp *codegen.ComposeAp
 	return service.Pull(ctx, composeApp, api.PullOptions{})
 }
 
-func (s *ComposeService) Install(projectName string, composeYAML []byte) (*codegen.ComposeApp, error) {
-	yamlFilePath, err := s.PrepareWorkingDirectory(projectName, composeYAML)
+func (s *ComposeService) Install(composeYAML []byte) error {
+	composeApp, err := NewComposeAppFromYAML(composeYAML)
 	if err != nil {
-		return nil, err
+		return err
+	}
+
+	yamlFilePath, err := s.PrepareWorkingDirectory(composeApp.Name, composeYAML)
+	if err != nil {
+		return err
 	}
 
 	options := composeCmd.ProjectOptions{
-		ConfigPaths: []string{yamlFilePath},
-		WorkDir:     filepath.Dir(yamlFilePath),
 		ProjectDir:  filepath.Dir(yamlFilePath),
-		ProjectName: projectName,
+		ProjectName: composeApp.Name,
 	}
 
-	composeApp, err := options.ToProject(nil)
+	// update interpolation map in current context
+	interpolationMap := common.InterpolationMapFromContext(s.ctx)
+	interpolationMap["AppID"] = composeApp.Name
+	ctx := common.WithInterpolationMap(s.ctx, interpolationMap)
+
+	// load project
+	project, err := options.ToProject(
+		nil,
+		cli.WithWorkingDirectory(options.ProjectDir),
+		cli.WithOsEnv,
+		cli.WithEnvFile(options.EnvFile),
+		cli.WithDotEnv,
+		cli.WithConfigFileEnv,
+		cli.WithDefaultConfigPath,
+		cli.WithName(options.ProjectName),
+		cli.WithEnv(lo.MapToSlice(interpolationMap, func(k, v string) string { return k + "=" + v })),
+	)
 	if err != nil {
-		logger.Error("failed to create project", zap.Error(err))
-		return nil, err
+		logger.Error("failed to install compose app", zap.Error(err), zap.String("name", composeApp.Name))
+		cleanup(yamlFilePath)
+		return err
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 300*time.Second) // 5 min
-	go func(ctx context.Context, cancel context.CancelFunc, composeApp *codegen.ComposeApp) {
+	go func(ctx context.Context) {
+		ctx, cancel := context.WithTimeout(ctx, 30*time.Minute)
 		defer cancel()
 
-		if err := s.Pull(ctx, composeApp); err != nil {
-			logger.Error("failed to pull images", zap.Error(err))
-			cleanup(options.WorkDir)
-			return
+		if err := pullAndInstall(ctx, project); err != nil {
+			logger.Error("failed to install compose app", zap.Error(err), zap.String("name", composeApp.Name))
+			cleanup(yamlFilePath)
 		}
-	}(ctx, cancel, composeApp)
+	}(ctx)
 
-	return nil, nil
+	return nil
 }
 
-func (s *ComposeService) List(ctx context.Context) ([]*codegen.ComposeApp, error) {
+func (s *ComposeService) List(ctx context.Context) (map[string]*codegen.ComposeApp, error) {
 	service, err := apiService()
 	if err != nil {
 		return nil, err
@@ -101,9 +125,12 @@ func (s *ComposeService) List(ctx context.Context) ([]*codegen.ComposeApp, error
 		return nil, err
 	}
 
-	result := []*codegen.ComposeApp{}
+	result := map[string]*codegen.ComposeApp{}
 
 	for _, stack := range stackList {
+		interpolationMap := common.InterpolationMapFromContext(s.ctx)
+		interpolationMap["AppID"] = stack.ID
+
 		project, err := loader.Load(
 			types.ConfigDetails{
 				ConfigFiles: []types.ConfigFile{
@@ -111,23 +138,35 @@ func (s *ComposeService) List(ctx context.Context) ([]*codegen.ComposeApp, error
 						Filename: stack.ConfigFiles,
 					},
 				},
-				Environment: map[string]string{},
+				Environment: interpolationMap,
 			},
-			func(o *loader.Options) { o.SkipInterpolation = true },
+			func(o *loader.Options) {
+				o.SkipInterpolation = true
+			},
 		)
 		if err != nil {
 			logger.Error("failed to load compose file", zap.Error(err), zap.String("path", stack.ConfigFiles))
 			continue
 		}
 
-		result = append(result, (*codegen.ComposeApp)(project))
+		result[stack.ID] = (*codegen.ComposeApp)(project)
 	}
 
 	return result, nil
 }
 
 func NewComposeService() *ComposeService {
-	return &ComposeService{}
+	return &ComposeService{
+		ctx: common.WithInterpolationMap(
+			context.Background(),
+			map[string]string{
+				"DefaultUserName": common.DefaultUserName,
+				"DefaultPassword": common.DefaultPassword,
+				"PUID":            common.DefaultPUID,
+				"PGID":            common.DefaultPGID,
+				"TZ":              timeutils.GetSystemTimeZoneName(),
+			}),
+	}
 }
 
 func apiService() (api.Service, error) {
@@ -146,7 +185,42 @@ func apiService() (api.Service, error) {
 }
 
 func cleanup(workDir string) {
+	logger.Info("cleaning up working dir", zap.String("path", workDir))
 	if err := file.RMDir(workDir); err != nil {
 		logger.Error("failed to cleanup working dir", zap.Error(err), zap.String("path", workDir))
 	}
+}
+
+func pullAndInstall(ctx context.Context, composeApp *codegen.ComposeApp) error {
+	service, err := apiService()
+	if err != nil {
+		return err
+	}
+
+	if err := service.Pull(ctx, composeApp, api.PullOptions{}); err != nil {
+		return err
+	}
+
+	// prepare source path for volumes if not exist
+	for _, app := range composeApp.Services {
+		for _, volume := range app.Volumes {
+			path := volume.Source
+			if err := file.IsNotExistMkDir(path); err != nil {
+				return err
+			}
+		}
+	}
+
+	if err := service.Create(ctx, composeApp, api.CreateOptions{}); err != nil {
+		return err
+	}
+
+	if err := service.Start(ctx, composeApp.Name, api.StartOptions{
+		CascadeStop: true,
+		Wait:        true,
+	}); err != nil {
+		return err
+	}
+
+	return nil
 }

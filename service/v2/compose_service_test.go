@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/IceWhaleTech/CasaOS-AppManagement/pkg/docker"
+	"github.com/IceWhaleTech/CasaOS-Common/utils/logger"
 	"gotest.tools/v3/assert"
 )
 
@@ -12,6 +13,8 @@ func TestList(t *testing.T) {
 	if !docker.IsDaemonRunning() {
 		t.Skip("Docker daemon is not running")
 	}
+
+	logger.LogInitConsoleOnly()
 
 	service := NewComposeService()
 

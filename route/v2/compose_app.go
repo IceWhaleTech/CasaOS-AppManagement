@@ -10,7 +10,6 @@ import (
 	"github.com/IceWhaleTech/CasaOS-AppManagement/service"
 	"github.com/IceWhaleTech/CasaOS-Common/utils"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/logger"
-	"github.com/compose-spec/compose-go/loader"
 	"github.com/labstack/echo/v4"
 	"go.uber.org/zap"
 	"gopkg.in/yaml.v2"
@@ -19,12 +18,17 @@ import (
 var ErrComposeAppNameNotProvided = errors.New("compose app name is not provided")
 
 func (a *AppManagement) MyComposeAppList(ctx echo.Context) error {
-	panic("implement me")
+	composeApps, err := service.MyService.Compose().List(ctx.Request().Context())
+	if err != nil {
+		message := err.Error()
+		logger.Error("failed to list compose apps", zap.Error(err))
+		return ctx.JSON(http.StatusInternalServerError, codegen.ResponseInternalServerError{Message: &message})
+	}
+
+	return ctx.JSON(http.StatusOK, composeApps)
 }
 
-func (a *AppManagement) InstallComposeApp(ctx echo.Context, params codegen.InstallComposeAppParams) error {
-	projectName := params.Name
-
+func (a *AppManagement) InstallComposeApp(ctx echo.Context) error {
 	var buf []byte
 
 	switch ctx.Request().Header.Get(echo.HeaderContentType) {
@@ -38,22 +42,6 @@ func (a *AppManagement) InstallComposeApp(ctx echo.Context, params codegen.Insta
 		}
 
 		buf = _buf
-
-		if projectName == nil || *projectName == "" {
-			out, err := loader.ParseYAML(buf)
-			if err != nil {
-				message := err.Error()
-				logger.Error("failed to parse YAML from the request", zap.Error(err))
-				return ctx.JSON(http.StatusBadRequest, codegen.ResponseBadRequest{Message: &message})
-			}
-			if _name, ok := out["name"]; ok {
-				projectName = utils.Ptr(_name.(string))
-			} else {
-				message := "name is required"
-				logger.Error("failed to parse YAML from the request", zap.Error(err))
-				return ctx.JSON(http.StatusBadRequest, codegen.ResponseBadRequest{Message: &message})
-			}
-		}
 
 	default:
 		var c codegen.ComposeApp
@@ -72,24 +60,15 @@ func (a *AppManagement) InstallComposeApp(ctx echo.Context, params codegen.Insta
 			return ctx.JSON(http.StatusInternalServerError, codegen.ResponseInternalServerError{Message: &message})
 		}
 		buf = _buf
-
-		if projectName == nil || *projectName == "" {
-			if c.Name == "" {
-				message := "name is required"
-				logger.Error("failed to parse YAML from the request", zap.Error(ErrComposeAppNameNotProvided))
-				return ctx.JSON(http.StatusBadRequest, codegen.ResponseBadRequest{Message: &message})
-			}
-
-			projectName = &c.Name
-		}
 	}
 
-	composeApp, err := service.MyService.Compose().Install(*projectName, buf)
-	if err != nil {
+	if err := service.MyService.Compose().Install(buf); err != nil {
 		message := err.Error()
 		logger.Error("failed to start compose app installation", zap.Error(err))
 		return ctx.JSON(http.StatusInternalServerError, codegen.ResponseInternalServerError{Message: &message})
 	}
 
-	return ctx.JSON(http.StatusOK, composeApp)
+	return ctx.JSON(http.StatusOK, codegen.ComposeAppInstallOK{
+		Message: utils.Ptr("compose app is being installed asynchronously"),
+	})
 }

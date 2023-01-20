@@ -191,19 +191,11 @@ paths:
       operationId: installComposeApp
       tags:
         - Compose methods
-      parameters:
-        - name: name
-          in: query
-          description: |
-            The name of the project. If not specified, the project name will be the same as the `id` of the compose app.
-          required: false
-          schema:
-            type: string
       requestBody:
         $ref: "#/components/requestBodies/RequestComposeApp"
       responses:
         "200":
-          $ref: "#/components/responses/ComposeAppOK"
+          $ref: "#/components/responses/ComposeAppInstallOK"
         "400":
           $ref: "#/components/responses/ResponseBadRequest"
         "500":
@@ -406,9 +398,18 @@ components:
               - $ref: "#/components/schemas/BaseResponse"
               - properties:
                   data:
-                    type: array
-                    items:
+                    type: object
+                    additionalProperties:
                       $ref: "#/components/schemas/ComposeApp"
+                    example:
+                      syncthing: {}
+
+    ComposeAppInstallOK:
+      description: OK
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/BaseResponse"
 
     ComposeAppOK:
       description: OK
@@ -507,6 +508,8 @@ components:
           type: object
           additionalProperties:
             $ref: "#/components/schemas/AppStoreInfo"
+          example:
+            syncthing: {}
           x-oapi-codegen-extra-tags:
             yaml: ",omitempty"
 
