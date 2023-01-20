@@ -12,6 +12,8 @@ import (
 	"github.com/IceWhaleTech/CasaOS-Common/utils/file"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/logger"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/random"
+	"github.com/compose-spec/compose-go/loader"
+	"github.com/compose-spec/compose-go/types"
 	"github.com/docker/cli/cli/command"
 	"github.com/docker/cli/cli/flags"
 	composeCmd "github.com/docker/compose/v2/cmd/compose"
@@ -84,6 +86,44 @@ func (s *ComposeService) Install(projectName string, composeYAML []byte) (*codeg
 	}(ctx, cancel, composeApp)
 
 	return nil, nil
+}
+
+func (s *ComposeService) List(ctx context.Context) ([]*codegen.ComposeApp, error) {
+	service, err := apiService()
+	if err != nil {
+		return nil, err
+	}
+
+	stackList, err := service.List(ctx, api.ListOptions{
+		All: true,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	result := []*codegen.ComposeApp{}
+
+	for _, stack := range stackList {
+		project, err := loader.Load(
+			types.ConfigDetails{
+				ConfigFiles: []types.ConfigFile{
+					{
+						Filename: stack.ConfigFiles,
+					},
+				},
+				Environment: map[string]string{},
+			},
+			func(o *loader.Options) { o.SkipInterpolation = true },
+		)
+		if err != nil {
+			logger.Error("failed to load compose file", zap.Error(err), zap.String("path", stack.ConfigFiles))
+			continue
+		}
+
+		result = append(result, (*codegen.ComposeApp)(project))
+	}
+
+	return result, nil
 }
 
 func NewComposeService() *ComposeService {

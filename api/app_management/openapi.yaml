@@ -172,7 +172,7 @@ paths:
 
   /compose:
     get:
-      summary: Get the list of locally runnig compose apps
+      summary: Get the list of installed compose apps
       description: |
         TODO
       operationId: myComposeAppList
