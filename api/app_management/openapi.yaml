@@ -201,6 +201,24 @@ paths:
         "500":
           $ref: "#/components/responses/ResponseInternalServerError"
 
+  /compose/{id}/logs:
+    get:
+      summary: Get the logs of a compose app
+      description: |
+        TODO
+      operationId: composeAppLogs
+      tags:
+        - Compose methods
+      parameters:
+        - $ref: "#/components/parameters/ComposeAppID"
+      responses:
+        "200":
+          $ref: "#/components/responses/ComposeAppLogsOK"
+        "404":
+          $ref: "#/components/responses/ResponseNotFound"
+        "500":
+          $ref: "#/components/responses/ResponseInternalServerError"
+
   /container/{id}:
     patch:
       summary: Recreate the container app
@@ -268,12 +286,21 @@ components:
   parameters:
     AppStoreID:
       name: id
-      description: App ID in the AppStore
+      description: App Store ID
       in: path
       required: true
       schema:
         type: string
         example: "e4380876-d759-4b26-af1f-968a4606d399"
+
+    ComposeAppID:
+      name: id
+      description: App ID of the compose app (equivalent to compose project name)
+      in: path
+      required: true
+      schema:
+        type: string
+        example: "syncthing-jsaq"
 
     ContainerIDs:
       name: container_ids
@@ -424,6 +451,18 @@ components:
         application/yaml:
           schema:
             type: string
+
+    ComposeAppLogsOK:
+      description: OK
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: "#/components/schemas/BaseResponse"
+              - properties:
+                  data:
+                    readOnly: true
+                    type: string
 
     ContainerHealthCheckOK:
       description: OK

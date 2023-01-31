@@ -15,7 +15,7 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-var ErrComposeAppNameNotProvided = errors.New("compose app name is not provided")
+var ErrComposeAppIDNotProvided = errors.New("compose AppID (compose project name) is not provided")
 
 func (a *AppManagement) MyComposeAppList(ctx echo.Context) error {
 	composeApps, err := service.MyService.Compose().List(ctx.Request().Context())
@@ -71,4 +71,21 @@ func (a *AppManagement) InstallComposeApp(ctx echo.Context) error {
 	return ctx.JSON(http.StatusOK, codegen.ComposeAppInstallOK{
 		Message: utils.Ptr("compose app is being installed asynchronously"),
 	})
+}
+
+func (a *AppManagement) ComposeAppLogs(ctx echo.Context, id codegen.ComposeAppID) error {
+	if id == "" {
+		message := ErrComposeAppIDNotProvided.Error()
+		return ctx.JSON(http.StatusBadRequest, codegen.ResponseBadRequest{
+			Message: &message,
+		})
+	}
+
+	// TODO - get ComposeApp by ID
+
+	// TODO - get containers of ComposeApp
+
+	// TODO - get logs of main container
+
+	return nil
 }

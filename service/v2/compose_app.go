@@ -1,6 +1,7 @@
 package v2
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/IceWhaleTech/CasaOS-AppManagement/codegen"
@@ -8,6 +9,8 @@ import (
 	"github.com/IceWhaleTech/CasaOS-Common/utils"
 	"github.com/compose-spec/compose-go/loader"
 	"github.com/compose-spec/compose-go/types"
+	"github.com/docker/compose/v2/pkg/api"
+	"github.com/samber/lo"
 	"gopkg.in/yaml.v3"
 )
 
@@ -84,6 +87,29 @@ func (a *ComposeApp) Apps() map[string]*App {
 	}
 
 	return apps
+}
+
+func (a *ComposeApp) Containers(ctx context.Context) (map[string]*api.ContainerSummary, error) {
+	service, err := apiService()
+	if err != nil {
+		return nil, err
+	}
+
+	containers, err := service.Ps(ctx, a.Name, api.PsOptions{
+		All: true,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	containerMap := lo.SliceToMap(
+		containers,
+		func(c api.ContainerSummary) (string, *api.ContainerSummary) {
+			return c.Service, &c
+		},
+	)
+
+	return containerMap, nil
 }
 
 func NewComposeAppFromYAML(yaml []byte) (*ComposeApp, error) {
