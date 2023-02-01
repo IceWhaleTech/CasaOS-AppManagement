@@ -9,6 +9,7 @@ import (
 	"github.com/IceWhaleTech/CasaOS-AppManagement/codegen"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/common"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/pkg/config"
+	"github.com/IceWhaleTech/CasaOS-Common/utils"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/file"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/logger"
 	timeutils "github.com/IceWhaleTech/CasaOS-Common/utils/time"
@@ -49,13 +50,13 @@ func (s *ComposeService) PrepareWorkingDirectory(name string, composeYAML []byte
 	return yamlFilePath, nil
 }
 
-func (s *ComposeService) Pull(ctx context.Context, composeApp *codegen.ComposeApp) error {
+func (s *ComposeService) Pull(ctx context.Context, composeApp *ComposeApp) error {
 	service, err := apiService()
 	if err != nil {
 		return err
 	}
 
-	return service.Pull(ctx, composeApp, api.PullOptions{})
+	return service.Pull(ctx, utils.Ptr(codegen.ComposeApp(*composeApp)), api.PullOptions{})
 }
 
 func (s *ComposeService) Install(composeYAML []byte) error {
@@ -110,7 +111,7 @@ func (s *ComposeService) Install(composeYAML []byte) error {
 	return nil
 }
 
-func (s *ComposeService) List(ctx context.Context) (map[string]*codegen.ComposeApp, error) {
+func (s *ComposeService) List(ctx context.Context) (map[string]*ComposeApp, error) {
 	service, err := apiService()
 	if err != nil {
 		return nil, err
@@ -123,7 +124,7 @@ func (s *ComposeService) List(ctx context.Context) (map[string]*codegen.ComposeA
 		return nil, err
 	}
 
-	result := map[string]*codegen.ComposeApp{}
+	result := map[string]*ComposeApp{}
 
 	for _, stack := range stackList {
 
@@ -153,7 +154,7 @@ func (s *ComposeService) List(ctx context.Context) (map[string]*codegen.ComposeA
 			continue
 		}
 
-		result[stack.ID] = (*codegen.ComposeApp)(project)
+		result[stack.ID] = (*ComposeApp)(project)
 	}
 
 	return result, nil
