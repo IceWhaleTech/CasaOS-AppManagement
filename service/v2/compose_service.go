@@ -111,6 +111,8 @@ func (s *ComposeService) Install(composeYAML []byte) error {
 	return nil
 }
 
+// TODO - add ComposeApp(ctx context.Context, id string) (*ComposeApp, error)
+
 func (s *ComposeService) List(ctx context.Context) (map[string]*ComposeApp, error) {
 	service, err := apiService()
 	if err != nil {
