@@ -540,7 +540,20 @@ func ContainerUpdateInfo(c *gin.Context) {
 		name = strings.ReplaceAll(info.Name, "/", "")
 	}
 
+	var appStoreID uint
+	if appStoreIDStr, ok := info.Config.Labels[common.ContainerLabelV1AppStoreID]; ok {
+		_appStoreID, err := strconv.Atoi(appStoreIDStr)
+		if err != nil {
+			logger.Error("error when converting appStoreID from string to int", zap.Error(err), zap.String("appStoreIDStr", appStoreIDStr))
+		}
+
+		if _appStoreID > 0 {
+			appStoreID = uint(_appStoreID)
+		}
+	}
+
 	m := model.CustomizationPostData{
+		AppStoreID:    appStoreID,
 		CapAdd:        info.HostConfig.CapAdd,
 		Cmd:           info.Config.Cmd,
 		ContainerName: strings.ReplaceAll(info.Name, "/", ""),
