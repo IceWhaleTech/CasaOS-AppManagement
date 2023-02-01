@@ -499,19 +499,14 @@ func ContainerUpdateInfo(c *gin.Context) {
 		}
 	}
 	for _, v := range info.Config.Env {
+		env := strings.SplitN(v, "=", 2)
 		if len(showENVList) > 0 && info.Config.Labels["origin"] != "local" {
-			if _, ok := showENVMap[strings.Split(v, "=")[0]]; ok {
-				temp := model.Env{
-					Name:  strings.Split(v, "=")[0],
-					Value: strings.Split(v, "=")[1],
-				}
+			if _, ok := showENVMap[env[0]]; ok {
+				temp := model.Env{Name: env[0], Value: env[1]}
 				envs = append(envs, temp)
 			}
 		} else {
-			temp := model.Env{
-				Name:  strings.Split(v, "=")[0],
-				Value: strings.Split(v, "=")[1],
-			}
+			temp := model.Env{Name: env[0], Value: env[1]}
 			envs = append(envs, temp)
 		}
 	}
