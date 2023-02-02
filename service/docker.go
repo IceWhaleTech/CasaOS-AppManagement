@@ -407,9 +407,19 @@ func (ds *dockerService) PullLatestImage(ctx context.Context, imageName, appName
 	})
 
 	defer PublishEventWrapper(ctx, common.EventTypeImagePullEnd, map[string]string{
-		common.PropertyTypeImageName.Name:    imageName,
-		common.PropertyTypeImageUpdated.Name: fmt.Sprint(isImageUpdated),
+		common.PropertyTypeImageName.Name: imageName,
+
+		// update image update information in the defer func below, instead of here.
+		// this because PublishEventWrapper will retrieve the information from context and include all properties in the event.
+		//
+		// common.PropertyTypeImageUpdated.Name: fmt.Sprint(isImageUpdated),  // <- no need to do it here.
 	})
+
+	defer func() {
+		// write image updated information as a property back to context, so both current func and external caller can see it
+		properties := common.PropertiesFromContext(ctx)
+		properties[common.PropertyTypeImageUpdated.Name] = fmt.Sprint(isImageUpdated) // <- instead, do it here.
+	}()
 
 	if strings.HasPrefix(imageName, "sha256:") {
 		message := "container uses a pinned image, and cannot be updated"
@@ -672,7 +682,7 @@ func (ds *dockerService) RecreateContainer(ctx context.Context, id string, pull 
 	if pull {
 		imageName := docker.ImageName(containerInfo)
 		if imageName != "" {
-			_isImageUpdated, err := ds.PullLatestImage(ctx, imageName, "")
+			_isImageUpdated, err := ds.PullLatestImage(ctx, imageName, "") // image update result will be included in ctx properties
 			if err != nil {
 				logger.Error("pull new image failed", zap.Error(err), zap.String("image", imageName))
 			}
