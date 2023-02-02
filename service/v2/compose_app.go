@@ -1,14 +1,17 @@
 package v2
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"strconv"
 
 	"github.com/IceWhaleTech/CasaOS-AppManagement/codegen"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/common"
 	"github.com/IceWhaleTech/CasaOS-Common/utils"
 	"github.com/compose-spec/compose-go/loader"
 	"github.com/compose-spec/compose-go/types"
+	"github.com/docker/compose/v2/cmd/formatter"
 	"github.com/docker/compose/v2/pkg/api"
 	"github.com/samber/lo"
 	"gopkg.in/yaml.v3"
@@ -110,6 +113,28 @@ func (a *ComposeApp) Containers(ctx context.Context) (map[string]*api.ContainerS
 	)
 
 	return containerMap, nil
+}
+
+func (a *ComposeApp) Logs(ctx context.Context, lines int) ([]byte, error) {
+	service, err := apiService()
+	if err != nil {
+		return nil, err
+	}
+
+	var buf bytes.Buffer
+
+	consumer := formatter.NewLogConsumer(ctx, &buf, &buf, false, true, false)
+
+	if err := service.Logs(ctx, a.Name, consumer, api.LogOptions{
+		Project:  (*codegen.ComposeApp)(a),
+		Services: lo.Map(a.Services, func(s types.ServiceConfig, i int) string { return s.Name }),
+		Follow:   false,
+		Tail:     lo.If(lines < 0, "all").Else(strconv.Itoa(lines)),
+	}); err != nil {
+		return nil, err
+	}
+
+	return buf.Bytes(), nil
 }
 
 func NewComposeAppFromYAML(yaml []byte) (*ComposeApp, error) {

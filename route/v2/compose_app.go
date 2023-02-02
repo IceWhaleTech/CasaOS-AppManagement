@@ -2,6 +2,7 @@ package v2
 
 import (
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 
@@ -11,6 +12,7 @@ import (
 	"github.com/IceWhaleTech/CasaOS-Common/utils"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/logger"
 	"github.com/labstack/echo/v4"
+	"github.com/samber/lo"
 	"go.uber.org/zap"
 	"gopkg.in/yaml.v2"
 )
@@ -73,7 +75,7 @@ func (a *AppManagement) InstallComposeApp(ctx echo.Context) error {
 	})
 }
 
-func (a *AppManagement) ComposeAppLogs(ctx echo.Context, id codegen.ComposeAppID) error {
+func (a *AppManagement) ComposeAppLogs(ctx echo.Context, id codegen.ComposeAppID, params codegen.ComposeAppLogsParams) error {
 	if id == "" {
 		message := ErrComposeAppIDNotProvided.Error()
 		return ctx.JSON(http.StatusBadRequest, codegen.ResponseBadRequest{
@@ -81,11 +83,24 @@ func (a *AppManagement) ComposeAppLogs(ctx echo.Context, id codegen.ComposeAppID
 		})
 	}
 
-	// TODO - get ComposeApp by ID
+	composeApps, err := service.MyService.Compose().List(ctx.Request().Context())
+	if err != nil {
+		message := err.Error()
+		return ctx.JSON(http.StatusInternalServerError, codegen.ResponseInternalServerError{Message: &message})
+	}
 
-	// TODO - get containers of ComposeApp
+	composeApp, ok := composeApps[id]
+	if !ok {
+		message := fmt.Sprintf("compose app `%s` not found", id)
+		return ctx.JSON(http.StatusNotFound, codegen.ResponseNotFound{Message: &message})
+	}
 
-	// TODO - get logs of main container
+	lines := lo.If(params.Lines == nil, 1000).Else(*params.Lines)
+	logs, err := composeApp.Logs(ctx.Request().Context(), lines)
+	if err != nil {
+		message := err.Error()
+		return ctx.JSON(http.StatusInternalServerError, codegen.ResponseInternalServerError{Message: &message})
+	}
 
-	return nil
+	return ctx.JSON(http.StatusOK, codegen.ComposeAppLogsOK{Data: utils.Ptr(string(logs))})
 }

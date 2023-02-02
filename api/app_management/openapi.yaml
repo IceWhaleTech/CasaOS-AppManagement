@@ -211,6 +211,15 @@ paths:
         - Compose methods
       parameters:
         - $ref: "#/components/parameters/ComposeAppID"
+        - name: lines
+          in: query
+          description: |
+            Number of lines to show from the end of the logs for each compose app.
+
+            - show all logs if `-1`
+          schema:
+            type: integer
+            default: 1000
       responses:
         "200":
           $ref: "#/components/responses/ComposeAppLogsOK"
