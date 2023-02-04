@@ -11,6 +11,7 @@ import (
 	"github.com/IceWhaleTech/CasaOS-AppManagement/service"
 	"github.com/IceWhaleTech/CasaOS-Common/utils"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/logger"
+	"github.com/compose-spec/compose-go/types"
 	"github.com/labstack/echo/v4"
 	"github.com/samber/lo"
 	"go.uber.org/zap"
@@ -28,6 +29,45 @@ func (a *AppManagement) MyComposeAppList(ctx echo.Context) error {
 	}
 
 	return ctx.JSON(http.StatusOK, composeApps)
+}
+
+func (a *AppManagement) MyComposeApp(ctx echo.Context, id codegen.ComposeAppID) error {
+	if id == "" {
+		message := ErrComposeAppIDNotProvided.Error()
+		return ctx.JSON(http.StatusBadRequest, codegen.ResponseBadRequest{
+			Message: &message,
+		})
+	}
+
+	composeApps, err := service.MyService.Compose().List(ctx.Request().Context())
+	if err != nil {
+		message := err.Error()
+		return ctx.JSON(http.StatusInternalServerError, codegen.ResponseInternalServerError{Message: &message})
+	}
+
+	composeApp, ok := composeApps[id]
+	if !ok {
+		message := fmt.Sprintf("compose app `%s` not found", id)
+		return ctx.JSON(http.StatusNotFound, codegen.ResponseNotFound{Message: &message})
+	}
+
+	accept := ctx.Request().Header.Get(echo.HeaderAccept)
+	if accept == common.MIMEApplicationYAML {
+		yaml, err := composeApp.YAML()
+		if err != nil {
+			message := err.Error()
+			return ctx.JSON(http.StatusInternalServerError, codegen.ResponseInternalServerError{
+				Message: &message,
+			})
+		}
+
+		return ctx.String(http.StatusOK, *yaml)
+	}
+
+	return ctx.JSON(http.StatusOK, codegen.ComposeAppOK{
+		// extension properties aren't marshalled - https://github.com/golang/go/issues/6213
+		Data: (*types.Project)(composeApp),
+	})
 }
 
 func (a *AppManagement) InstallComposeApp(ctx echo.Context) error {

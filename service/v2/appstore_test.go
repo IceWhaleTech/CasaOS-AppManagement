@@ -23,7 +23,9 @@ func TestComposeYAML(t *testing.T) {
 	assert.NilError(t, err)
 
 	for _, composeApp := range appStore.Catalog() {
-		assert.Equal(t, *composeApp.YAML(), v2.SampleComposeAppYAML)
+		composeAppYAML, err := composeApp.YAML()
+		assert.NilError(t, err)
+		assert.Equal(t, *composeAppYAML, v2.SampleComposeAppYAML)
 	}
 }
 

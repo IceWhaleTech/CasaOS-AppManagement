@@ -69,10 +69,11 @@ func (*AppManagement) ComposeApp(ctx echo.Context, id codegen.AppStoreID) error 
 
 	accept := ctx.Request().Header.Get(echo.HeaderAccept)
 	if accept == common.MIMEApplicationYAML {
-		yaml := composeApp.YAML()
-		if yaml == nil {
+		yaml, err := composeApp.YAML()
+		if err != nil {
+			message := err.Error()
 			return ctx.JSON(http.StatusInternalServerError, codegen.ResponseInternalServerError{
-				Message: utils.Ptr("yaml not found"),
+				Message: &message,
 			})
 		}
 
@@ -80,6 +81,7 @@ func (*AppManagement) ComposeApp(ctx echo.Context, id codegen.AppStoreID) error 
 	}
 
 	return ctx.JSON(http.StatusOK, codegen.ComposeAppOK{
+		// extension properties aren't marshalled - https://github.com/golang/go/issues/6213
 		Data: (*types.Project)(composeApp),
 	})
 }

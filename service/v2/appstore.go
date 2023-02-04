@@ -17,6 +17,7 @@ var (
 	SampleComposeAppYAML string
 
 	ErrComposeExtensionNameXCasaOSNotFound = fmt.Errorf("extension `%s` not found", common.ComposeExtensionNameXCasaOS)
+	ErrComposeExtensionNameYAMLNotFound    = fmt.Errorf("extension `%s` not found", common.ComposeExtensionNameYAML)
 	ErrMainAppNotFound                     = fmt.Errorf("main app not found")
 )
 

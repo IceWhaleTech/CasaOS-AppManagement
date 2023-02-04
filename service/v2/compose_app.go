@@ -8,7 +8,6 @@ import (
 
 	"github.com/IceWhaleTech/CasaOS-AppManagement/codegen"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/common"
-	"github.com/IceWhaleTech/CasaOS-Common/utils"
 	"github.com/compose-spec/compose-go/loader"
 	"github.com/compose-spec/compose-go/types"
 	"github.com/docker/compose/v2/cmd/formatter"
@@ -55,17 +54,22 @@ func (a *ComposeApp) StoreInfo() (*codegen.ComposeAppStoreInfo, error) {
 	return nil, ErrComposeExtensionNameXCasaOSNotFound
 }
 
-func (a *ComposeApp) YAML() *string {
-	if _, ok := a.Extensions["yaml"]; !ok {
+func (a *ComposeApp) YAML() (*string, error) {
+	if _, ok := a.Extensions[common.ComposeExtensionNameYAML]; !ok {
 		out, err := yaml.Marshal(a)
 		if err != nil {
-			return nil
+			return nil, err
 		}
 
-		a.Extensions["yaml"] = out
+		a.Extensions[common.ComposeExtensionNameYAML] = string(out)
 	}
 
-	return a.Extensions["yaml"].(*string)
+	output, ok := a.Extensions[common.ComposeExtensionNameYAML].(string)
+	if !ok {
+		return nil, ErrComposeExtensionNameYAMLNotFound
+	}
+
+	return &output, nil
 }
 
 func (a *ComposeApp) App(name string) *App {
@@ -158,7 +162,7 @@ func NewComposeAppFromYAML(yaml []byte) (*ComposeApp, error) {
 		project.Extensions = make(map[string]interface{})
 	}
 
-	project.Extensions["yaml"] = utils.Ptr(string(yaml))
+	project.Extensions["yaml"] = string(yaml)
 
 	// fix name
 	if err := fixProjectName(project); err != nil {

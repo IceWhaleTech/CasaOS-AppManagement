@@ -157,7 +157,7 @@ paths:
         Accept both `application/json` and `application/yaml` content type for the `Accept` header in the HTTP request.
 
         If the `Accept` header is set to `application/yaml`, the response will be the original `docker-compose.yml` content that follows [Compose Specification](https://compose-spec.io).
-      operationId: composeAppByAppStoreID
+      operationId: composeApp
       tags:
         - AppStore methods
       parameters:
@@ -207,14 +207,21 @@ paths:
       description: |
         Accept both `application/json` and `application/yaml` content type for the `Accept` header in the HTTP request.
 
-        If the `Accept` header is set to `application/yaml`, the response will be the original `docker-compose.yml` content that follows [Compose Specification](https://compose-spec.io).
+        If the `Accept` header is set to `application/yaml`, the response will be the interpolated `docker-compose.yml` content that follows [Compose Specification](https://compose-spec.io).
 
         > The difference between this and `/apps/{id}/compose` is that the compose detail returned has all environment variables interpolated. E.g. `$TZ` will be replaced by actual timezone text.
-      operationId: composeAppByAppID
+      operationId: myComposeApp
       tags:
         - Compose methods
       parameters:
         - $ref: "#/components/parameters/ComposeAppID"
+      responses:
+        "200":
+          $ref: "#/components/responses/ComposeAppOK"
+        "404":
+          $ref: "#/components/responses/ResponseNotFound"
+        "500":
+          $ref: "#/components/responses/ResponseInternalServerError"
 
   /compose/{id}/logs:
     get:
