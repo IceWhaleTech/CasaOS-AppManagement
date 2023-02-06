@@ -49,8 +49,6 @@ github.com/Azure/go-autorest/tracing v0.6.0/go.mod h1:+vhtPC754Xsa23ID7GlGsrdKBp
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
 github.com/BurntSushi/toml v1.2.0 h1:Rt8g24XnyGTyglgET/PRUNlrUeu9F5L+7FilkXfZgs0=
 github.com/BurntSushi/xgb v0.0.0-20160522181843-27f122750802/go.mod h1:IVnqGOEym/WlBOVXweHU+Q+/VP0lqqI8lqeDx9IjBqo=
-github.com/IceWhaleTech/CasaOS-Common v0.4.1-alpha2 h1:O6vDvIy+wFBj6DuUN4ZDLa6M7Cg80SXXpMsM9t2EqpA=
-github.com/IceWhaleTech/CasaOS-Common v0.4.1-alpha2/go.mod h1:xcemiRsXcs1zrmQxYMyExDjZ7UHYwkJqYE71IDIV0xA=
 github.com/IceWhaleTech/CasaOS-Common v0.4.2-alpha2.0.20230206162644-6b60fd9fe992 h1:uSzi+vaqGqe1Nu9JYImZzsmEznol595Sbn4NHNjTWic=
 github.com/IceWhaleTech/CasaOS-Common v0.4.2-alpha2.0.20230206162644-6b60fd9fe992/go.mod h1:xcemiRsXcs1zrmQxYMyExDjZ7UHYwkJqYE71IDIV0xA=
 github.com/Microsoft/go-winio v0.5.2/go.mod h1:WpS1mjBmmwHBEWmogvA2mj8546UReBk4v8QkMxJ6pZY=
