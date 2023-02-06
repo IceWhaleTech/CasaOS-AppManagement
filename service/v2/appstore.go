@@ -1,25 +1,15 @@
 package v2
 
 import (
-	"fmt"
-
 	_ "embed"
-
-	"github.com/IceWhaleTech/CasaOS-AppManagement/common"
 )
 
 type AppStore struct {
 	catalog map[string]*ComposeApp
 }
 
-var (
-	//go:embed fixtures/sample.docker-compose.yaml
-	SampleComposeAppYAML string
-
-	ErrComposeExtensionNameXCasaOSNotFound = fmt.Errorf("extension `%s` not found", common.ComposeExtensionNameXCasaOS)
-	ErrComposeExtensionNameYAMLNotFound    = fmt.Errorf("extension `%s` not found", common.ComposeExtensionNameYAML)
-	ErrMainAppNotFound                     = fmt.Errorf("main app not found")
-)
+//go:embed fixtures/sample.docker-compose.yaml
+var SampleComposeAppYAML string
 
 func (s *AppStore) Catalog() map[string]*ComposeApp {
 	return s.catalog

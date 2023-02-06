@@ -223,6 +223,24 @@ paths:
         "500":
           $ref: "#/components/responses/ResponseInternalServerError"
 
+  /compose/{id}/status:
+    get:
+      summary: Get the status of a compose app
+      description: |
+        TODO
+      operationId: composeAppStatus
+      tags:
+        - Compose methods
+      parameters:
+        - $ref: "#/components/parameters/ComposeAppID"
+      responses:
+        "200":
+          $ref: "#/components/responses/ComposeAppStatusOK"
+        "404":
+          $ref: "#/components/responses/ResponseNotFound"
+        "500":
+          $ref: "#/components/responses/ResponseInternalServerError"
+
   /compose/{id}/logs:
     get:
       summary: Get the logs of a compose app
@@ -482,6 +500,18 @@ components:
         application/yaml:
           schema:
             type: string
+
+    ComposeAppStatusOK:
+      description: OK
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: "#/components/schemas/BaseResponse"
+              - properties:
+                  data:
+                    type: string
+                    example: "running"
 
     ComposeAppLogsOK:
       description: OK

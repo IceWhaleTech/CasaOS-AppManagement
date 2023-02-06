@@ -9,6 +9,7 @@ import (
 	"github.com/IceWhaleTech/CasaOS-AppManagement/codegen"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/common"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/service"
+	v2 "github.com/IceWhaleTech/CasaOS-AppManagement/service/v2"
 	"github.com/IceWhaleTech/CasaOS-Common/utils"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/logger"
 	"github.com/compose-spec/compose-go/types"
@@ -112,6 +113,30 @@ func (a *AppManagement) InstallComposeApp(ctx echo.Context) error {
 
 	return ctx.JSON(http.StatusOK, codegen.ComposeAppInstallOK{
 		Message: utils.Ptr("compose app is being installed asynchronously"),
+	})
+}
+
+func (a *AppManagement) ComposeAppStatus(ctx echo.Context, id codegen.ComposeAppID) error {
+	if id == "" {
+		message := ErrComposeAppIDNotProvided.Error()
+		return ctx.JSON(http.StatusBadRequest, codegen.ResponseBadRequest{
+			Message: &message,
+		})
+	}
+
+	status, err := service.MyService.Compose().Status(ctx.Request().Context(), id)
+	if err != nil {
+		message := err.Error()
+
+		if err == v2.ErrComposeAppNotFound {
+			return ctx.JSON(http.StatusNotFound, codegen.ResponseNotFound{Message: &message})
+		}
+
+		return ctx.JSON(http.StatusInternalServerError, codegen.ResponseInternalServerError{Message: &message})
+	}
+
+	return ctx.JSON(http.StatusOK, codegen.ComposeAppStatusOK{
+		Data: &status,
 	})
 }
 

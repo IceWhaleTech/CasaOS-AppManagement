@@ -111,6 +111,28 @@ func (s *ComposeService) Install(composeYAML []byte) error {
 	return nil
 }
 
+func (s *ComposeService) Status(ctx context.Context, appID string) (string, error) {
+	service, err := apiService()
+	if err != nil {
+		return "", err
+	}
+
+	stackList, err := service.List(ctx, api.ListOptions{
+		All: true,
+	})
+	if err != nil {
+		return "", err
+	}
+
+	for _, stack := range stackList {
+		if stack.ID == appID {
+			return stack.Status, nil
+		}
+	}
+
+	return "", ErrComposeAppNotFound
+}
+
 func (s *ComposeService) List(ctx context.Context) (map[string]*ComposeApp, error) {
 	service, err := apiService()
 	if err != nil {
