@@ -736,8 +736,6 @@ func pullAndInstall(ctx context.Context, imageName string, m *model.Customizatio
 
 		if err := service.MyService.Docker().PullImage(ctx, imageName, m.Label); err != nil {
 
-			go service.SendNotification(m.Label, err.Error(), "PULLING", false, false, "INSTALL")
-
 			go service.PublishEventWrapper(ctx, common.EventTypeImagePullError, map[string]string{
 				common.PropertyTypeImageName.Name: imageName,
 
@@ -770,8 +768,6 @@ func pullAndInstall(ctx context.Context, imageName string, m *model.Customizatio
 
 		_containerID, err := service.MyService.Docker().CreateContainer(*m, "")
 		if err != nil {
-			go service.SendNotification(m.Label, err.Error(), "STARTING", false, false, "INSTALL")
-
 			go service.PublishEventWrapper(ctx, common.EventTypeContainerCreateError, map[string]string{
 				common.PropertyTypeImageName.Name: imageName,
 
@@ -799,9 +795,7 @@ func pullAndInstall(ctx context.Context, imageName string, m *model.Customizatio
 			common.PropertyTypeImageName.Name:   imageName,
 		})
 
-		go service.SendNotification(m.Label, "Starting container...", "STARTING", false, true, "INSTALL")
 		if err := service.MyService.Docker().StartContainer(m.ContainerName); err != nil {
-			go service.SendNotification(m.Label, err.Error(), "STARTING", false, false, "INSTALL")
 
 			go service.PublishEventWrapper(ctx, common.EventTypeContainerStartError, map[string]string{
 				common.PropertyTypeContainerID.Name: containerID,
@@ -818,8 +812,6 @@ func pullAndInstall(ctx context.Context, imageName string, m *model.Customizatio
 			go service.SendNotification(m.Label, err.Error(), "INSTALLED", true, false, "INSTALL")
 			return err
 		}
-
-		go service.SendNotification(m.Label, "Installed successfully", "INSTALLED", true, true, "INSTALL")
 
 		return nil
 	}(); err != nil {

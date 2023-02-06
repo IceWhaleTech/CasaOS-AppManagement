@@ -22,7 +22,6 @@ import (
 	"github.com/IceWhaleTech/CasaOS-AppManagement/pkg/config"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/pkg/docker"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/pkg/utils/envHelper"
-	"github.com/IceWhaleTech/CasaOS-Common/model/notify"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/file"
 	httpUtil "github.com/IceWhaleTech/CasaOS-Common/utils/http"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/logger"
@@ -1019,27 +1018,6 @@ func getV1AppStoreID(m *types.Container) uint {
 	return 0
 }
 
-// Deprecated: Use PublishEventWrapper(...) for message bus instead.
-func SendNotification(label, message, state string, finished, success bool, notificationType string) {
-	if len(label) == 0 {
-		return
-	}
-
-	notify := notify.Application{
-		Icon:     "icon",
-		Name:     label,
-		State:    state,
-		Type:     strings.ToUpper(notificationType),
-		Finished: finished,
-		Success:  success,
-		Message:  message,
-	}
-
-	if err := MyService.Notify().SendInstallAppBySocket(notify); err != nil {
-		logger.Error("send install app by socket error: ", zap.Error(err), zap.Any("notify", notify))
-	}
-}
-
 // Deprecated: Use pullImageProgress(...) instead.
 func pullImageProgressOld(ctx context.Context, out io.ReadCloser, appName, notificationType string) {
 	buf := make([]byte, 2048*4)
@@ -1058,7 +1036,6 @@ func pullImageProgressOld(ctx context.Context, out io.ReadCloser, appName, notif
 			common.PropertyTypeAppName.Name: appName,
 			common.PropertyTypeMessage.Name: message,
 		})
-		go SendNotification(appName, message, "PULLING", false, true, notificationType)
 	}
 }
 
@@ -1085,7 +1062,6 @@ func pullImageProgress(ctx context.Context, out io.ReadCloser, appName, notifica
 			common.PropertyTypeAppName.Name: appName,
 			common.PropertyTypeMessage.Name: progressMessage,
 		})
-		go SendNotification(appName, progressMessage, "PULLING", false, true, notificationType)
 
 	}
 }
