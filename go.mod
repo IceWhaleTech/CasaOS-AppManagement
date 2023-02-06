@@ -199,7 +199,7 @@ require (
 )
 
 require (
-	github.com/IceWhaleTech/CasaOS-Common v0.4.2-alpha2.0.20230206162644-6b60fd9fe992
+	github.com/IceWhaleTech/CasaOS-Common v0.4.2-alpha3
 	github.com/compose-spec/compose-go v1.8.1
 	github.com/coreos/go-systemd v0.0.0-20191104093116-d3cd4ed1dbcf
 	github.com/docker/cli v20.10.22+incompatible
