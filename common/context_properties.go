@@ -13,12 +13,12 @@ func WithProperties(ctx context.Context, properties map[string]string) context.C
 func PropertiesFromContext(ctx context.Context) map[string]string {
 	value := ctx.Value(contextKey)
 	if value == nil {
-		return map[string]string{}
+		return nil
 	}
 
 	if properties, ok := value.(map[string]string); ok {
 		return properties
 	}
 
-	return map[string]string{}
+	return nil
 }

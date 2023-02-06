@@ -177,6 +177,31 @@ var (
 			PropertyTypeMessage,
 		},
 	}
+
+	EventTypeImageRemoveBegin = message_bus.EventType{
+		SourceID: AppManagementServiceName,
+		Name:     "docker:image:remove-begin",
+		PropertyTypeList: []message_bus.PropertyType{
+			PropertyTypeAppName,
+		},
+	}
+
+	EventTypeImageRemoveEnd = message_bus.EventType{
+		SourceID: AppManagementServiceName,
+		Name:     "docker:image:remove-end",
+		PropertyTypeList: []message_bus.PropertyType{
+			PropertyTypeAppName,
+		},
+	}
+
+	EventTypeImageRemoveError = message_bus.EventType{
+		SourceID: AppManagementServiceName,
+		Name:     "docker:image:remove-error",
+		PropertyTypeList: []message_bus.PropertyType{
+			PropertyTypeAppName,
+			PropertyTypeMessage,
+		},
+	}
 )
 
 // event types for container
