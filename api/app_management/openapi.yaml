@@ -54,6 +54,10 @@ tags:
     description: |-
       <SchemaDefinition schemaRef="#/components/schemas/ComposeAppStoreInfo" />
 
+  - name: ContainerSummary
+    description: |-
+      <SchemaDefinition schemaRef="#/components/schemas/ContainerSummary" />
+
   - name: ContainerStoreInfo
     description: |-
       <SchemaDefinition schemaRef="#/components/schemas/ContainerStoreInfo" />
@@ -89,6 +93,7 @@ x-tagGroups:
       - ComposeApp
       - ComposeAppStoreInfoLists
       - ComposeAppStoreInfo
+      - ContainerSummary
       - ContainerStoreInfo
       - EnvStoreInfo
       - PortStoreInfo
@@ -236,6 +241,24 @@ paths:
       responses:
         "200":
           $ref: "#/components/responses/ComposeAppStatusOK"
+        "404":
+          $ref: "#/components/responses/ResponseNotFound"
+        "500":
+          $ref: "#/components/responses/ResponseInternalServerError"
+
+  /compose/{id}/containers:
+    get:
+      summary: Get the list of containers of a compose app
+      description: |
+        TODO
+      operationId: composeAppContainers
+      tags:
+        - Compose methods
+      parameters:
+        - $ref: "#/components/parameters/ComposeAppID"
+      responses:
+        "200":
+          $ref: "#/components/responses/ComposeAppContainersOK"
         "404":
           $ref: "#/components/responses/ResponseNotFound"
         "500":
@@ -513,6 +536,21 @@ components:
                     type: string
                     example: "running"
 
+    ComposeAppContainersOK:
+      description: OK
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: "#/components/schemas/BaseResponse"
+              - properties:
+                  data:
+                    type: object
+                    additionalProperties:
+                      $ref: "#/components/schemas/ContainerSummary"
+                    example:
+                      ? "09e70f4a7dd3fc43de6a1bc40d45c79f857544e13679e5b1a47409034a7ce621"
+                      : {}
     ComposeAppLogsOK:
       description: OK
       content:
@@ -617,7 +655,7 @@ components:
     ComposeApp:
       type: object
       description: |-
-        See [Compose Specification](https://compose-spec.io) for the schema structure.
+        See [Compose Specification](https://compose-spec.io) for the schema structure of `ComposeApp`.
 
       x-go-type: types.Project
       x-go-type-import:
@@ -688,6 +726,16 @@ components:
           $ref: "#/components/schemas/TipsStoreInfo"
         container:
           $ref: "#/components/schemas/ContainerStoreInfo"
+
+    ContainerSummary:
+      type: object
+      description: |-
+        See [Go Doc](https://pkg.go.dev/github.com/docker/compose/v2@v2.14.2/pkg/api#ContainerSummary) for the schema structure of `ContainerSummary`.
+
+      x-go-type: api.ContainerSummary
+      x-go-type-import:
+        name: api
+        path: github.com/docker/compose/v2/pkg/api
 
     ContainerStoreInfo:
       required:

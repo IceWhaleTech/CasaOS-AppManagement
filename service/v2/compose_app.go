@@ -96,7 +96,7 @@ func (a *ComposeApp) Apps() map[string]*App {
 	return apps
 }
 
-func (a *ComposeApp) Containers(ctx context.Context) (map[string]*api.ContainerSummary, error) {
+func (a *ComposeApp) Containers(ctx context.Context) (map[string]api.ContainerSummary, error) {
 	service, err := apiService()
 	if err != nil {
 		return nil, err
@@ -111,8 +111,8 @@ func (a *ComposeApp) Containers(ctx context.Context) (map[string]*api.ContainerS
 
 	containerMap := lo.SliceToMap(
 		containers,
-		func(c api.ContainerSummary) (string, *api.ContainerSummary) {
-			return c.Service, &c
+		func(c api.ContainerSummary) (string, api.ContainerSummary) {
+			return c.Service, c
 		},
 	)
 
