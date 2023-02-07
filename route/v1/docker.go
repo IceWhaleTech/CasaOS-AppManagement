@@ -189,6 +189,7 @@ func InstallApp(c *gin.Context) {
 
 	eventProperties := common.PropertiesFromContext(ctx)
 	eventProperties[common.PropertyTypeAppName.Name] = m.Label
+	eventProperties[common.PropertyTypeAppIcon.Name] = m.Icon
 	eventProperties[common.PropertyTypeImageName.Name] = imageName
 
 	go func() {

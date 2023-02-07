@@ -20,6 +20,12 @@ var (
 		Description: utils.Ptr("name of the app which could be a container image name including version, a snap name or the name of any other forms of app"),
 		Example:     utils.Ptr("hello-world:latest (this is the name of a container image"),
 	}
+
+	PropertyTypeAppIcon = message_bus.PropertyType{
+		Name:        "app:icon",
+		Description: utils.Ptr("icon of the app"),
+		Example:     utils.Ptr("https://example.com/icon.png"),
+	}
 )
 
 // container properties
@@ -75,6 +81,7 @@ var (
 		Name:     "app:install-begin",
 		PropertyTypeList: []message_bus.PropertyType{
 			PropertyTypeAppName,
+			PropertyTypeAppIcon,
 		},
 	}
 
@@ -83,6 +90,7 @@ var (
 		Name:     "app:install-end",
 		PropertyTypeList: []message_bus.PropertyType{
 			PropertyTypeAppName,
+			PropertyTypeAppIcon,
 		},
 	}
 
@@ -91,6 +99,7 @@ var (
 		Name:     "app:install-error",
 		PropertyTypeList: []message_bus.PropertyType{
 			PropertyTypeAppName,
+			PropertyTypeAppIcon,
 			PropertyTypeMessage,
 		},
 	}
