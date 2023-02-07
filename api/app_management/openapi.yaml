@@ -524,6 +524,7 @@ components:
                   data:
                     readOnly: true
                     type: string
+                    example: <logs...>
 
     ContainerHealthCheckOK:
       description: OK
