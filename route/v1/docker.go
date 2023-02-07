@@ -14,7 +14,6 @@ import (
 	"github.com/IceWhaleTech/CasaOS-AppManagement/service"
 	v1 "github.com/IceWhaleTech/CasaOS-AppManagement/service/v1"
 	modelCommon "github.com/IceWhaleTech/CasaOS-Common/model"
-	"github.com/IceWhaleTech/CasaOS-Common/model/notify"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/common_err"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/file"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/logger"
@@ -184,19 +183,22 @@ func InstallApp(c *gin.Context) {
 	id := uuid.NewV4().String()
 	m.CustomID = id
 
+	imageName := dockerImage + ":" + dockerImageVersion
+
 	ctx := common.WithProperties(context.Background(), PropertiesFromQueryParams(c))
+
+	eventProperties := common.PropertiesFromContext(ctx)
+	eventProperties[common.PropertyTypeAppName.Name] = m.Label
+	eventProperties[common.PropertyTypeAppIcon.Name] = m.Icon
+	eventProperties[common.PropertyTypeImageName.Name] = imageName
+
 	go func() {
-		go service.PublishEventWrapper(ctx, common.EventTypeAppInstallBegin, map[string]string{
-			common.PropertyTypeAppName.Name: m.Label,
-		})
+		go service.PublishEventWrapper(ctx, common.EventTypeAppInstallBegin, nil)
 
-		defer service.PublishEventWrapper(ctx, common.EventTypeAppInstallEnd, map[string]string{
-			common.PropertyTypeAppName.Name: m.Label,
-		})
+		defer service.PublishEventWrapper(ctx, common.EventTypeAppInstallEnd, nil)
 
-		if err := pullAndInstall(ctx, dockerImage+":"+dockerImageVersion, &m); err != nil {
+		if err := pullAndInstall(ctx, imageName, &m); err != nil {
 			go service.PublishEventWrapper(ctx, common.EventTypeAppInstallError, map[string]string{
-				common.PropertyTypeAppName.Name: m.Label,
 				common.PropertyTypeMessage.Name: err.Error(),
 			})
 		}
@@ -243,18 +245,16 @@ func UninstallApp(c *gin.Context) {
 		return
 	}
 
-	go func() {
-		go service.PublishEventWrapper(ctx, common.EventTypeAppUninstallBegin, map[string]string{
-			common.PropertyTypeAppName.Name: container.Config.Image,
-		})
+	eventProperties := common.PropertiesFromContext(ctx)
+	eventProperties[common.PropertyTypeAppName.Name] = container.Config.Labels["name"]
 
-		defer service.PublishEventWrapper(ctx, common.EventTypeAppUninstallEnd, map[string]string{
-			common.PropertyTypeAppName.Name: container.Config.Image,
-		})
+	go func() {
+		go service.PublishEventWrapper(ctx, common.EventTypeAppUninstallBegin, nil)
+
+		defer service.PublishEventWrapper(ctx, common.EventTypeAppUninstallEnd, nil)
 
 		if err := uninstall(ctx, container, isDelete); err != nil {
 			go service.PublishEventWrapper(ctx, common.EventTypeAppUninstallError, map[string]string{
-				common.PropertyTypeAppName.Name: container.Config.Image,
 				common.PropertyTypeMessage.Name: err.Error(),
 			})
 		}
@@ -726,21 +726,13 @@ func PutDockerDaemonConfiguration(c *gin.Context) {
 func pullAndInstall(ctx context.Context, imageName string, m *model.CustomizationPostData) error {
 	// step：下载镜像
 	if err := func() error {
-		go service.PublishEventWrapper(ctx, common.EventTypeImagePullBegin, map[string]string{
-			common.PropertyTypeImageName.Name: imageName,
-		})
+		go service.PublishEventWrapper(ctx, common.EventTypeImagePullBegin, nil)
 
-		defer service.PublishEventWrapper(ctx, common.EventTypeImagePullEnd, map[string]string{
-			common.PropertyTypeImageName.Name: imageName,
-		})
+		defer service.PublishEventWrapper(ctx, common.EventTypeImagePullEnd, nil)
 
 		if err := service.MyService.Docker().PullImage(ctx, imageName, m.Label); err != nil {
 
-			go service.SendNotification(m.Label, err.Error(), "PULLING", false, false, "INSTALL")
-
 			go service.PublishEventWrapper(ctx, common.EventTypeImagePullError, map[string]string{
-				common.PropertyTypeImageName.Name: imageName,
-
 				common.PropertyTypeMessage.Name: err.Error(),
 			})
 
@@ -759,28 +751,22 @@ func pullAndInstall(ctx context.Context, imageName string, m *model.Customizatio
 	var containerID string
 
 	if err := func() error {
-		go service.PublishEventWrapper(ctx, common.EventTypeContainerCreateBegin, map[string]string{
-			common.PropertyTypeImageName.Name: imageName,
-		})
+		go service.PublishEventWrapper(ctx, common.EventTypeContainerCreateBegin, nil)
 
-		defer service.PublishEventWrapper(ctx, common.EventTypeContainerCreateEnd, map[string]string{
-			common.PropertyTypeContainerID.Name: containerID,
-			common.PropertyTypeImageName.Name:   imageName,
-		})
+		defer service.PublishEventWrapper(ctx, common.EventTypeContainerCreateEnd, nil)
 
 		_containerID, err := service.MyService.Docker().CreateContainer(*m, "")
 		if err != nil {
-			go service.SendNotification(m.Label, err.Error(), "STARTING", false, false, "INSTALL")
-
 			go service.PublishEventWrapper(ctx, common.EventTypeContainerCreateError, map[string]string{
-				common.PropertyTypeImageName.Name: imageName,
-
 				common.PropertyTypeMessage.Name: err.Error(),
 			})
 			return err
 		}
 
 		containerID = _containerID
+
+		eventProperties := common.PropertiesFromContext(ctx)
+		eventProperties[common.PropertyTypeContainerID.Name] = containerID
 
 		return nil
 	}(); err != nil {
@@ -789,37 +775,17 @@ func pullAndInstall(ctx context.Context, imageName string, m *model.Customizatio
 
 	// step：启动容器
 	if err := func() error {
-		go service.PublishEventWrapper(ctx, common.EventTypeContainerStartBegin, map[string]string{
-			common.PropertyTypeContainerID.Name: containerID,
-			common.PropertyTypeImageName.Name:   imageName,
-		})
+		go service.PublishEventWrapper(ctx, common.EventTypeContainerStartBegin, nil)
 
-		defer service.PublishEventWrapper(ctx, common.EventTypeContainerStartEnd, map[string]string{
-			common.PropertyTypeContainerID.Name: containerID,
-			common.PropertyTypeImageName.Name:   imageName,
-		})
+		defer service.PublishEventWrapper(ctx, common.EventTypeContainerStartEnd, nil)
 
-		go service.SendNotification(m.Label, "Starting container...", "STARTING", false, true, "INSTALL")
 		if err := service.MyService.Docker().StartContainer(m.ContainerName); err != nil {
-			go service.SendNotification(m.Label, err.Error(), "STARTING", false, false, "INSTALL")
 
 			go service.PublishEventWrapper(ctx, common.EventTypeContainerStartError, map[string]string{
-				common.PropertyTypeContainerID.Name: containerID,
-				common.PropertyTypeImageName.Name:   imageName,
-
 				common.PropertyTypeMessage.Name: err.Error(),
 			})
 			return err
 		}
-
-		// step: 启动成功     检查容器状态确认启动成功
-		container, err := service.MyService.Docker().DescribeContainer(ctx, m.ContainerName)
-		if err != nil && container.ContainerJSONBase.State.Running {
-			go service.SendNotification(m.Label, err.Error(), "INSTALLED", true, false, "INSTALL")
-			return err
-		}
-
-		go service.SendNotification(m.Label, "Installed successfully", "INSTALLED", true, true, "INSTALL")
 
 		return nil
 	}(); err != nil {
@@ -831,29 +797,59 @@ func pullAndInstall(ctx context.Context, imageName string, m *model.Customizatio
 }
 
 func uninstall(ctx context.Context, container *types.ContainerJSON, isDelete bool) error {
-	// publish app installing event
-
 	// step：停止容器
-	err := service.MyService.Docker().StopContainer(container.ID)
-	if err != nil {
-		go service.PublishEventWrapper(ctx, common.EventTypeAppUninstallError, map[string]string{
-			common.PropertyTypeAppName.Name: container.Config.Image,
-			common.PropertyTypeMessage.Name: err.Error(),
-		})
+	if err := func() error {
+		go service.PublishEventWrapper(ctx, common.EventTypeContainerStopBegin, nil)
+
+		defer service.PublishEventWrapper(ctx, common.EventTypeContainerStopEnd, nil)
+
+		if err := service.MyService.Docker().StopContainer(container.ID); err != nil {
+
+			go service.PublishEventWrapper(ctx, common.EventTypeContainerStopError, map[string]string{
+				common.PropertyTypeMessage.Name: err.Error(),
+			})
+
+			return err
+		}
+
+		return nil
+	}(); err != nil {
 		return err
 	}
 
-	err = service.MyService.Docker().RemoveContainer(container.ID, false)
-	if err != nil {
-		go service.PublishEventWrapper(ctx, common.EventTypeAppUninstallError, map[string]string{
-			common.PropertyTypeAppName.Name: container.Config.Image,
-			common.PropertyTypeMessage.Name: err.Error(),
-		})
+	if err := func() error {
+		go service.PublishEventWrapper(ctx, common.EventTypeContainerRemoveBegin, nil)
+
+		defer service.PublishEventWrapper(ctx, common.EventTypeContainerRemoveEnd, nil)
+
+		if err := service.MyService.Docker().RemoveContainer(container.ID, false); err != nil {
+			go service.PublishEventWrapper(ctx, common.EventTypeContainerRemoveError, map[string]string{
+				common.PropertyTypeMessage.Name: err.Error(),
+			})
+			return err
+		}
+
+		return nil
+	}(); err != nil {
 		return err
 	}
 
-	if err := service.MyService.Docker().RemoveImage(container.Config.Image); err != nil {
-		logger.Error("error when trying to remove docker image", zap.Error(err), zap.String("image", container.Config.Image))
+	if err := func() error {
+		go service.PublishEventWrapper(ctx, common.EventTypeImageRemoveBegin, nil)
+
+		defer service.PublishEventWrapper(ctx, common.EventTypeImageRemoveEnd, nil)
+
+		if err := service.MyService.Docker().RemoveImage(container.Config.Image); err != nil {
+			logger.Error("error when trying to remove docker image", zap.Error(err), zap.String("image", container.Config.Image))
+
+			go service.PublishEventWrapper(ctx, common.EventTypeImageRemoveError, map[string]string{
+				common.PropertyTypeMessage.Name: err.Error(),
+			})
+		}
+
+		return nil
+	}(); err != nil {
+		return err
 	}
 
 	if container.Config.Labels["origin"] != "custom" && isDelete {
@@ -862,32 +858,12 @@ func uninstall(ctx context.Context, container *types.ContainerJSON, isDelete boo
 			if strings.Contains(v.Source, container.Name) {
 				path := filepath.Join(strings.Split(v.Source, container.Name)[0], container.Name)
 				if err := file.RMDir(path); err != nil {
-					go service.PublishEventWrapper(ctx, common.EventTypeAppUninstallError, map[string]string{
-						common.PropertyTypeAppName.Name: container.Config.Image,
-						common.PropertyTypeMessage.Name: err.Error(),
-					})
 					return err
 				}
 			}
 		}
 	}
 	config.CasaOSGlobalVariables.AppChange = true
-
-	notify := notify.Application{
-		Icon:     v1.AppIcon(container),
-		Name:     strings.ReplaceAll(container.Name, "/", ""),
-		State:    "FINISHED",
-		Type:     "UNINSTALL",
-		Success:  true,
-		Finished: true,
-		Properties: map[string]string{
-			common.PropertyTypeAppName.Name: container.Config.Image,
-		},
-	}
-
-	if err := service.MyService.Notify().SendUninstallAppBySocket(notify); err != nil {
-		logger.Error("send uninstall app notify error", zap.Error(err), zap.Any("notify", notify))
-	}
 
 	return nil
 }

@@ -126,6 +126,10 @@ func PublishEventWrapper(ctx context.Context, eventType message_bus.EventType, p
 		return
 	}
 
+	if properties == nil {
+		properties = map[string]string{}
+	}
+
 	// merge with properties from context
 	for k, v := range common.PropertiesFromContext(ctx) {
 		properties[k] = v
