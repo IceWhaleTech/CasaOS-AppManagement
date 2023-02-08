@@ -8,11 +8,13 @@ import (
 
 	"github.com/IceWhaleTech/CasaOS-AppManagement/codegen"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/common"
+	"github.com/IceWhaleTech/CasaOS-Common/utils/logger"
 	"github.com/compose-spec/compose-go/loader"
 	"github.com/compose-spec/compose-go/types"
 	"github.com/docker/compose/v2/cmd/formatter"
 	"github.com/docker/compose/v2/pkg/api"
 	"github.com/samber/lo"
+	"go.uber.org/zap"
 	"gopkg.in/yaml.v3"
 )
 
@@ -47,6 +49,19 @@ func (a *ComposeApp) StoreInfo() (*codegen.ComposeAppStoreInfo, error) {
 		appStoreID := fmt.Sprintf("%s.%s", Standardize(appStoreInfo.Developer), Standardize(a.Name))
 
 		storeInfo.AppStoreID = &appStoreID
+
+		// apps
+		apps := lo.MapValues(a.Apps(), func(app *App, name string) codegen.AppStoreInfo {
+			appStoreInfo, err := app.StoreInfo()
+			if err != nil {
+				logger.Error("failed to get app store info", zap.Error(err), zap.String("app", name))
+				return codegen.AppStoreInfo{}
+			}
+
+			return *appStoreInfo
+		})
+
+		storeInfo.Apps = &apps
 
 		return &storeInfo, nil
 	}

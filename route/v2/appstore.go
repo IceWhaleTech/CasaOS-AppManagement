@@ -80,8 +80,19 @@ func (*AppManagement) ComposeApp(ctx echo.Context, id codegen.AppStoreID) error 
 		return ctx.String(http.StatusOK, *yaml)
 	}
 
+	storeInfo, err := composeApp.StoreInfo()
+	if err != nil {
+		message := err.Error()
+		return ctx.JSON(http.StatusInternalServerError, codegen.ResponseInternalServerError{
+			Message: &message,
+		})
+	}
+
 	return ctx.JSON(http.StatusOK, codegen.ComposeAppOK{
 		// extension properties aren't marshalled - https://github.com/golang/go/issues/6213
-		Data: (*types.Project)(composeApp),
+		Data: &codegen.ComposeAppWithStoreInfo{
+			StoreInfo: storeInfo,
+			Compose:   (*types.Project)(composeApp),
+		},
 	})
 }

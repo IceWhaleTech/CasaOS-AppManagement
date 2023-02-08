@@ -519,7 +519,7 @@ components:
               - $ref: "#/components/schemas/BaseResponse"
               - properties:
                   data:
-                    $ref: "#/components/schemas/ComposeApp"
+                    $ref: "#/components/schemas/ComposeAppWithStoreInfo"
         application/yaml:
           schema:
             type: string
@@ -545,12 +545,8 @@ components:
               - $ref: "#/components/schemas/BaseResponse"
               - properties:
                   data:
-                    type: object
-                    additionalProperties:
-                      $ref: "#/components/schemas/ContainerSummary"
-                    example:
-                      ? "09e70f4a7dd3fc43de6a1bc40d45c79f857544e13679e5b1a47409034a7ce621"
-                      : {}
+                    $ref: "#/components/schemas/ComposeAppContainers"
+
     ComposeAppLogsOK:
       description: OK
       content:
@@ -662,6 +658,17 @@ components:
         name: types
         path: github.com/compose-spec/compose-go/types
 
+    ComposeAppWithStoreInfo:
+      description: |-
+        Schema for `ComposeAppOK` response.
+
+        > Do not mistake it as `ComposeAppStoreInfo` which is just store information of a compose app.
+      properties:
+        store_info:
+          $ref: "#/components/schemas/ComposeAppStoreInfo"
+        compose:
+          $ref: "#/components/schemas/ComposeApp"
+
     AppStoreInfo:
       title: StoreInfo of an app
       description: |-
@@ -726,6 +733,21 @@ components:
           $ref: "#/components/schemas/TipsStoreInfo"
         container:
           $ref: "#/components/schemas/ContainerStoreInfo"
+
+    ComposeAppContainers:
+      description: |-
+        Schema for `ComposeAppContainersOK` response.
+      properties:
+        main:
+          type: string
+          example: "syncthing"
+        containers:
+          type: object
+          additionalProperties:
+            $ref: "#/components/schemas/ContainerSummary"
+          example:
+            "09e70f4a7dd3fc43de6a1bc40d45c79f857544e13679e5b1a47409034a7ce621":
+              {}
 
     ContainerSummary:
       type: object

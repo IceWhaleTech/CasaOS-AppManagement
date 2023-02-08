@@ -65,9 +65,20 @@ func (a *AppManagement) MyComposeApp(ctx echo.Context, id codegen.ComposeAppID) 
 		return ctx.String(http.StatusOK, *yaml)
 	}
 
+	storeInfo, err := composeApp.StoreInfo()
+	if err != nil {
+		message := err.Error()
+		return ctx.JSON(http.StatusInternalServerError, codegen.ResponseInternalServerError{
+			Message: &message,
+		})
+	}
+
 	return ctx.JSON(http.StatusOK, codegen.ComposeAppOK{
 		// extension properties aren't marshalled - https://github.com/golang/go/issues/6213
-		Data: (*types.Project)(composeApp),
+		Data: &codegen.ComposeAppWithStoreInfo{
+			StoreInfo: storeInfo,
+			Compose:   (*types.Project)(composeApp),
+		},
 	})
 }
 
@@ -196,5 +207,16 @@ func (a *AppManagement) ComposeAppContainers(ctx echo.Context, id codegen.Compos
 		return ctx.JSON(http.StatusInternalServerError, codegen.ResponseInternalServerError{Message: &message})
 	}
 
-	return ctx.JSON(http.StatusOK, codegen.ComposeAppContainersOK{Data: &containers})
+	storeInfo, err := composeApp.StoreInfo()
+	if err != nil {
+		message := err.Error()
+		return ctx.JSON(http.StatusInternalServerError, codegen.ResponseInternalServerError{Message: &message})
+	}
+
+	return ctx.JSON(http.StatusOK, codegen.ComposeAppContainersOK{
+		Data: &codegen.ComposeAppContainers{
+			Main:       storeInfo.MainApp,
+			Containers: &containers,
+		},
+	})
 }
