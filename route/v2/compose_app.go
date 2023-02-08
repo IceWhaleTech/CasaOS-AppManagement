@@ -54,7 +54,7 @@ func (a *AppManagement) MyComposeApp(ctx echo.Context, id codegen.ComposeAppID) 
 
 	accept := ctx.Request().Header.Get(echo.HeaderAccept)
 	if accept == common.MIMEApplicationYAML {
-		yaml, err := composeApp.YAML()
+		yaml, err := yaml.Marshal(composeApp)
 		if err != nil {
 			message := err.Error()
 			return ctx.JSON(http.StatusInternalServerError, codegen.ResponseInternalServerError{
@@ -62,7 +62,7 @@ func (a *AppManagement) MyComposeApp(ctx echo.Context, id codegen.ComposeAppID) 
 			})
 		}
 
-		return ctx.String(http.StatusOK, *yaml)
+		return ctx.String(http.StatusOK, string(yaml))
 	}
 
 	storeInfo, err := composeApp.StoreInfo()

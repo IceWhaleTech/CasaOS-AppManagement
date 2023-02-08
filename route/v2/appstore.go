@@ -9,6 +9,7 @@ import (
 	"github.com/IceWhaleTech/CasaOS-Common/utils"
 	"github.com/compose-spec/compose-go/types"
 	"github.com/labstack/echo/v4"
+	"gopkg.in/yaml.v3"
 )
 
 func (*AppManagement) ComposeAppStoreInfoList(ctx echo.Context) error {
@@ -69,7 +70,7 @@ func (*AppManagement) ComposeApp(ctx echo.Context, id codegen.AppStoreID) error 
 
 	accept := ctx.Request().Header.Get(echo.HeaderAccept)
 	if accept == common.MIMEApplicationYAML {
-		yaml, err := composeApp.YAML()
+		yaml, err := yaml.Marshal(composeApp)
 		if err != nil {
 			message := err.Error()
 			return ctx.JSON(http.StatusInternalServerError, codegen.ResponseInternalServerError{
@@ -77,7 +78,7 @@ func (*AppManagement) ComposeApp(ctx echo.Context, id codegen.AppStoreID) error 
 			})
 		}
 
-		return ctx.String(http.StatusOK, *yaml)
+		return ctx.String(http.StatusOK, string(yaml))
 	}
 
 	storeInfo, err := composeApp.StoreInfo()

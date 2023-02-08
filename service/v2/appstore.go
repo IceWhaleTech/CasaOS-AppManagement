@@ -47,6 +47,8 @@ func tempStoreForTest() (map[string]*ComposeApp, error) {
 		return nil, err
 	}
 
+	composeAppStoreInfo.AppStoreID = composeAppStoreInfo.MainApp // TODO remove this line
+
 	store[*composeAppStoreInfo.AppStoreID] = composeApp
 
 	return store, nil

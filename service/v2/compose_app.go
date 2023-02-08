@@ -14,7 +14,6 @@ import (
 	"github.com/docker/compose/v2/pkg/api"
 	"github.com/samber/lo"
 	"go.uber.org/zap"
-	"gopkg.in/yaml.v3"
 )
 
 type ComposeApp codegen.ComposeApp
@@ -53,24 +52,6 @@ func (a *ComposeApp) StoreInfo() (*codegen.ComposeAppStoreInfo, error) {
 	storeInfo.Apps = &apps
 
 	return &storeInfo, nil
-}
-
-func (a *ComposeApp) YAML() (*string, error) {
-	if _, ok := a.Extensions[common.ComposeExtensionNameYAML]; !ok {
-		out, err := yaml.Marshal(a)
-		if err != nil {
-			return nil, err
-		}
-
-		a.Extensions[common.ComposeExtensionNameYAML] = string(out)
-	}
-
-	output, ok := a.Extensions[common.ComposeExtensionNameYAML].(string)
-	if !ok {
-		return nil, ErrComposeExtensionNameYAMLNotFound
-	}
-
-	return &output, nil
 }
 
 func (a *ComposeApp) App(name string) *App {
@@ -162,8 +143,6 @@ func NewComposeAppFromYAML(yaml []byte) (*ComposeApp, error) {
 	if project.Extensions == nil {
 		project.Extensions = make(map[string]interface{})
 	}
-
-	project.Extensions[common.ComposeExtensionNameYAML] = string(yaml)
 
 	// fix name
 	if err := fixProjectName(project); err != nil {
