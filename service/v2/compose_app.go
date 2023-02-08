@@ -163,7 +163,7 @@ func NewComposeAppFromYAML(yaml []byte) (*ComposeApp, error) {
 		project.Extensions = make(map[string]interface{})
 	}
 
-	project.Extensions["yaml"] = string(yaml)
+	project.Extensions[common.ComposeExtensionNameYAML] = string(yaml)
 
 	// fix name
 	if err := fixProjectName(project); err != nil {
