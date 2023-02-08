@@ -356,6 +356,7 @@ func (ds *dockerService) CreateContainerShellSession(container, row, col string)
 	if err != nil {
 		return types.HijackedResponse{}, err
 	}
+
 	// 附加到上面创建的/bin/bash进程中
 	return cli.ContainerExecAttach(ctx, ir.ID, types.ExecStartCheck{Detach: false, Tty: true})
 }

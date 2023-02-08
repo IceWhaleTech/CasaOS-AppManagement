@@ -82,6 +82,71 @@ func (a *AppManagement) MyComposeApp(ctx echo.Context, id codegen.ComposeAppID) 
 	})
 }
 
+func (a *AppManagement) UpdateComposeAppSettings(ctx echo.Context, id codegen.ComposeAppID) error {
+	if id == "" {
+		message := ErrComposeAppIDNotProvided.Error()
+		return ctx.JSON(http.StatusBadRequest, codegen.ResponseBadRequest{
+			Message: &message,
+		})
+	}
+
+	composeApps, err := service.MyService.Compose().List(ctx.Request().Context())
+	if err != nil {
+		message := err.Error()
+		return ctx.JSON(http.StatusInternalServerError, codegen.ResponseInternalServerError{Message: &message})
+	}
+
+	_, ok := composeApps[id]
+	if !ok {
+		message := fmt.Sprintf("compose app `%s` not found", id)
+		return ctx.JSON(http.StatusNotFound, codegen.ResponseNotFound{Message: &message})
+	}
+
+	var buf []byte
+
+	switch ctx.Request().Header.Get(echo.HeaderContentType) {
+	case common.MIMEApplicationYAML:
+
+		_buf, err := io.ReadAll(ctx.Request().Body)
+		if err != nil {
+			message := err.Error()
+			logger.Error("failed to read body from the request", zap.Error(err))
+			return ctx.JSON(http.StatusBadRequest, codegen.ResponseBadRequest{Message: &message})
+		}
+
+		buf = _buf
+
+	default:
+		var c codegen.ComposeApp
+		if err := ctx.Bind(&c); err != nil {
+			message := err.Error()
+			logger.Error("failed to decode JSON from the request", zap.Error(err))
+			return ctx.JSON(http.StatusBadRequest, codegen.ResponseBadRequest{
+				Message: &message,
+			})
+		}
+
+		_buf, err := yaml.Marshal(c)
+		if err != nil {
+			message := err.Error()
+			logger.Error("failed to marshal compose app", zap.Error(err))
+			return ctx.JSON(http.StatusInternalServerError, codegen.ResponseInternalServerError{Message: &message})
+		}
+		buf = _buf
+	}
+
+	if err := service.MyService.Compose().UpdateSettings(id, buf); err != nil {
+		message := err.Error()
+		return ctx.JSON(http.StatusInternalServerError, codegen.ResponseInternalServerError{
+			Message: &message,
+		})
+	}
+
+	return ctx.JSON(http.StatusOK, codegen.ComposeAppUpdateSettingsOK{
+		Message: utils.Ptr("compose app settings are being updated asynchronously"),
+	})
+}
+
 func (a *AppManagement) InstallComposeApp(ctx echo.Context) error {
 	var buf []byte
 
