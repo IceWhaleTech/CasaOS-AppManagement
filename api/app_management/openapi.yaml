@@ -228,6 +228,27 @@ paths:
         "500":
           $ref: "#/components/responses/ResponseInternalServerError"
 
+    put:
+      summary: Update settings of a compose app
+      description: |
+        TODO
+      operationId: updateComposeAppSettings
+      tags:
+        - Compose methods
+      parameters:
+        - $ref: "#/components/parameters/ComposeAppID"
+      requestBody:
+        $ref: "#/components/requestBodies/RequestComposeApp"
+      responses:
+        "200":
+          $ref: "#/components/responses/ComposeAppUpdateSettingsOK"
+        "400":
+          $ref: "#/components/responses/ResponseBadRequest"
+        "404":
+          $ref: "#/components/responses/ResponseNotFound"
+        "500":
+          $ref: "#/components/responses/ResponseInternalServerError"
+
   /compose/{id}/status:
     get:
       summary: Get the status of a compose app
@@ -523,6 +544,13 @@ components:
         application/yaml:
           schema:
             type: string
+
+    ComposeAppUpdateSettingsOK:
+      description: OK
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/BaseResponse"
 
     ComposeAppStatusOK:
       description: OK

@@ -3,7 +3,6 @@ package v2
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"strconv"
 
 	"github.com/IceWhaleTech/CasaOS-AppManagement/codegen"
@@ -21,52 +20,39 @@ import (
 type ComposeApp codegen.ComposeApp
 
 func (a *ComposeApp) StoreInfo() (*codegen.ComposeAppStoreInfo, error) {
-	if ex, ok := a.Extensions[common.ComposeExtensionNameXCasaOS]; ok {
-		var storeInfo codegen.ComposeAppStoreInfo
-		if err := loader.Transform(ex, &storeInfo); err != nil {
-			return nil, err
-		}
-
-		// locate main app
-		if storeInfo.MainApp == nil || *storeInfo.MainApp == "" {
-			for _, app := range a.Apps() {
-				storeInfo.MainApp = &app.Name
-				break
-			}
-		}
-
-		mainApp := a.App(*storeInfo.MainApp)
-		if mainApp == nil {
-			return nil, ErrMainAppNotFound
-		}
-
-		appStoreInfo, err := mainApp.StoreInfo()
-		if err != nil {
-			return nil, err
-		}
-
-		// appStoreID is auto-generated
-		appStoreID := fmt.Sprintf("%s.%s", Standardize(appStoreInfo.Developer), Standardize(a.Name))
-
-		storeInfo.AppStoreID = &appStoreID
-
-		// apps
-		apps := lo.MapValues(a.Apps(), func(app *App, name string) codegen.AppStoreInfo {
-			appStoreInfo, err := app.StoreInfo()
-			if err != nil {
-				logger.Error("failed to get app store info", zap.Error(err), zap.String("app", name))
-				return codegen.AppStoreInfo{}
-			}
-
-			return *appStoreInfo
-		})
-
-		storeInfo.Apps = &apps
-
-		return &storeInfo, nil
+	ex, ok := a.Extensions[common.ComposeExtensionNameXCasaOS]
+	if !ok {
+		return nil, ErrComposeExtensionNameXCasaOSNotFound
 	}
 
-	return nil, ErrComposeExtensionNameXCasaOSNotFound
+	var storeInfo codegen.ComposeAppStoreInfo
+	if err := loader.Transform(ex, &storeInfo); err != nil {
+		return nil, err
+	}
+
+	// locate main app
+	if storeInfo.MainApp == nil || *storeInfo.MainApp == "" {
+		// if main app is not specified, use the first app
+		for _, app := range a.Apps() {
+			storeInfo.MainApp = &app.Name
+			break
+		}
+	}
+
+	// apps
+	apps := lo.MapValues(a.Apps(), func(app *App, name string) codegen.AppStoreInfo {
+		appStoreInfo, err := app.StoreInfo()
+		if err != nil {
+			logger.Error("failed to get app store info", zap.Error(err), zap.String("app", name))
+			return codegen.AppStoreInfo{}
+		}
+
+		return *appStoreInfo
+	})
+
+	storeInfo.Apps = &apps
+
+	return &storeInfo, nil
 }
 
 func (a *ComposeApp) YAML() (*string, error) {

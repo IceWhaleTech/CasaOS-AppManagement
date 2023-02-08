@@ -47,6 +47,8 @@ func tempStoreForTest() (map[string]*ComposeApp, error) {
 		return nil, err
 	}
 
+	// TODO - generate app store ID by git repo URL - must be case insensitive
+
 	store[*composeAppStoreInfo.AppStoreID] = composeApp
 
 	return store, nil
