@@ -1,29 +1,43 @@
 package v2
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/IceWhaleTech/CasaOS-AppManagement/codegen"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/common"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/service"
+	v2 "github.com/IceWhaleTech/CasaOS-AppManagement/service/v2"
 	"github.com/IceWhaleTech/CasaOS-Common/utils"
+	"github.com/IceWhaleTech/CasaOS-Common/utils/logger"
 	"github.com/compose-spec/compose-go/types"
 	"github.com/labstack/echo/v4"
+	"github.com/samber/lo"
+	"go.uber.org/zap"
 	"gopkg.in/yaml.v3"
 )
 
-func (*AppManagement) ComposeAppStoreInfoList(ctx echo.Context) error {
+func (a *AppManagement) ComposeAppStoreInfoList(ctx echo.Context) error {
+	catalog := service.MyService.V2AppStore().Catalog()
+
+	list := lo.MapValues(catalog, func(composeApp *v2.ComposeApp, appStoreID string) codegen.ComposeAppStoreInfo {
+		storeInfo, err := composeApp.StoreInfo(true)
+		if err != nil {
+			logger.Error("failed to get store info", zap.Error(err), zap.String("appStoreID", appStoreID))
+			return codegen.ComposeAppStoreInfo{}
+		}
+
+		return *storeInfo
+	})
+
 	return ctx.JSON(http.StatusOK, codegen.ComposeAppStoreInfoListsOK{
 		Data: &codegen.ComposeAppStoreInfoLists{
-			// TODO
-			Recommend: &[]codegen.ComposeAppStoreInfo{},
-			List:      &[]codegen.ComposeAppStoreInfo{},
-			Community: &[]codegen.ComposeAppStoreInfo{},
+			List: &list,
 		},
 	})
 }
 
-func (*AppManagement) ComposeAppStoreInfo(ctx echo.Context, id codegen.AppStoreID) error {
+func (a *AppManagement) ComposeAppStoreInfo(ctx echo.Context, id codegen.AppStoreID) error {
 	composeApp := service.MyService.V2AppStore().ComposeApp(id)
 
 	if composeApp == nil {
@@ -32,34 +46,19 @@ func (*AppManagement) ComposeAppStoreInfo(ctx echo.Context, id codegen.AppStoreI
 		})
 	}
 
-	storeInfo, err := composeApp.StoreInfo()
+	storeInfo, err := composeApp.StoreInfo(true)
 	if err != nil {
 		return ctx.JSON(http.StatusInternalServerError, codegen.ResponseInternalServerError{
 			Message: utils.Ptr(err.Error()),
 		})
 	}
 
-	apps := map[string]codegen.AppStoreInfo{}
-
-	for _, app := range composeApp.Apps() {
-		appStoreInfo, err := app.StoreInfo()
-		if err != nil {
-			return ctx.JSON(http.StatusInternalServerError, codegen.ResponseInternalServerError{
-				Message: utils.Ptr(err.Error()),
-			})
-		}
-
-		apps[app.Name] = *appStoreInfo
-	}
-
-	storeInfo.Apps = &apps
-
 	return ctx.JSON(http.StatusOK, codegen.ComposeAppStoreInfoOK{
 		Data: storeInfo,
 	})
 }
 
-func (*AppManagement) ComposeApp(ctx echo.Context, id codegen.AppStoreID) error {
+func (a *AppManagement) ComposeApp(ctx echo.Context, id codegen.AppStoreID) error {
 	composeApp := service.MyService.V2AppStore().ComposeApp(id)
 
 	if composeApp == nil {
@@ -81,7 +80,7 @@ func (*AppManagement) ComposeApp(ctx echo.Context, id codegen.AppStoreID) error 
 		return ctx.String(http.StatusOK, string(yaml))
 	}
 
-	storeInfo, err := composeApp.StoreInfo()
+	storeInfo, err := composeApp.StoreInfo(false)
 	if err != nil {
 		message := err.Error()
 		return ctx.JSON(http.StatusInternalServerError, codegen.ResponseInternalServerError{
@@ -89,8 +88,10 @@ func (*AppManagement) ComposeApp(ctx echo.Context, id codegen.AppStoreID) error 
 		})
 	}
 
+	message := fmt.Sprintf("!! JSON format is for debugging purpose only - use `Accept: %s` HTTP header to get YAML instead !!", common.MIMEApplicationYAML)
 	return ctx.JSON(http.StatusOK, codegen.ComposeAppOK{
 		// extension properties aren't marshalled - https://github.com/golang/go/issues/6213
+		Message: &message,
 		Data: &codegen.ComposeAppWithStoreInfo{
 			StoreInfo: storeInfo,
 			Compose:   (*types.Project)(composeApp),

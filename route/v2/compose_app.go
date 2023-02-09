@@ -29,7 +29,21 @@ func (a *AppManagement) MyComposeAppList(ctx echo.Context) error {
 		return ctx.JSON(http.StatusInternalServerError, codegen.ResponseInternalServerError{Message: &message})
 	}
 
-	return ctx.JSON(http.StatusOK, composeApps)
+	composeAppsWithStoreInfo := lo.MapValues(composeApps, func(composeApp *v2.ComposeApp, id string) codegen.ComposeAppWithStoreInfo {
+		storeInfo, err := composeApp.StoreInfo(true)
+		if err != nil {
+			logger.Error("failed to get store info", zap.Error(err), zap.String("composeAppID", id))
+		}
+
+		return codegen.ComposeAppWithStoreInfo{
+			Compose:   (*codegen.ComposeApp)(composeApp),
+			StoreInfo: storeInfo,
+		}
+	})
+
+	return ctx.JSON(http.StatusOK, codegen.ComposeAppListOK{
+		Data: &composeAppsWithStoreInfo,
+	})
 }
 
 func (a *AppManagement) MyComposeApp(ctx echo.Context, id codegen.ComposeAppID) error {
@@ -65,7 +79,7 @@ func (a *AppManagement) MyComposeApp(ctx echo.Context, id codegen.ComposeAppID) 
 		return ctx.String(http.StatusOK, string(yaml))
 	}
 
-	storeInfo, err := composeApp.StoreInfo()
+	storeInfo, err := composeApp.StoreInfo(true)
 	if err != nil {
 		message := err.Error()
 		return ctx.JSON(http.StatusInternalServerError, codegen.ResponseInternalServerError{
@@ -73,8 +87,10 @@ func (a *AppManagement) MyComposeApp(ctx echo.Context, id codegen.ComposeAppID) 
 		})
 	}
 
+	message := fmt.Sprintf("!! JSON format is for debugging purpose only - use `Accept: %s` HTTP header to get YAML instead !!", common.MIMEApplicationYAML)
 	return ctx.JSON(http.StatusOK, codegen.ComposeAppOK{
 		// extension properties aren't marshalled - https://github.com/golang/go/issues/6213
+		Message: &message,
 		Data: &codegen.ComposeAppWithStoreInfo{
 			StoreInfo: storeInfo,
 			Compose:   (*types.Project)(composeApp),
@@ -183,6 +199,11 @@ func (a *AppManagement) InstallComposeApp(ctx echo.Context) error {
 
 	if err := service.MyService.Compose().Install(buf); err != nil {
 		message := err.Error()
+
+		if err == v2.ErrComposeExtensionNameXCasaOSNotFound {
+			return ctx.JSON(http.StatusBadRequest, codegen.ResponseBadRequest{Message: &message})
+		}
+
 		logger.Error("failed to start compose app installation", zap.Error(err))
 		return ctx.JSON(http.StatusInternalServerError, codegen.ResponseInternalServerError{Message: &message})
 	}
@@ -272,7 +293,7 @@ func (a *AppManagement) ComposeAppContainers(ctx echo.Context, id codegen.Compos
 		return ctx.JSON(http.StatusInternalServerError, codegen.ResponseInternalServerError{Message: &message})
 	}
 
-	storeInfo, err := composeApp.StoreInfo()
+	storeInfo, err := composeApp.StoreInfo(false)
 	if err != nil {
 		message := err.Error()
 		return ctx.JSON(http.StatusInternalServerError, codegen.ResponseInternalServerError{Message: &message})

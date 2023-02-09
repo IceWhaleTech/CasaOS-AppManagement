@@ -80,12 +80,12 @@ func main() {
 }
 
 func validateComposeApp(composeApp1, composeApp2 *v2.ComposeApp) error {
-	storeInfo1, err := composeApp1.StoreInfo()
+	storeInfo1, err := composeApp1.StoreInfo(true)
 	if err != nil {
 		return err
 	}
 
-	storeInfo2, err := composeApp2.StoreInfo()
+	storeInfo2, err := composeApp2.StoreInfo(true)
 	if err != nil {
 		return err
 	}

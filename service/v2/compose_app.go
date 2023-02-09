@@ -7,18 +7,16 @@ import (
 
 	"github.com/IceWhaleTech/CasaOS-AppManagement/codegen"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/common"
-	"github.com/IceWhaleTech/CasaOS-Common/utils/logger"
 	"github.com/compose-spec/compose-go/loader"
 	"github.com/compose-spec/compose-go/types"
 	"github.com/docker/compose/v2/cmd/formatter"
 	"github.com/docker/compose/v2/pkg/api"
 	"github.com/samber/lo"
-	"go.uber.org/zap"
 )
 
 type ComposeApp codegen.ComposeApp
 
-func (a *ComposeApp) StoreInfo() (*codegen.ComposeAppStoreInfo, error) {
+func (a *ComposeApp) StoreInfo(includeApps bool) (*codegen.ComposeAppStoreInfo, error) {
 	ex, ok := a.Extensions[common.ComposeExtensionNameXCasaOS]
 	if !ok {
 		return nil, ErrComposeExtensionNameXCasaOSNotFound
@@ -38,18 +36,19 @@ func (a *ComposeApp) StoreInfo() (*codegen.ComposeAppStoreInfo, error) {
 		}
 	}
 
-	// apps
-	apps := lo.MapValues(a.Apps(), func(app *App, name string) codegen.AppStoreInfo {
-		appStoreInfo, err := app.StoreInfo()
-		if err != nil {
-			logger.Error("failed to get app store info", zap.Error(err), zap.String("app", name))
-			return codegen.AppStoreInfo{}
+	if includeApps {
+		apps := map[string]codegen.AppStoreInfo{}
+
+		for _, app := range a.Apps() {
+			appStoreInfo, err := app.StoreInfo()
+			if err != nil {
+				return nil, err
+			}
+			apps[app.Name] = *appStoreInfo
 		}
 
-		return *appStoreInfo
-	})
-
-	storeInfo.Apps = &apps
+		storeInfo.Apps = &apps
+	}
 
 	return &storeInfo, nil
 }
@@ -155,7 +154,7 @@ func NewComposeAppFromYAML(yaml []byte) (*ComposeApp, error) {
 func fixProjectName(project *codegen.ComposeApp) error {
 	if project.Name == "" {
 		composeApp := (*ComposeApp)(project)
-		storeInfo, err := composeApp.StoreInfo()
+		storeInfo, err := composeApp.StoreInfo(false)
 		if err != nil {
 			return err
 		}

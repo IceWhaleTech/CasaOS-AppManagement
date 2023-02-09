@@ -2,6 +2,8 @@ package v2
 
 import (
 	_ "embed"
+
+	"github.com/IceWhaleTech/CasaOS-AppManagement/common"
 )
 
 type AppStore struct {
@@ -42,12 +44,14 @@ func tempStoreForTest() (map[string]*ComposeApp, error) {
 		return nil, err
 	}
 
-	composeAppStoreInfo, err := composeApp.StoreInfo()
+	composeAppStoreInfo, err := composeApp.StoreInfo(false)
 	if err != nil {
 		return nil, err
 	}
 
-	composeAppStoreInfo.AppStoreID = composeAppStoreInfo.MainApp // TODO remove this line
+	composeAppStoreInfo.AppStoreID = composeAppStoreInfo.MainApp // TODO replace this with real app store ID
+
+	composeApp.Extensions[common.ComposeExtensionNameXCasaOS] = composeAppStoreInfo
 
 	store[*composeAppStoreInfo.AppStoreID] = composeApp
 

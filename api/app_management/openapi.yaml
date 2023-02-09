@@ -520,7 +520,7 @@ components:
                   data:
                     type: object
                     additionalProperties:
-                      $ref: "#/components/schemas/ComposeApp"
+                      $ref: "#/components/schemas/ComposeAppWithStoreInfo"
                     example:
                       syncthing: {}
 
@@ -630,16 +630,16 @@ components:
     ComposeAppStoreInfoLists:
       properties:
         recommend:
-          type: array
-          items:
+          type: object
+          additionalProperties:
             $ref: "#/components/schemas/ComposeAppStoreInfo"
         list:
-          type: array
-          items:
+          type: object
+          additionalProperties:
             $ref: "#/components/schemas/ComposeAppStoreInfo"
         community:
-          type: array
-          items:
+          type: object
+          additionalProperties:
             $ref: "#/components/schemas/ComposeAppStoreInfo"
 
     ComposeAppStoreInfo:
@@ -668,6 +668,7 @@ components:
           title: container apps included in the compose app
           description: |
             The key is the name of a container app, and the value is the StoreInfo of this container app.
+          readOnly: true
           type: object
           additionalProperties:
             $ref: "#/components/schemas/AppStoreInfo"

@@ -24,10 +24,10 @@ func TestMain(t *testing.T) {
 	assert.NilError(t, err)
 	assert.Assert(t, composeApp2 != nil)
 
-	storeInfo1, err := composeApp1.StoreInfo()
+	storeInfo1, err := composeApp1.StoreInfo(true)
 	assert.NilError(t, err)
 
-	storeInfo2, err := composeApp2.StoreInfo()
+	storeInfo2, err := composeApp2.StoreInfo(true)
 	assert.NilError(t, err)
 
 	assert.DeepEqual(t, storeInfo1, storeInfo2)
@@ -76,10 +76,10 @@ func TestAll(t *testing.T) {
 		assert.NilError(t, err)
 		assert.Assert(t, composeApp2 != nil)
 
-		storeInfo1, err := composeApp1.StoreInfo()
+		storeInfo1, err := composeApp1.StoreInfo(true)
 		assert.NilError(t, err)
 
-		storeInfo2, err := composeApp2.StoreInfo()
+		storeInfo2, err := composeApp2.StoreInfo(true)
 		assert.NilError(t, err)
 
 		assert.DeepEqual(t, storeInfo1, storeInfo2)
