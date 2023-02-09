@@ -112,46 +112,21 @@ func (a *AppManagement) UpdateComposeAppSettings(ctx echo.Context, id codegen.Co
 		return ctx.JSON(http.StatusInternalServerError, codegen.ResponseInternalServerError{Message: &message})
 	}
 
-	_, ok := composeApps[id]
+	composeApp, ok := composeApps[id]
 	if !ok {
 		message := fmt.Sprintf("compose app `%s` not found", id)
 		return ctx.JSON(http.StatusNotFound, codegen.ResponseNotFound{Message: &message})
 	}
 
-	var buf []byte
-
-	switch ctx.Request().Header.Get(echo.HeaderContentType) {
-	case common.MIMEApplicationYAML:
-
-		_buf, err := io.ReadAll(ctx.Request().Body)
-		if err != nil {
-			message := err.Error()
-			logger.Error("failed to read body from the request", zap.Error(err))
-			return ctx.JSON(http.StatusBadRequest, codegen.ResponseBadRequest{Message: &message})
-		}
-
-		buf = _buf
-
-	default:
-		var c codegen.ComposeApp
-		if err := ctx.Bind(&c); err != nil {
-			message := err.Error()
-			logger.Error("failed to decode JSON from the request", zap.Error(err))
-			return ctx.JSON(http.StatusBadRequest, codegen.ResponseBadRequest{
-				Message: &message,
-			})
-		}
-
-		_buf, err := yaml.Marshal(c)
-		if err != nil {
-			message := err.Error()
-			logger.Error("failed to marshal compose app", zap.Error(err))
-			return ctx.JSON(http.StatusInternalServerError, codegen.ResponseInternalServerError{Message: &message})
-		}
-		buf = _buf
+	buf, err := YAMLfromRequest(ctx)
+	if err != nil {
+		message := err.Error()
+		return ctx.JSON(http.StatusBadRequest, codegen.ResponseBadRequest{
+			Message: &message,
+		})
 	}
 
-	if err := service.MyService.Compose().UpdateSettings(id, buf); err != nil {
+	if err := service.MyService.Compose().UpdateSettings(composeApp, buf); err != nil {
 		message := err.Error()
 		return ctx.JSON(http.StatusInternalServerError, codegen.ResponseInternalServerError{
 			Message: &message,
@@ -164,37 +139,12 @@ func (a *AppManagement) UpdateComposeAppSettings(ctx echo.Context, id codegen.Co
 }
 
 func (a *AppManagement) InstallComposeApp(ctx echo.Context) error {
-	var buf []byte
-
-	switch ctx.Request().Header.Get(echo.HeaderContentType) {
-	case common.MIMEApplicationYAML:
-
-		_buf, err := io.ReadAll(ctx.Request().Body)
-		if err != nil {
-			message := err.Error()
-			logger.Error("failed to read body from the request", zap.Error(err))
-			return ctx.JSON(http.StatusBadRequest, codegen.ResponseBadRequest{Message: &message})
-		}
-
-		buf = _buf
-
-	default:
-		var c codegen.ComposeApp
-		if err := ctx.Bind(&c); err != nil {
-			message := err.Error()
-			logger.Error("failed to decode JSON from the request", zap.Error(err))
-			return ctx.JSON(http.StatusBadRequest, codegen.ResponseBadRequest{
-				Message: &message,
-			})
-		}
-
-		_buf, err := yaml.Marshal(c)
-		if err != nil {
-			message := err.Error()
-			logger.Error("failed to marshal compose app", zap.Error(err))
-			return ctx.JSON(http.StatusInternalServerError, codegen.ResponseInternalServerError{Message: &message})
-		}
-		buf = _buf
+	buf, err := YAMLfromRequest(ctx)
+	if err != nil {
+		message := err.Error()
+		return ctx.JSON(http.StatusBadRequest, codegen.ResponseBadRequest{
+			Message: &message,
+		})
 	}
 
 	if err := service.MyService.Compose().Install(buf); err != nil {
@@ -305,4 +255,33 @@ func (a *AppManagement) ComposeAppContainers(ctx echo.Context, id codegen.Compos
 			Containers: &containers,
 		},
 	})
+}
+
+func YAMLfromRequest(ctx echo.Context) ([]byte, error) {
+	var buf []byte
+
+	switch ctx.Request().Header.Get(echo.HeaderContentType) {
+	case common.MIMEApplicationYAML:
+
+		_buf, err := io.ReadAll(ctx.Request().Body)
+		if err != nil {
+			return nil, err
+		}
+
+		buf = _buf
+
+	default:
+		var c codegen.ComposeApp
+		if err := ctx.Bind(&c); err != nil {
+			return nil, err
+		}
+
+		_buf, err := yaml.Marshal(c)
+		if err != nil {
+			return nil, err
+		}
+		buf = _buf
+	}
+
+	return buf, nil
 }

@@ -59,8 +59,16 @@ func (s *ComposeService) Pull(ctx context.Context, composeApp *ComposeApp) error
 	return service.Pull(ctx, utils.Ptr(codegen.ComposeApp(*composeApp)), api.PullOptions{})
 }
 
-func (s *ComposeService) UpdateSettings(id string, composeYAML []byte) error {
-	// TODO implement this
+func (s *ComposeService) UpdateSettings(composeApp *ComposeApp, composeYAML []byte) error {
+	// TODO create new ComposeApp from composeYAML
+
+	// TODO compare new ComposeApp with current ComposeApp
+
+	// TODO backup current compose file
+
+	// TODO save new compose file
+
+	// TODO compose up
 
 	return nil
 }
