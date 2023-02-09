@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"io/ioutil"
 	"strconv"
 	"strings"
@@ -10,8 +9,11 @@ import (
 	"github.com/IceWhaleTech/CasaOS-AppManagement/common"
 	v2 "github.com/IceWhaleTech/CasaOS-AppManagement/service/v2"
 	"github.com/compose-spec/compose-go/types"
+	jsoniter "github.com/json-iterator/go"
 	"github.com/samber/lo"
 )
+
+var json = jsoniter.ConfigCompatibleWithStandardLibrary
 
 // https://raw.githubusercontent.com/IceWhaleTech/CasaOS-AppStore/main/Apps/FileBrowser/appfile.json
 type AppFile struct {

@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -12,6 +11,7 @@ import (
 	"sync"
 	"time"
 
+	jsoniter "github.com/json-iterator/go"
 	"github.com/labstack/echo/v4"
 	"github.com/pkg/errors"
 	"github.com/samber/lo"
@@ -41,6 +41,8 @@ import (
 )
 
 var (
+	json = jsoniter.ConfigCompatibleWithStandardLibrary
+
 	dataStats = &sync.Map{}
 	isFinish  bool
 
@@ -328,8 +330,12 @@ func (ds *dockerService) GetContainerAppList(name, image, state *string) (*[]mod
 	return &casaOSApps, &localApps
 }
 
-func (ds *dockerService) CreateContainerShellSession(container, row, col string) (hr types.HijackedResponse, err error) {
+func (ds *dockerService) CreateContainerShellSession(container, row, col string) (types.HijackedResponse, error) {
 	cli, err := client2.NewClientWithOpts(client2.FromEnv, client2.WithAPIVersionNegotiation())
+	if err != nil {
+		return types.HijackedResponse{}, err
+	}
+
 	ctx := context.Background()
 	// 执行/bin/bash命令
 	ir, err := cli.ContainerExecCreate(ctx, container, types.ExecConfig{
@@ -341,14 +347,10 @@ func (ds *dockerService) CreateContainerShellSession(container, row, col string)
 		Tty:          true,
 	})
 	if err != nil {
-		return
+		return types.HijackedResponse{}, err
 	}
 	// 附加到上面创建的/bin/bash进程中
-	hr, err = cli.ContainerExecAttach(ctx, ir.ID, types.ExecStartCheck{Detach: false, Tty: true})
-	if err != nil {
-		return
-	}
-	return
+	return cli.ContainerExecAttach(ctx, ir.ID, types.ExecStartCheck{Detach: false, Tty: true})
 }
 
 // 正式内容
@@ -383,7 +385,7 @@ func (ds *dockerService) PullImage(ctx context.Context, imageName, appName strin
 	})
 
 	if err := docker.PullImage(ctx, imageName, types.ImagePullOptions{}, func(out io.ReadCloser) {
-		pullImageProgressOld(ctx, out, appName, "INSTALL")
+		pullImageProgress(ctx, out, appName, "INSTALL")
 	}); err != nil {
 		go PublishEventWrapper(ctx, common.EventTypeImagePullError, map[string]string{
 			common.PropertyTypeImageName.Name: imageName,
@@ -1018,27 +1020,6 @@ func getV1AppStoreID(m *types.Container) uint {
 	return 0
 }
 
-// Deprecated: Use pullImageProgress(...) instead.
-func pullImageProgressOld(ctx context.Context, out io.ReadCloser, appName, notificationType string) {
-	buf := make([]byte, 2048*4)
-	for {
-		n, err := out.Read(buf)
-		if err != nil {
-			if err != io.EOF {
-				fmt.Println("read error:", err)
-			}
-			break
-		}
-
-		message := string(buf[:n])
-
-		go PublishEventWrapper(ctx, common.EventTypeImagePullProgress, map[string]string{
-			common.PropertyTypeAppName.Name: appName,
-			common.PropertyTypeMessage.Name: message,
-		})
-	}
-}
-
 func pullImageProgress(ctx context.Context, out io.ReadCloser, appName, notificationType string) {
 	decoder := json.NewDecoder(out)
 	if decoder == nil {
@@ -1053,14 +1034,15 @@ func pullImageProgress(ctx context.Context, out io.ReadCloser, appName, notifica
 			continue
 		}
 
-		progressMessage := ""
-		if message.Progress != nil {
-			progressMessage = message.Progress.String()
+		buf, err := json.Marshal(message)
+		if err != nil {
+			logger.Error("failed to marshal json message", zap.Error(err))
+			continue
 		}
 
 		go PublishEventWrapper(ctx, common.EventTypeImagePullProgress, map[string]string{
 			common.PropertyTypeAppName.Name: appName,
-			common.PropertyTypeMessage.Name: progressMessage,
+			common.PropertyTypeMessage.Name: string(buf),
 		})
 
 	}
