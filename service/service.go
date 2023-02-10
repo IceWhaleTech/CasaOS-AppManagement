@@ -21,10 +21,15 @@ import (
 	v2 "github.com/IceWhaleTech/CasaOS-AppManagement/service/v2"
 	"github.com/IceWhaleTech/CasaOS-Common/external"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/logger"
+	jsoniter "github.com/json-iterator/go"
 	"go.uber.org/zap"
 )
 
-var MyService Services
+var (
+	MyService Services
+
+	json = jsoniter.ConfigCompatibleWithStandardLibrary
+)
 
 type Services interface {
 	V1AppStore() v1.AppStore

@@ -26,12 +26,17 @@ func Image(ctx context.Context, imageName string) (*types.ImageInspect, error) {
 	return &imageInfo, nil
 }
 
-func PullImage(ctx context.Context, imageName string, opts types.ImagePullOptions, handleOut func(io.ReadCloser)) error {
+func PullImage(ctx context.Context, imageName string, handleOut func(io.ReadCloser)) error {
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
 		return err
 	}
 	defer cli.Close()
+
+	opts, err := GetPullOptions(imageName)
+	if err != nil {
+		return err
+	}
 
 	out, err := cli.ImagePull(ctx, imageName, opts)
 	if err != nil {

@@ -4,15 +4,22 @@ credit: https://github.com/containrrr/watchtower
 package docker
 
 import (
+	"context"
 	"crypto/tls"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"net"
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/docker/distribution/manifest"
+	"github.com/docker/distribution/manifest/manifestlist"
+	"github.com/docker/distribution/manifest/schema1"
+	"github.com/docker/distribution/manifest/schema2"
 )
 
 // RegistryCredentials is a credential pair used for basic auth
@@ -25,26 +32,15 @@ type RegistryCredentials struct {
 const ContentDigestHeader = "Docker-Content-Digest"
 
 // CompareDigest ...
-func CompareDigest(imageName string, repoDigests []string, registryAuth string) (bool, error) {
+func CompareDigest(imageName string, repoDigests []string) (bool, error) {
 	var digest string
 
-	registryAuth = TransformAuth(registryAuth)
-	challenge, err := GetChallenge(imageName)
+	token, url, err := tokenAndURL(imageName)
 	if err != nil {
 		return false, err
 	}
 
-	token, err := GetToken(challenge, registryAuth, imageName)
-	if err != nil {
-		return false, err
-	}
-
-	digestURL, err := BuildManifestURL(imageName)
-	if err != nil {
-		return false, err
-	}
-
-	if digest, err = GetDigest(digestURL, token); err != nil {
+	if digest, err = GetDigest(url, token); err != nil {
 		return false, err
 	}
 
@@ -75,36 +71,14 @@ func TransformAuth(registryAuth string) string {
 
 // GetDigest from registry using a HEAD request to prevent rate limiting
 func GetDigest(url string, token string) (string, error) {
-	tr := &http.Transport{
-		DialContext: (&net.Dialer{
-			Timeout:   30 * time.Second,
-			KeepAlive: 30 * time.Second,
-		}).DialContext,
-		DisableKeepAlives:     true,
-		ExpectContinueTimeout: 1 * time.Second,
-		ForceAttemptHTTP2:     true,
-		IdleConnTimeout:       90 * time.Second,
-		MaxIdleConns:          100,
-		Proxy:                 http.ProxyFromEnvironment,
-		TLSClientConfig:       &tls.Config{InsecureSkipVerify: true}, // nolint:gosec
-		TLSHandshakeTimeout:   10 * time.Second,
-	}
-	client := &http.Client{Transport: tr}
-
-	req, _ := http.NewRequest(http.MethodHead, url, nil)
-	// req.Header.Set("User-Agent", userAgent) - confirm if this is needed
-
 	if token == "" {
 		return "", errors.New("could not fetch token")
 	}
 
-	req.Header.Add("Authorization", token)
-	req.Header.Add("Accept", "application/vnd.docker.distribution.manifest.v2+json")
-	req.Header.Add("Accept", "application/vnd.docker.distribution.manifest.list.v2+json")
-	req.Header.Add("Accept", "application/vnd.docker.distribution.manifest.v1+json")
-	req.Header.Add("Accept", "application/vnd.oci.image.index.v1+json")
+	req, _ := http.NewRequest(http.MethodHead, url, nil)
+	addDefaultHeaders(&req.Header, token)
 
-	res, err := client.Do(req)
+	res, err := httpClient().Do(req)
 	if err != nil {
 		return "", err
 	}
@@ -118,4 +92,103 @@ func GetDigest(url string, token string) (string, error) {
 		return "", fmt.Errorf("registry responded to head request with %q, auth: %q", res.Status, wwwAuthHeader)
 	}
 	return res.Header.Get(ContentDigestHeader), nil
+}
+
+func GetManifest(ctx context.Context, imageName string) (interface{}, string, error) {
+	token, url, err := tokenAndURL(imageName)
+	if err != nil {
+		return nil, "", err
+	}
+
+	req, _ := http.NewRequest(http.MethodGet, url, nil)
+	req = req.WithContext(ctx)
+	addDefaultHeaders(&req.Header, token)
+
+	res, err := httpClient().Do(req)
+	if err != nil {
+		return nil, "", err
+	}
+	defer res.Body.Close()
+
+	if res.StatusCode != http.StatusOK {
+		return nil, "", fmt.Errorf("registry responded to head request with %q", res.Status)
+	}
+
+	contentType := res.Header.Get("Content-Type")
+
+	buf, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		return nil, "", err
+	}
+
+	var baseManifest manifest.Versioned
+	if err := json.Unmarshal(buf, &baseManifest); err != nil {
+		return nil, contentType, fmt.Errorf("not a manifest content: %w", err)
+	}
+
+	manifest, ok := map[string]interface{}{
+		schema1.MediaTypeSignedManifest:    schema1.SignedManifest{},
+		schema2.MediaTypeManifest:          schema2.Manifest{},
+		manifestlist.MediaTypeManifestList: manifestlist.ManifestList{},
+	}[contentType]
+
+	if !ok {
+		return nil, contentType, fmt.Errorf("unknown content type: %s", contentType)
+	}
+
+	if err := json.Unmarshal(buf, &manifest); err != nil {
+		return nil, "", err
+	}
+
+	return manifest, contentType, nil
+}
+
+func tokenAndURL(imageName string) (string, string, error) {
+	opts, err := GetPullOptions(imageName)
+	if err != nil {
+		return "", "", err
+	}
+
+	registryAuth := TransformAuth(opts.RegistryAuth)
+	challenge, err := GetChallenge(imageName)
+	if err != nil {
+		return "", "", err
+	}
+
+	token, err := GetToken(challenge, registryAuth, imageName)
+	if err != nil {
+		return "", "", err
+	}
+
+	url, err := BuildManifestURL(imageName)
+	if err != nil {
+		return "", "", err
+	}
+
+	return token, url, nil
+}
+
+func httpClient() *http.Client {
+	return &http.Client{Transport: &http.Transport{
+		DialContext: (&net.Dialer{
+			Timeout:   30 * time.Second,
+			KeepAlive: 30 * time.Second,
+		}).DialContext,
+		DisableKeepAlives:     true,
+		ExpectContinueTimeout: 1 * time.Second,
+		ForceAttemptHTTP2:     true,
+		IdleConnTimeout:       90 * time.Second,
+		MaxIdleConns:          100,
+		Proxy:                 http.ProxyFromEnvironment,
+		TLSClientConfig:       &tls.Config{InsecureSkipVerify: true}, // nolint:gosec
+		TLSHandshakeTimeout:   10 * time.Second,
+	}}
+}
+
+func addDefaultHeaders(header *http.Header, token string) {
+	header.Add("Authorization", token)
+	// header.Add("Accept", schema2.MediaTypeManifest)
+	header.Add("Accept", manifestlist.MediaTypeManifestList)
+	// header.Add("Accept", schema1.MediaTypeManifest)
+	// header.Add("Accept", v1.MediaTypeImageIndex)
 }
