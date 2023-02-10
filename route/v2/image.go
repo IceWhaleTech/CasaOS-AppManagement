@@ -18,27 +18,31 @@ import (
 
 func (a *AppManagement) PullImages(ctx echo.Context, params codegen.PullImagesParams) error {
 	// attach context key/value pairs from upstream
-	backgroundCtx := common.WithProperties(context.Background(), PropertiesFromQueryParams(ctx))
+	backgroundCtx := context.Background()
 
 	if params.ContainerIds != nil {
 		containerIDs := strings.Split(*params.ContainerIds, ",")
 		for _, containerID := range containerIDs {
 
-			containerInfo, err := docker.Container(backgroundCtx, containerID)
+			container, err := docker.Container(backgroundCtx, containerID)
 			if err != nil {
 				logger.Error("get container info failed", zap.Error(err))
 				continue
 			}
 
-			imageName := docker.ImageName(containerInfo)
+			imageName := docker.ImageName(container)
 			if imageName == "" {
 				continue
 			}
 
-			appName := v1.AppName(containerInfo)
-
 			go func(containerID, imageName string) {
-				_, err := service.MyService.Docker().PullLatestImage(backgroundCtx, imageName, appName)
+				backgroundCtx := common.WithProperties(backgroundCtx, PropertiesFromQueryParams(ctx))
+
+				eventProperties := common.PropertiesFromContext(backgroundCtx)
+				eventProperties[common.PropertyTypeAppName.Name] = v1.AppName(container)
+				eventProperties[common.PropertyTypeAppIcon.Name] = v1.AppIcon(container)
+
+				_, err := service.MyService.Docker().PullLatestImage(backgroundCtx, imageName)
 				if err != nil {
 					logger.Error("pull new image failed", zap.Error(err), zap.String("image", imageName))
 				}

@@ -7,6 +7,7 @@ import (
 	"github.com/IceWhaleTech/CasaOS-AppManagement/codegen"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/common"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/service"
+	v1 "github.com/IceWhaleTech/CasaOS-AppManagement/service/v1"
 	"github.com/IceWhaleTech/CasaOS-Common/utils"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/logger"
 	"github.com/docker/docker/errdefs"
@@ -32,7 +33,8 @@ func (a *AppManagement) RecreateContainerByID(ctx echo.Context, id codegen.Conta
 	// attach context key/value pairs from upstream
 	backgroundCtx := common.WithProperties(context.Background(), PropertiesFromQueryParams(ctx))
 
-	if _, err := service.MyService.Docker().DescribeContainer(backgroundCtx, id); err != nil {
+	container, err := service.MyService.Docker().DescribeContainer(backgroundCtx, id)
+	if err != nil {
 
 		message := err.Error()
 		if _, ok := err.(errdefs.ErrNotFound); ok {
@@ -52,10 +54,14 @@ func (a *AppManagement) RecreateContainerByID(ctx echo.Context, id codegen.Conta
 		force = *params.Force
 	}
 
-	go func() {
-		go service.PublishEventWrapper(backgroundCtx, common.EventTypeAppUpdateBegin, map[string]string{})
+	eventProperties := common.PropertiesFromContext(backgroundCtx)
+	eventProperties[common.PropertyTypeAppName.Name] = v1.AppName(container)
+	eventProperties[common.PropertyTypeAppIcon.Name] = v1.AppIcon(container)
 
-		defer service.PublishEventWrapper(backgroundCtx, common.EventTypeAppUpdateEnd, map[string]string{})
+	go func() {
+		go service.PublishEventWrapper(backgroundCtx, common.EventTypeAppUpdateBegin, nil)
+
+		defer service.PublishEventWrapper(backgroundCtx, common.EventTypeAppUpdateEnd, nil)
 
 		if err := service.MyService.Docker().RecreateContainer(backgroundCtx, id, pullLatestImage, force); err != nil {
 			go service.PublishEventWrapper(backgroundCtx, common.EventTypeAppUpdateError, map[string]string{

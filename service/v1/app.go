@@ -1,6 +1,10 @@
 package v1
 
-import "github.com/docker/docker/api/types"
+import (
+	"strings"
+
+	"github.com/docker/docker/api/types"
+)
 
 const (
 	V1LabelName = "name"
@@ -12,7 +16,11 @@ func AppName(containerInfo *types.ContainerJSON) string {
 		return ""
 	}
 
-	return containerInfo.Config.Labels[V1LabelName]
+	if name, ok := containerInfo.Config.Labels[V1LabelName]; ok {
+		return name
+	}
+
+	return strings.TrimPrefix(containerInfo.Name, "/")
 }
 
 func AppIcon(containerInfo *types.ContainerJSON) string {
