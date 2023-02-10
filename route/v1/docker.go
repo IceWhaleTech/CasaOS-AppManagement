@@ -246,7 +246,8 @@ func UninstallApp(c *gin.Context) {
 	}
 
 	eventProperties := common.PropertiesFromContext(ctx)
-	eventProperties[common.PropertyTypeAppName.Name] = container.Config.Labels["name"]
+	eventProperties[common.PropertyTypeAppName.Name] = v1.AppName(container)
+	eventProperties[common.PropertyTypeAppIcon.Name] = v1.AppIcon(container)
 
 	go func() {
 		go service.PublishEventWrapper(ctx, common.EventTypeAppUninstallBegin, nil)
@@ -730,7 +731,7 @@ func pullAndInstall(ctx context.Context, imageName string, m *model.Customizatio
 
 		defer service.PublishEventWrapper(ctx, common.EventTypeImagePullEnd, nil)
 
-		if err := service.MyService.Docker().PullImage(ctx, imageName, m.Label); err != nil {
+		if err := service.MyService.Docker().PullImage(ctx, imageName); err != nil {
 
 			go service.PublishEventWrapper(ctx, common.EventTypeImagePullError, map[string]string{
 				common.PropertyTypeMessage.Name: err.Error(),

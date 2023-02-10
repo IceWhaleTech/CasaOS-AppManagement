@@ -52,8 +52,8 @@ var (
 type DockerService interface {
 	// image
 	IsExistImage(imageName string) bool
-	PullImage(ctx context.Context, imageName, appName string) error
-	PullLatestImage(ctx context.Context, imageName, appName string) (bool, error)
+	PullImage(ctx context.Context, imageName string) error
+	PullLatestImage(ctx context.Context, imageName string) (bool, error)
 	RemoveImage(name string) error
 
 	// container
@@ -375,7 +375,7 @@ func (ds *dockerService) IsExistImage(imageName string) bool {
 }
 
 // 安装镜像
-func (ds *dockerService) PullImage(ctx context.Context, imageName, appName string) error {
+func (ds *dockerService) PullImage(ctx context.Context, imageName string) error {
 	go PublishEventWrapper(ctx, common.EventTypeImagePullBegin, map[string]string{
 		common.PropertyTypeImageName.Name: imageName,
 	})
@@ -385,12 +385,11 @@ func (ds *dockerService) PullImage(ctx context.Context, imageName, appName strin
 	})
 
 	if err := docker.PullImage(ctx, imageName, types.ImagePullOptions{}, func(out io.ReadCloser) {
-		pullImageProgress(ctx, out, appName, "INSTALL")
+		pullImageProgress(ctx, out, "INSTALL")
 	}); err != nil {
 		go PublishEventWrapper(ctx, common.EventTypeImagePullError, map[string]string{
 			common.PropertyTypeImageName.Name: imageName,
-
-			common.PropertyTypeMessage.Name: err.Error(),
+			common.PropertyTypeMessage.Name:   err.Error(),
 		})
 	}
 
@@ -400,7 +399,7 @@ func (ds *dockerService) PullImage(ctx context.Context, imageName, appName strin
 // Try to pull latest image.
 //
 // It returns `true` if the image is updated.
-func (ds *dockerService) PullLatestImage(ctx context.Context, imageName, appName string) (bool, error) {
+func (ds *dockerService) PullLatestImage(ctx context.Context, imageName string) (bool, error) {
 	isImageUpdated := false
 
 	go PublishEventWrapper(ctx, common.EventTypeImagePullBegin, map[string]string{
@@ -457,7 +456,7 @@ func (ds *dockerService) PullLatestImage(ctx context.Context, imageName, appName
 	}
 
 	if err = docker.PullImage(ctx, imageName, opts, func(out io.ReadCloser) {
-		pullImageProgress(ctx, out, appName, "UPDATE")
+		pullImageProgress(ctx, out, "UPDATE")
 	}); err != nil {
 		go PublishEventWrapper(ctx, common.EventTypeImagePullError, map[string]string{
 			common.PropertyTypeImageName.Name: imageName,
@@ -683,7 +682,7 @@ func (ds *dockerService) RecreateContainer(ctx context.Context, id string, pull 
 	if pull {
 		imageName := docker.ImageName(containerInfo)
 		if imageName != "" {
-			_isImageUpdated, err := ds.PullLatestImage(ctx, imageName, "") // image update result will be included in ctx properties
+			_isImageUpdated, err := ds.PullLatestImage(ctx, imageName) // image update result will be included in ctx properties
 			if err != nil {
 				logger.Error("pull new image failed", zap.Error(err), zap.String("image", imageName))
 			}
@@ -713,8 +712,7 @@ func (ds *dockerService) RecreateContainer(ctx context.Context, id string, pull 
 		if err != nil {
 			go PublishEventWrapper(ctx, common.EventTypeContainerCreateError, map[string]string{
 				common.PropertyTypeContainerName.Name: tempName,
-
-				common.PropertyTypeMessage.Name: err.Error(),
+				common.PropertyTypeMessage.Name:       err.Error(),
 			})
 			return err
 		}
@@ -739,8 +737,7 @@ func (ds *dockerService) RecreateContainer(ctx context.Context, id string, pull 
 			if err := docker.StopContainer(ctx, id); err != nil {
 				go PublishEventWrapper(ctx, common.EventTypeContainerStopError, map[string]string{
 					common.PropertyTypeContainerID.Name: id,
-
-					common.PropertyTypeMessage.Name: err.Error(),
+					common.PropertyTypeMessage.Name:     err.Error(),
 				})
 				return err
 			}
@@ -763,8 +760,7 @@ func (ds *dockerService) RecreateContainer(ctx context.Context, id string, pull 
 		if err := docker.StartContainer(ctx, newID); err != nil {
 			go PublishEventWrapper(ctx, common.EventTypeContainerStartError, map[string]string{
 				common.PropertyTypeContainerID.Name: newID,
-
-				common.PropertyTypeMessage.Name: err.Error(),
+				common.PropertyTypeMessage.Name:     err.Error(),
 			})
 			return err
 		}
@@ -785,8 +781,7 @@ func (ds *dockerService) RecreateContainer(ctx context.Context, id string, pull 
 				if err := docker.StartContainer(ctx, id); err != nil {
 					go PublishEventWrapper(ctx, common.EventTypeContainerStartError, map[string]string{
 						common.PropertyTypeContainerID.Name: id,
-
-						common.PropertyTypeMessage.Name: err.Error(),
+						common.PropertyTypeMessage.Name:     err.Error(),
 					})
 					return err
 				}
@@ -808,8 +803,7 @@ func (ds *dockerService) RecreateContainer(ctx context.Context, id string, pull 
 				if err := docker.RemoveContainer(ctx, newID); err != nil {
 					go PublishEventWrapper(ctx, common.EventTypeContainerRemoveError, map[string]string{
 						common.PropertyTypeContainerID.Name: newID,
-
-						common.PropertyTypeMessage.Name: err.Error(),
+						common.PropertyTypeMessage.Name:     err.Error(),
 					})
 					return err
 				}
@@ -833,8 +827,7 @@ func (ds *dockerService) RecreateContainer(ctx context.Context, id string, pull 
 		if err := docker.RemoveContainer(ctx, containerInfo.ID); err != nil {
 			go PublishEventWrapper(ctx, common.EventTypeContainerRemoveError, map[string]string{
 				common.PropertyTypeContainerID.Name: containerInfo.ID,
-
-				common.PropertyTypeMessage.Name: err.Error(),
+				common.PropertyTypeMessage.Name:     err.Error(),
 			})
 			return err
 		}
@@ -859,8 +852,7 @@ func (ds *dockerService) RecreateContainer(ctx context.Context, id string, pull 
 			go PublishEventWrapper(ctx, common.EventTypeContainerRenameError, map[string]string{
 				common.PropertyTypeContainerID.Name:   newID,
 				common.PropertyTypeContainerName.Name: containerInfo.Name,
-
-				common.PropertyTypeMessage.Name: err.Error(),
+				common.PropertyTypeMessage.Name:       err.Error(),
 			})
 
 			return err
@@ -1020,7 +1012,7 @@ func getV1AppStoreID(m *types.Container) uint {
 	return 0
 }
 
-func pullImageProgress(ctx context.Context, out io.ReadCloser, appName, notificationType string) {
+func pullImageProgress(ctx context.Context, out io.ReadCloser, notificationType string) {
 	decoder := json.NewDecoder(out)
 	if decoder == nil {
 		logger.Error("failed to create json decoder")
@@ -1041,7 +1033,6 @@ func pullImageProgress(ctx context.Context, out io.ReadCloser, appName, notifica
 		}
 
 		go PublishEventWrapper(ctx, common.EventTypeImagePullProgress, map[string]string{
-			common.PropertyTypeAppName.Name: appName,
 			common.PropertyTypeMessage.Name: string(buf),
 		})
 
