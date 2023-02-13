@@ -191,7 +191,8 @@ func (ds *dockerService) CheckContainerHealth(id string) (bool, error) {
 			logger.Error("failed to check container health", zap.Error(err), zap.Any("name", container.Names), zap.String("id", id))
 			return false, err
 		}
-		if response.StatusCode() == http.StatusOK {
+		if response.StatusCode() == http.StatusOK || response.StatusCode() == http.StatusUnauthorized {
+
 			return true, nil
 		}
 		// response, err := httpUtil.GetWithHeader(url, 30*time.Second, map[string]string{
