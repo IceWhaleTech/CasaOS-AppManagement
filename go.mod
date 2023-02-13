@@ -10,6 +10,7 @@ require (
 	github.com/getkin/kin-openapi v0.112.0
 	github.com/gin-gonic/gin v1.8.2
 	github.com/go-git/go-git/v5 v5.5.1
+	github.com/go-resty/resty/v2 v2.7.0
 	github.com/google/go-cmp v0.5.9
 	github.com/labstack/echo/v4 v4.10.0
 	github.com/mitchellh/mapstructure v1.5.0

@@ -11,7 +11,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/labstack/echo/v4"
+	"github.com/go-resty/resty/v2"
 	"github.com/pkg/errors"
 	"github.com/samber/lo"
 	"go.uber.org/zap"
@@ -22,7 +22,6 @@ import (
 	"github.com/IceWhaleTech/CasaOS-AppManagement/pkg/docker"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/pkg/utils/envHelper"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/file"
-	httpUtil "github.com/IceWhaleTech/CasaOS-Common/utils/http"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/logger"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/random"
 	timeutils "github.com/IceWhaleTech/CasaOS-Common/utils/time"
@@ -184,23 +183,33 @@ func (ds *dockerService) CheckContainerHealth(id string) (bool, error) {
 		url := fmt.Sprintf("http://%s:%s", common.Localhost, webUIPort)
 
 		logger.Info("checking container health at the specified web port...", zap.Any("name", container.Names), zap.String("id", id), zap.Any("url", url))
-
-		response, err := httpUtil.GetWithHeader(url, 30*time.Second, map[string]string{
-			echo.HeaderAccept: echo.MIMETextHTML, // emulate a browser
-		})
+		client := resty.New()
+		client.SetTimeout(30 * time.Second)
+		client.SetHeader("Accept", "text/html")
+		response, err := client.R().Get(url)
 		if err != nil {
 			logger.Error("failed to check container health", zap.Error(err), zap.Any("name", container.Names), zap.String("id", id))
 			return false, err
 		}
-
-		if (response.StatusCode == http.StatusUnauthorized) || // we treat Unauthroized as a success because it means the container is up and running
-			(response.StatusCode >= 200 && response.StatusCode < 300) {
-			logger.Info("container health check passed at the specified web port", zap.Any("name", container.Names), zap.String("id", id), zap.Any("url", url))
+		if response.StatusCode() == http.StatusOK {
 			return true, nil
 		}
+		// response, err := httpUtil.GetWithHeader(url, 30*time.Second, map[string]string{
+		// 	echo.HeaderAccept: echo.MIMETextHTML, // emulate a browser
+		// })
+		// if err != nil {
+		// 	logger.Error("failed to check container health", zap.Error(err), zap.Any("name", container.Names), zap.String("id", id))
+		// 	return false, err
+		// }
 
-		logger.Error("container health check failed at the specified web port", zap.Any("name", container.Names), zap.String("id", id), zap.Any("url", url), zap.String("status", response.Status))
-		return false, errors.New(response.Status)
+		// if (response.StatusCode == http.StatusUnauthorized) || // we treat Unauthroized as a success because it means the container is up and running
+		// 	(response.StatusCode >= 200 && response.StatusCode < 300) {
+		// 	logger.Info("container health check passed at the specified web port", zap.Any("name", container.Names), zap.String("id", id), zap.Any("url", url))
+		// 	return true, nil
+		// }
+
+		logger.Error("container health check failed at the specified web port", zap.Any("name", container.Names), zap.String("id", id), zap.Any("url", url), zap.String("status", fmt.Sprint(response.StatusCode())))
+		return false, errors.New(fmt.Sprint(response.StatusCode()))
 	}
 
 	logger.Error("container health check failed, no web port specified", zap.Any("name", container.Names), zap.String("id", id))
