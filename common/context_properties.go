@@ -22,16 +22,6 @@ func PropertiesFromContext(ctx context.Context) map[string]string {
 	return mapFromContext(ctx, keyProperties)
 }
 
-// Returns a new context with the given interpolation map for compose app intepolation.
-func WithInterpolationMap(ctx context.Context, interpolationMap map[string]string) context.Context {
-	return withMap(ctx, keyInterpolationMap, interpolationMap)
-}
-
-// Returns the interpolation map from the context for compose app intepolation.
-func InterpolationMapFromContext(ctx context.Context) map[string]string {
-	return mapFromContext(ctx, keyInterpolationMap)
-}
-
 func withMap[T any](ctx context.Context, key T, value map[string]string) context.Context {
 	return context.WithValue(ctx, key, value)
 }

@@ -179,7 +179,7 @@ paths:
     get:
       summary: Get the list of installed compose apps
       description: |
-        TODO
+        TODO - add description
       operationId: myComposeAppList
       tags:
         - Compose methods
@@ -192,7 +192,7 @@ paths:
     post:
       summary: Install a compose app
       description: |
-        TODO
+        TODO - add description
       operationId: installComposeApp
       tags:
         - Compose methods
@@ -231,7 +231,7 @@ paths:
     put:
       summary: Update settings of a compose app
       description: |
-        TODO
+        TODO - add description
       operationId: updateComposeAppSettings
       tags:
         - Compose methods
@@ -253,7 +253,7 @@ paths:
     get:
       summary: Get the status of a compose app
       description: |
-        TODO
+        TODO - add description
       operationId: composeAppStatus
       tags:
         - Compose methods
@@ -271,7 +271,7 @@ paths:
     get:
       summary: Get the list of containers of a compose app
       description: |
-        TODO
+        TODO - add description
       operationId: composeAppContainers
       tags:
         - Compose methods
@@ -289,7 +289,7 @@ paths:
     get:
       summary: Get the logs of a compose app
       description: |
-        TODO
+        TODO - add description
       operationId: composeAppLogs
       tags:
         - Compose methods
@@ -316,7 +316,7 @@ paths:
     patch:
       summary: Recreate the container app
       description: |
-        TODO
+        TODO - add description
       operationId: recreateContainerByID
       tags:
         - Container methods
@@ -650,7 +650,7 @@ components:
             The StoreID is the unique identifier of the app in the AppStore.
           readOnly: true
           type: string
-          example: "syncthing.syncthing (developer + app name)" # TODO
+          example: "syncthing.syncthing (developer + app name)" # TODO - decide app store id
           x-go-name: AppStoreID
           x-oapi-codegen-extra-tags:
             mapstructure: "appstore_id"

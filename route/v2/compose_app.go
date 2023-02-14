@@ -1,6 +1,7 @@
 package v2
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -126,7 +127,10 @@ func (a *AppManagement) UpdateComposeAppSettings(ctx echo.Context, id codegen.Co
 		})
 	}
 
-	if err := service.MyService.Compose().UpdateSettings(composeApp, buf); err != nil {
+	// attach context key/value pairs from upstream
+	backgroundCtx := common.WithProperties(context.Background(), PropertiesFromQueryParams(ctx))
+
+	if err := service.MyService.Compose().UpdateSettings(backgroundCtx, composeApp, buf); err != nil {
 		message := err.Error()
 		return ctx.JSON(http.StatusInternalServerError, codegen.ResponseInternalServerError{
 			Message: &message,
@@ -147,7 +151,10 @@ func (a *AppManagement) InstallComposeApp(ctx echo.Context) error {
 		})
 	}
 
-	if err := service.MyService.Compose().Install(buf); err != nil {
+	// attach context key/value pairs from upstream
+	backgroundCtx := common.WithProperties(context.Background(), PropertiesFromQueryParams(ctx))
+
+	if err := service.MyService.Compose().Install(backgroundCtx, buf); err != nil {
 		message := err.Error()
 
 		if err == v2.ErrComposeExtensionNameXCasaOSNotFound {

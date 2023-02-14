@@ -4,6 +4,7 @@ import (
 	"context"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/IceWhaleTech/CasaOS-AppManagement/codegen"
@@ -13,21 +14,17 @@ import (
 	"github.com/IceWhaleTech/CasaOS-Common/utils/file"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/logger"
 	timeutils "github.com/IceWhaleTech/CasaOS-Common/utils/time"
-	"github.com/samber/lo"
 
-	"github.com/compose-spec/compose-go/cli"
+	"github.com/compose-spec/compose-go/types"
 	"github.com/docker/cli/cli/command"
 	"github.com/docker/cli/cli/flags"
-	composeCmd "github.com/docker/compose/v2/cmd/compose"
 	"github.com/docker/compose/v2/pkg/api"
 	"github.com/docker/compose/v2/pkg/compose"
 
 	"go.uber.org/zap"
 )
 
-type ComposeService struct {
-	ctx context.Context
-}
+type ComposeService struct{}
 
 func (s *ComposeService) PrepareWorkingDirectory(name string, composeYAML []byte) (string, error) {
 	workingDirectory := filepath.Join(config.AppInfo.AppsPath, name)
@@ -59,21 +56,65 @@ func (s *ComposeService) Pull(ctx context.Context, composeApp *ComposeApp) error
 	return service.Pull(ctx, utils.Ptr(codegen.ComposeApp(*composeApp)), api.PullOptions{})
 }
 
-func (s *ComposeService) UpdateSettings(composeApp *ComposeApp, composeYAML []byte) error {
-	// TODO create new ComposeApp from composeYAML
+func (s *ComposeService) UpdateSettings(ctx context.Context, currentComposeApp *ComposeApp, newComposeYAML []byte) error {
+	// create new temporary ComposeApp from composeYAML
+	tempComposeApp, err := NewComposeAppFromYAML(newComposeYAML)
+	if err != nil {
+		return err
+	}
 
-	// TODO compare new ComposeApp with current ComposeApp
+	// compare new ComposeApp with current ComposeApp
+	if tempComposeApp.Name != currentComposeApp.Name {
+		return ErrComposeAppNotMatch
+	}
 
-	// TODO backup current compose file
+	if len(currentComposeApp.ComposeFiles) <= 0 {
+		return ErrComposeFileNotFound
+	}
 
-	// TODO save new compose file
+	if len(tempComposeApp.ComposeFiles) > 1 {
+		logger.Info("warning: multiple compose files found, only the first one will be used", zap.String("compose files", strings.Join(tempComposeApp.ComposeFiles, ",")))
+	}
 
-	// TODO compose up
+	// backup current compose file
+	currentComposeFile := currentComposeApp.ComposeFiles[0]
 
+	backupComposeFile := currentComposeFile + "." + "bak"
+	if err := file.CopySingleFile(currentComposeFile, backupComposeFile, ""); err != nil {
+		logger.Error("failed to backup compose file", zap.Error(err), zap.String("src", currentComposeFile), zap.String("dst", backupComposeFile))
+	}
+
+	success := false
+	defer func() {
+		if !success {
+			if err := file.CopySingleFile(backupComposeFile, currentComposeFile, ""); err != nil {
+				logger.Error("failed to restore compose file", zap.Error(err), zap.String("src", backupComposeFile), zap.String("dst", currentComposeFile))
+			}
+		}
+	}()
+
+	// save new compose file
+	if err := file.WriteToFullPath(newComposeYAML, currentComposeFile, 0o600); err != nil {
+		logger.Error("failed to save compose file", zap.Error(err), zap.String("path", currentComposeFile))
+		return err
+	}
+
+	// start compose app
+	service, err := apiService()
+	if err != nil {
+		return err
+	}
+
+	if err := service.Restart(ctx, currentComposeApp.Name, api.RestartOptions{}); err != nil {
+		logger.Error("failed to restart compose app", zap.Error(err), zap.String("name", currentComposeApp.Name))
+		return err
+	}
+
+	success = true
 	return nil
 }
 
-func (s *ComposeService) Install(composeYAML []byte) error {
+func (s *ComposeService) Install(ctx context.Context, composeYAML []byte) error {
 	composeApp, err := NewComposeAppFromYAML(composeYAML)
 	if err != nil {
 		return err
@@ -84,28 +125,13 @@ func (s *ComposeService) Install(composeYAML []byte) error {
 		return err
 	}
 
-	options := composeCmd.ProjectOptions{
-		ProjectDir:  filepath.Dir(yamlFilePath),
-		ProjectName: composeApp.Name,
-	}
-
 	// update interpolation map in current context
-	interpolationMap := common.InterpolationMapFromContext(s.ctx)
+	interpolationMap := baseInterpolationMap()
 	interpolationMap["AppID"] = composeApp.Name
-	ctx := common.WithInterpolationMap(s.ctx, interpolationMap)
 
 	// load project
-	project, err := options.ToProject(
-		nil,
-		cli.WithWorkingDirectory(options.ProjectDir),
-		cli.WithOsEnv,
-		cli.WithEnvFile(options.EnvFile),
-		cli.WithDotEnv,
-		cli.WithConfigFileEnv,
-		cli.WithDefaultConfigPath,
-		cli.WithName(options.ProjectName),
-		cli.WithEnv(lo.MapToSlice(interpolationMap, func(k, v string) string { return k + "=" + v })),
-	)
+	composeApp, err = LoadComposeAppFromConfigFile(composeApp.Name, yamlFilePath, interpolationMap)
+
 	if err != nil {
 		logger.Error("failed to install compose app", zap.Error(err), zap.String("name", composeApp.Name))
 		cleanup(yamlFilePath)
@@ -116,7 +142,7 @@ func (s *ComposeService) Install(composeYAML []byte) error {
 		ctx, cancel := context.WithTimeout(ctx, 30*time.Minute)
 		defer cancel()
 
-		if err := pullAndInstall(ctx, project); err != nil {
+		if err := pullAndInstall(ctx, (*types.Project)(composeApp)); err != nil {
 			logger.Error("failed to install compose app", zap.Error(err), zap.String("name", composeApp.Name))
 			cleanup(yamlFilePath)
 		}
@@ -164,49 +190,34 @@ func (s *ComposeService) List(ctx context.Context) (map[string]*ComposeApp, erro
 
 	for _, stack := range stackList {
 
-		options := composeCmd.ProjectOptions{
-			ProjectDir:  filepath.Dir(stack.ConfigFiles),
-			ProjectName: stack.ID,
-		}
-
 		// update interpolation map in current context
-		interpolationMap := common.InterpolationMapFromContext(s.ctx)
+		interpolationMap := baseInterpolationMap()
 		interpolationMap["AppID"] = stack.ID
 
+		composeApp, err := LoadComposeAppFromConfigFile(stack.ID, stack.ConfigFiles, interpolationMap)
 		// load project
-		project, err := options.ToProject(
-			nil,
-			cli.WithWorkingDirectory(options.ProjectDir),
-			cli.WithOsEnv,
-			cli.WithEnvFile(options.EnvFile),
-			cli.WithDotEnv,
-			cli.WithConfigFileEnv,
-			cli.WithDefaultConfigPath,
-			cli.WithName(options.ProjectName),
-			cli.WithEnv(lo.MapToSlice(interpolationMap, func(k, v string) string { return k + "=" + v })),
-		)
 		if err != nil {
 			logger.Error("failed to load compose file", zap.Error(err), zap.String("path", stack.ConfigFiles))
 			continue
 		}
 
-		result[stack.ID] = (*ComposeApp)(project)
+		result[stack.ID] = composeApp
 	}
 
 	return result, nil
 }
 
 func NewComposeService() *ComposeService {
-	return &ComposeService{
-		ctx: common.WithInterpolationMap(
-			context.Background(),
-			map[string]string{
-				"DefaultUserName": common.DefaultUserName,
-				"DefaultPassword": common.DefaultPassword,
-				"PUID":            common.DefaultPUID,
-				"PGID":            common.DefaultPGID,
-				"TZ":              timeutils.GetSystemTimeZoneName(),
-			}),
+	return &ComposeService{}
+}
+
+func baseInterpolationMap() map[string]string {
+	return map[string]string{
+		"DefaultUserName": common.DefaultUserName,
+		"DefaultPassword": common.DefaultPassword,
+		"PUID":            common.DefaultPUID,
+		"PGID":            common.DefaultPGID,
+		"TZ":              timeutils.GetSystemTimeZoneName(),
 	}
 }
 
@@ -260,6 +271,10 @@ func pullAndInstall(ctx context.Context, composeApp *codegen.ComposeApp) error {
 		CascadeStop: true,
 		Wait:        true,
 	}); err != nil {
+		return err
+	}
+
+	if err := service.Up(ctx, composeApp, api.UpOptions{}); err != nil {
 		return err
 	}
 

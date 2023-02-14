@@ -41,7 +41,7 @@ var (
 	dataStats = &sync.Map{}
 	isFinish  bool
 
-	NewVersionApp map[string]string // TODO - make use of this
+	NewVersionApp map[string]string // TODO - make use of NewVersionApp map
 )
 
 type DockerService interface {
@@ -193,7 +193,6 @@ func (ds *dockerService) CheckContainerHealth(id string) (bool, error) {
 			return false, err
 		}
 		if response.StatusCode() == http.StatusOK || response.StatusCode() == http.StatusUnauthorized {
-
 			return true, nil
 		}
 		// response, err := httpUtil.GetWithHeader(url, 30*time.Second, map[string]string{

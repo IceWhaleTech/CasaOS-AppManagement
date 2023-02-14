@@ -3,12 +3,15 @@ package v2
 import (
 	"bytes"
 	"context"
+	"path/filepath"
 	"strconv"
 
 	"github.com/IceWhaleTech/CasaOS-AppManagement/codegen"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/common"
+	"github.com/compose-spec/compose-go/cli"
 	"github.com/compose-spec/compose-go/loader"
 	"github.com/compose-spec/compose-go/types"
+	composeCmd "github.com/docker/compose/v2/cmd/compose"
 	"github.com/docker/compose/v2/cmd/formatter"
 	"github.com/docker/compose/v2/pkg/api"
 	"github.com/samber/lo"
@@ -120,6 +123,28 @@ func (a *ComposeApp) Logs(ctx context.Context, lines int) ([]byte, error) {
 	}
 
 	return buf.Bytes(), nil
+}
+
+func LoadComposeAppFromConfigFile(appID string, configFile string, env map[string]string) (*ComposeApp, error) {
+	options := composeCmd.ProjectOptions{
+		ProjectDir:  filepath.Dir(configFile),
+		ProjectName: appID,
+	}
+
+	// load project
+	project, err := options.ToProject(
+		nil,
+		cli.WithWorkingDirectory(options.ProjectDir),
+		cli.WithOsEnv,
+		cli.WithEnvFile(options.EnvFile),
+		cli.WithDotEnv,
+		cli.WithConfigFileEnv,
+		cli.WithDefaultConfigPath,
+		cli.WithName(options.ProjectName),
+		cli.WithEnv(lo.MapToSlice(env, func(k, v string) string { return k + "=" + v })),
+	)
+
+	return (*ComposeApp)(project), err
 }
 
 func NewComposeAppFromYAML(yaml []byte) (*ComposeApp, error) {
