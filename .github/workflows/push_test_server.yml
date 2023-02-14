@@ -20,7 +20,7 @@ jobs:
         run: sudo git config --global --add safe.directory '*'
       - name: set version
         run: sudo git tag v99.99.99-alpha 
-        
+
       -
         name: Fetch all tags
         run: sudo git fetch --force --tags
@@ -44,7 +44,7 @@ jobs:
           # either 'goreleaser' (default) or 'goreleaser-pro'
           distribution: goreleaser
           version: latest
-          args: release --rm-dist
+          args: release --rm-dist --snapshot
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           # Your GoReleaser Pro key, if you are using the 'goreleaser-pro' distribution
