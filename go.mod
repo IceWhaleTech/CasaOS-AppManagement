@@ -14,6 +14,7 @@ require (
 	github.com/google/go-cmp v0.5.9
 	github.com/labstack/echo/v4 v4.10.0
 	github.com/mitchellh/mapstructure v1.5.0
+	github.com/opencontainers/image-spec v1.1.0-rc2
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/samber/lo v1.37.0
 	gopkg.in/yaml.v3 v3.0.1
@@ -112,7 +113,6 @@ require (
 	github.com/morikuni/aec v1.0.0 // indirect
 	github.com/nwaples/rardecode v1.1.3 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
-	github.com/opencontainers/image-spec v1.1.0-rc2 // indirect
 	github.com/opencontainers/runc v1.1.3 // indirect
 	github.com/pelletier/go-toml v1.9.4 // indirect
 	github.com/pierrec/lz4/v4 v4.1.17 // indirect

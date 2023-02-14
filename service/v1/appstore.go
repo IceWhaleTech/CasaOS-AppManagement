@@ -22,6 +22,7 @@ import (
 	"github.com/mitchellh/mapstructure"
 	"github.com/patrickmn/go-cache"
 	"github.com/pkg/errors"
+	"github.com/samber/lo"
 	"go.uber.org/zap"
 )
 
@@ -396,8 +397,14 @@ func tryGetArchitecturesFromManifestList(manifest interface{}) ([]string, error)
 
 	architectures := []string{}
 	for _, platform := range listManifest.Manifests {
+		if platform.Platform.Architecture == "" || platform.Platform.Architecture == "unknown" {
+			continue
+		}
+
 		architectures = append(architectures, platform.Platform.Architecture)
 	}
+
+	architectures = lo.Uniq(architectures)
 
 	return architectures, nil
 }
@@ -411,6 +418,10 @@ func tryGetArchitecturesFromV1SignedManifest(manifest interface{}) ([]string, er
 
 	if err := decoder.Decode(manifest); err != nil {
 		return nil, err
+	}
+
+	if signedManifest.Architecture == "" || signedManifest.Architecture == "unknown" {
+		return []string{"amd64"}, nil // bad assumption, but works for 99% of the cases
 	}
 
 	return []string{signedManifest.Architecture}, nil

@@ -20,6 +20,7 @@ import (
 	"github.com/docker/distribution/manifest/manifestlist"
 	"github.com/docker/distribution/manifest/schema1"
 	"github.com/docker/distribution/manifest/schema2"
+	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 )
 
 // RegistryCredentials is a credential pair used for basic auth
@@ -130,6 +131,7 @@ func GetManifest(ctx context.Context, imageName string) (interface{}, string, er
 		schema1.MediaTypeSignedManifest:    schema1.SignedManifest{},
 		schema2.MediaTypeManifest:          schema2.Manifest{},
 		manifestlist.MediaTypeManifestList: manifestlist.ManifestList{},
+		v1.MediaTypeImageIndex:             manifestlist.ManifestList{},
 	}[contentType]
 
 	if !ok {
@@ -190,5 +192,5 @@ func addDefaultHeaders(header *http.Header, token string) {
 	// header.Add("Accept", schema2.MediaTypeManifest)
 	header.Add("Accept", manifestlist.MediaTypeManifestList)
 	// header.Add("Accept", schema1.MediaTypeManifest)
-	// header.Add("Accept", v1.MediaTypeImageIndex)
+	header.Add("Accept", v1.MediaTypeImageIndex)
 }
