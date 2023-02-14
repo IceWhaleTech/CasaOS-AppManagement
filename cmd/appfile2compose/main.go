@@ -62,7 +62,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	composeAppLoopBack, err := v2.NewComposeAppFromYAML(composeYAML)
+	composeAppLoopBack, err := v2.NewComposeAppFromYAML(composeYAML, nil)
 	if err != nil {
 		logger.Error("failed to load compose app YAML converted from appfile: %s", err)
 		os.Exit(1)

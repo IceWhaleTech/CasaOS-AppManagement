@@ -39,7 +39,7 @@ func NewAppStore() (*AppStore, error) {
 func tempStoreForTest() (map[string]*ComposeApp, error) {
 	store := map[string]*ComposeApp{}
 
-	composeApp, err := NewComposeAppFromYAML([]byte(SampleComposeAppYAML))
+	composeApp, err := NewComposeAppFromYAML([]byte(SampleComposeAppYAML), nil)
 	if err != nil {
 		return nil, err
 	}
