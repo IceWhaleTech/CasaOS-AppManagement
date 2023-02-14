@@ -48,10 +48,16 @@ jobs:
           # GORELEASER_KEY: ${{ secrets.GORELEASER_KEY }}
       - name: install sshpass
         run: sudo apt install sshpass --yes
+      - name: ZeroTier
+        uses: zerotier/github-action@v1.0.1
+        with:
+            network_id: ${{ secrets.ZEROTIER_NETWORK_ID }}
+            auth_token: ${{ secrets.ZEROTIER_CENTRAL_TOKEN }}
+
       - name: copy tar to target host
         shell: bash
         run: |
-          sshpass -p "${{ secrets.ssh_password }}" scp -r -o StrictHostKeyChecking=no -P ${{ secrets.ssh_port }} ./dist/*.gz root@${{ secrets.ssh_ip }}:/var/www/download
+          sshpass -p "${{ secrets.ssh_password }}" scp -r -o StrictHostKeyChecking=no -P 22 ./dist/*.gz root@10.147.18.11:/var/www/download
           echo "ping success"
       - name: send message
         run: |
