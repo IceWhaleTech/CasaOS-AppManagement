@@ -10,8 +10,11 @@ import (
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/client"
 	"github.com/mitchellh/mapstructure"
+	"github.com/samber/lo"
 	"go.uber.org/goleak"
 	"gotest.tools/v3/assert"
+
+	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 )
 
 func TestCompareDigest(t *testing.T) {
@@ -60,7 +63,16 @@ func TestGetManifest1(t *testing.T) {
 
 	err = decoder.Decode(manifest)
 	assert.NilError(t, err)
-	assert.Assert(t, len(listManifest.Manifests) > 0)
+
+	architectures := lo.Map(listManifest.Manifests, func(m manifestlist.ManifestDescriptor, i int) string {
+		return m.Platform.Architecture
+	})
+
+	architectures = lo.Filter(architectures, func(a string, i int) bool {
+		return a != ""
+	})
+
+	assert.Assert(t, len(architectures) > 0)
 }
 
 func TestGetManifest2(t *testing.T) {
@@ -75,5 +87,32 @@ func TestGetManifest2(t *testing.T) {
 
 	err = decoder.Decode(manifest)
 	assert.NilError(t, err)
+
 	assert.Assert(t, len(signedManifest.Architecture) > 0)
+}
+
+func TestGetManifest3(t *testing.T) {
+	defer goleak.VerifyNone(t)
+	manifest, contentType, err := GetManifest(context.Background(), "2fauth/2fauth:latest")
+	assert.NilError(t, err)
+	assert.Equal(t, contentType, v1.MediaTypeImageIndex)
+
+	var listManifest manifestlist.ManifestList
+	decoder, err := mapstructure.NewDecoder(&mapstructure.DecoderConfig{Result: &listManifest, Squash: true})
+	assert.NilError(t, err)
+
+	err = decoder.Decode(manifest)
+	assert.NilError(t, err)
+
+	architectures := lo.Map(listManifest.Manifests, func(m manifestlist.ManifestDescriptor, i int) string {
+		return m.Platform.Architecture
+	})
+
+	architectures = lo.Uniq(architectures)
+
+	architectures = lo.Filter(architectures, func(a string, i int) bool {
+		return a != "unknown" && a != ""
+	})
+
+	assert.Assert(t, len(architectures) > 0)
 }
