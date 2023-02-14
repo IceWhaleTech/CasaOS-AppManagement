@@ -53,13 +53,13 @@ func (s *ComposeService) UpdateSettings(ctx context.Context, currentComposeApp *
 	interpolationMap["AppID"] = currentComposeApp.Name
 
 	// create new temporary ComposeApp from composeYAML
-	tempComposeApp, err := NewComposeAppFromYAML(newComposeYAML, interpolationMap)
+	newComposeAppName, err := getNameFromYAML(newComposeYAML)
 	if err != nil {
 		return err
 	}
 
 	// compare new ComposeApp with current ComposeApp
-	if tempComposeApp.Name != currentComposeApp.Name {
+	if newComposeAppName != currentComposeApp.Name {
 		return ErrComposeAppNotMatch
 	}
 
@@ -68,7 +68,7 @@ func (s *ComposeService) UpdateSettings(ctx context.Context, currentComposeApp *
 	}
 
 	if len(currentComposeApp.ComposeFiles) > 1 {
-		logger.Info("warning: multiple compose files found, only the first one will be used", zap.String("compose files", strings.Join(tempComposeApp.ComposeFiles, ",")))
+		logger.Info("warning: multiple compose files found, only the first one will be used", zap.String("compose files", strings.Join(currentComposeApp.ComposeFiles, ",")))
 	}
 
 	// backup current compose file
@@ -79,11 +79,26 @@ func (s *ComposeService) UpdateSettings(ctx context.Context, currentComposeApp *
 		logger.Error("failed to backup compose file", zap.Error(err), zap.String("src", currentComposeFile), zap.String("dst", backupComposeFile))
 	}
 
+	// start compose app
+	service, err := apiService()
+	if err != nil {
+		return err
+	}
+
 	success := false
 	defer func() {
 		if !success {
 			if err := file.CopySingleFile(backupComposeFile, currentComposeFile, ""); err != nil {
 				logger.Error("failed to restore compose file", zap.Error(err), zap.String("src", backupComposeFile), zap.String("dst", currentComposeFile))
+			}
+
+			if err := service.Up(ctx, (*codegen.ComposeApp)(currentComposeApp), api.UpOptions{
+				Start: api.StartOptions{
+					CascadeStop: true,
+					Wait:        true,
+				},
+			}); err != nil {
+				logger.Error("failed to start compose app", zap.Error(err), zap.String("name", currentComposeApp.Name))
 			}
 		}
 	}()
@@ -94,13 +109,13 @@ func (s *ComposeService) UpdateSettings(ctx context.Context, currentComposeApp *
 		return err
 	}
 
-	// start compose app
-	service, err := apiService()
+	newComposeApp, err := LoadComposeAppFromConfigFile(currentComposeApp.Name, currentComposeFile)
 	if err != nil {
+		logger.Error("failed to load compose app from config file", zap.Error(err), zap.String("path", currentComposeFile))
 		return err
 	}
 
-	if err := service.Up(ctx, (*codegen.ComposeApp)(currentComposeApp), api.UpOptions{
+	if err := service.Up(ctx, (*codegen.ComposeApp)(newComposeApp), api.UpOptions{
 		Start: api.StartOptions{
 			CascadeStop: true,
 			Wait:        true,
