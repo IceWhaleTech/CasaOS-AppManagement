@@ -224,6 +224,33 @@ func (a *ComposeApp) UpdateSettings(ctx context.Context, newComposeYAML []byte) 
 	return nil
 }
 
+func (a *ComposeApp) Start(ctx context.Context) error {
+	service, err := apiService()
+	if err != nil {
+		return err
+	}
+
+	storeInfo, err := a.StoreInfo(false)
+	if err != nil {
+		return err
+	}
+
+	return service.Start(ctx, a.Name, api.StartOptions{
+		CascadeStop:  true,
+		Wait:         true,
+		ExitCodeFrom: *storeInfo.MainApp,
+	})
+}
+
+func (a *ComposeApp) Stop(ctx context.Context) error {
+	service, err := apiService()
+	if err != nil {
+		return err
+	}
+
+	return service.Stop(ctx, a.Name, api.StopOptions{})
+}
+
 func (a *ComposeApp) Logs(ctx context.Context, lines int) ([]byte, error) {
 	service, err := apiService()
 	if err != nil {
