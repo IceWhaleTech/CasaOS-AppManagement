@@ -10,13 +10,11 @@ import (
 	"github.com/IceWhaleTech/CasaOS-AppManagement/codegen"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/common"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/pkg/config"
-	"github.com/IceWhaleTech/CasaOS-Common/utils"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/file"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/logger"
 	timeutils "github.com/IceWhaleTech/CasaOS-Common/utils/time"
 	"gopkg.in/yaml.v3"
 
-	"github.com/compose-spec/compose-go/types"
 	"github.com/docker/cli/cli/command"
 	"github.com/docker/cli/cli/flags"
 	"github.com/docker/compose/v2/pkg/api"
@@ -36,15 +34,6 @@ func (s *ComposeService) PrepareWorkingDirectory(name string, composeYAML []byte
 	}
 
 	return workingDirectory, nil
-}
-
-func (s *ComposeService) Pull(ctx context.Context, composeApp *ComposeApp) error {
-	service, err := apiService()
-	if err != nil {
-		return err
-	}
-
-	return service.Pull(ctx, utils.Ptr(codegen.ComposeApp(*composeApp)), api.PullOptions{})
 }
 
 func (s *ComposeService) UpdateSettings(ctx context.Context, currentComposeApp *ComposeApp, newComposeYAML []byte) error {
@@ -179,13 +168,26 @@ func (s *ComposeService) Install(ctx context.Context, composeYAML []byte) error 
 		ctx, cancel := context.WithTimeout(ctx, 30*time.Minute)
 		defer cancel()
 
-		if err := pullAndInstall(ctx, (*types.Project)(composeApp)); err != nil {
+		if err := composeApp.PullAndInstall(ctx); err != nil {
 			logger.Error("failed to install compose app", zap.Error(err), zap.String("name", composeApp.Name))
 			cleanup(yamlFilePath)
 		}
 	}(ctx)
 
 	return nil
+}
+
+func (s *ComposeService) Uninstall(ctx context.Context, appID string) error {
+	service, err := apiService()
+	if err != nil {
+		return err
+	}
+
+	return service.Down(ctx, appID, api.DownOptions{
+		RemoveOrphans: true,
+		Images:        "all",
+		Volumes:       true,
+	})
 }
 
 func (s *ComposeService) Status(ctx context.Context, appID string) (string, error) {
@@ -274,42 +276,4 @@ func cleanup(workDir string) {
 	if err := file.RMDir(workDir); err != nil {
 		logger.Error("failed to cleanup working dir", zap.Error(err), zap.String("path", workDir))
 	}
-}
-
-func pullAndInstall(ctx context.Context, composeApp *codegen.ComposeApp) error {
-	service, err := apiService()
-	if err != nil {
-		return err
-	}
-
-	if err := service.Pull(ctx, composeApp, api.PullOptions{}); err != nil {
-		return err
-	}
-
-	// prepare source path for volumes if not exist
-	for _, app := range composeApp.Services {
-		for _, volume := range app.Volumes {
-			path := volume.Source
-			if err := file.IsNotExistMkDir(path); err != nil {
-				return err
-			}
-		}
-	}
-
-	if err := service.Create(ctx, composeApp, api.CreateOptions{}); err != nil {
-		return err
-	}
-
-	if err := service.Start(ctx, composeApp.Name, api.StartOptions{
-		CascadeStop: true,
-		Wait:        true,
-	}); err != nil {
-		return err
-	}
-
-	if err := service.Up(ctx, composeApp, api.UpOptions{}); err != nil {
-		return err
-	}
-
-	return nil
 }

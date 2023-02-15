@@ -170,6 +170,25 @@ func (a *AppManagement) InstallComposeApp(ctx echo.Context) error {
 	})
 }
 
+func (a *AppManagement) UninstallComposeApp(ctx echo.Context, id codegen.ComposeAppID) error {
+	if id == "" {
+		message := ErrComposeAppIDNotProvided.Error()
+		return ctx.JSON(http.StatusBadRequest, codegen.ResponseBadRequest{
+			Message: &message,
+		})
+	}
+
+	// attach context key/value pairs from upstream
+	backgroundCtx := common.WithProperties(context.Background(), PropertiesFromQueryParams(ctx))
+
+	if err := service.MyService.Compose().Uninstall(backgroundCtx, id); err != nil {
+		message := err.Error()
+		return ctx.JSON(http.StatusInternalServerError, codegen.ResponseInternalServerError{Message: &message})
+	}
+
+	return ctx.JSON(http.StatusOK, codegen.ComposeAppUninstallOK{})
+}
+
 func (a *AppManagement) ComposeAppStatus(ctx echo.Context, id codegen.ComposeAppID) error {
 	if id == "" {
 		message := ErrComposeAppIDNotProvided.Error()
@@ -192,6 +211,31 @@ func (a *AppManagement) ComposeAppStatus(ctx echo.Context, id codegen.ComposeApp
 	return ctx.JSON(http.StatusOK, codegen.ComposeAppStatusOK{
 		Data: &status,
 	})
+}
+
+func (a *AppManagement) SetComposeAppStatus(ctx echo.Context, id codegen.ComposeAppID) error {
+	if id == "" {
+		message := ErrComposeAppIDNotProvided.Error()
+		return ctx.JSON(http.StatusBadRequest, codegen.ResponseBadRequest{
+			Message: &message,
+		})
+	}
+
+	var action codegen.RequestComposeAppStatus
+	if err := ctx.Bind(&action); err != nil {
+		message := err.Error()
+		return ctx.JSON(http.StatusBadRequest, codegen.ResponseBadRequest{Message: &message})
+	}
+
+	switch action {
+	case codegen.RequestComposeAppStatusStart:
+	case codegen.RequestComposeAppStatusStop:
+	case codegen.RequestComposeAppStatusRestart:
+	default:
+		message := fmt.Sprintf("invalid action `%s`", action)
+		return ctx.JSON(http.StatusBadRequest, codegen.ResponseBadRequest{Message: &message})
+	}
+	return ctx.JSON(http.StatusOK, codegen.RequestComposeAppStatusOK{})
 }
 
 func (a *AppManagement) ComposeAppLogs(ctx echo.Context, id codegen.ComposeAppID, params codegen.ComposeAppLogsParams) error {

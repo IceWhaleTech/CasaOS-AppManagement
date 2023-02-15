@@ -8,6 +8,7 @@ import (
 
 	"github.com/IceWhaleTech/CasaOS-AppManagement/codegen"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/common"
+	"github.com/IceWhaleTech/CasaOS-Common/utils/file"
 	"github.com/compose-spec/compose-go/cli"
 	"github.com/compose-spec/compose-go/loader"
 	"github.com/compose-spec/compose-go/types"
@@ -102,6 +103,40 @@ func (a *ComposeApp) Containers(ctx context.Context) (map[string]api.ContainerSu
 	)
 
 	return containerMap, nil
+}
+
+func (a *ComposeApp) PullAndInstall(ctx context.Context) error {
+	service, err := apiService()
+	if err != nil {
+		return err
+	}
+
+	if err := service.Pull(ctx, (*codegen.ComposeApp)(a), api.PullOptions{}); err != nil {
+		return err
+	}
+
+	// prepare source path for volumes if not exist
+	for _, app := range a.Services {
+		for _, volume := range app.Volumes {
+			path := volume.Source
+			if err := file.IsNotExistMkDir(path); err != nil {
+				return err
+			}
+		}
+	}
+
+	if err := service.Create(ctx, (*codegen.ComposeApp)(a), api.CreateOptions{}); err != nil {
+		return err
+	}
+
+	if err := service.Start(ctx, a.Name, api.StartOptions{
+		CascadeStop: true,
+		Wait:        true,
+	}); err != nil {
+		return err
+	}
+
+	return service.Up(ctx, (*codegen.ComposeApp)(a), api.UpOptions{})
 }
 
 func (a *ComposeApp) Logs(ctx context.Context, lines int) ([]byte, error) {
