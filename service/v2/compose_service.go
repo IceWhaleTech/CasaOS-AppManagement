@@ -11,6 +11,7 @@ import (
 	"github.com/IceWhaleTech/CasaOS-Common/utils/file"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/logger"
 	timeutils "github.com/IceWhaleTech/CasaOS-Common/utils/time"
+	"github.com/samber/lo"
 	"gopkg.in/yaml.v3"
 
 	"github.com/docker/cli/cli/command"
@@ -106,26 +107,22 @@ func (s *ComposeService) Uninstall(ctx context.Context, appID string) error {
 	})
 }
 
-func (s *ComposeService) Status(ctx context.Context, appID string) (string, error) {
+func (s *ComposeService) StatusList(ctx context.Context) (map[string]string, error) {
 	service, err := apiService()
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	stackList, err := service.List(ctx, api.ListOptions{
 		All: true,
 	})
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
-	for _, stack := range stackList {
-		if stack.ID == appID {
-			return stack.Status, nil
-		}
-	}
-
-	return "", ErrComposeAppNotFound
+	return lo.SliceToMap(stackList, func(stack api.Stack) (string, string) {
+		return stack.ID, stack.Status
+	}), nil
 }
 
 func (s *ComposeService) List(ctx context.Context) (map[string]*ComposeApp, error) {
