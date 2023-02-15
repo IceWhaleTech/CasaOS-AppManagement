@@ -5,10 +5,12 @@ import (
 	"context"
 	"path/filepath"
 	"strconv"
+	"strings"
 
 	"github.com/IceWhaleTech/CasaOS-AppManagement/codegen"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/common"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/file"
+	"github.com/IceWhaleTech/CasaOS-Common/utils/logger"
 	"github.com/compose-spec/compose-go/cli"
 	"github.com/compose-spec/compose-go/loader"
 	"github.com/compose-spec/compose-go/types"
@@ -16,6 +18,7 @@ import (
 	"github.com/docker/compose/v2/cmd/formatter"
 	"github.com/docker/compose/v2/pkg/api"
 	"github.com/samber/lo"
+	"go.uber.org/zap"
 	"gopkg.in/yaml.v3"
 )
 
@@ -137,6 +140,88 @@ func (a *ComposeApp) PullAndInstall(ctx context.Context) error {
 	}
 
 	return service.Up(ctx, (*codegen.ComposeApp)(a), api.UpOptions{})
+}
+
+func (a *ComposeApp) UpdateSettings(ctx context.Context, newComposeYAML []byte) error {
+	// update interpolation map in current context
+	interpolationMap := baseInterpolationMap()
+	interpolationMap["AppID"] = a.Name
+
+	// create new temporary ComposeApp from composeYAML
+	newComposeAppName, err := getNameFromYAML(newComposeYAML)
+	if err != nil {
+		return err
+	}
+
+	// compare new ComposeApp with current ComposeApp
+	if newComposeAppName != a.Name {
+		return ErrComposeAppNotMatch
+	}
+
+	if len(a.ComposeFiles) <= 0 {
+		return ErrComposeFileNotFound
+	}
+
+	if len(a.ComposeFiles) > 1 {
+		logger.Info("warning: multiple compose files found, only the first one will be used", zap.String("compose files", strings.Join(a.ComposeFiles, ",")))
+	}
+
+	// backup current compose file
+	currentComposeFile := a.ComposeFiles[0]
+
+	backupComposeFile := currentComposeFile + "." + "bak"
+	if err := file.CopySingleFile(currentComposeFile, backupComposeFile, ""); err != nil {
+		logger.Error("failed to backup compose file", zap.Error(err), zap.String("src", currentComposeFile), zap.String("dst", backupComposeFile))
+	}
+
+	// start compose app
+	service, err := apiService()
+	if err != nil {
+		return err
+	}
+
+	success := false
+	defer func() {
+		if !success {
+			if err := file.CopySingleFile(backupComposeFile, currentComposeFile, ""); err != nil {
+				logger.Error("failed to restore compose file", zap.Error(err), zap.String("src", backupComposeFile), zap.String("dst", currentComposeFile))
+			}
+
+			if err := service.Up(ctx, (*codegen.ComposeApp)(a), api.UpOptions{
+				Start: api.StartOptions{
+					CascadeStop: true,
+					Wait:        true,
+				},
+			}); err != nil {
+				logger.Error("failed to start compose app", zap.Error(err), zap.String("name", a.Name))
+			}
+		}
+	}()
+
+	// save new compose file
+	if err := file.WriteToFullPath(newComposeYAML, currentComposeFile, 0o600); err != nil {
+		logger.Error("failed to save compose file", zap.Error(err), zap.String("path", currentComposeFile))
+		return err
+	}
+
+	newComposeApp, err := LoadComposeAppFromConfigFile(a.Name, currentComposeFile)
+	if err != nil {
+		logger.Error("failed to load compose app from config file", zap.Error(err), zap.String("path", currentComposeFile))
+		return err
+	}
+
+	if err := service.Up(ctx, (*codegen.ComposeApp)(newComposeApp), api.UpOptions{
+		Start: api.StartOptions{
+			CascadeStop: true,
+			Wait:        true,
+		},
+	}); err != nil {
+		logger.Error("failed to start compose app", zap.Error(err), zap.String("name", a.Name))
+		return err
+	}
+
+	success = true
+	return nil
 }
 
 func (a *ComposeApp) Logs(ctx context.Context, lines int) ([]byte, error) {

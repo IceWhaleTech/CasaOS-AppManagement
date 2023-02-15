@@ -130,7 +130,7 @@ func (a *AppManagement) UpdateComposeAppSettings(ctx echo.Context, id codegen.Co
 	// attach context key/value pairs from upstream
 	backgroundCtx := common.WithProperties(context.Background(), PropertiesFromQueryParams(ctx))
 
-	if err := service.MyService.Compose().UpdateSettings(backgroundCtx, composeApp, buf); err != nil {
+	if err := composeApp.UpdateSettings(backgroundCtx, buf); err != nil {
 		message := err.Error()
 		return ctx.JSON(http.StatusInternalServerError, codegen.ResponseInternalServerError{
 			Message: &message,

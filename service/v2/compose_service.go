@@ -4,10 +4,8 @@ import (
 	"context"
 	"os"
 	"path/filepath"
-	"strings"
 	"time"
 
-	"github.com/IceWhaleTech/CasaOS-AppManagement/codegen"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/common"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/pkg/config"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/file"
@@ -34,88 +32,6 @@ func (s *ComposeService) PrepareWorkingDirectory(name string, composeYAML []byte
 	}
 
 	return workingDirectory, nil
-}
-
-func (s *ComposeService) UpdateSettings(ctx context.Context, currentComposeApp *ComposeApp, newComposeYAML []byte) error {
-	// update interpolation map in current context
-	interpolationMap := baseInterpolationMap()
-	interpolationMap["AppID"] = currentComposeApp.Name
-
-	// create new temporary ComposeApp from composeYAML
-	newComposeAppName, err := getNameFromYAML(newComposeYAML)
-	if err != nil {
-		return err
-	}
-
-	// compare new ComposeApp with current ComposeApp
-	if newComposeAppName != currentComposeApp.Name {
-		return ErrComposeAppNotMatch
-	}
-
-	if len(currentComposeApp.ComposeFiles) <= 0 {
-		return ErrComposeFileNotFound
-	}
-
-	if len(currentComposeApp.ComposeFiles) > 1 {
-		logger.Info("warning: multiple compose files found, only the first one will be used", zap.String("compose files", strings.Join(currentComposeApp.ComposeFiles, ",")))
-	}
-
-	// backup current compose file
-	currentComposeFile := currentComposeApp.ComposeFiles[0]
-
-	backupComposeFile := currentComposeFile + "." + "bak"
-	if err := file.CopySingleFile(currentComposeFile, backupComposeFile, ""); err != nil {
-		logger.Error("failed to backup compose file", zap.Error(err), zap.String("src", currentComposeFile), zap.String("dst", backupComposeFile))
-	}
-
-	// start compose app
-	service, err := apiService()
-	if err != nil {
-		return err
-	}
-
-	success := false
-	defer func() {
-		if !success {
-			if err := file.CopySingleFile(backupComposeFile, currentComposeFile, ""); err != nil {
-				logger.Error("failed to restore compose file", zap.Error(err), zap.String("src", backupComposeFile), zap.String("dst", currentComposeFile))
-			}
-
-			if err := service.Up(ctx, (*codegen.ComposeApp)(currentComposeApp), api.UpOptions{
-				Start: api.StartOptions{
-					CascadeStop: true,
-					Wait:        true,
-				},
-			}); err != nil {
-				logger.Error("failed to start compose app", zap.Error(err), zap.String("name", currentComposeApp.Name))
-			}
-		}
-	}()
-
-	// save new compose file
-	if err := file.WriteToFullPath(newComposeYAML, currentComposeFile, 0o600); err != nil {
-		logger.Error("failed to save compose file", zap.Error(err), zap.String("path", currentComposeFile))
-		return err
-	}
-
-	newComposeApp, err := LoadComposeAppFromConfigFile(currentComposeApp.Name, currentComposeFile)
-	if err != nil {
-		logger.Error("failed to load compose app from config file", zap.Error(err), zap.String("path", currentComposeFile))
-		return err
-	}
-
-	if err := service.Up(ctx, (*codegen.ComposeApp)(newComposeApp), api.UpOptions{
-		Start: api.StartOptions{
-			CascadeStop: true,
-			Wait:        true,
-		},
-	}); err != nil {
-		logger.Error("failed to start compose app", zap.Error(err), zap.String("name", currentComposeApp.Name))
-		return err
-	}
-
-	success = true
-	return nil
 }
 
 func (s *ComposeService) Install(ctx context.Context, composeYAML []byte) error {
