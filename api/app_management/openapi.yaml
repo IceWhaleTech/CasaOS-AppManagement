@@ -249,6 +249,23 @@ paths:
         "500":
           $ref: "#/components/responses/ResponseInternalServerError"
 
+    delete:
+      summary: Uninstall a compose app
+      description: |
+        TODO - add description
+      operationId: uninstallComposeApp
+      tags:
+        - Compose methods
+      parameters:
+        - $ref: "#/components/parameters/ComposeAppID"
+      responses:
+        "200":
+          $ref: "#/components/responses/ComposeAppUninstallOK"
+        "404":
+          $ref: "#/components/responses/ResponseNotFound"
+        "500":
+          $ref: "#/components/responses/ResponseInternalServerError"
+
   /compose/{id}/status:
     get:
       summary: Get the status of a compose app
@@ -262,6 +279,27 @@ paths:
       responses:
         "200":
           $ref: "#/components/responses/ComposeAppStatusOK"
+        "404":
+          $ref: "#/components/responses/ResponseNotFound"
+        "500":
+          $ref: "#/components/responses/ResponseInternalServerError"
+
+    put:
+      summary: Start/restart/stop a compose app
+      description: |
+        TODO - add description
+      operationId: setComposeAppStatus
+      tags:
+        - Compose methods
+      parameters:
+        - $ref: "#/components/parameters/ComposeAppID"
+      requestBody:
+        $ref: "#/components/requestBodies/RequestComposeAppStatus"
+      responses:
+        "200":
+          $ref: "#/components/responses/RequestComposeAppStatusOK"
+        "400":
+          $ref: "#/components/responses/ResponseBadRequest"
         "404":
           $ref: "#/components/responses/ResponseNotFound"
         "500":
@@ -443,6 +481,18 @@ components:
           schema:
             $ref: "#/components/schemas/ComposeApp"
 
+    RequestComposeAppStatus:
+      description: Compose app status
+      required: true
+      content:
+        application/json:
+          schema:
+            type: string
+            enum:
+              - "start"
+              - "restart"
+              - "stop"
+
   responses:
     ResponseInternalServerError:
       description: Internal Server Error
@@ -531,6 +581,13 @@ components:
           schema:
             $ref: "#/components/schemas/BaseResponse"
 
+    ComposeAppUninstallOK:
+      description: OK
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/BaseResponse"
+
     ComposeAppOK:
       description: OK
       content:
@@ -563,6 +620,14 @@ components:
                   data:
                     type: string
                     example: "running"
+
+    RequestComposeAppStatusOK:
+      description: OK
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: "#/components/schemas/BaseResponse"
 
     ComposeAppContainersOK:
       description: OK
