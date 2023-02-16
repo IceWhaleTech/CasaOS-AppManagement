@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"path/filepath"
+	"reflect"
 	"strconv"
 	"strings"
 
@@ -17,12 +18,78 @@ import (
 	composeCmd "github.com/docker/compose/v2/cmd/compose"
 	"github.com/docker/compose/v2/cmd/formatter"
 	"github.com/docker/compose/v2/pkg/api"
+	"github.com/mitchellh/mapstructure"
 	"github.com/samber/lo"
 	"go.uber.org/zap"
 	"gopkg.in/yaml.v3"
 )
 
-type ComposeApp codegen.ComposeApp
+type (
+	ComposeApp codegen.ComposeApp
+)
+
+func (a *ComposeApp) MarshalJSON() ([]byte, error) {
+	return json.Marshal((*codegen.ComposeApp)(a))
+}
+
+func (a *ComposeApp) UnmarshalJSON(data []byte) error {
+	var any map[string]interface{}
+	if err := json.Unmarshal(data, &any); err != nil {
+		return err
+	}
+
+	services := lo.MapToSlice(any["services"].(map[string]interface{}), func(name string, service interface{}) interface{} {
+		return service
+	})
+
+	any["services"] = &services
+
+	var out codegen.ComposeApp
+
+	dec, err := mapstructure.NewDecoder(&mapstructure.DecoderConfig{
+		DecodeHook: mapstructure.ComposeDecodeHookFunc(
+			func(f reflect.Type, t reflect.Type, data interface{}) (interface{}, error) {
+				if f.Kind() != reflect.String {
+					return data, nil
+				}
+				if t != reflect.TypeOf(types.UnitBytes(0)) {
+					return data, nil
+				}
+
+				value, err := strconv.ParseUint(data.(string), 10, 64)
+				if err != nil {
+					return nil, err
+				}
+
+				return types.UnitBytes(value), nil
+			},
+			func(f reflect.Type, t reflect.Type, data interface{}) (interface{}, error) {
+				if f.Kind() != reflect.Bool {
+					return data, nil
+				}
+
+				if t != reflect.TypeOf(types.External{}) {
+					return data, nil
+				}
+
+				return types.External{
+					External: data.(bool),
+				}, nil
+			},
+		),
+		Result: &out,
+	})
+	if err != nil {
+		return err
+	}
+
+	if err := dec.Decode(any); err != nil {
+		return err
+	}
+
+	*a = ComposeApp(out)
+	return nil
+}
 
 func (a *ComposeApp) StoreInfo(includeApps bool) (*codegen.ComposeAppStoreInfo, error) {
 	ex, ok := a.Extensions[common.ComposeExtensionNameXCasaOS]

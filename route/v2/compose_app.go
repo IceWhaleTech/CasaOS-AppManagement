@@ -22,6 +22,11 @@ import (
 
 var ErrComposeAppIDNotProvided = errors.New("compose AppID (compose project name) is not provided")
 
+type ComposeAppListOK struct {
+	codegen.BaseResponse
+	Data *map[string]v2.ComposeAppWithStoreInfo `json:"data,omitempty"`
+}
+
 func (a *AppManagement) MyComposeAppList(ctx echo.Context) error {
 	composeApps, err := service.MyService.Compose().List(ctx.Request().Context())
 	if err != nil {
@@ -30,13 +35,13 @@ func (a *AppManagement) MyComposeAppList(ctx echo.Context) error {
 		return ctx.JSON(http.StatusInternalServerError, codegen.ResponseInternalServerError{Message: &message})
 	}
 
-	composeAppsWithStoreInfo := lo.MapValues(composeApps, func(composeApp *v2.ComposeApp, id string) codegen.ComposeAppWithStoreInfo {
+	composeAppsWithStoreInfo := lo.MapValues(composeApps, func(composeApp *v2.ComposeApp, id string) codegen.ComposeYAMLWithStoreInfo {
 		storeInfo, err := composeApp.StoreInfo(true)
 		if err != nil {
 			logger.Error("failed to get store info", zap.Error(err), zap.String("composeAppID", id))
 		}
 
-		return codegen.ComposeAppWithStoreInfo{
+		return codegen.ComposeYAMLWithStoreInfo{
 			Compose:   (*codegen.ComposeApp)(composeApp),
 			StoreInfo: storeInfo,
 		}
@@ -92,7 +97,7 @@ func (a *AppManagement) MyComposeApp(ctx echo.Context, id codegen.ComposeAppID) 
 	return ctx.JSON(http.StatusOK, codegen.ComposeAppOK{
 		// extension properties aren't marshalled - https://github.com/golang/go/issues/6213
 		Message: &message,
-		Data: &codegen.ComposeAppWithStoreInfo{
+		Data: &codegen.ComposeYAMLWithStoreInfo{
 			StoreInfo: storeInfo,
 			Compose:   (*types.Project)(composeApp),
 		},

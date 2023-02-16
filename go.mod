@@ -13,10 +13,12 @@ require (
 	github.com/go-resty/resty/v2 v2.7.0
 	github.com/google/go-cmp v0.5.9
 	github.com/labstack/echo/v4 v4.10.0
+	github.com/mailru/easyjson v0.7.7
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/opencontainers/image-spec v1.1.0-rc2
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/samber/lo v1.37.0
+	github.com/vmihailenco/msgpack/v5 v5.3.5
 	gopkg.in/yaml.v3 v3.0.1
 	gotest.tools/v3 v3.4.0
 	modernc.org/sqlite v1.20.1
@@ -92,7 +94,6 @@ require (
 	github.com/klauspost/pgzip v1.2.5 // indirect
 	github.com/labstack/gommon v0.4.0 // indirect
 	github.com/magiconair/properties v1.8.0 // indirect
-	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-runewidth v0.0.14 // indirect
 	github.com/mattn/go-shellwords v1.0.12 // indirect
@@ -141,6 +142,7 @@ require (
 	github.com/ulikunitz/xz v0.5.11 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/fasttemplate v1.2.2 // indirect
+	github.com/vmihailenco/tagparser/v2 v2.0.0 // indirect
 	github.com/weppos/publicsuffix-go v0.20.0 // indirect
 	github.com/xanzy/ssh-agent v0.3.3 // indirect
 	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb // indirect

@@ -3,9 +3,14 @@ package v2
 import (
 	"regexp"
 	"strings"
+
+	jsoniter "github.com/json-iterator/go"
 )
 
-var nonAlphaNumeric = regexp.MustCompile(`[^a-z0-9]+`)
+var (
+	nonAlphaNumeric = regexp.MustCompile(`[^a-z0-9]+`)
+	json            = jsoniter.ConfigCompatibleWithStandardLibrary
+)
 
 func Standardize(text string) string {
 	if text == "" {
