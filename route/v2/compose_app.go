@@ -233,48 +233,13 @@ func (a *AppManagement) SetComposeAppStatus(ctx echo.Context, id codegen.Compose
 		return ctx.JSON(http.StatusBadRequest, codegen.ResponseBadRequest{Message: &message})
 	}
 
-	if !lo.Contains([]codegen.RequestComposeAppStatus{
-		codegen.RequestComposeAppStatusStart,
-		codegen.RequestComposeAppStatusStop,
-		codegen.RequestComposeAppStatusRestart,
-	}, action) {
-		message := fmt.Sprintf("invalid action `%s`", action)
-		return ctx.JSON(http.StatusBadRequest, codegen.ResponseBadRequest{Message: &message})
-	}
-
-	// attach context key/value pairs from upstream
-	backgroundCtx := common.WithProperties(context.Background(), PropertiesFromQueryParams(ctx))
-
-	composeApp, err := service.MyService.Compose().ComposeApp(backgroundCtx, id)
-	if err != nil {
-		message := err.Error()
-		if err == v2.ErrComposeAppNotFound {
-			return ctx.JSON(http.StatusNotFound, codegen.ResponseNotFound{Message: &message})
-		}
-		return ctx.JSON(http.StatusInternalServerError, codegen.ResponseInternalServerError{Message: &message})
-	}
-
 	switch action {
 	case codegen.RequestComposeAppStatusStart:
-		if err := composeApp.Start(backgroundCtx); err != nil {
-			message := err.Error()
-			return ctx.JSON(http.StatusInternalServerError, codegen.ResponseInternalServerError{Message: &message})
-		}
 	case codegen.RequestComposeAppStatusStop:
-		if err := composeApp.Stop(backgroundCtx); err != nil {
-			message := err.Error()
-			return ctx.JSON(http.StatusInternalServerError, codegen.ResponseInternalServerError{Message: &message})
-		}
 	case codegen.RequestComposeAppStatusRestart:
-		if err := composeApp.Stop(backgroundCtx); err != nil {
-			message := err.Error()
-			return ctx.JSON(http.StatusInternalServerError, codegen.ResponseInternalServerError{Message: &message})
-		}
-
-		if err := composeApp.Start(backgroundCtx); err != nil {
-			message := err.Error()
-			return ctx.JSON(http.StatusInternalServerError, codegen.ResponseInternalServerError{Message: &message})
-		}
+	default:
+		message := fmt.Sprintf("invalid action `%s`", action)
+		return ctx.JSON(http.StatusBadRequest, codegen.ResponseBadRequest{Message: &message})
 	}
 	return ctx.JSON(http.StatusOK, codegen.RequestComposeAppStatusOK{})
 }

@@ -143,6 +143,7 @@ func (s *ComposeService) List(ctx context.Context) (map[string]*ComposeApp, erro
 	for _, stack := range stackList {
 
 		composeApp, err := LoadComposeAppFromConfigFile(stack.ID, stack.ConfigFiles)
+		// load project
 		if err != nil {
 			logger.Error("failed to load compose file", zap.Error(err), zap.String("path", stack.ConfigFiles))
 			continue
@@ -152,36 +153,6 @@ func (s *ComposeService) List(ctx context.Context) (map[string]*ComposeApp, erro
 	}
 
 	return result, nil
-}
-
-func (s *ComposeService) ComposeApp(ctx context.Context, appID string) (*ComposeApp, error) {
-	service, err := apiService()
-	if err != nil {
-		return nil, err
-	}
-
-	stackList, err := service.List(ctx, api.ListOptions{
-		All: true,
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	for _, stack := range stackList {
-
-		if stack.ID != appID {
-			continue
-		}
-
-		composeApp, err := LoadComposeAppFromConfigFile(stack.ID, stack.ConfigFiles)
-		if err != nil {
-			return nil, err
-		}
-
-		return composeApp, nil
-	}
-
-	return nil, ErrComposeAppNotFound
 }
 
 func NewComposeService() *ComposeService {
