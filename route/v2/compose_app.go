@@ -17,7 +17,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/samber/lo"
 	"go.uber.org/zap"
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 )
 
 var ErrComposeAppIDNotProvided = errors.New("compose AppID (compose project name) is not provided")
