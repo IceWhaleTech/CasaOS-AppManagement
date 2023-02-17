@@ -10,7 +10,6 @@ import (
 	v2 "github.com/IceWhaleTech/CasaOS-AppManagement/service/v2"
 	"github.com/IceWhaleTech/CasaOS-Common/utils"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/logger"
-	"github.com/compose-spec/compose-go/types"
 	"github.com/labstack/echo/v4"
 	"github.com/samber/lo"
 	"go.uber.org/zap"
@@ -94,7 +93,7 @@ func (a *AppManagement) ComposeApp(ctx echo.Context, id codegen.AppStoreID) erro
 		Message: &message,
 		Data: &codegen.ComposeAppWithStoreInfo{
 			StoreInfo: storeInfo,
-			Compose:   (*types.Project)(composeApp),
+			Compose:   (*codegen.ComposeApp)(composeApp),
 		},
 	})
 }
