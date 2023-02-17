@@ -10,6 +10,7 @@ import (
 	v2 "github.com/IceWhaleTech/CasaOS-AppManagement/service/v2"
 	"github.com/IceWhaleTech/CasaOS-Common/utils"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/logger"
+	"github.com/compose-spec/compose-go/types"
 	"github.com/labstack/echo/v4"
 	"github.com/samber/lo"
 	"go.uber.org/zap"
@@ -87,21 +88,13 @@ func (a *AppManagement) ComposeApp(ctx echo.Context, id codegen.AppStoreID) erro
 		})
 	}
 
-	compose, err := yaml.Marshal(composeApp)
-	if err != nil {
-		message := err.Error()
-		return ctx.JSON(http.StatusInternalServerError, codegen.ResponseInternalServerError{
-			Message: &message,
-		})
-	}
-
 	message := fmt.Sprintf("!! JSON format is for debugging purpose only - use `Accept: %s` HTTP header to get YAML instead !!", common.MIMEApplicationYAML)
 	return ctx.JSON(http.StatusOK, codegen.ComposeAppOK{
 		// extension properties aren't marshalled - https://github.com/golang/go/issues/6213
 		Message: &message,
-		Data: &codegen.ComposeYAMLWithStoreInfo{
+		Data: &codegen.ComposeAppWithStoreInfo{
 			StoreInfo: storeInfo,
-			Compose:   utils.Ptr(string(compose)),
+			Compose:   (*types.Project)(composeApp),
 		},
 	})
 }

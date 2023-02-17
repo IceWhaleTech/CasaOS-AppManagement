@@ -570,7 +570,7 @@ components:
                   data:
                     type: object
                     additionalProperties:
-                      $ref: "#/components/schemas/ComposeYAMLWithStoreInfo"
+                      $ref: "#/components/schemas/ComposeAppWithStoreInfo"
                     example:
                       syncthing: {}
 
@@ -597,7 +597,7 @@ components:
               - $ref: "#/components/schemas/BaseResponse"
               - properties:
                   data:
-                    $ref: "#/components/schemas/ComposeYAMLWithStoreInfo"
+                    $ref: "#/components/schemas/ComposeAppWithStoreInfo"
         application/yaml:
           schema:
             type: string
@@ -752,18 +752,16 @@ components:
         name: types
         path: github.com/compose-spec/compose-go/types
 
-    ComposeYAMLWithStoreInfo:
+    ComposeAppWithStoreInfo:
       description: |-
         Schema for `ComposeAppOK` response.
 
         > Do not mistake it as `ComposeAppStoreInfo` which is just store information of a compose app.
       properties:
-        compose:
-          type: string
-          example: <Compose YAML>
-
         store_info:
           $ref: "#/components/schemas/ComposeAppStoreInfo"
+        compose:
+          $ref: "#/components/schemas/ComposeApp"
 
     AppStoreInfo:
       title: StoreInfo of an app
