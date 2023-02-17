@@ -202,16 +202,15 @@ func (a *AppManagement) ComposeAppStatus(ctx echo.Context, id codegen.ComposeApp
 		})
 	}
 
-	statusList, err := service.MyService.Compose().StatusList(ctx.Request().Context())
+	status, err := service.MyService.Compose().Status(ctx.Request().Context(), id)
 	if err != nil {
 		message := err.Error()
-		return ctx.JSON(http.StatusInternalServerError, codegen.ResponseInternalServerError{Message: &message})
-	}
 
-	status, ok := statusList[id]
-	if !ok {
-		message := fmt.Sprintf("compose app `%s` not found", id)
-		return ctx.JSON(http.StatusNotFound, codegen.ResponseNotFound{Message: &message})
+		if err == v2.ErrComposeAppNotFound {
+			return ctx.JSON(http.StatusNotFound, codegen.ResponseNotFound{Message: &message})
+		}
+
+		return ctx.JSON(http.StatusInternalServerError, codegen.ResponseInternalServerError{Message: &message})
 	}
 
 	return ctx.JSON(http.StatusOK, codegen.ComposeAppStatusOK{
