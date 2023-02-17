@@ -48,6 +48,10 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           # Your GoReleaser Pro key, if you are using the 'goreleaser-pro' distribution
           # GORELEASER_KEY: ${{ secrets.GORELEASER_KEY }}
+      
+      - name: remove migration file
+        run: find . -type f  \( -name '*migration*' \) -delete
+    
       - name: install sshpass
         run: sudo apt install sshpass --yes
       - name: ZeroTier
