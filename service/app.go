@@ -1,4 +1,4 @@
-package v2
+package service
 
 import (
 	"github.com/IceWhaleTech/CasaOS-AppManagement/codegen"

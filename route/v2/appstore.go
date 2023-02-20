@@ -7,7 +7,6 @@ import (
 	"github.com/IceWhaleTech/CasaOS-AppManagement/codegen"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/common"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/service"
-	v2 "github.com/IceWhaleTech/CasaOS-AppManagement/service/v2"
 	"github.com/IceWhaleTech/CasaOS-Common/utils"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/logger"
 	"github.com/labstack/echo/v4"
@@ -19,7 +18,7 @@ import (
 func (a *AppManagement) ComposeAppStoreInfoList(ctx echo.Context) error {
 	catalog := service.MyService.V2AppStore().Catalog()
 
-	list := lo.MapValues(catalog, func(composeApp *v2.ComposeApp, appStoreID string) codegen.ComposeAppStoreInfo {
+	list := lo.MapValues(catalog, func(composeApp *service.ComposeApp, appStoreID string) codegen.ComposeAppStoreInfo {
 		storeInfo, err := composeApp.StoreInfo(true)
 		if err != nil {
 			logger.Error("failed to get store info", zap.Error(err), zap.String("appStoreID", appStoreID))

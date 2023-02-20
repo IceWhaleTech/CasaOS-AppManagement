@@ -18,7 +18,6 @@ import (
 	"github.com/IceWhaleTech/CasaOS-AppManagement/common"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/pkg/config"
 	v1 "github.com/IceWhaleTech/CasaOS-AppManagement/service/v1"
-	v2 "github.com/IceWhaleTech/CasaOS-AppManagement/service/v2"
 	"github.com/IceWhaleTech/CasaOS-Common/external"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/logger"
 	jsoniter "github.com/json-iterator/go"
@@ -33,10 +32,10 @@ var (
 
 type Services interface {
 	V1AppStore() v1.AppStore
-	V2AppStore() *v2.AppStore
+	V2AppStore() *AppStore
 
 	// Git() *GitService
-	Compose() *v2.ComposeService
+	Compose() *ComposeService
 	Docker() DockerService
 	Gateway() external.ManagementService
 	Notify() external.NotifyService
@@ -49,7 +48,7 @@ func NewService(RuntimePath string) Services {
 		panic(err)
 	}
 
-	v2appStore, err := v2.NewAppStore()
+	v2appStore, err := NewAppStore()
 	if err != nil {
 		panic(err)
 	}
@@ -60,7 +59,7 @@ func NewService(RuntimePath string) Services {
 
 		v1appStore: v1.NewAppService(),
 		v2appStore: v2appStore,
-		compose:    v2.NewComposeService(),
+		compose:    NewComposeService(),
 		docker:     NewDockerService(),
 		// git:        NewGitService(),
 	}
@@ -68,10 +67,10 @@ func NewService(RuntimePath string) Services {
 
 type store struct {
 	v1appStore v1.AppStore
-	v2appStore *v2.AppStore
+	v2appStore *AppStore
 
 	// git     *GitService
-	compose *v2.ComposeService
+	compose *ComposeService
 	docker  DockerService
 	gateway external.ManagementService
 	notify  external.NotifyService
@@ -89,7 +88,7 @@ func (c *store) V1AppStore() v1.AppStore {
 	return c.v1appStore
 }
 
-func (c *store) V2AppStore() *v2.AppStore {
+func (c *store) V2AppStore() *AppStore {
 	return c.v2appStore
 }
 
@@ -97,7 +96,7 @@ func (c *store) V2AppStore() *v2.AppStore {
 // 	return c.git
 // }
 
-func (c *store) Compose() *v2.ComposeService {
+func (c *store) Compose() *ComposeService {
 	return c.compose
 }
 

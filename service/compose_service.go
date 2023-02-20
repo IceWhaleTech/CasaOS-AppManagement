@@ -1,10 +1,9 @@
-package v2
+package service
 
 import (
 	"context"
 	"os"
 	"path/filepath"
-	"time"
 
 	"github.com/IceWhaleTech/CasaOS-AppManagement/common"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/pkg/config"
@@ -80,11 +79,36 @@ func (s *ComposeService) Install(ctx context.Context, composeYAML []byte) error 
 		return err
 	}
 
+	// prepare for message bus events
+	storeInfo, err := composeApp.StoreInfo(true)
+	if err != nil {
+		return err
+	}
+
+	if storeInfo.Apps == nil || len(*storeInfo.Apps) == 0 {
+		return ErrNoAppFoundInComposeApp
+	}
+
+	mainAppStoreInfo, ok := (*storeInfo.Apps)[*storeInfo.MainApp]
+	if !ok {
+		return ErrMainAppNotFound
+	}
+
+	eventProperties := common.PropertiesFromContext(ctx)
+	eventProperties[common.PropertyTypeAppName.Name] = appID
+	eventProperties[common.PropertyTypeAppIcon.Name] = mainAppStoreInfo.Icon
+	eventProperties[common.PropertyTypeImageName.Name] = composeApp.App(*storeInfo.MainApp).Image
+
 	go func(ctx context.Context) {
-		ctx, cancel := context.WithTimeout(ctx, 30*time.Minute)
-		defer cancel()
+		go PublishEventWrapper(ctx, common.EventTypeAppInstallBegin, nil)
+
+		defer PublishEventWrapper(ctx, common.EventTypeAppInstallEnd, nil)
 
 		if err := composeApp.PullAndInstall(ctx); err != nil {
+			go PublishEventWrapper(ctx, common.EventTypeAppInstallError, map[string]string{
+				common.PropertyTypeMessage.Name: err.Error(),
+			})
+
 			logger.Error("failed to install compose app", zap.Error(err), zap.String("name", composeApp.Name))
 			cleanup(yamlFilePath)
 		}

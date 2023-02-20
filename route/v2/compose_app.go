@@ -11,7 +11,6 @@ import (
 	"github.com/IceWhaleTech/CasaOS-AppManagement/codegen"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/common"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/service"
-	v2 "github.com/IceWhaleTech/CasaOS-AppManagement/service/v2"
 	"github.com/IceWhaleTech/CasaOS-Common/utils"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/logger"
 	"github.com/compose-spec/compose-go/types"
@@ -31,7 +30,11 @@ func (a *AppManagement) MyComposeAppList(ctx echo.Context) error {
 		return ctx.JSON(http.StatusInternalServerError, codegen.ResponseInternalServerError{Message: &message})
 	}
 
-	composeAppsWithStoreInfo := lo.MapValues(composeApps, func(composeApp *v2.ComposeApp, id string) codegen.ComposeAppWithStoreInfo {
+	composeAppsWithStoreInfo := lo.MapValues(composeApps, func(composeApp *service.ComposeApp, id string) codegen.ComposeAppWithStoreInfo {
+		if composeApp == nil {
+			return codegen.ComposeAppWithStoreInfo{}
+		}
+
 		storeInfo, err := composeApp.StoreInfo(true)
 		if err != nil {
 			logger.Error("failed to get store info", zap.Error(err), zap.String("composeAppID", id))
@@ -158,7 +161,7 @@ func (a *AppManagement) InstallComposeApp(ctx echo.Context) error {
 	if err := service.MyService.Compose().Install(backgroundCtx, buf); err != nil {
 		message := err.Error()
 
-		if err == v2.ErrComposeExtensionNameXCasaOSNotFound {
+		if err == service.ErrComposeExtensionNameXCasaOSNotFound {
 			return ctx.JSON(http.StatusBadRequest, codegen.ResponseBadRequest{Message: &message})
 		}
 
@@ -219,7 +222,7 @@ func (a *AppManagement) ComposeAppStatus(ctx echo.Context, id codegen.ComposeApp
 	if err != nil {
 		message := err.Error()
 
-		if err == v2.ErrComposeAppNotFound {
+		if err == service.ErrComposeAppNotFound {
 			return ctx.JSON(http.StatusNotFound, codegen.ResponseNotFound{Message: &message})
 		}
 

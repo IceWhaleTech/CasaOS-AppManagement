@@ -180,7 +180,7 @@ func (ds *dockerService) CheckContainerHealth(id string) (bool, error) {
 	}
 
 	if webUIPort, ok := container.Labels["web"]; ok {
-		index, _ := container.Labels["index"]
+		index := container.Labels["index"]
 		url := fmt.Sprintf("http://%s:%s/%s", common.Localhost, webUIPort, index)
 
 		logger.Info("checking container health at the specified web port...", zap.Any("name", container.Names), zap.String("id", id), zap.Any("url", url))

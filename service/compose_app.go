@@ -1,8 +1,9 @@
-package v2
+package service
 
 import (
 	"bytes"
 	"context"
+	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -17,6 +18,7 @@ import (
 	composeCmd "github.com/docker/compose/v2/cmd/compose"
 	"github.com/docker/compose/v2/cmd/formatter"
 	"github.com/docker/compose/v2/pkg/api"
+	"github.com/docker/compose/v2/pkg/progress"
 	"github.com/samber/lo"
 	"go.uber.org/zap"
 	"gopkg.in/yaml.v3"
@@ -114,32 +116,91 @@ func (a *ComposeApp) PullAndInstall(ctx context.Context) error {
 		return err
 	}
 
-	if err := service.Pull(ctx, (*codegen.ComposeApp)(a), api.PullOptions{}); err != nil {
+	// pull
+	if err := func() error {
+		go PublishEventWrapper(ctx, common.EventTypeImagePullBegin, nil)
+
+		defer PublishEventWrapper(ctx, common.EventTypeImagePullEnd, nil)
+
+		tempFile, err := os.OpenFile("/tmp/tt.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o666)
+		if err != nil {
+			go PublishEventWrapper(ctx, common.EventTypeImagePullError, map[string]string{
+				common.PropertyTypeMessage.Name: err.Error(),
+			})
+			return err
+		}
+
+		writer, err := progress.NewWriter(tempFile)
+		if err != nil {
+			go PublishEventWrapper(ctx, common.EventTypeImagePullError, map[string]string{
+				common.PropertyTypeMessage.Name: err.Error(),
+			})
+			return err
+		}
+
+		ctx = progress.WithContextWriter(ctx, writer)
+
+		if err := service.Pull(ctx, (*codegen.ComposeApp)(a), api.PullOptions{
+			Quiet: true,
+		}); err != nil {
+			go PublishEventWrapper(ctx, common.EventTypeImagePullError, map[string]string{
+				common.PropertyTypeMessage.Name: err.Error(),
+			})
+
+			return err
+		}
+
+		return nil
+	}(); err != nil {
 		return err
 	}
 
-	// prepare source path for volumes if not exist
-	for _, app := range a.Services {
-		for _, volume := range app.Volumes {
-			path := volume.Source
-			if err := file.IsNotExistMkDir(path); err != nil {
-				return err
+	// create
+	if err := func() error {
+		go PublishEventWrapper(ctx, common.EventTypeContainerCreateBegin, nil)
+
+		defer PublishEventWrapper(ctx, common.EventTypeContainerCreateEnd, nil)
+
+		// prepare source path for volumes if not exist
+		for _, app := range a.Services {
+			for _, volume := range app.Volumes {
+				path := volume.Source
+				if err := file.IsNotExistMkDir(path); err != nil {
+					go PublishEventWrapper(ctx, common.EventTypeContainerCreateError, map[string]string{
+						common.PropertyTypeMessage.Name: err.Error(),
+					})
+					return err
+				}
 			}
 		}
-	}
 
-	if err := service.Create(ctx, (*codegen.ComposeApp)(a), api.CreateOptions{}); err != nil {
+		if err := service.Create(ctx, (*codegen.ComposeApp)(a), api.CreateOptions{}); err != nil {
+			go PublishEventWrapper(ctx, common.EventTypeContainerCreateError, map[string]string{
+				common.PropertyTypeMessage.Name: err.Error(),
+			})
+			return err
+		}
+
+		return nil
+	}(); err != nil {
 		return err
 	}
+
+	go PublishEventWrapper(ctx, common.EventTypeContainerStartBegin, nil)
+
+	defer PublishEventWrapper(ctx, common.EventTypeContainerStartEnd, nil)
 
 	if err := service.Start(ctx, a.Name, api.StartOptions{
 		CascadeStop: true,
 		Wait:        true,
 	}); err != nil {
+		go PublishEventWrapper(ctx, common.EventTypeContainerStartError, map[string]string{
+			common.PropertyTypeMessage.Name: err.Error(),
+		})
 		return err
 	}
 
-	return service.Up(ctx, (*codegen.ComposeApp)(a), api.UpOptions{})
+	return nil
 }
 
 func (a *ComposeApp) UpdateSettings(ctx context.Context, newComposeYAML []byte) error {
