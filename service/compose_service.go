@@ -75,7 +75,7 @@ func (s *ComposeService) Install(ctx context.Context, composeYAML []byte) error 
 
 	if err != nil {
 		logger.Error("failed to install compose app", zap.Error(err), zap.String("name", composeApp.Name))
-		cleanup(yamlFilePath)
+		cleanup(workingDirectory)
 		return err
 	}
 
@@ -110,7 +110,6 @@ func (s *ComposeService) Install(ctx context.Context, composeYAML []byte) error 
 			})
 
 			logger.Error("failed to install compose app", zap.Error(err), zap.String("name", composeApp.Name))
-			cleanup(yamlFilePath)
 		}
 	}(ctx)
 
