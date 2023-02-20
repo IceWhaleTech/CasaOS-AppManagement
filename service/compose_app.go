@@ -3,13 +3,14 @@ package service
 import (
 	"bytes"
 	"context"
-	"os"
+	"io"
 	"path/filepath"
 	"strconv"
 	"strings"
 
 	"github.com/IceWhaleTech/CasaOS-AppManagement/codegen"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/common"
+	"github.com/IceWhaleTech/CasaOS-AppManagement/pkg/docker"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/file"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/logger"
 	"github.com/compose-spec/compose-go/cli"
@@ -18,7 +19,6 @@ import (
 	composeCmd "github.com/docker/compose/v2/cmd/compose"
 	"github.com/docker/compose/v2/cmd/formatter"
 	"github.com/docker/compose/v2/pkg/api"
-	"github.com/docker/compose/v2/pkg/progress"
 	"github.com/samber/lo"
 	"go.uber.org/zap"
 	"gopkg.in/yaml.v3"
@@ -117,42 +117,29 @@ func (a *ComposeApp) PullAndInstall(ctx context.Context) error {
 	}
 
 	// pull
-	if err := func() error {
-		go PublishEventWrapper(ctx, common.EventTypeImagePullBegin, nil)
-
-		defer PublishEventWrapper(ctx, common.EventTypeImagePullEnd, nil)
-
-		tempFile, err := os.OpenFile("/tmp/tt.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o666)
-		if err != nil {
-			go PublishEventWrapper(ctx, common.EventTypeImagePullError, map[string]string{
-				common.PropertyTypeMessage.Name: err.Error(),
-			})
-			return err
-		}
-
-		writer, err := progress.NewWriter(tempFile)
-		if err != nil {
-			go PublishEventWrapper(ctx, common.EventTypeImagePullError, map[string]string{
-				common.PropertyTypeMessage.Name: err.Error(),
-			})
-			return err
-		}
-
-		ctx = progress.WithContextWriter(ctx, writer)
-
-		if err := service.Pull(ctx, (*codegen.ComposeApp)(a), api.PullOptions{
-			Quiet: true,
-		}); err != nil {
-			go PublishEventWrapper(ctx, common.EventTypeImagePullError, map[string]string{
-				common.PropertyTypeMessage.Name: err.Error(),
+	for _, app := range a.Services {
+		if err := func() error {
+			go PublishEventWrapper(ctx, common.EventTypeImagePullBegin, map[string]string{
+				common.PropertyTypeImageName.Name: app.Image,
 			})
 
+			defer PublishEventWrapper(ctx, common.EventTypeImagePullEnd, map[string]string{
+				common.PropertyTypeImageName.Name: app.Image,
+			})
+
+			if err := docker.PullImage(ctx, app.Image, func(out io.ReadCloser) {
+				pullImageProgress(ctx, out, "INSTALL")
+			}); err != nil {
+				go PublishEventWrapper(ctx, common.EventTypeImagePullError, map[string]string{
+					common.PropertyTypeImageName.Name: app.Image,
+					common.PropertyTypeMessage.Name:   err.Error(),
+				})
+			}
+
+			return nil
+		}(); err != nil {
 			return err
 		}
-
-		return nil
-	}(); err != nil {
-		return err
 	}
 
 	// create
