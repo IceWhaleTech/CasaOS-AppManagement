@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"time"
 
 	"github.com/IceWhaleTech/CasaOS-AppManagement/codegen"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/common"
@@ -174,7 +173,7 @@ func (a *AppManagement) InstallComposeApp(ctx echo.Context) error {
 	})
 }
 
-func (a *AppManagement) UninstallComposeApp(ctx echo.Context, id codegen.ComposeAppID) error {
+func (a *AppManagement) UninstallComposeApp(ctx echo.Context, id codegen.ComposeAppID, params codegen.UninstallComposeAppParams) error {
 	if id == "" {
 		message := ErrComposeAppIDNotProvided.Error()
 		return ctx.JSON(http.StatusBadRequest, codegen.ResponseBadRequest{
@@ -188,7 +187,7 @@ func (a *AppManagement) UninstallComposeApp(ctx echo.Context, id codegen.Compose
 		return ctx.JSON(http.StatusInternalServerError, codegen.ResponseInternalServerError{Message: &message})
 	}
 
-	_, ok := appList[id]
+	composeApp, ok := appList[id]
 	if !ok {
 		message := fmt.Sprintf("compose app `%s` not found", id)
 		return ctx.JSON(http.StatusNotFound, codegen.ResponseNotFound{Message: &message})
@@ -197,13 +196,16 @@ func (a *AppManagement) UninstallComposeApp(ctx echo.Context, id codegen.Compose
 	// attach context key/value pairs from upstream
 	backgroundCtx := common.WithProperties(context.Background(), PropertiesFromQueryParams(ctx))
 
-	go func(ctx context.Context) {
-		ctx, cancel := context.WithTimeout(ctx, 30*time.Minute)
-		defer cancel()
-		if err := service.MyService.Compose().Uninstall(ctx, id); err != nil {
-			logger.Error("failed to uninstall compose app", zap.Error(err), zap.String("appID", id))
-		}
-	}(backgroundCtx)
+	deleteConfigFolder := true
+	if params.DeleteConfigFolder != nil {
+		deleteConfigFolder = *params.DeleteConfigFolder
+	}
+
+	if err := service.MyService.Compose().Uninstall(backgroundCtx, composeApp, deleteConfigFolder); err != nil {
+		logger.Error("failed to uninstall compose app", zap.Error(err), zap.String("appID", id))
+		message := err.Error()
+		return ctx.JSON(http.StatusInternalServerError, codegen.ResponseInternalServerError{Message: &message})
+	}
 
 	return ctx.JSON(http.StatusOK, codegen.ComposeAppUninstallOK{
 		Message: utils.Ptr("compose app is being uninstalled asynchronously"),

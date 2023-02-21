@@ -4,6 +4,7 @@ import (
 	"context"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/IceWhaleTech/CasaOS-AppManagement/common"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/pkg/config"
@@ -116,17 +117,95 @@ func (s *ComposeService) Install(ctx context.Context, composeYAML []byte) error 
 	return nil
 }
 
-func (s *ComposeService) Uninstall(ctx context.Context, appID string) error {
+func (s *ComposeService) Uninstall(ctx context.Context, composeApp *ComposeApp, deleteConfigFolder bool) error {
 	service, err := apiService()
 	if err != nil {
 		return err
 	}
 
-	return service.Down(ctx, appID, api.DownOptions{
+	// prepare for message bus events
+	storeInfo, err := composeApp.StoreInfo(true)
+	if err != nil {
+		return err
+	}
+
+	if storeInfo.Apps == nil || len(*storeInfo.Apps) == 0 {
+		return ErrNoAppFoundInComposeApp
+	}
+
+	mainAppStoreInfo, ok := (*storeInfo.Apps)[*storeInfo.MainApp]
+	if !ok {
+		return ErrMainAppNotFound
+	}
+
+	eventProperties := common.PropertiesFromContext(ctx)
+	eventProperties[common.PropertyTypeAppName.Name] = composeApp.Name
+	eventProperties[common.PropertyTypeAppIcon.Name] = mainAppStoreInfo.Icon
+
+	// TODO: move to compose_app.go
+
+	// stop
+	if err := func() error {
+		go PublishEventWrapper(ctx, common.EventTypeContainerStopBegin, nil)
+
+		defer PublishEventWrapper(ctx, common.EventTypeContainerStopEnd, nil)
+
+		if err := service.Stop(ctx, composeApp.Name, api.StopOptions{}); err != nil {
+			go PublishEventWrapper(ctx, common.EventTypeContainerStopError, map[string]string{
+				common.PropertyTypeMessage.Name: err.Error(),
+			})
+
+			return err
+		}
+
+		return nil
+	}(); err != nil {
+		return err
+	}
+
+	// remove
+	go PublishEventWrapper(ctx, common.EventTypeContainerRemoveBegin, nil)
+
+	defer PublishEventWrapper(ctx, common.EventTypeContainerRemoveEnd, nil)
+
+	if err := service.Down(ctx, composeApp.Name, api.DownOptions{
 		RemoveOrphans: true,
 		Images:        "all",
 		Volumes:       true,
-	})
+	}); err != nil {
+		go PublishEventWrapper(ctx, common.EventTypeImageRemoveError, map[string]string{
+			common.PropertyTypeMessage.Name: err.Error(),
+		})
+
+		return err
+	}
+
+	if err := file.RMDir(composeApp.WorkingDir); err != nil {
+		go PublishEventWrapper(ctx, common.EventTypeImageRemoveError, map[string]string{
+			common.PropertyTypeMessage.Name: err.Error(),
+		})
+	}
+
+	if !deleteConfigFolder {
+		return nil
+	}
+
+	for _, app := range composeApp.Services {
+		for _, volume := range app.Volumes {
+			if strings.Contains(volume.Source, composeApp.Name) {
+				path := filepath.Join(strings.Split(volume.Source, composeApp.Name)[0], composeApp.Name)
+				if err := file.RMDir(path); err != nil {
+					logger.Error("failed to remove compose app config folder", zap.Error(err), zap.String("path", path))
+
+					go PublishEventWrapper(ctx, common.EventTypeImageRemoveError, map[string]string{
+						common.PropertyTypeMessage.Name: err.Error(),
+					})
+				}
+			}
+		}
+	}
+
+	return nil
 }
 
 func (s *ComposeService) Status(ctx context.Context, appID string) (string, error) {

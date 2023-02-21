@@ -190,6 +190,12 @@ func (a *ComposeApp) PullAndInstall(ctx context.Context) error {
 	return nil
 }
 
+func (a *ComposeApp) Uninstall(ctx context.Context, deleteConfigFolder bool) error {
+	// TODO: move to here
+
+	return nil
+}
+
 func (a *ComposeApp) UpdateSettings(ctx context.Context, newComposeYAML []byte) error {
 	// update interpolation map in current context
 	interpolationMap := baseInterpolationMap()

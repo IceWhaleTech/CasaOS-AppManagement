@@ -258,6 +258,7 @@ paths:
         - Compose methods
       parameters:
         - $ref: "#/components/parameters/ComposeAppID"
+        - $ref: "#/components/parameters/DeleteConfigFolder"
       responses:
         "200":
           $ref: "#/components/responses/ComposeAppUninstallOK"
@@ -449,6 +450,14 @@ components:
       schema:
         type: string
       example: 09e70f4a7dd3fc43de6a1bc40d45c79f857544e13679e5b1a47409034a7ce621
+
+    DeleteConfigFolder:
+      name: delete_config_folder
+      description: Delete the config folder of the app
+      in: query
+      schema:
+        type: boolean
+        default: true
 
     PullLatestImage:
       name: pull
