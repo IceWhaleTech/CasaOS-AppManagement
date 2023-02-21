@@ -142,7 +142,7 @@ func (s *ComposeService) Uninstall(ctx context.Context, composeApp *ComposeApp, 
 	eventProperties[common.PropertyTypeAppName.Name] = composeApp.Name
 	eventProperties[common.PropertyTypeAppIcon.Name] = mainAppStoreInfo.Icon
 
-	// TODO: move to compose_app.go
+	// TODO: move to compose_app.go, in order to wrap with app-uninstall-begin/end events
 
 	// stop
 	if err := func() error {
