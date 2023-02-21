@@ -60,6 +60,17 @@ jobs:
             network_id: ${{ secrets.ZEROTIER_NETWORK_ID }}
             auth_token: ${{ secrets.ZEROTIER_CENTRAL_TOKEN }}
 
+      - name: ping host
+        shell: bash
+        run: |
+          count=10
+          while ! ping -c 1 10.147.18.11 ; do
+            echo "waiting..." ;
+            sleep 1 ;
+            let count=count-1
+          done
+          echo "ping success"
+
       - name: copy tar to target host
         shell: bash
         run: |
@@ -67,4 +78,4 @@ jobs:
           echo "ping success"
       - name: send message
         run: |
-          curl -X POST -H "Content-Type: application/json" -d '{"msg_type":"text","content":{"text":"CasaOS-AppManagement updated"}}'  https://open.feishu.cn/open-apis/bot/v2/hook/eb8f45c7-9636-4b64-84f2-a66d9aeb9d30
+          curl -X POST -H "Content-Type: application/json" -d '{"msg_type":"text","content":{"text":"CasaOS-AppManagement updated"}}' ${{ secrets.SSH_ROBOT_URL }}
