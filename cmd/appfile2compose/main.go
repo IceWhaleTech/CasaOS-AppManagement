@@ -6,7 +6,7 @@ import (
 	"os"
 
 	"github.com/IceWhaleTech/CasaOS-AppManagement/common"
-	v2 "github.com/IceWhaleTech/CasaOS-AppManagement/service/v2"
+	"github.com/IceWhaleTech/CasaOS-AppManagement/service"
 	"github.com/IceWhaleTech/CasaOS-Common/utils"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"gopkg.in/yaml.v3"
@@ -62,7 +62,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	composeAppLoopBack, err := v2.NewComposeAppFromYAML(composeYAML)
+	composeAppLoopBack, err := service.NewComposeAppFromYAML(composeYAML, nil)
 	if err != nil {
 		logger.Error("failed to load compose app YAML converted from appfile: %s", err)
 		os.Exit(1)
@@ -79,13 +79,13 @@ func main() {
 	}
 }
 
-func validateComposeApp(composeApp1, composeApp2 *v2.ComposeApp) error {
-	storeInfo1, err := composeApp1.StoreInfo()
+func validateComposeApp(composeApp1, composeApp2 *service.ComposeApp) error {
+	storeInfo1, err := composeApp1.StoreInfo(true)
 	if err != nil {
 		return err
 	}
 
-	storeInfo2, err := composeApp2.StoreInfo()
+	storeInfo2, err := composeApp2.StoreInfo(true)
 	if err != nil {
 		return err
 	}

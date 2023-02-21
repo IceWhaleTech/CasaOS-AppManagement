@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	v2 "github.com/IceWhaleTech/CasaOS-AppManagement/service/v2"
+	"github.com/IceWhaleTech/CasaOS-AppManagement/service"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"gopkg.in/yaml.v3"
 	"gotest.tools/v3/assert"
@@ -17,17 +17,17 @@ func TestMain(t *testing.T) {
 
 	composeApp1 := appFile.ComposeApp()
 
-	composeYAML, err := yaml.Marshal(composeApp1)
+	config, err := yaml.Marshal(composeApp1)
 	assert.NilError(t, err)
 
-	composeApp2, err := v2.NewComposeAppFromYAML(composeYAML)
+	composeApp2, err := service.NewComposeAppFromYAML(config, nil)
 	assert.NilError(t, err)
 	assert.Assert(t, composeApp2 != nil)
 
-	storeInfo1, err := composeApp1.StoreInfo()
+	storeInfo1, err := composeApp1.StoreInfo(true)
 	assert.NilError(t, err)
 
-	storeInfo2, err := composeApp2.StoreInfo()
+	storeInfo2, err := composeApp2.StoreInfo(true)
 	assert.NilError(t, err)
 
 	assert.DeepEqual(t, storeInfo1, storeInfo2)
@@ -69,17 +69,17 @@ func TestAll(t *testing.T) {
 
 		composeApp1 := appFile.ComposeApp()
 
-		composeYAML, err := yaml.Marshal(composeApp1)
+		config, err := yaml.Marshal(composeApp1)
 		assert.NilError(t, err)
 
-		composeApp2, err := v2.NewComposeAppFromYAML(composeYAML)
+		composeApp2, err := service.NewComposeAppFromYAML(config, nil)
 		assert.NilError(t, err)
 		assert.Assert(t, composeApp2 != nil)
 
-		storeInfo1, err := composeApp1.StoreInfo()
+		storeInfo1, err := composeApp1.StoreInfo(true)
 		assert.NilError(t, err)
 
-		storeInfo2, err := composeApp2.StoreInfo()
+		storeInfo2, err := composeApp2.StoreInfo(true)
 		assert.NilError(t, err)
 
 		assert.DeepEqual(t, storeInfo1, storeInfo2)

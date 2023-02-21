@@ -7,7 +7,7 @@ import (
 
 	"github.com/IceWhaleTech/CasaOS-AppManagement/codegen"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/common"
-	v2 "github.com/IceWhaleTech/CasaOS-AppManagement/service/v2"
+	"github.com/IceWhaleTech/CasaOS-AppManagement/service"
 	"github.com/compose-spec/compose-go/types"
 	jsoniter "github.com/json-iterator/go"
 	"github.com/samber/lo"
@@ -180,7 +180,7 @@ func (a *AppFile) ComposeAppStoreInfo() *codegen.ComposeAppStoreInfo {
 	}
 }
 
-func (a *AppFile) ComposeApp() *v2.ComposeApp {
+func (a *AppFile) ComposeApp() *service.ComposeApp {
 	environment := make(map[string]*string, len(a.Container.Envs))
 	for i, env := range a.Container.Envs {
 		environment[env.Key] = &a.Container.Envs[i].Value
@@ -231,7 +231,7 @@ func (a *AppFile) ComposeApp() *v2.ComposeApp {
 		},
 	}}
 
-	composeApp := (v2.ComposeApp)(types.Project{
+	composeApp := (service.ComposeApp)(types.Project{
 		Name:     a.Name,
 		Services: services,
 		Extensions: map[string]interface{}{
@@ -254,7 +254,7 @@ func NewAppFile(path string) (*AppFile, error) {
 		return nil, err
 	}
 
-	appFile.Name = v2.Standardize(appFile.Name)
+	appFile.Name = service.Standardize(appFile.Name)
 
 	return appFile, nil
 }

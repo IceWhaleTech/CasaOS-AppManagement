@@ -1,4 +1,4 @@
-package v2
+package service
 
 import (
 	"regexp"
@@ -8,6 +8,10 @@ import (
 var nonAlphaNumeric = regexp.MustCompile(`[^a-z0-9]+`)
 
 func Standardize(text string) string {
+	if text == "" {
+		return "unknown"
+	}
+
 	result := strings.ToLower(text)
 
 	// Replace any non-alphanumeric characters with a single hyphen

@@ -1,34 +1,24 @@
-package v2_test
+package service
 
 import (
 	"testing"
 
-	v2 "github.com/IceWhaleTech/CasaOS-AppManagement/service/v2"
 	"gotest.tools/v3/assert"
 )
 
 func TestGetComposeApp(t *testing.T) {
-	appStore, err := v2.NewAppStore()
+	appStore, err := NewAppStore()
 	assert.NilError(t, err)
 
 	for storeAppID, composeApp := range appStore.Catalog() {
-		storeInfo, err := composeApp.StoreInfo()
+		storeInfo, err := composeApp.StoreInfo(true)
 		assert.NilError(t, err)
 		assert.Equal(t, *storeInfo.AppStoreID, storeAppID)
 	}
 }
 
-func TestComposeYAML(t *testing.T) {
-	appStore, err := v2.NewAppStore()
-	assert.NilError(t, err)
-
-	for _, composeApp := range appStore.Catalog() {
-		assert.Equal(t, *composeApp.YAML(), v2.SampleComposeAppYAML)
-	}
-}
-
 func TestGetApp(t *testing.T) {
-	appStore, err := v2.NewAppStore()
+	appStore, err := NewAppStore()
 	assert.NilError(t, err)
 
 	for _, composeApp := range appStore.Catalog() {

@@ -41,7 +41,7 @@ var (
 	dataStats = &sync.Map{}
 	isFinish  bool
 
-	NewVersionApp map[string]string // TODO - make use of this
+	NewVersionApp map[string]string // TODO - make use of NewVersionApp map
 )
 
 type DockerService interface {
@@ -180,7 +180,7 @@ func (ds *dockerService) CheckContainerHealth(id string) (bool, error) {
 	}
 
 	if webUIPort, ok := container.Labels["web"]; ok {
-		index, _ := container.Labels["index"]
+		index := container.Labels["index"]
 		url := fmt.Sprintf("http://%s:%s/%s", common.Localhost, webUIPort, index)
 
 		logger.Info("checking container health at the specified web port...", zap.Any("name", container.Names), zap.String("id", id), zap.Any("url", url))
@@ -193,7 +193,6 @@ func (ds *dockerService) CheckContainerHealth(id string) (bool, error) {
 			return false, err
 		}
 		if response.StatusCode() == http.StatusOK || response.StatusCode() == http.StatusUnauthorized {
-
 			return true, nil
 		}
 		// response, err := httpUtil.GetWithHeader(url, 30*time.Second, map[string]string{
@@ -356,6 +355,7 @@ func (ds *dockerService) CreateContainerShellSession(container, row, col string)
 	if err != nil {
 		return types.HijackedResponse{}, err
 	}
+
 	// 附加到上面创建的/bin/bash进程中
 	return cli.ContainerExecAttach(ctx, ir.ID, types.ExecStartCheck{Detach: false, Tty: true})
 }

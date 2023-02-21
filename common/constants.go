@@ -12,4 +12,9 @@ const (
 	ComposeYAMLFileName         = "docker-compose.yml"
 
 	MIMEApplicationYAML = "application/yaml"
+
+	DefaultPassword = "casaos"
+	DefaultUserName = "admin"
+	DefaultPUID     = "1000"
+	DefaultPGID     = "1000"
 )

@@ -1,8 +1,6 @@
-package v2
+package service
 
 import (
-	"fmt"
-
 	_ "embed"
 
 	"github.com/IceWhaleTech/CasaOS-AppManagement/common"
@@ -12,13 +10,8 @@ type AppStore struct {
 	catalog map[string]*ComposeApp
 }
 
-var (
-	//go:embed fixtures/sample.docker-compose.yaml
-	SampleComposeAppYAML string
-
-	ErrComposeExtensionNameXCasaOSNotFound = fmt.Errorf("extension `%s` not found", common.ComposeExtensionNameXCasaOS)
-	ErrMainAppNotFound                     = fmt.Errorf("main app not found")
-)
+//go:embed fixtures/sample.docker-compose.yaml
+var SampleComposeAppYAML string
 
 func (s *AppStore) Catalog() map[string]*ComposeApp {
 	return s.catalog
@@ -46,15 +39,19 @@ func NewAppStore() (*AppStore, error) {
 func tempStoreForTest() (map[string]*ComposeApp, error) {
 	store := map[string]*ComposeApp{}
 
-	composeApp, err := NewComposeAppFromYAML([]byte(SampleComposeAppYAML))
+	composeApp, err := NewComposeAppFromYAML([]byte(SampleComposeAppYAML), nil)
 	if err != nil {
 		return nil, err
 	}
 
-	composeAppStoreInfo, err := composeApp.StoreInfo()
+	composeAppStoreInfo, err := composeApp.StoreInfo(false)
 	if err != nil {
 		return nil, err
 	}
+
+	composeAppStoreInfo.AppStoreID = composeAppStoreInfo.MainApp // TODO replace this with real app store ID
+
+	composeApp.Extensions[common.ComposeExtensionNameXCasaOS] = composeAppStoreInfo
 
 	store[*composeAppStoreInfo.AppStoreID] = composeApp
 
