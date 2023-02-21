@@ -191,7 +191,71 @@ func (a *ComposeApp) PullAndInstall(ctx context.Context) error {
 }
 
 func (a *ComposeApp) Uninstall(ctx context.Context, deleteConfigFolder bool) error {
-	// TODO: move to here
+	service, err := apiService()
+	if err != nil {
+		return err
+	}
+
+	// stop
+	if err := func() error {
+		go PublishEventWrapper(ctx, common.EventTypeContainerStopBegin, nil)
+
+		defer PublishEventWrapper(ctx, common.EventTypeContainerStopEnd, nil)
+
+		if err := service.Stop(ctx, a.Name, api.StopOptions{}); err != nil {
+			go PublishEventWrapper(ctx, common.EventTypeContainerStopError, map[string]string{
+				common.PropertyTypeMessage.Name: err.Error(),
+			})
+
+			return err
+		}
+
+		return nil
+	}(); err != nil {
+		return err
+	}
+
+	// remove
+	go PublishEventWrapper(ctx, common.EventTypeContainerRemoveBegin, nil)
+
+	defer PublishEventWrapper(ctx, common.EventTypeContainerRemoveEnd, nil)
+
+	if err := service.Down(ctx, a.Name, api.DownOptions{
+		RemoveOrphans: true,
+		Images:        "all",
+		Volumes:       true,
+	}); err != nil {
+		go PublishEventWrapper(ctx, common.EventTypeImageRemoveError, map[string]string{
+			common.PropertyTypeMessage.Name: err.Error(),
+		})
+
+		return err
+	}
+
+	if err := file.RMDir(a.WorkingDir); err != nil {
+		go PublishEventWrapper(ctx, common.EventTypeImageRemoveError, map[string]string{
+			common.PropertyTypeMessage.Name: err.Error(),
+		})
+	}
+
+	if !deleteConfigFolder {
+		return nil
+	}
+
+	for _, app := range a.Services {
+		for _, volume := range app.Volumes {
+			if strings.Contains(volume.Source, a.Name) {
+				path := filepath.Join(strings.Split(volume.Source, a.Name)[0], a.Name)
+				if err := file.RMDir(path); err != nil {
+					logger.Error("failed to remove compose app config folder", zap.Error(err), zap.String("path", path))
+
+					go PublishEventWrapper(ctx, common.EventTypeImageRemoveError, map[string]string{
+						common.PropertyTypeMessage.Name: err.Error(),
+					})
+				}
+			}
+		}
+	}
 
 	return nil
 }
