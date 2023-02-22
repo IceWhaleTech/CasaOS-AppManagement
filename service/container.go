@@ -181,7 +181,7 @@ func (ds *dockerService) CheckContainerHealth(id string) (bool, error) {
 
 	if webUIPort, ok := container.Labels["web"]; ok {
 		index := container.Labels["index"]
-		url := fmt.Sprintf("http://%s:%s/%s", common.Localhost, webUIPort, index)
+		url := fmt.Sprintf("http://%s:%s/%s", common.Localhost, webUIPort, strings.TrimLeft(index, "/"))
 
 		logger.Info("checking container health at the specified web port...", zap.Any("name", container.Names), zap.String("id", id), zap.Any("url", url))
 		client := resty.New()
@@ -203,7 +203,7 @@ func (ds *dockerService) CheckContainerHealth(id string) (bool, error) {
 		// 	return false, err
 		// }
 
-		// if (response.StatusCode == http.StatusUnauthorized) || // we treat Unauthroized as a success because it means the container is up and running
+		// if (response.StatusCode == http.StatusUnauthorized) || // we treat Unauthorized as a success because it means the container is up and running
 		// 	(response.StatusCode >= 200 && response.StatusCode < 300) {
 		// 	logger.Info("container health check passed at the specified web port", zap.Any("name", container.Names), zap.String("id", id), zap.Any("url", url))
 		// 	return true, nil
