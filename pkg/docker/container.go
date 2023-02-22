@@ -191,7 +191,7 @@ func runtimeConfig(containerInfo *types.ContainerJSON, imageInfo *types.ImageIns
 		}
 	}
 
-	config.Env = lo.Filter(config.Env, func(s string, i int) bool { return lo.Contains(imageConfig.Env, s) })
+	config.Env = lo.Filter(config.Env, func(s string, i int) bool { return !lo.Contains(imageConfig.Env, s) })
 
 	config.Labels = lo.OmitBy(config.Labels, func(k string, v string) bool {
 		v2, ok := imageConfig.Labels[k]
