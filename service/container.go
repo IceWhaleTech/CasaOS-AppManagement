@@ -180,8 +180,8 @@ func (ds *dockerService) CheckContainerHealth(id string) (bool, error) {
 	}
 
 	if webUIPort, ok := container.Labels["web"]; ok {
-		index, _ := container.Labels["index"]
-		url := fmt.Sprintf("http://%s:%s/%s", common.Localhost, webUIPort, index)
+		index := container.Labels["index"]
+		url := fmt.Sprintf("http://%s:%s/%s", common.Localhost, webUIPort, strings.TrimLeft(index, "/"))
 
 		logger.Info("checking container health at the specified web port...", zap.Any("name", container.Names), zap.String("id", id), zap.Any("url", url))
 		client := resty.New()
@@ -193,7 +193,6 @@ func (ds *dockerService) CheckContainerHealth(id string) (bool, error) {
 			return false, err
 		}
 		if response.StatusCode() == http.StatusOK || response.StatusCode() == http.StatusUnauthorized {
-
 			return true, nil
 		}
 		// response, err := httpUtil.GetWithHeader(url, 30*time.Second, map[string]string{
