@@ -15,6 +15,18 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+func (a *AppManagement) AppStoreList(ctx echo.Context) error {
+	panic("not implemented")
+}
+
+func (a *AppManagement) RegisterAppStore(ctx echo.Context, params codegen.RegisterAppStoreParams) error {
+	panic("not implemented")
+}
+
+func (a *AppManagement) UnregisterAppStore(ctx echo.Context, id codegen.AppStoreID) error {
+	panic("not implemented")
+}
+
 func (a *AppManagement) ComposeAppStoreInfoList(ctx echo.Context) error {
 	catalog := service.MyService.V2AppStore().Catalog()
 
@@ -35,7 +47,7 @@ func (a *AppManagement) ComposeAppStoreInfoList(ctx echo.Context) error {
 	})
 }
 
-func (a *AppManagement) ComposeAppStoreInfo(ctx echo.Context, id codegen.AppStoreID) error {
+func (a *AppManagement) ComposeAppStoreInfo(ctx echo.Context, id codegen.StoreAppID) error {
 	composeApp := service.MyService.V2AppStore().ComposeApp(id)
 
 	if composeApp == nil {
@@ -56,7 +68,7 @@ func (a *AppManagement) ComposeAppStoreInfo(ctx echo.Context, id codegen.AppStor
 	})
 }
 
-func (a *AppManagement) ComposeApp(ctx echo.Context, id codegen.AppStoreID) error {
+func (a *AppManagement) ComposeApp(ctx echo.Context, id codegen.StoreAppID) error {
 	composeApp := service.MyService.V2AppStore().ComposeApp(id)
 
 	if composeApp == nil {

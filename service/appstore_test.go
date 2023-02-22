@@ -13,7 +13,7 @@ func TestGetComposeApp(t *testing.T) {
 	for storeAppID, composeApp := range appStore.Catalog() {
 		storeInfo, err := composeApp.StoreInfo(true)
 		assert.NilError(t, err)
-		assert.Equal(t, *storeInfo.AppStoreID, storeAppID)
+		assert.Equal(t, *storeInfo.StoreAppID, storeAppID)
 	}
 }
 

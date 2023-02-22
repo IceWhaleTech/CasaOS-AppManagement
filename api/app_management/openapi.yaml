@@ -116,9 +116,58 @@ paths:
         "500":
           $ref: "#/components/responses/ResponseInternalServerError"
 
+  /appstore:
+    get:
+      summary: Get the list of registered app stores
+      description: |
+        (TODO)
+      operationId: appStoreList
+      tags:
+        - AppStore methods
+      responses:
+        "200":
+          $ref: "#/components/responses/AppStoreListOK"
+        "500":
+          $ref: "#/components/responses/ResponseInternalServerError"
+
+    post:
+      summary: Register an app store
+      description: |
+        (TODO)
+      operationId: registerAppStore
+      tags:
+        - AppStore methods
+      parameters:
+        - $ref: "#/components/parameters/AppStoreURL"
+      responses:
+        "200":
+          $ref: "#/components/responses/AppStoreRegisterOK"
+        "400":
+          $ref: "#/components/responses/ResponseBadRequest"
+        "500":
+          $ref: "#/components/responses/ResponseInternalServerError"
+
+  /appstore/{id}:
+    delete:
+      summary: Unregister an app store
+      description: |
+        (TODO)
+      operationId: unregisterAppStore
+      tags:
+        - AppStore methods
+      parameters:
+        - $ref: "#/components/parameters/AppStoreID"
+      responses:
+        "200":
+          $ref: "#/components/responses/AppStoreUnregisterOK"
+        "404":
+          $ref: "#/components/responses/ResponseNotFound"
+        "500":
+          $ref: "#/components/responses/ResponseInternalServerError"
+
   /apps:
     get:
-      summary: Get app list from AppStore
+      summary: Get app list from registred app stores
       description: |
         Get lists of StoreInfo of all compose apps from AppStore.
 
@@ -128,7 +177,6 @@ paths:
       operationId: composeAppStoreInfoList
       tags:
         - AppStore methods
-
       responses:
         "200":
           $ref: "#/components/responses/ComposeAppStoreInfoListsOK"
@@ -137,7 +185,7 @@ paths:
 
   /apps/{id}:
     get:
-      summary: Get app info from AppStore
+      summary: Get app info from registered app stores
       description: |
         Get StoreInfo of specific compose app.
 
@@ -146,7 +194,7 @@ paths:
       tags:
         - AppStore methods
       parameters:
-        - $ref: "#/components/parameters/AppStoreID"
+        - $ref: "#/components/parameters/StoreAppID"
       responses:
         "200":
           $ref: "#/components/responses/ComposeAppStoreInfoOK"
@@ -157,7 +205,7 @@ paths:
 
   /apps/{id}/compose:
     get:
-      summary: Get compose details of an app from AppStore
+      summary: Get compose details of an app from registered app stores
       description: |
         Accept both `application/json` and `application/yaml` content type for the `Accept` header in the HTTP request.
 
@@ -166,7 +214,7 @@ paths:
       tags:
         - AppStore methods
       parameters:
-        - $ref: "#/components/parameters/AppStoreID"
+        - $ref: "#/components/parameters/StoreAppID"
       responses:
         "200":
           $ref: "#/components/responses/ComposeAppOK"
@@ -416,23 +464,40 @@ components:
       name: Authorization
 
   parameters:
+    AppStoreURL:
+      name: url
+      description: URL of the app store
+      in: query
+      schema:
+        type: string
+        example: "https://github.com/IceWhaleTech/CasaOS-AppStore"
+
     AppStoreID:
       name: id
-      description: App Store ID
+      description: ID of the app store
+      in: path
+      required: true
+      schema:
+        type: number
+        example: 0
+
+    StoreAppID:
+      name: id
+      description: Store app ID of a compose app (unique across all app stores)
       in: path
       required: true
       schema:
         type: string
-        example: "e4380876-d759-4b26-af1f-968a4606d399"
+        example: "syncthing"
 
     ComposeAppID:
       name: id
-      description: App ID of the compose app (equivalent to compose project name)
+      description: App ID of a compose app (equivalent to compose project name)
       in: path
       required: true
       schema:
         type: string
-        example: "syncthing-jsaq"
+        example: "syncthing"
 
     ContainerIDs:
       name: container_ids
@@ -545,6 +610,35 @@ components:
         application/json:
           schema:
             $ref: "#/components/schemas/Info"
+
+    AppStoreListOK:
+      description: OK
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: "#/components/schemas/BaseResponse"
+              - properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/AppStore"
+
+    AppStoreRegisterOK:
+      description: OK
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: "#/components/schemas/BaseResponse"
+
+    AppStoreUnregisterOK:
+      description: OK
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: "#/components/schemas/BaseResponse"
 
     ComposeAppStoreInfoListsOK:
       description: OK
@@ -701,6 +795,17 @@ components:
           readOnly: true
           example: "amd64"
 
+    AppStore:
+      properties:
+        id:
+          type: number
+          readOnly: true
+          example: 0
+        url:
+          type: string
+          readOnly: true
+          example: "https://github.com/IceWhaleTech/CasaOS-AppStore"
+
     ComposeAppStoreInfoLists:
       properties:
         recommend:
@@ -718,17 +823,17 @@ components:
 
     ComposeAppStoreInfo:
       properties:
-        appstore_id:
-          title: StoreID of the compose app
+        store_app_id:
+          title: Store app ID
           description: |
-            The StoreID is the unique identifier of the app in the AppStore.
+            Store app ID of the compose app (unique across all app stores)
           readOnly: true
           type: string
-          example: "syncthing.syncthing (developer + app name)" # TODO - decide app store id
-          x-go-name: AppStoreID
+          example: "syncthing"
+          x-go-name: StoreAppID
           x-oapi-codegen-extra-tags:
-            mapstructure: "appstore_id"
-            yaml: "appstore_id,omitempty"
+            mapstructure: "store_app_id"
+            yaml: "store_app_id,omitempty"
         main_app:
           title: name of the main container app in `apps`
           description: |

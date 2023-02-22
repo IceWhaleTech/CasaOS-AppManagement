@@ -49,11 +49,11 @@ func tempStoreForTest() (map[string]*ComposeApp, error) {
 		return nil, err
 	}
 
-	composeAppStoreInfo.AppStoreID = composeAppStoreInfo.MainApp // TODO replace this with real app store ID
+	composeAppStoreInfo.StoreAppID = composeAppStoreInfo.MainApp // TODO replace this with real app store ID
 
 	composeApp.Extensions[common.ComposeExtensionNameXCasaOS] = composeAppStoreInfo
 
-	store[*composeAppStoreInfo.AppStoreID] = composeApp
+	store[*composeAppStoreInfo.StoreAppID] = composeApp
 
 	return store, nil
 }
