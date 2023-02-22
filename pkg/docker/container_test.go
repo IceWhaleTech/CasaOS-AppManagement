@@ -10,6 +10,7 @@ import (
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/network"
 	"github.com/docker/docker/client"
+	"github.com/samber/lo"
 	"go.uber.org/goleak"
 	"gotest.tools/v3/assert"
 )
@@ -24,6 +25,7 @@ func setupTestContainer(ctx context.Context, t *testing.T) *container.CreateResp
 	config := &container.Config{
 		Image: imageName,
 		Cmd:   []string{"tail", "-f", "/dev/null"},
+		Env:   []string{"FOO=BAR"},
 	}
 
 	hostConfig := &container.HostConfig{}
@@ -85,6 +87,10 @@ func TestCloneContainer(t *testing.T) {
 		err := StopContainer(ctx, newID)
 		assert.NilError(t, err)
 	}()
+
+	containerInfo, err := Container(ctx, newID)
+	assert.NilError(t, err)
+	assert.Assert(t, lo.Contains(containerInfo.Config.Env, "FOO=BAR"))
 }
 
 func TestNonExistingContainer(t *testing.T) {
