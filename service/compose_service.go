@@ -225,9 +225,7 @@ func apiService() (api.Service, error) {
 		return nil, err
 	}
 
-	if err := dockerCli.Initialize(&flags.ClientOptions{
-		Common: &flags.CommonOptions{},
-	}); err != nil {
+	if err := dockerCli.Initialize(&flags.ClientOptions{}); err != nil {
 		return nil, err
 	}
 
