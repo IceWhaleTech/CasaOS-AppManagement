@@ -622,7 +622,7 @@ components:
                   data:
                     type: array
                     items:
-                      $ref: "#/components/schemas/AppStore"
+                      $ref: "#/components/schemas/AppStoreMetadata"
 
     AppStoreRegisterOK:
       description: OK
@@ -752,7 +752,6 @@ components:
               - $ref: "#/components/schemas/BaseResponse"
               - properties:
                   data:
-                    readOnly: true
                     type: string
                     example: <logs...>
 
@@ -783,7 +782,6 @@ components:
     BaseResponse:
       properties:
         message:
-          readOnly: true
           description: message returned by server side if there is any
           type: string
           example: ""
@@ -795,16 +793,18 @@ components:
           readOnly: true
           example: "amd64"
 
-    AppStore:
+    AppStoreMetadata:
       properties:
         id:
-          type: number
+          type: integer
+          minimum: 0
           readOnly: true
-          example: 0
+          x-go-name: ID
         url:
           type: string
           readOnly: true
           example: "https://github.com/IceWhaleTech/CasaOS-AppStore"
+          x-go-name: URL
 
     ComposeAppStoreInfoLists:
       properties:

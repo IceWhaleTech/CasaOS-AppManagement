@@ -70,7 +70,6 @@ func main() {
 
 	migrationTools := []interfaces.MigrationTool{
 		// NewMigrationDummy(),
-		NewMigrationToolFor038AndOlder(),
 	}
 
 	var selectedMigrationTool interfaces.MigrationTool

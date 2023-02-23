@@ -16,7 +16,11 @@ import (
 )
 
 func (a *AppManagement) AppStoreList(ctx echo.Context) error {
-	panic("not implemented")
+	appStoreList := service.MyService.AppStoreManagement().AppStoreList()
+
+	return ctx.JSON(http.StatusOK, codegen.AppStoreListOK{
+		Data: &appStoreList,
+	})
 }
 
 func (a *AppManagement) RegisterAppStore(ctx echo.Context, params codegen.RegisterAppStoreParams) error {
