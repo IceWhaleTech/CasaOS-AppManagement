@@ -3,10 +3,13 @@ package service
 import (
 	"testing"
 
+	"go.uber.org/goleak"
 	"gotest.tools/v3/assert"
 )
 
 func TestGetComposeApp(t *testing.T) {
+	defer goleak.VerifyNone(t)
+
 	appStore, err := NewAppStore()
 	assert.NilError(t, err)
 
@@ -18,6 +21,8 @@ func TestGetComposeApp(t *testing.T) {
 }
 
 func TestGetApp(t *testing.T) {
+	defer goleak.VerifyNone(t)
+
 	appStore, err := NewAppStore()
 	assert.NilError(t, err)
 

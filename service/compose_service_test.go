@@ -6,10 +6,13 @@ import (
 
 	"github.com/IceWhaleTech/CasaOS-AppManagement/pkg/docker"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/logger"
+	"go.uber.org/goleak"
 	"gotest.tools/v3/assert"
 )
 
 func TestList(t *testing.T) {
+	defer goleak.VerifyNone(t)
+
 	if !docker.IsDaemonRunning() {
 		t.Skip("Docker daemon is not running")
 	}

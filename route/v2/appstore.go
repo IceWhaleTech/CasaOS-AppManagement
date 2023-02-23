@@ -31,13 +31,15 @@ func (a *AppManagement) RegisterAppStore(ctx echo.Context, params codegen.Regist
 		return ctx.JSON(http.StatusBadRequest, codegen.ResponseBadRequest{Message: &message})
 	}
 
-	if err := service.MyService.AppStoreManagement().RegisterAppStore(appstoreURL.String()); err != nil {
+	appStoreMetadata, err := service.MyService.AppStoreManagement().RegisterAppStore(appstoreURL.String())
+	if err != nil {
 		message := err.Error()
 		return ctx.JSON(http.StatusInternalServerError, codegen.ResponseInternalServerError{Message: &message})
 	}
 
 	return ctx.JSON(http.StatusOK, codegen.AppStoreRegisterOK{
 		Message: utils.Ptr("new app store is registered, and will be pulled asynchronously."),
+		Data:    appStoreMetadata,
 	})
 }
 

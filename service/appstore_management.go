@@ -1,8 +1,11 @@
 package service
 
 import (
+	"strings"
+
 	"github.com/IceWhaleTech/CasaOS-AppManagement/codegen"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/pkg/config"
+	"github.com/IceWhaleTech/CasaOS-Common/utils"
 	"github.com/samber/lo"
 )
 
@@ -28,19 +31,38 @@ func (a *AppStoreManagement) OnAppStoreUnregister(fn func(string) error) {
 	a.onAppStoreUnregister = append(a.onAppStoreUnregister, fn)
 }
 
-func (a *AppStoreManagement) RegisterAppStore(appstoreURL string) error {
+func (a *AppStoreManagement) RegisterAppStore(appstoreURL string) (*codegen.AppStoreMetadata, error) {
+	appstoreURL = strings.ToLower(appstoreURL)
+
+	config.ServerInfo.AppStoreList = lo.Map(config.ServerInfo.AppStoreList,
+		func(url string, id int) string {
+			return strings.ToLower(url)
+		})
+
+	for i, url := range config.ServerInfo.AppStoreList {
+		if url == appstoreURL {
+			return &codegen.AppStoreMetadata{
+				ID:  &i,
+				URL: &config.ServerInfo.AppStoreList[i],
+			}, nil
+		}
+	}
+
 	config.ServerInfo.AppStoreList = append(config.ServerInfo.AppStoreList, appstoreURL)
 
 	if err := config.SaveSetup(); err != nil {
-		return err
+		return nil, err
 	}
 
 	for _, fn := range a.onAppStoreRegister {
 		if err := fn(appstoreURL); err != nil {
-			return err
+			return nil, err
 		}
 	}
-	return nil
+	return &codegen.AppStoreMetadata{
+		ID:  utils.Ptr(len(config.ServerInfo.AppStoreList) - 1),
+		URL: &appstoreURL,
+	}, nil
 }
 
 func (a *AppStoreManagement) UnregisterAppStore(appStoreID uint) error {

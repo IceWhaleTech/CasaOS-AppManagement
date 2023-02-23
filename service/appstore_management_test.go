@@ -5,11 +5,12 @@ import (
 	"testing"
 
 	"github.com/IceWhaleTech/CasaOS-AppManagement/pkg/config"
+	"go.uber.org/goleak"
 	"gotest.tools/v3/assert"
 )
 
 func TestAppStoreList(t *testing.T) {
-	// defer goleak.VerifyNone(t)
+	defer goleak.VerifyNone(t)
 
 	file, err := os.CreateTemp("", "app-management.conf")
 	assert.NilError(t, err)
@@ -36,8 +37,10 @@ func TestAppStoreList(t *testing.T) {
 	})
 
 	expectAppStoreURL := "https://appstore.example.com"
-	err = appStoreManagement.RegisterAppStore(expectAppStoreURL)
+	appStoreMetadata, err := appStoreManagement.RegisterAppStore(expectAppStoreURL)
 	assert.NilError(t, err)
+	assert.Equal(t, *appStoreMetadata.ID, 1)
+	assert.Equal(t, *appStoreMetadata.URL, expectAppStoreURL)
 	assert.Assert(t, len(registeredAppStoreList) == 1)
 
 	appStoreList = appStoreManagement.AppStoreList()
