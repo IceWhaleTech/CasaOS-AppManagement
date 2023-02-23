@@ -478,7 +478,7 @@ components:
       in: path
       required: true
       schema:
-        type: number
+        type: integer
         example: 0
 
     StoreAppID:
