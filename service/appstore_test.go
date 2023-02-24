@@ -10,7 +10,7 @@ import (
 func TestGetComposeApp(t *testing.T) {
 	defer goleak.VerifyNone(t)
 
-	appStore, err := NewAppStore()
+	appStore, err := NewAppStoreForTest()
 	assert.NilError(t, err)
 
 	for storeAppID, composeApp := range appStore.Catalog() {
@@ -23,7 +23,7 @@ func TestGetComposeApp(t *testing.T) {
 func TestGetApp(t *testing.T) {
 	defer goleak.VerifyNone(t)
 
-	appStore, err := NewAppStore()
+	appStore, err := NewAppStoreForTest()
 	assert.NilError(t, err)
 
 	for _, composeApp := range appStore.Catalog() {

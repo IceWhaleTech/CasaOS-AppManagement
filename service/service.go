@@ -50,7 +50,7 @@ func NewService(RuntimePath string) Services {
 		panic(err)
 	}
 
-	v2appStore, err := NewAppStore()
+	v2appStore, err := NewAppStoreForTest()
 	if err != nil {
 		panic(err)
 	}

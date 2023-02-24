@@ -12,6 +12,8 @@ import (
 type AppStoreManagement struct {
 	onAppStoreRegister   []func(string) error
 	onAppStoreUnregister []func(string) error
+
+	appStoreMap map[string]*AppStore
 }
 
 func (a *AppStoreManagement) AppStoreList() []codegen.AppStoreMetadata {
@@ -33,26 +35,6 @@ func (a *AppStoreManagement) OnAppStoreUnregister(fn func(string) error) {
 
 func (a *AppStoreManagement) RegisterAppStore(appstoreURL string) (*codegen.AppStoreMetadata, error) {
 	appstoreURL = strings.ToLower(appstoreURL)
-
-	config.ServerInfo.AppStoreList = lo.Map(config.ServerInfo.AppStoreList,
-		func(url string, id int) string {
-			return strings.ToLower(url)
-		})
-
-	for i, url := range config.ServerInfo.AppStoreList {
-		if url == appstoreURL {
-			return &codegen.AppStoreMetadata{
-				ID:  &i,
-				URL: &config.ServerInfo.AppStoreList[i],
-			}, nil
-		}
-	}
-
-	config.ServerInfo.AppStoreList = append(config.ServerInfo.AppStoreList, appstoreURL)
-
-	if err := config.SaveSetup(); err != nil {
-		return nil, err
-	}
 
 	for _, fn := range a.onAppStoreRegister {
 		if err := fn(appstoreURL); err != nil {
@@ -82,8 +64,18 @@ func (a *AppStoreManagement) UnregisterAppStore(appStoreID uint) error {
 	return nil
 }
 
+func (a *AppStoreManagement) addAppStore(url string) error {
+	appStore := NewAppStore(url)
+
+	a.appStoreMap[url] = appStore
+
+	return nil
+}
+
 func NewAppStoreManagement() *AppStoreManagement {
 	appStoreManagement := &AppStoreManagement{}
+
+	appStoreManagement.OnAppStoreRegister(appStoreManagement.addAppStore)
 
 	return appStoreManagement
 }
