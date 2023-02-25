@@ -36,6 +36,7 @@ func (a *AppStoreManagement) OnAppStoreUnregister(fn func(string) error) {
 func (a *AppStoreManagement) RegisterAppStore(appstoreURL string) (*codegen.AppStoreMetadata, error) {
 	appstoreURL = strings.ToLower(appstoreURL)
 
+	// check if appstore already exists
 	config.ServerInfo.AppStoreList = lo.Map(config.ServerInfo.AppStoreList,
 		func(url string, id int) string {
 			return strings.ToLower(url)
@@ -50,6 +51,15 @@ func (a *AppStoreManagement) RegisterAppStore(appstoreURL string) (*codegen.AppS
 		}
 	}
 
+	// try to clone the store locally
+	appstore := NewAppStore(appstoreURL)
+	if err := appstore.UpdateCatalog(); err != nil {
+		// TODO clean up
+
+		return nil, err
+	}
+
+	// if everything is good, add to the list
 	config.ServerInfo.AppStoreList = append(config.ServerInfo.AppStoreList, appstoreURL)
 
 	if err := config.SaveSetup(); err != nil {

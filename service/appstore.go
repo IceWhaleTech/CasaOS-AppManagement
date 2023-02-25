@@ -3,8 +3,11 @@ package service
 import (
 	_ "embed"
 	"net/url"
+	"strings"
 
 	"github.com/IceWhaleTech/CasaOS-AppManagement/common"
+	"github.com/IceWhaleTech/CasaOS-AppManagement/pkg/config"
+	pkggit "github.com/IceWhaleTech/CasaOS-AppManagement/pkg/git"
 )
 
 type AppStore struct {
@@ -18,6 +21,19 @@ var SampleComposeAppYAML string
 func (s *AppStore) UpdateCatalog() error {
 	if _, err := url.Parse(s.url); err != nil {
 		return err
+	}
+
+	workdir, err := pkggit.WorkDir(s.url, config.AppInfo.AppStorePath)
+	if err != nil {
+		return err
+	}
+
+	// try to pull first
+	if err := pkggit.Pull(workdir); err != nil {
+		// if pull failed, try to clone
+		if err := pkggit.Clone(s.url, workdir); err != nil {
+			return err
+		}
 	}
 
 	// TODO - implement this
@@ -39,7 +55,7 @@ func (s *AppStore) ComposeApp(appStoreID string) *ComposeApp {
 
 func NewAppStore(url string) *AppStore {
 	return &AppStore{
-		url:     url,
+		url:     strings.ToLower(url),
 		catalog: map[string]*ComposeApp{},
 	}
 }
