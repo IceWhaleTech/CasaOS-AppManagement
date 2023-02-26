@@ -6,7 +6,6 @@ import (
 
 	"github.com/IceWhaleTech/CasaOS-AppManagement/codegen"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/common"
-	"github.com/IceWhaleTech/CasaOS-AppManagement/pkg/git"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/service"
 	"github.com/IceWhaleTech/CasaOS-Common/utils"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/logger"
@@ -25,11 +24,6 @@ func (a *AppManagement) AppStoreList(ctx echo.Context) error {
 }
 
 func (a *AppManagement) RegisterAppStore(ctx echo.Context, params codegen.RegisterAppStoreParams) error {
-	if err := git.ValidateGitURL(*params.Url); err != nil {
-		message := fmt.Sprintf("%s is either an invalid Git URL or cannot be accessed.", *params.Url)
-		return ctx.JSON(http.StatusBadRequest, codegen.ResponseBadRequest{Message: &message})
-	}
-
 	appStoreMetadata, err := service.MyService.AppStoreManagement().RegisterAppStore(*params.Url)
 	if err != nil {
 		message := err.Error()

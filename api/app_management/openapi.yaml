@@ -806,7 +806,7 @@ components:
         url:
           type: string
           readOnly: true
-          example: "https://github.com/IceWhaleTech/CasaOS-AppStore"
+          example: "https://github.com/IceWhaleTech/CasaOS-AppStore/archive/refs/heads/main.zip"
           x-go-name: URL
 
     ComposeAppStoreInfoLists:
