@@ -52,7 +52,11 @@ func (a *AppStoreManagement) RegisterAppStore(appstoreURL string) (*codegen.AppS
 	}
 
 	// try to clone the store locally
-	appstore := NewAppStore(appstoreURL)
+	appstore, err := NewAppStore(appstoreURL)
+	if err != nil {
+		return nil, err
+	}
+
 	if err := appstore.UpdateCatalog(); err != nil {
 		// TODO clean up
 
@@ -95,10 +99,24 @@ func (a *AppStoreManagement) UnregisterAppStore(appStoreID uint) error {
 	return nil
 }
 
-func (a *AppStoreManagement) addAppStore(url string) error {
-	appStore := NewAppStore(url)
+func (a *AppStoreManagement) Catalog() map[string]*ComposeApp {
+	catalog := map[string]*ComposeApp{}
 
-	a.appStoreMap[url] = appStore
+	for _, appStore := range a.appStoreMap {
+		for appStoreID, composeApp := range appStore.Catalog() {
+			catalog[appStoreID] = composeApp
+		}
+	}
+
+	return catalog
+}
+
+func (a *AppStoreManagement) ComposeApp(id string) *ComposeApp {
+	for _, appStore := range a.appStoreMap {
+		if composeApp := appStore.ComposeApp(id); composeApp != nil {
+			return composeApp
+		}
+	}
 
 	return nil
 }
@@ -107,8 +125,6 @@ func NewAppStoreManagement() *AppStoreManagement {
 	appStoreManagement := &AppStoreManagement{
 		appStoreMap: map[string]*AppStore{},
 	}
-
-	appStoreManagement.OnAppStoreRegister(appStoreManagement.addAppStore)
 
 	return appStoreManagement
 }

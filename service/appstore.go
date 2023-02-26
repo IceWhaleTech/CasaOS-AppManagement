@@ -1,11 +1,18 @@
 package service
 
 import (
+	"crypto/md5" // nolint: gosec
 	_ "embed"
+	"fmt"
 	"net/url"
+	"os"
+	"path/filepath"
 	"strings"
 
-	"github.com/IceWhaleTech/CasaOS-AppManagement/common"
+	"github.com/IceWhaleTech/CasaOS-AppManagement/pkg/config"
+	"github.com/IceWhaleTech/CasaOS-Common/utils/file"
+	"github.com/IceWhaleTech/CasaOS-Common/utils/logger"
+	"go.uber.org/zap"
 )
 
 type AppStore struct {
@@ -21,7 +28,39 @@ func (s *AppStore) UpdateCatalog() error {
 		return err
 	}
 
+	workdir, err := s.WorkDir()
+	if err != nil {
+		return err
+	}
+
+	updateSucessful := false
+
+	if file.Exists(workdir) {
+		backupDir := workdir + ".backup"
+		if err := os.Rename(workdir, backupDir); err != nil {
+			return err
+		}
+
+		defer func() {
+			if !updateSucessful {
+				if err := os.Rename(backupDir, workdir); err != nil {
+					logger.Error("failed to restore appstore workdir", zap.Error(err), zap.String("backupDir", backupDir), zap.String("workdir", workdir))
+				}
+			}
+		}()
+	}
+
+	if err := s.prepareWorkDir(); err != nil {
+		return err
+	}
+
+	// TODO - download .zip file from s.url using github.com/hashicorp/go-getter
+
+	// unzip it to workdir
+
 	// TODO - implement this
+
+	updateSucessful = true
 
 	return nil
 }
@@ -38,42 +77,41 @@ func (s *AppStore) ComposeApp(appStoreID string) *ComposeApp {
 	return nil
 }
 
-func NewAppStore(url string) *AppStore {
+func (s *AppStore) WorkDir() (string, error) {
+	parsedURL, err := url.Parse(s.url)
+	if err != nil {
+		return "", err
+	}
+
+	hash := fmt.Sprintf("%x", md5.Sum([]byte(parsedURL.Path))) //nolint: gosec
+
+	return filepath.Join(config.AppInfo.AppStorePath, parsedURL.Host, hash), nil
+}
+
+func (s *AppStore) prepareWorkDir() error {
+	workdir, err := s.WorkDir()
+	if err != nil {
+		return err
+	}
+
+	if err := file.IsNotExistMkDir(workdir); err != nil {
+		return err
+	}
+
+	placeholderFile := filepath.Join(workdir, ".casaos-appstore")
+	return file.CreateFileAndWriteContent(placeholderFile, s.url)
+}
+
+func NewAppStore(appstoreURL string) (*AppStore, error) {
+	appstoreURL = strings.ToLower(appstoreURL)
+
+	_, err := url.Parse(appstoreURL)
+	if err != nil {
+		return nil, err
+	}
+
 	return &AppStore{
-		url:     strings.ToLower(url),
+		url:     appstoreURL,
 		catalog: map[string]*ComposeApp{},
-	}
-}
-
-func NewAppStoreForTest() (*AppStore, error) {
-	store, err := tempStoreForTest() // TODO - replace this with real store
-	if err != nil {
-		return nil, err
-	}
-
-	return &AppStore{
-		catalog: store,
 	}, nil
-}
-
-func tempStoreForTest() (map[string]*ComposeApp, error) {
-	store := map[string]*ComposeApp{}
-
-	composeApp, err := NewComposeAppFromYAML([]byte(SampleComposeAppYAML), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	composeAppStoreInfo, err := composeApp.StoreInfo(false)
-	if err != nil {
-		return nil, err
-	}
-
-	composeAppStoreInfo.StoreAppID = composeAppStoreInfo.MainApp // TODO replace this with real app store ID
-
-	composeApp.Extensions[common.ComposeExtensionNameXCasaOS] = composeAppStoreInfo
-
-	store[*composeAppStoreInfo.StoreAppID] = composeApp
-
-	return store, nil
 }
