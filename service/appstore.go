@@ -59,11 +59,21 @@ func (s *AppStore) UpdateCatalog() error {
 		}()
 	}
 
-	if err := prepare(workdir, s.url); err != nil {
+	if err := file.IsNotExistMkDir(workdir); err != nil {
 		return err
 	}
 
 	if err := downloadHelper.Download(s.url, workdir); err != nil {
+		return err
+	}
+
+	storeRoot, err := storeRoot(workdir)
+	if err != nil {
+		return err
+	}
+
+	placeholderFile := filepath.Join(storeRoot, ".casaos-appstore")
+	if err := file.CreateFileAndWriteContent(placeholderFile, s.url); err != nil {
 		return err
 	}
 
@@ -109,15 +119,6 @@ func NewAppStore(appstoreURL string) (*AppStore, error) {
 		url:     appstoreURL,
 		catalog: map[string]*ComposeApp{},
 	}, nil
-}
-
-func prepare(workdir string, markerContent string) error {
-	if err := file.IsNotExistMkDir(workdir); err != nil {
-		return err
-	}
-
-	placeholderFile := filepath.Join(workdir, ".casaos-appstore")
-	return file.CreateFileAndWriteContent(placeholderFile, markerContent)
 }
 
 func storeRoot(workdir string) (string, error) {
