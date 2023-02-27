@@ -51,19 +51,18 @@ func (a *AppStoreManagement) RegisterAppStore(appstoreURL string) (*codegen.AppS
 		}
 	}
 
-	// try to clone the store locally
 	appstore, err := NewAppStore(appstoreURL)
 	if err != nil {
 		return nil, err
 	}
 
 	if err := appstore.UpdateCatalog(); err != nil {
-		// TODO clean up
-
 		return nil, err
 	}
 
 	// if everything is good, add to the list
+	a.appStoreMap[appstoreURL] = appstore
+
 	config.ServerInfo.AppStoreList = append(config.ServerInfo.AppStoreList, appstoreURL)
 
 	if err := config.SaveSetup(); err != nil {
@@ -90,6 +89,8 @@ func (a *AppStoreManagement) UnregisterAppStore(appStoreID uint) error {
 	if err := config.SaveSetup(); err != nil {
 		return err
 	}
+
+	delete(a.appStoreMap, appStoreURL)
 
 	for _, fn := range a.onAppStoreUnregister {
 		if err := fn(appStoreURL); err != nil {
