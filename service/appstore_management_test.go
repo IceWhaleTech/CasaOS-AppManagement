@@ -2,6 +2,7 @@ package service
 
 import (
 	"os"
+	"strings"
 	"testing"
 
 	"github.com/IceWhaleTech/CasaOS-AppManagement/pkg/config"
@@ -18,6 +19,10 @@ func TestAppStoreList(t *testing.T) {
 	defer os.Remove(file.Name())
 
 	config.InitSetup(file.Name())
+	config.AppInfo.AppStorePath, err = os.MkdirTemp("", "test-app-store-*")
+	assert.NilError(t, err)
+
+	defer os.RemoveAll(config.AppInfo.AppStorePath)
 
 	appStoreManagement := NewAppStoreManagement()
 
@@ -36,7 +41,7 @@ func TestAppStoreList(t *testing.T) {
 		return nil
 	})
 
-	expectAppStoreURL := "https://appstore.example.com"
+	expectAppStoreURL := strings.ToLower("https://github.com/IceWhaleTech/CasaOS-AppStore/archive/refs/heads/api_v2.zip")
 	appStoreMetadata, err := appStoreManagement.RegisterAppStore(expectAppStoreURL)
 	assert.NilError(t, err)
 	assert.Equal(t, *appStoreMetadata.ID, 1)
