@@ -88,10 +88,11 @@ func (a *ComposeApp) Apps() map[string]*App {
 }
 
 func (a *ComposeApp) Containers(ctx context.Context) (map[string]api.ContainerSummary, error) {
-	service, err := apiService()
+	service, dockerClient, err := apiService()
 	if err != nil {
 		return nil, err
 	}
+	defer dockerClient.Close()
 
 	containers, err := service.Ps(ctx, a.Name, api.PsOptions{
 		All: true,
@@ -111,10 +112,11 @@ func (a *ComposeApp) Containers(ctx context.Context) (map[string]api.ContainerSu
 }
 
 func (a *ComposeApp) PullAndInstall(ctx context.Context) error {
-	service, err := apiService()
+	service, dockerClient, err := apiService()
 	if err != nil {
 		return err
 	}
+	defer dockerClient.Close()
 
 	// pull
 	for _, app := range a.Services {
@@ -191,10 +193,11 @@ func (a *ComposeApp) PullAndInstall(ctx context.Context) error {
 }
 
 func (a *ComposeApp) Uninstall(ctx context.Context, deleteConfigFolder bool) error {
-	service, err := apiService()
+	service, dockerClient, err := apiService()
 	if err != nil {
 		return err
 	}
+	defer dockerClient.Close()
 
 	// stop
 	if err := func() error {
@@ -293,10 +296,11 @@ func (a *ComposeApp) UpdateSettings(ctx context.Context, newComposeYAML []byte) 
 	}
 
 	// start compose app
-	service, err := apiService()
+	service, dockerClient, err := apiService()
 	if err != nil {
 		return err
 	}
+	defer dockerClient.Close()
 
 	success := false
 	defer func() {
@@ -343,10 +347,11 @@ func (a *ComposeApp) UpdateSettings(ctx context.Context, newComposeYAML []byte) 
 }
 
 func (a *ComposeApp) Logs(ctx context.Context, lines int) ([]byte, error) {
-	service, err := apiService()
+	service, dockerClient, err := apiService()
 	if err != nil {
 		return nil, err
 	}
+	defer dockerClient.Close()
 
 	var buf bytes.Buffer
 

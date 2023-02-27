@@ -1,16 +1,18 @@
 package service
 
 import (
+	"os"
 	"path/filepath"
 	"testing"
 
 	"github.com/IceWhaleTech/CasaOS-AppManagement/pkg/config"
+	"github.com/IceWhaleTech/CasaOS-Common/utils/file"
 	"go.uber.org/goleak"
 	"gotest.tools/v3/assert"
 )
 
 func TestGetComposeApp(t *testing.T) {
-	defer goleak.VerifyNone(t)
+	defer goleak.VerifyNone(t, goleak.IgnoreTopFunction("go.opencensus.io/stats/view.(*worker).start")) // https://github.com/census-instrumentation/opencensus-go/issues/1191
 
 	appStore, err := NewAppStore("https://github.com/IceWhaleTech/CasaOS-AppStore/archive/refs/heads/main.zip")
 	assert.NilError(t, err)
@@ -23,7 +25,7 @@ func TestGetComposeApp(t *testing.T) {
 }
 
 func TestGetApp(t *testing.T) {
-	defer goleak.VerifyNone(t)
+	defer goleak.VerifyNone(t, goleak.IgnoreTopFunction("go.opencensus.io/stats/view.(*worker).start")) // https://github.com/census-instrumentation/opencensus-go/issues/1191
 
 	appStore, err := NewAppStore("https://github.com/IceWhaleTech/CasaOS-AppStore/archive/refs/heads/main.zip")
 	assert.NilError(t, err)
@@ -37,7 +39,7 @@ func TestGetApp(t *testing.T) {
 }
 
 func TestWorkDir(t *testing.T) {
-	defer goleak.VerifyNone(t)
+	defer goleak.VerifyNone(t, goleak.IgnoreTopFunction("go.opencensus.io/stats/view.(*worker).start")) // https://github.com/census-instrumentation/opencensus-go/issues/1191
 
 	// test for http
 	hostport := "localhost:8080"
@@ -65,4 +67,20 @@ func TestWorkDir(t *testing.T) {
 	workdir, err = appStore.WorkDir()
 	assert.NilError(t, err)
 	assert.Equal(t, workdir, filepath.Join(config.AppInfo.AppStorePath, hostname, "8b0968a7d7cda3f813d05736a89d0c92"))
+}
+
+func TestStoreRoot(t *testing.T) {
+	defer goleak.VerifyNone(t, goleak.IgnoreTopFunction("go.opencensus.io/stats/view.(*worker).start")) // https://github.com/census-instrumentation/opencensus-go/issues/1191
+
+	workdir, err := os.MkdirTemp("", "appstore-test-*")
+	assert.NilError(t, err)
+
+	expectedStoreRoot := filepath.Join(workdir, "github.com", "IceWhaleTech", "CasaOS-AppStore", "main")
+	err = file.MkDir(filepath.Join(expectedStoreRoot, "Apps"))
+	assert.NilError(t, err)
+
+	actualStoreRoot, err := storeRoot(workdir)
+	assert.NilError(t, err)
+
+	assert.Equal(t, actualStoreRoot, expectedStoreRoot)
 }

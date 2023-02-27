@@ -11,7 +11,7 @@ import (
 )
 
 func TestList(t *testing.T) {
-	defer goleak.VerifyNone(t)
+	defer goleak.VerifyNone(t, goleak.IgnoreTopFunction("go.opencensus.io/stats/view.(*worker).start")) // https://github.com/census-instrumentation/opencensus-go/issues/1191
 
 	if !docker.IsDaemonRunning() {
 		t.Skip("Docker daemon is not running")
