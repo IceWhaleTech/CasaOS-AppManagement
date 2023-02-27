@@ -32,6 +32,10 @@ func (a *AppManagement) RegisterAppStore(ctx echo.Context, params codegen.Regist
 	appStoreMetadata, err := service.MyService.AppStoreManagement().RegisterAppStore(*params.Url)
 	if err != nil {
 		message := err.Error()
+		if err == service.ErrNotAppStore {
+			return ctx.JSON(http.StatusBadRequest, codegen.ResponseBadRequest{Message: &message})
+		}
+
 		return ctx.JSON(http.StatusInternalServerError, codegen.ResponseInternalServerError{Message: &message})
 	}
 
