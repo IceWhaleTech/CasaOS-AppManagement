@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/IceWhaleTech/CasaOS-AppManagement/common"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/pkg/config"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/pkg/utils/downloadHelper"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/file"
@@ -77,7 +78,10 @@ func (s *AppStore) UpdateCatalog() error {
 		return err
 	}
 
-	// TODO - implement this
+	s.catalog, err = buildCatalog(storeRoot)
+	if err != nil {
+		return err
+	}
 
 	updateSucessful = true
 
@@ -119,6 +123,44 @@ func NewAppStore(appstoreURL string) (*AppStore, error) {
 		url:     appstoreURL,
 		catalog: map[string]*ComposeApp{},
 	}, nil
+}
+
+func buildCatalog(storeRoot string) (map[string]*ComposeApp, error) {
+	catalog := map[string]*ComposeApp{}
+
+	// walk through each folder under storeRoot/Apps and build the catalog
+	if err := filepath.WalkDir(filepath.Join(storeRoot, "Apps"), func(path string, d os.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+
+		if !d.IsDir() {
+			return nil
+		}
+
+		composeFile := filepath.Join(path, common.ComposeYAMLFileName)
+		if !file.Exists(composeFile) {
+			return nil
+		}
+
+		composeYAML := file.ReadFullFile(composeFile)
+		if len(composeYAML) == 0 {
+			return nil
+		}
+
+		composeApp, err := NewComposeAppFromYAML(composeYAML, nil)
+		if err != nil {
+			return err
+		}
+
+		catalog[composeApp.Name] = composeApp
+
+		return nil
+	}); err != nil {
+		return nil, err
+	}
+
+	return catalog, nil
 }
 
 func storeRoot(workdir string) (string, error) {

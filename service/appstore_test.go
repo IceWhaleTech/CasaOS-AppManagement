@@ -1,10 +1,13 @@
 package service
 
 import (
+	_ "embed"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"testing"
 
+	"github.com/IceWhaleTech/CasaOS-AppManagement/common"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/pkg/config"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/file"
 	"go.uber.org/goleak"
@@ -83,4 +86,36 @@ func TestStoreRoot(t *testing.T) {
 	assert.NilError(t, err)
 
 	assert.Equal(t, actualStoreRoot, expectedStoreRoot)
+}
+
+func TestBuildCatalog(t *testing.T) {
+	defer goleak.VerifyNone(t, goleak.IgnoreTopFunction("go.opencensus.io/stats/view.(*worker).start")) // https://github.com/census-instrumentation/opencensus-go/issues/1191
+
+	storeRoot, err := os.MkdirTemp("", "appstore-test-*")
+	assert.NilError(t, err)
+
+	defer os.RemoveAll(storeRoot)
+
+	// test for invalid storeRoot
+	_, err = buildCatalog(storeRoot)
+	assert.ErrorType(t, err, new(fs.PathError))
+
+	appsPath := filepath.Join(storeRoot, "Apps")
+	err = file.MkDir(appsPath)
+	assert.NilError(t, err)
+
+	// test for empty catalog
+	catalog, err := buildCatalog(storeRoot)
+	assert.NilError(t, err)
+	assert.Equal(t, len(catalog), 0)
+
+	// build test catalog
+	err = file.MkDir(filepath.Join(appsPath, "test1"))
+	assert.NilError(t, err)
+
+	err = file.WriteToFullPath([]byte(SampleComposeAppYAML), filepath.Join(appsPath, "test1", common.ComposeYAMLFileName), 0o644)
+	assert.NilError(t, err)
+	catalog, err = buildCatalog(storeRoot)
+	assert.NilError(t, err)
+	assert.Equal(t, len(catalog), 1)
 }
