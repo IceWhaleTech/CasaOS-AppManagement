@@ -9,6 +9,7 @@ import (
 	"github.com/IceWhaleTech/CasaOS-Common/utils"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/logger"
 	"github.com/samber/lo"
+	"go.uber.org/zap"
 )
 
 type AppStoreManagement struct {
@@ -124,6 +125,14 @@ func (a *AppStoreManagement) Catalog() map[string]*ComposeApp {
 	}
 
 	return catalog
+}
+
+func (a *AppStoreManagement) UpdateCatalog() {
+	for url, appStore := range a.appStoreMap {
+		if err := appStore.UpdateCatalog(); err != nil {
+			logger.Error("error while updating catalog for app store", zap.Error(err), zap.String("url", url))
+		}
+	}
 }
 
 func (a *AppStoreManagement) ComposeApp(id string) *ComposeApp {
