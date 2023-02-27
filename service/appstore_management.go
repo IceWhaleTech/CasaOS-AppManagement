@@ -1,11 +1,13 @@
 package service
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/IceWhaleTech/CasaOS-AppManagement/codegen"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/pkg/config"
 	"github.com/IceWhaleTech/CasaOS-Common/utils"
+	"github.com/IceWhaleTech/CasaOS-Common/utils/logger"
 	"github.com/samber/lo"
 )
 
@@ -13,7 +15,8 @@ type AppStoreManagement struct {
 	onAppStoreRegister   []func(string) error
 	onAppStoreUnregister []func(string) error
 
-	appStoreMap map[string]*AppStore
+	appStoreMap     map[string]*AppStore
+	defaultAppStore *AppStore
 }
 
 func (a *AppStoreManagement) AppStoreList() []codegen.AppStoreMetadata {
@@ -109,6 +112,17 @@ func (a *AppStoreManagement) Catalog() map[string]*ComposeApp {
 		}
 	}
 
+	if len(catalog) == 0 {
+		logger.Info("No appstore registered")
+		if a.defaultAppStore == nil {
+			logger.Info("WARNING - no default appstore")
+			return map[string]*ComposeApp{}
+		}
+
+		logger.Info("Using default appstore")
+		return a.defaultAppStore.Catalog()
+	}
+
 	return catalog
 }
 
@@ -119,12 +133,27 @@ func (a *AppStoreManagement) ComposeApp(id string) *ComposeApp {
 		}
 	}
 
-	return nil
+	logger.Info("No appstore registered")
+
+	if a.defaultAppStore == nil {
+		logger.Info("WARNING - no default appstore")
+		return nil
+	}
+
+	logger.Info("Using default appstore")
+
+	return a.defaultAppStore.ComposeApp(id)
 }
 
 func NewAppStoreManagement() *AppStoreManagement {
+	defaultAppStore, err := NewDefaultAppStore()
+	if err != nil {
+		fmt.Printf("error while loading default appstore: %s\n", err.Error())
+	}
+
 	appStoreManagement := &AppStoreManagement{
-		appStoreMap: map[string]*AppStore{},
+		appStoreMap:     map[string]*AppStore{},
+		defaultAppStore: defaultAppStore,
 	}
 
 	return appStoreManagement

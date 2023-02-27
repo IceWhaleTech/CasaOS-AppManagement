@@ -26,7 +26,8 @@ var (
 	//go:embed fixtures/sample.docker-compose.yaml
 	SampleComposeAppYAML string
 
-	ErrNotAppStore = fmt.Errorf("not an appstore")
+	ErrNotAppStore             = fmt.Errorf("not an appstore")
+	ErrDefaultAppStoreNotFound = fmt.Errorf("default appstore not found")
 )
 
 func (s *AppStore) UpdateCatalog() error {
@@ -135,6 +136,24 @@ func NewAppStore(appstoreURL string) (*AppStore, error) {
 	return &AppStore{
 		url:     appstoreURL,
 		catalog: map[string]*ComposeApp{},
+	}, nil
+}
+
+func NewDefaultAppStore() (*AppStore, error) {
+	storeRoot := filepath.Join(config.AppInfo.AppStorePath, "default")
+
+	if !file.Exists(storeRoot) {
+		return nil, ErrDefaultAppStoreNotFound
+	}
+
+	catalog, err := buildCatalog(storeRoot)
+	if err != nil {
+		return nil, err
+	}
+
+	return &AppStore{
+		url:     "default",
+		catalog: catalog,
 	}, nil
 }
 

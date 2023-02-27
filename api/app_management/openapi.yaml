@@ -167,7 +167,7 @@ paths:
 
   /apps:
     get:
-      summary: Get app list from registred app stores
+      summary: Get app list from registered app stores
       description: |
         Get lists of StoreInfo of all compose apps from AppStore.
 
