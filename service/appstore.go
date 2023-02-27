@@ -38,9 +38,21 @@ func (s *AppStore) UpdateCatalog() error {
 	if err != nil {
 		return err
 	}
+	tmpDir := workdir + ".tmp"
 
-	updateSucessful := false
+	defer func() {
+		if err := file.RMDir(tmpDir); err != nil {
+			logger.Error("failed to remove temp appstore workdir", zap.Error(err), zap.String("tmpDir", tmpDir))
+		}
+	}()
 
+	if err := downloadHelper.Download(s.url, tmpDir); err != nil {
+		return err
+	}
+
+	isSuccessful := false
+
+	// make a backup of existing workdir
 	if file.Exists(workdir) {
 		backupDir := workdir + ".backup"
 		if err := os.Rename(workdir, backupDir); err != nil {
@@ -48,23 +60,24 @@ func (s *AppStore) UpdateCatalog() error {
 		}
 
 		defer func() {
-			if !updateSucessful {
-				if err := file.RMDir(workdir); err != nil {
-					logger.Error("failed to remove appstore workdir", zap.Error(err), zap.String("workdir", workdir))
+			if isSuccessful {
+				if err := file.RMDir(backupDir); err != nil {
+					logger.Error("failed to remove backup appstore workdir", zap.Error(err), zap.String("backupDir", backupDir))
 				}
+				return
+			}
 
-				if err := os.Rename(backupDir, workdir); err != nil {
-					logger.Error("failed to restore appstore workdir", zap.Error(err), zap.String("backupDir", backupDir), zap.String("workdir", workdir))
-				}
+			if err := file.RMDir(workdir); err != nil {
+				logger.Error("failed to remove appstore workdir", zap.Error(err), zap.String("workdir", workdir))
+			}
+
+			if err := os.Rename(backupDir, workdir); err != nil {
+				logger.Error("failed to restore backup appstore workdir", zap.Error(err), zap.String("backupDir", backupDir), zap.String("workdir", workdir))
 			}
 		}()
 	}
 
-	if err := file.IsNotExistMkDir(workdir); err != nil {
-		return err
-	}
-
-	if err := downloadHelper.Download(s.url, workdir); err != nil {
+	if err := os.Rename(tmpDir, workdir); err != nil {
 		return err
 	}
 
@@ -83,7 +96,7 @@ func (s *AppStore) UpdateCatalog() error {
 		return err
 	}
 
-	updateSucessful = true
+	isSuccessful = true
 
 	return nil
 }

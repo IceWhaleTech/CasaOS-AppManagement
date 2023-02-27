@@ -24,6 +24,11 @@ func (a *AppManagement) AppStoreList(ctx echo.Context) error {
 }
 
 func (a *AppManagement) RegisterAppStore(ctx echo.Context, params codegen.RegisterAppStoreParams) error {
+	if params.Url == nil {
+		message := "appstore url is required"
+		return ctx.JSON(http.StatusBadRequest, codegen.ResponseBadRequest{Message: &message})
+	}
+
 	appStoreMetadata, err := service.MyService.AppStoreManagement().RegisterAppStore(*params.Url)
 	if err != nil {
 		message := err.Error()
@@ -31,7 +36,7 @@ func (a *AppManagement) RegisterAppStore(ctx echo.Context, params codegen.Regist
 	}
 
 	return ctx.JSON(http.StatusOK, codegen.AppStoreRegisterOK{
-		Message: utils.Ptr("new app store is registered, and will be pulled asynchronously."),
+		Message: utils.Ptr("new app store is registered."),
 		Data:    appStoreMetadata,
 	})
 }
