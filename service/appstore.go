@@ -108,6 +108,27 @@ func (s *AppStore) UpdateCatalog() error {
 }
 
 func (s *AppStore) Catalog() map[string]*ComposeApp {
+	if s.catalog != nil && len(s.catalog) > 0 {
+		return s.catalog
+	}
+
+	workdir, err := s.WorkDir()
+	if err != nil {
+		return nil
+	}
+
+	storeRoot, err := storeRoot(workdir)
+	if err != nil {
+		return nil
+	}
+
+	catalog, err := buildCatalog(storeRoot)
+	if err != nil {
+		return nil
+	}
+
+	s.catalog = catalog
+
 	return s.catalog
 }
 
