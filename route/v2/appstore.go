@@ -65,7 +65,9 @@ func (a *AppManagement) UnregisterAppStore(ctx echo.Context, id codegen.AppStore
 func (a *AppManagement) ComposeAppStoreInfoList(ctx echo.Context, params codegen.ComposeAppStoreInfoListParams) error {
 	catalog := service.MyService.V2AppStore().Catalog()
 
-	catalog = filterCatalogByCategory(catalog, *params.Category)
+	if params.Category != nil {
+		catalog = filterCatalogByCategory(catalog, *params.Category)
+	}
 
 	list := lo.MapValues(catalog, func(composeApp *service.ComposeApp, appStoreID string) codegen.ComposeAppStoreInfo {
 		storeInfo, err := composeApp.StoreInfo(true)
