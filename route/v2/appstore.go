@@ -3,6 +3,7 @@ package v2
 import (
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/IceWhaleTech/CasaOS-AppManagement/codegen"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/common"
@@ -61,8 +62,10 @@ func (a *AppManagement) UnregisterAppStore(ctx echo.Context, id codegen.AppStore
 	})
 }
 
-func (a *AppManagement) ComposeAppStoreInfoList(ctx echo.Context) error {
+func (a *AppManagement) ComposeAppStoreInfoList(ctx echo.Context, params codegen.ComposeAppStoreInfoListParams) error {
 	catalog := service.MyService.V2AppStore().Catalog()
+
+	catalog = filterCatalogByCategory(catalog, *params.Category)
 
 	list := lo.MapValues(catalog, func(composeApp *service.ComposeApp, appStoreID string) codegen.ComposeAppStoreInfo {
 		storeInfo, err := composeApp.StoreInfo(true)
@@ -141,4 +144,43 @@ func (a *AppManagement) ComposeApp(ctx echo.Context, id codegen.StoreAppID) erro
 			Compose:   (*codegen.ComposeApp)(composeApp),
 		},
 	})
+}
+
+func filterCatalogByCategory(catalog map[string]*service.ComposeApp, category string) map[string]*service.ComposeApp {
+	if category == "" {
+		return catalog
+	}
+
+	filteredCatalog := make(map[string]*service.ComposeApp)
+
+	for storeAppID, composeApp := range catalog {
+		storeInfo, err := composeApp.StoreInfo(true)
+		if err != nil {
+			logger.Error("failed to get store info", zap.Error(err), zap.String("storeAppID", storeAppID))
+			continue
+		}
+
+		mainApp := storeInfo.MainApp
+		if mainApp == nil || *mainApp == "" {
+			logger.Error("main app is not set", zap.String("storeAppID", storeAppID))
+			continue
+		}
+
+		if storeInfo.Apps == nil || len(*storeInfo.Apps) == 0 {
+			logger.Error("apps is not set", zap.String("storeAppID", storeAppID))
+			continue
+		}
+
+		mainAppStoreInfo, ok := (*storeInfo.Apps)[*mainApp]
+		if !ok {
+			logger.Error("main app is not found", zap.String("storeAppID", storeAppID), zap.String("mainApp", *mainApp))
+			continue
+		}
+
+		if strings.ToLower(mainAppStoreInfo.Category) == strings.ToLower(category) {
+			filteredCatalog[storeAppID] = composeApp
+		}
+	}
+
+	return filteredCatalog
 }

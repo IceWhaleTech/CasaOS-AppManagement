@@ -177,6 +177,8 @@ paths:
       operationId: composeAppStoreInfoList
       tags:
         - AppStore methods
+      parameters:
+        - $ref: "#/components/parameters/StoreAppCategory"
       responses:
         "200":
           $ref: "#/components/responses/ComposeAppStoreInfoListsOK"
@@ -489,6 +491,14 @@ components:
       schema:
         type: string
         example: "syncthing"
+
+    StoreAppCategory:
+      name: category
+      description: Category of the store app
+      in: query
+      schema:
+        type: string
+        example: "chat"
 
     ComposeAppID:
       name: id

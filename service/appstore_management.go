@@ -137,8 +137,8 @@ func (a *AppStoreManagement) Catalog() map[string]*ComposeApp {
 	}
 
 	for _, appStore := range appStoreMap {
-		for appStoreID, composeApp := range appStore.Catalog() {
-			catalog[appStoreID] = composeApp
+		for storeAppID, composeApp := range appStore.Catalog() {
+			catalog[storeAppID] = composeApp
 		}
 	}
 
