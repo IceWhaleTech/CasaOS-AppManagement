@@ -29,8 +29,7 @@ func (a *AppManagement) RegisterAppStore(ctx echo.Context, params codegen.Regist
 		return ctx.JSON(http.StatusBadRequest, codegen.ResponseBadRequest{Message: &message})
 	}
 
-	appStoreMetadata, err := service.MyService.AppStoreManagement().RegisterAppStore(*params.Url)
-	if err != nil {
+	if _, err := service.MyService.AppStoreManagement().RegisterAppStore(*params.Url); err != nil {
 		message := err.Error()
 		if err == service.ErrNotAppStore {
 			return ctx.JSON(http.StatusBadRequest, codegen.ResponseBadRequest{Message: &message})
@@ -40,8 +39,7 @@ func (a *AppManagement) RegisterAppStore(ctx echo.Context, params codegen.Regist
 	}
 
 	return ctx.JSON(http.StatusOK, codegen.AppStoreRegisterOK{
-		Message: utils.Ptr("new app store is registered."),
-		Data:    appStoreMetadata,
+		Message: utils.Ptr("trying to register app store asynchronously."),
 	})
 }
 

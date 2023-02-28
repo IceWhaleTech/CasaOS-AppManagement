@@ -56,6 +56,11 @@ func (s *AppStore) UpdateCatalog() error {
 	// make a backup of existing workdir
 	if file.Exists(workdir) {
 		backupDir := workdir + ".backup"
+
+		if err := file.RMDir(backupDir); err != nil {
+			return err
+		}
+
 		if err := os.Rename(workdir, backupDir); err != nil {
 			return err
 		}

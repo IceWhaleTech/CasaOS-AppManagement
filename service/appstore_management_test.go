@@ -6,12 +6,15 @@ import (
 	"testing"
 
 	"github.com/IceWhaleTech/CasaOS-AppManagement/pkg/config"
+	"github.com/IceWhaleTech/CasaOS-Common/utils/logger"
 	"go.uber.org/goleak"
 	"gotest.tools/v3/assert"
 )
 
 func TestAppStoreList(t *testing.T) {
 	defer goleak.VerifyNone(t, goleak.IgnoreTopFunction("go.opencensus.io/stats/view.(*worker).start")) // https://github.com/census-instrumentation/opencensus-go/issues/1191
+
+	logger.LogInitConsoleOnly()
 
 	file, err := os.CreateTemp("", "app-management.conf")
 	assert.NilError(t, err)
@@ -41,10 +44,11 @@ func TestAppStoreList(t *testing.T) {
 		return nil
 	})
 
-	expectAppStoreURL := strings.ToLower("https://github.com/IceWhaleTech/CasaOS-AppStore/archive/refs/heads/api_v2.zip")
-	appStoreMetadata, err := appStoreManagement.RegisterAppStore(expectAppStoreURL)
+	expectAppStoreURL := strings.ToLower("https://github.com/IceWhaleTech/CasaOS-AppStore/archive/refs/heads/main.zip")
+	ch, err := appStoreManagement.RegisterAppStore(expectAppStoreURL)
 	assert.NilError(t, err)
-	assert.Equal(t, *appStoreMetadata.ID, 1)
+
+	appStoreMetadata := <-ch
 	assert.Equal(t, *appStoreMetadata.URL, expectAppStoreURL)
 	assert.Assert(t, len(registeredAppStoreList) == 1)
 

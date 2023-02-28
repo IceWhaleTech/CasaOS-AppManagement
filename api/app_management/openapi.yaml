@@ -631,9 +631,6 @@ components:
           schema:
             allOf:
               - $ref: "#/components/schemas/BaseResponse"
-              - properties:
-                  data:
-                    $ref: "#/components/schemas/AppStoreMetadata"
 
     AppStoreUnregisterOK:
       description: OK
