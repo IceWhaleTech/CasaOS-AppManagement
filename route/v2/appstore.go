@@ -52,6 +52,11 @@ func (a *AppManagement) UnregisterAppStore(ctx echo.Context, id codegen.AppStore
 		return ctx.JSON(http.StatusNotFound, codegen.ResponseNotFound{Message: &message})
 	}
 
+	if len(appStoreList) == 1 {
+		message := "cannot unregister the last app store - need at least one app store"
+		return ctx.JSON(http.StatusBadRequest, codegen.ResponseBadRequest{Message: &message})
+	}
+
 	if err := service.MyService.AppStoreManagement().UnregisterAppStore(uint(id)); err != nil {
 		message := err.Error()
 		return ctx.JSON(http.StatusInternalServerError, codegen.ResponseInternalServerError{Message: &message})
