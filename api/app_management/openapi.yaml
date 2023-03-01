@@ -819,14 +819,11 @@ components:
     ComposeAppStoreInfoLists:
       properties:
         recommend:
-          type: object
-          additionalProperties:
-            $ref: "#/components/schemas/ComposeAppStoreInfo"
+          type: array
+          items:
+            type: string
+            example: "syncthing"
         list:
-          type: object
-          additionalProperties:
-            $ref: "#/components/schemas/ComposeAppStoreInfo"
-        community:
           type: object
           additionalProperties:
             $ref: "#/components/schemas/ComposeAppStoreInfo"

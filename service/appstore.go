@@ -14,12 +14,14 @@ import (
 	"github.com/IceWhaleTech/CasaOS-AppManagement/pkg/utils/downloadHelper"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/file"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/logger"
+	"github.com/samber/lo"
 	"go.uber.org/zap"
 )
 
 type AppStore struct {
-	url     string
-	catalog map[string]*ComposeApp
+	url       string
+	catalog   map[string]*ComposeApp
+	recommend []string
 }
 
 var (
@@ -107,6 +109,24 @@ func (s *AppStore) UpdateCatalog() error {
 	return nil
 }
 
+func (s *AppStore) Recommend() []string {
+	if s.recommend != nil && len(s.recommend) > 0 {
+		return s.recommend
+	}
+
+	workdir, err := s.WorkDir()
+	if err != nil {
+		return nil
+	}
+
+	storeRoot, err := storeRoot(workdir)
+	if err != nil {
+		return nil
+	}
+
+	return loadRecommend(storeRoot)
+}
+
 func (s *AppStore) Catalog() map[string]*ComposeApp {
 	if s.catalog != nil && len(s.catalog) > 0 {
 		return s.catalog
@@ -183,11 +203,42 @@ func NewDefaultAppStore() (*AppStore, error) {
 	}, nil
 }
 
+func loadRecommend(storeRoot string) []string {
+	recommendListFile := filepath.Join(storeRoot, common.RecommendListFileName)
+
+	// unmarsal recommend list
+	recommendList := []interface{}{}
+
+	if file.Exists(recommendListFile) {
+		buf := file.ReadFullFile(recommendListFile)
+
+		if err := json.Unmarshal(buf, &recommendList); err != nil {
+			logger.Error("failed to unmarshal recommend list", zap.Error(err), zap.String("recommendListFile", recommendListFile))
+		}
+	}
+
+	result := lo.Map(recommendList, func(item interface{}, i int) string {
+		recommendItem, ok := item.(map[string]interface{})
+		if !ok {
+			return ""
+		}
+
+		storeAppID, ok := recommendItem["appid"]
+		if !ok {
+			return ""
+		}
+
+		return storeAppID.(string)
+	})
+
+	return result
+}
+
 func buildCatalog(storeRoot string) (map[string]*ComposeApp, error) {
 	catalog := map[string]*ComposeApp{}
 
 	// walk through each folder under storeRoot/Apps and build the catalog
-	if err := filepath.WalkDir(filepath.Join(storeRoot, "Apps"), func(path string, d os.DirEntry, err error) error {
+	if err := filepath.WalkDir(filepath.Join(storeRoot, common.AppsDirectoryName), func(path string, d os.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
@@ -230,7 +281,7 @@ func storeRoot(workdir string) (string, error) {
 			return err
 		}
 
-		if d.IsDir() && d.Name() == "Apps" {
+		if d.IsDir() && d.Name() == common.AppsDirectoryName {
 			storeRoot = filepath.Dir(path)
 			return filepath.SkipDir
 		}
