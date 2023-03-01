@@ -127,6 +127,21 @@ func (a *AppStoreManagement) UnregisterAppStore(appStoreID uint) error {
 	return nil
 }
 
+func (a *AppStoreManagement) Recommend() []string {
+	appStoreMap, err := a.AppStoreMap()
+	if err != nil {
+		logger.Error("error while loading appstore map", zap.Error(err))
+		return []string{}
+	}
+
+	recommend := []string{}
+	for _, appStore := range appStoreMap {
+		recommend = lo.Union(recommend, appStore.Recommend())
+	}
+
+	return recommend
+}
+
 func (a *AppStoreManagement) Catalog() map[string]*ComposeApp {
 	catalog := map[string]*ComposeApp{}
 

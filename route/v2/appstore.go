@@ -69,6 +69,7 @@ func (a *AppManagement) ComposeAppStoreInfoList(ctx echo.Context, params codegen
 		catalog = filterCatalogByCategory(catalog, *params.Category)
 	}
 
+	// list
 	list := lo.MapValues(catalog, func(composeApp *service.ComposeApp, appStoreID string) codegen.ComposeAppStoreInfo {
 		storeInfo, err := composeApp.StoreInfo(true)
 		if err != nil {
@@ -79,9 +80,16 @@ func (a *AppManagement) ComposeAppStoreInfoList(ctx echo.Context, params codegen
 		return *storeInfo
 	})
 
+	// recommend
+	recommend := service.MyService.V2AppStore().Recommend()
+	if params.Category != nil {
+		recommend = lo.Intersect(recommend, lo.Keys(catalog))
+	}
+
 	return ctx.JSON(http.StatusOK, codegen.ComposeAppStoreInfoListsOK{
 		Data: &codegen.ComposeAppStoreInfoLists{
-			List: &list,
+			List:      &list,
+			Recommend: &recommend,
 		},
 	})
 }
@@ -153,36 +161,26 @@ func filterCatalogByCategory(catalog map[string]*service.ComposeApp, category st
 		return catalog
 	}
 
-	filteredCatalog := make(map[string]*service.ComposeApp)
-
-	for storeAppID, composeApp := range catalog {
+	return lo.PickBy(catalog, func(storeAppID string, composeApp *service.ComposeApp) bool {
 		storeInfo, err := composeApp.StoreInfo(true)
 		if err != nil {
-			logger.Error("failed to get store info", zap.Error(err), zap.String("storeAppID", storeAppID))
-			continue
+			return false
 		}
 
 		mainApp := storeInfo.MainApp
 		if mainApp == nil || *mainApp == "" {
-			logger.Error("main app is not set", zap.String("storeAppID", storeAppID))
-			continue
+			return false
 		}
 
 		if storeInfo.Apps == nil || len(*storeInfo.Apps) == 0 {
-			logger.Error("apps is not set", zap.String("storeAppID", storeAppID))
-			continue
+			return false
 		}
 
 		mainAppStoreInfo, ok := (*storeInfo.Apps)[*mainApp]
 		if !ok {
-			logger.Error("main app is not found", zap.String("storeAppID", storeAppID), zap.String("mainApp", *mainApp))
-			continue
+			return false
 		}
 
-		if strings.ToLower(mainAppStoreInfo.Category) == strings.ToLower(category) {
-			filteredCatalog[storeAppID] = composeApp
-		}
-	}
-
-	return filteredCatalog
+		return strings.ToLower(mainAppStoreInfo.Category) == strings.ToLower(category)
+	})
 }
