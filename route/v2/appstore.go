@@ -25,9 +25,18 @@ func (a *AppManagement) AppStoreList(ctx echo.Context) error {
 }
 
 func (a *AppManagement) RegisterAppStore(ctx echo.Context, params codegen.RegisterAppStoreParams) error {
-	if params.Url == nil {
+	if params.Url == nil || *params.Url == "" {
 		message := "appstore url is required"
 		return ctx.JSON(http.StatusBadRequest, codegen.ResponseBadRequest{Message: &message})
+	}
+
+	isExist := lo.ContainsBy(service.MyService.AppStoreManagement().AppStoreList(), func(appstore codegen.AppStoreMetadata) bool {
+		return appstore.URL != nil && strings.ToLower(*appstore.URL) == strings.ToLower(*params.Url)
+	})
+
+	if isExist {
+		message := fmt.Sprintf("appstore of URL `%s` is already registered", *params.Url)
+		return ctx.JSON(http.StatusOK, codegen.AppStoreRegisterOK{Message: &message})
 	}
 
 	if _, err := service.MyService.AppStoreManagement().RegisterAppStore(*params.Url); err != nil {
@@ -40,7 +49,7 @@ func (a *AppManagement) RegisterAppStore(ctx echo.Context, params codegen.Regist
 	}
 
 	return ctx.JSON(http.StatusOK, codegen.AppStoreRegisterOK{
-		Message: utils.Ptr("trying to register app store asynchronously."),
+		Message: utils.Ptr("trying to register app store asynchronously - might fail if app store cannot be validated."),
 	})
 }
 
