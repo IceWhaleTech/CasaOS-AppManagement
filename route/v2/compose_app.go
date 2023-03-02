@@ -39,9 +39,16 @@ func (a *AppManagement) MyComposeAppList(ctx echo.Context) error {
 			logger.Error("failed to get store info", zap.Error(err), zap.String("composeAppID", id))
 		}
 
+		status, err := service.MyService.Compose().Status(ctx.Request().Context(), composeApp.Name)
+		if err != nil {
+			status = "unknown"
+			logger.Error("failed to get compose app status", zap.Error(err), zap.String("composeAppID", id))
+		}
+
 		return codegen.ComposeAppWithStoreInfo{
 			Compose:   (*codegen.ComposeApp)(composeApp),
 			StoreInfo: storeInfo,
+			Status:    &status,
 		}
 	})
 
@@ -91,6 +98,12 @@ func (a *AppManagement) MyComposeApp(ctx echo.Context, id codegen.ComposeAppID) 
 		})
 	}
 
+	status, err := service.MyService.Compose().Status(ctx.Request().Context(), composeApp.Name)
+	if err != nil {
+		status = "unknown"
+		logger.Error("failed to get compose app status", zap.Error(err), zap.String("composeAppID", id))
+	}
+
 	message := fmt.Sprintf("!! JSON format is for debugging purpose only - use `Accept: %s` HTTP header to get YAML instead !!", common.MIMEApplicationYAML)
 	return ctx.JSON(http.StatusOK, codegen.ComposeAppOK{
 		// extension properties aren't marshalled - https://github.com/golang/go/issues/6213
@@ -98,6 +111,7 @@ func (a *AppManagement) MyComposeApp(ctx echo.Context, id codegen.ComposeAppID) 
 		Data: &codegen.ComposeAppWithStoreInfo{
 			StoreInfo: storeInfo,
 			Compose:   (*types.Project)(composeApp),
+			Status:    &status,
 		},
 	})
 }
@@ -209,30 +223,6 @@ func (a *AppManagement) UninstallComposeApp(ctx echo.Context, id codegen.Compose
 
 	return ctx.JSON(http.StatusOK, codegen.ComposeAppUninstallOK{
 		Message: utils.Ptr("compose app is being uninstalled asynchronously"),
-	})
-}
-
-func (a *AppManagement) ComposeAppStatus(ctx echo.Context, id codegen.ComposeAppID) error {
-	if id == "" {
-		message := ErrComposeAppIDNotProvided.Error()
-		return ctx.JSON(http.StatusBadRequest, codegen.ResponseBadRequest{
-			Message: &message,
-		})
-	}
-
-	status, err := service.MyService.Compose().Status(ctx.Request().Context(), id)
-	if err != nil {
-		message := err.Error()
-
-		if err == service.ErrComposeAppNotFound {
-			return ctx.JSON(http.StatusNotFound, codegen.ResponseNotFound{Message: &message})
-		}
-
-		return ctx.JSON(http.StatusInternalServerError, codegen.ResponseInternalServerError{Message: &message})
-	}
-
-	return ctx.JSON(http.StatusOK, codegen.ComposeAppStatusOK{
-		Data: &status,
 	})
 }
 

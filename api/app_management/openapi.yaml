@@ -318,23 +318,6 @@ paths:
           $ref: "#/components/responses/ResponseInternalServerError"
 
   /compose/{id}/status:
-    get:
-      summary: Get the status of a compose app
-      description: |
-        TODO - add description
-      operationId: composeAppStatus
-      tags:
-        - Compose methods
-      parameters:
-        - $ref: "#/components/parameters/ComposeAppID"
-      responses:
-        "200":
-          $ref: "#/components/responses/ComposeAppStatusOK"
-        "404":
-          $ref: "#/components/responses/ResponseNotFound"
-        "500":
-          $ref: "#/components/responses/ResponseInternalServerError"
-
     put:
       summary: Start/restart/stop a compose app
       description: |
@@ -722,18 +705,6 @@ components:
           schema:
             $ref: "#/components/schemas/BaseResponse"
 
-    ComposeAppStatusOK:
-      description: OK
-      content:
-        application/json:
-          schema:
-            allOf:
-              - $ref: "#/components/schemas/BaseResponse"
-              - properties:
-                  data:
-                    type: string
-                    example: "running"
-
     RequestComposeAppStatusOK:
       description: OK
       content:
@@ -887,6 +858,10 @@ components:
           $ref: "#/components/schemas/ComposeAppStoreInfo"
         compose:
           $ref: "#/components/schemas/ComposeApp"
+        status:
+          type: string
+          readOnly: true
+          example: running
 
     AppStoreInfo:
       title: StoreInfo of an app
