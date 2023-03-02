@@ -20,7 +20,7 @@ func TestMain(t *testing.T) {
 	config, err := yaml.Marshal(composeApp1)
 	assert.NilError(t, err)
 
-	composeApp2, err := service.NewComposeAppFromYAML(config, nil)
+	composeApp2, err := service.NewComposeAppFromYAML(config)
 	assert.NilError(t, err)
 	assert.Assert(t, composeApp2 != nil)
 
@@ -72,7 +72,7 @@ func TestAll(t *testing.T) {
 		config, err := yaml.Marshal(composeApp1)
 		assert.NilError(t, err)
 
-		composeApp2, err := service.NewComposeAppFromYAML(config, nil)
+		composeApp2, err := service.NewComposeAppFromYAML(config)
 		assert.NilError(t, err)
 		assert.Assert(t, composeApp2 != nil)
 
