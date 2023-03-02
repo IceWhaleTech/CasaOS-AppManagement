@@ -16,6 +16,7 @@ import (
 	"github.com/docker/cli/cli/flags"
 	"github.com/docker/compose/v2/pkg/api"
 	"github.com/docker/compose/v2/pkg/compose"
+	"github.com/docker/docker/client"
 
 	"go.uber.org/zap"
 )
@@ -154,10 +155,11 @@ func (s *ComposeService) Uninstall(ctx context.Context, composeApp *ComposeApp, 
 }
 
 func (s *ComposeService) Status(ctx context.Context, appID string) (string, error) {
-	service, err := apiService()
+	service, dockerClient, err := apiService()
 	if err != nil {
 		return "", err
 	}
+	defer dockerClient.Close()
 
 	stackList, err := service.List(ctx, api.ListOptions{
 		All: true,
@@ -176,10 +178,11 @@ func (s *ComposeService) Status(ctx context.Context, appID string) (string, erro
 }
 
 func (s *ComposeService) List(ctx context.Context) (map[string]*ComposeApp, error) {
-	service, err := apiService()
+	service, dockerClient, err := apiService()
 	if err != nil {
 		return nil, err
 	}
+	defer dockerClient.Close()
 
 	stackList, err := service.List(ctx, api.ListOptions{
 		All: true,
@@ -219,19 +222,17 @@ func baseInterpolationMap() map[string]string {
 	}
 }
 
-func apiService() (api.Service, error) {
+func apiService() (api.Service, client.APIClient, error) {
 	dockerCli, err := command.NewDockerCli()
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	if err := dockerCli.Initialize(&flags.ClientOptions{
-		Common: &flags.CommonOptions{},
-	}); err != nil {
-		return nil, err
+	if err := dockerCli.Initialize(&flags.ClientOptions{}); err != nil {
+		return nil, nil, err
 	}
 
-	return compose.NewComposeService(dockerCli), nil
+	return compose.NewComposeService(dockerCli), dockerCli.Client(), nil
 }
 
 func cleanup(workDir string) {

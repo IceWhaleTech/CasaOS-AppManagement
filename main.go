@@ -43,88 +43,104 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	// arguments
-	configFlag := flag.String("c", "", "config file path")
-	dbFlag := flag.String("db", "", "db path")
-	versionFlag := flag.Bool("v", false, "version")
+	// parse arguments and intialize
+	{
+		configFlag := flag.String("c", "", "config file path")
+		dbFlag := flag.String("db", "", "db path")
+		versionFlag := flag.Bool("v", false, "version")
 
-	flag.Parse()
+		flag.Parse()
 
-	if *versionFlag {
-		fmt.Printf("v%s\n", common.AppManagementVersion)
-		os.Exit(0)
+		if *versionFlag {
+			fmt.Printf("v%s\n", common.AppManagementVersion)
+			os.Exit(0)
+		}
+
+		println("git commit:", commit)
+		println("build date:", date)
+
+		config.InitSetup(*configFlag)
+
+		logger.LogInit(config.AppInfo.LogPath, config.AppInfo.LogSaveName, config.AppInfo.LogFileExt)
+
+		if len(*dbFlag) == 0 {
+			*dbFlag = config.AppInfo.DBPath
+		}
+
+		service.MyService = service.NewService(config.CommonInfo.RuntimePath)
+
+		v1.Cache = cache.New(5*time.Minute, 60*time.Second)
+		v1.GetToken()
 	}
 
-	println("git commit:", commit)
-	println("build date:", date)
+	// setup cron
+	{
+		crontab := cron.New(cron.WithSeconds())
 
-	config.InitSetup(*configFlag)
+		// schedule async v1job to get v1 appstore list
+		v1job := func() {
+			if _, err := service.MyService.V1AppStore().AsyncGetServerList(); err != nil {
+				logger.Error("error when trying to get appstore list", zap.Error(err))
+			}
+		}
 
-	logger.LogInit(config.AppInfo.LogPath, config.AppInfo.LogSaveName, config.AppInfo.LogFileExt)
+		go v1job() // run once at startup
 
-	if len(*dbFlag) == 0 {
-		*dbFlag = config.AppInfo.DBPath
+		if _, err := crontab.AddFunc("@every 8h", v1job); err != nil {
+			panic(err)
+		}
+
+		// schedule async v2job to get v2 appstore list
+		go service.MyService.AppStoreManagement().UpdateCatalog() // run once at startup
+
+		if _, err := crontab.AddFunc("@every 8h", service.MyService.AppStoreManagement().UpdateCatalog); err != nil {
+			panic(err)
+		}
+
+		crontab.Start()
+		defer crontab.Stop()
+
 	}
 
-	service.MyService = service.NewService(config.CommonInfo.RuntimePath)
+	// register at message bus
+	{
+		response, err := service.MyService.MessageBus().RegisterEventTypesWithResponse(ctx, common.EventTypes)
+		if err != nil {
+			logger.Error("error when trying to register one or more event types - some event type will not be discoverable", zap.Error(err))
+		}
 
-	v1.Cache = cache.New(5*time.Minute, 60*time.Second)
-	v1.GetToken()
-
-	// schedule async job to get appstore list
-	job := func() {
-		if _, err := service.MyService.V1AppStore().AsyncGetServerList(); err != nil {
-			logger.Error("error when trying to get appstore list", zap.Error(err))
+		if response != nil && response.StatusCode() != http.StatusOK {
+			logger.Error("error when trying to register one or more event types - some event type will not be discoverable", zap.String("status", response.Status()), zap.String("body", string(response.Body)))
 		}
 	}
 
-	crontab := cron.New(cron.WithSeconds())
-	if _, err := crontab.AddFunc("@every 1h", job); err != nil {
-		panic(err)
-	}
-
-	crontab.Start()
-	defer crontab.Stop()
-
-	go job() // run once at startup
-
 	// setup listener
-
 	listener, err := net.Listen("tcp", net.JoinHostPort(common.Localhost, "0"))
 	if err != nil {
 		panic(err)
 	}
 
-	// register at gateway
-	apiPaths := []string{
-		"/v1/apps",
-		"/v1/container",
-		"/v1/app-categories",
-		route.V2APIPath,
-		route.V2DocPath,
-	}
+	// initialize routers and register at gateway
+	{
+		apiPaths := []string{
+			"/v1/apps",
+			"/v1/container",
+			"/v1/app-categories",
+			route.V2APIPath,
+			route.V2DocPath,
+		}
 
-	for _, apiPath := range apiPaths {
-		if err := service.MyService.Gateway().CreateRoute(&model.Route{
-			Path:   apiPath,
-			Target: "http://" + listener.Addr().String(),
-		}); err != nil {
-			panic(err)
+		for _, apiPath := range apiPaths {
+			if err := service.MyService.Gateway().CreateRoute(&model.Route{
+				Path:   apiPath,
+				Target: "http://" + listener.Addr().String(),
+			}); err != nil {
+				panic(err)
+			}
 		}
 	}
 
-	// register at message bus
-	response, err := service.MyService.MessageBus().RegisterEventTypesWithResponse(ctx, common.EventTypes)
-	if err != nil {
-		logger.Error("error when trying to register one or more event types - some event type will not be discoverable", zap.Error(err))
-	}
-
-	if response != nil && response.StatusCode() != http.StatusOK {
-		logger.Error("error when trying to register one or more event types - some event type will not be discoverable", zap.String("status", response.Status()), zap.String("body", string(response.Body)))
-	}
-
 	v1Router := route.InitV1Router()
-
 	v2Router := route.InitV2Router()
 	v2DocRouter := route.InitV2DocRouter(_docHTML, _docYAML)
 
@@ -137,15 +153,17 @@ func main() {
 	}
 
 	// notify systemd that we are ready
-	if supported, err := daemon.SdNotify(false, daemon.SdNotifyReady); err != nil {
-		logger.Error("Failed to notify systemd that casaos main service is ready", zap.Any("error", err))
-	} else if supported {
-		logger.Info("Notified systemd that casaos main service is ready")
-	} else {
-		logger.Info("This process is not running as a systemd service.")
-	}
+	{
+		if supported, err := daemon.SdNotify(false, daemon.SdNotifyReady); err != nil {
+			logger.Error("Failed to notify systemd that casaos main service is ready", zap.Any("error", err))
+		} else if supported {
+			logger.Info("Notified systemd that casaos main service is ready")
+		} else {
+			logger.Info("This process is not running as a systemd service.")
+		}
 
-	logger.Info("App management service is listening...", zap.Any("address", listener.Addr().String()))
+		logger.Info("App management service is listening...", zap.Any("address", listener.Addr().String()))
+	}
 
 	s := &http.Server{
 		Handler:           mux,

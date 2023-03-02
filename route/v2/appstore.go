@@ -3,6 +3,7 @@ package v2
 import (
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/IceWhaleTech/CasaOS-AppManagement/codegen"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/common"
@@ -15,9 +16,74 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-func (a *AppManagement) ComposeAppStoreInfoList(ctx echo.Context) error {
+func (a *AppManagement) AppStoreList(ctx echo.Context) error {
+	appStoreList := service.MyService.AppStoreManagement().AppStoreList()
+
+	return ctx.JSON(http.StatusOK, codegen.AppStoreListOK{
+		Data: &appStoreList,
+	})
+}
+
+func (a *AppManagement) RegisterAppStore(ctx echo.Context, params codegen.RegisterAppStoreParams) error {
+	if params.Url == nil || *params.Url == "" {
+		message := "appstore url is required"
+		return ctx.JSON(http.StatusBadRequest, codegen.ResponseBadRequest{Message: &message})
+	}
+
+	isExist := lo.ContainsBy(service.MyService.AppStoreManagement().AppStoreList(), func(appstore codegen.AppStoreMetadata) bool {
+		return appstore.URL != nil && strings.ToLower(*appstore.URL) == strings.ToLower(*params.Url)
+	})
+
+	if isExist {
+		message := "appstore is already registered"
+		return ctx.JSON(http.StatusOK, codegen.AppStoreRegisterOK{Message: &message})
+	}
+
+	if _, err := service.MyService.AppStoreManagement().RegisterAppStore(*params.Url); err != nil {
+		message := err.Error()
+		if err == service.ErrNotAppStore {
+			return ctx.JSON(http.StatusBadRequest, codegen.ResponseBadRequest{Message: &message})
+		}
+
+		return ctx.JSON(http.StatusInternalServerError, codegen.ResponseInternalServerError{Message: &message})
+	}
+
+	return ctx.JSON(http.StatusOK, codegen.AppStoreRegisterOK{
+		Message: utils.Ptr("trying to register app store asynchronously - might fail if app store cannot be validated."),
+	})
+}
+
+func (a *AppManagement) UnregisterAppStore(ctx echo.Context, id codegen.AppStoreID) error {
+	appStoreList := service.MyService.AppStoreManagement().AppStoreList()
+
+	if id < 0 || id >= len(appStoreList) {
+		message := fmt.Sprintf("app store id %d is not found", id)
+		return ctx.JSON(http.StatusNotFound, codegen.ResponseNotFound{Message: &message})
+	}
+
+	if len(appStoreList) == 1 {
+		message := "cannot unregister the last app store - need at least one app store"
+		return ctx.JSON(http.StatusBadRequest, codegen.ResponseBadRequest{Message: &message})
+	}
+
+	if err := service.MyService.AppStoreManagement().UnregisterAppStore(uint(id)); err != nil {
+		message := err.Error()
+		return ctx.JSON(http.StatusInternalServerError, codegen.ResponseInternalServerError{Message: &message})
+	}
+
+	return ctx.JSON(http.StatusOK, codegen.AppStoreUnregisterOK{
+		Message: utils.Ptr("app store is unregistered."),
+	})
+}
+
+func (a *AppManagement) ComposeAppStoreInfoList(ctx echo.Context, params codegen.ComposeAppStoreInfoListParams) error {
 	catalog := service.MyService.V2AppStore().Catalog()
 
+	if params.Category != nil {
+		catalog = filterCatalogByCategory(catalog, *params.Category)
+	}
+
+	// list
 	list := lo.MapValues(catalog, func(composeApp *service.ComposeApp, appStoreID string) codegen.ComposeAppStoreInfo {
 		storeInfo, err := composeApp.StoreInfo(true)
 		if err != nil {
@@ -28,14 +94,21 @@ func (a *AppManagement) ComposeAppStoreInfoList(ctx echo.Context) error {
 		return *storeInfo
 	})
 
+	// recommend
+	recommend := service.MyService.V2AppStore().Recommend()
+	if params.Category != nil {
+		recommend = lo.Intersect(recommend, lo.Keys(catalog))
+	}
+
 	return ctx.JSON(http.StatusOK, codegen.ComposeAppStoreInfoListsOK{
 		Data: &codegen.ComposeAppStoreInfoLists{
-			List: &list,
+			List:      &list,
+			Recommend: &recommend,
 		},
 	})
 }
 
-func (a *AppManagement) ComposeAppStoreInfo(ctx echo.Context, id codegen.AppStoreID) error {
+func (a *AppManagement) ComposeAppStoreInfo(ctx echo.Context, id codegen.StoreAppID) error {
 	composeApp := service.MyService.V2AppStore().ComposeApp(id)
 
 	if composeApp == nil {
@@ -56,7 +129,7 @@ func (a *AppManagement) ComposeAppStoreInfo(ctx echo.Context, id codegen.AppStor
 	})
 }
 
-func (a *AppManagement) ComposeApp(ctx echo.Context, id codegen.AppStoreID) error {
+func (a *AppManagement) ComposeApp(ctx echo.Context, id codegen.StoreAppID) error {
 	composeApp := service.MyService.V2AppStore().ComposeApp(id)
 
 	if composeApp == nil {
@@ -94,5 +167,34 @@ func (a *AppManagement) ComposeApp(ctx echo.Context, id codegen.AppStoreID) erro
 			StoreInfo: storeInfo,
 			Compose:   (*codegen.ComposeApp)(composeApp),
 		},
+	})
+}
+
+func filterCatalogByCategory(catalog map[string]*service.ComposeApp, category string) map[string]*service.ComposeApp {
+	if category == "" {
+		return catalog
+	}
+
+	return lo.PickBy(catalog, func(storeAppID string, composeApp *service.ComposeApp) bool {
+		storeInfo, err := composeApp.StoreInfo(true)
+		if err != nil {
+			return false
+		}
+
+		mainApp := storeInfo.MainApp
+		if mainApp == nil || *mainApp == "" {
+			return false
+		}
+
+		if storeInfo.Apps == nil || len(*storeInfo.Apps) == 0 {
+			return false
+		}
+
+		mainAppStoreInfo, ok := (*storeInfo.Apps)[*mainApp]
+		if !ok {
+			return false
+		}
+
+		return strings.ToLower(mainAppStoreInfo.Category) == strings.ToLower(category)
 	})
 }

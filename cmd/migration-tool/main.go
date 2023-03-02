@@ -9,7 +9,6 @@ import (
 	"github.com/IceWhaleTech/CasaOS-AppManagement/common"
 	interfaces "github.com/IceWhaleTech/CasaOS-Common"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/systemctl"
-	"github.com/IceWhaleTech/CasaOS-Common/utils/version"
 )
 
 const (
@@ -20,11 +19,11 @@ const (
 )
 
 //go:embedded ../../build/sysroot/etc/casaos/app-management.conf.sample
-var _appManagementConfigFileSample string
+//var _appManagementConfigFileSample string
 
 var (
 	_logger *Logger
-	_status *version.GlobalMigrationStatus
+	// _status *version.GlobalMigrationStatus
 
 	commit = "private build"
 	date   = "private build"
@@ -70,7 +69,6 @@ func main() {
 
 	migrationTools := []interfaces.MigrationTool{
 		// NewMigrationDummy(),
-		NewMigrationToolFor038AndOlder(),
 	}
 
 	var selectedMigrationTool interfaces.MigrationTool
