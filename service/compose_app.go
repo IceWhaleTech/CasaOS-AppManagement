@@ -3,6 +3,7 @@ package service
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"io"
 	"path/filepath"
 	"strconv"
@@ -268,14 +269,8 @@ func (a *ComposeApp) UpdateSettings(ctx context.Context, newComposeYAML []byte) 
 	interpolationMap := baseInterpolationMap()
 	interpolationMap["AppID"] = a.Name
 
-	// create new temporary ComposeApp from composeYAML
-	newComposeAppName, err := getNameFromYAML(newComposeYAML)
-	if err != nil {
-		return err
-	}
-
 	// compare new ComposeApp with current ComposeApp
-	if newComposeAppName != a.Name {
+	if getNameFrom(newComposeYAML) != a.Name {
 		return ErrComposeAppNotMatch
 	}
 
@@ -375,71 +370,76 @@ func LoadComposeAppFromConfigFile(appID string, configFile string) (*ComposeApp,
 		ProjectName: appID,
 	}
 
+	env := []string{fmt.Sprintf("%s=%s", "AppID", appID)}
+	for k, v := range baseInterpolationMap() {
+		env = append(env, fmt.Sprintf("%s=%s", k, v))
+	}
+
 	// load project
 	project, err := options.ToProject(
 		nil,
-		cli.WithWorkingDirectory(options.ProjectDir),
 		cli.WithOsEnv,
-		cli.WithEnvFile(options.EnvFile),
 		cli.WithDotEnv,
+		cli.WithEnv(env),
 		cli.WithConfigFileEnv,
 		cli.WithDefaultConfigPath,
+		cli.WithEnvFile(options.EnvFile),
 		cli.WithName(options.ProjectName),
+		cli.WithWorkingDirectory(options.ProjectDir),
 	)
 
 	return (*ComposeApp)(project), err
 }
 
-func NewComposeAppFromYAML(yaml []byte, env map[string]string) (*ComposeApp, error) {
-	composeApp, err := loader.Load(
+func NewComposeAppFromYAML(yaml []byte) (*ComposeApp, error) {
+	// env := baseInterpolationMap()
+	// appID := getNameFrom(yaml)
+	// if appID == "" {
+	// 	env["AppID"] = appID
+	// }
+
+	project, err := loader.Load(
 		types.ConfigDetails{
 			ConfigFiles: []types.ConfigFile{
 				{
 					Content: []byte(yaml),
 				},
 			},
-			Environment: lo.If(env == nil, map[string]string{}).Else(env),
+			Environment: map[string]string{},
 		},
-		func(o *loader.Options) { o.SkipInterpolation = (len(env) == 0) },
+		func(o *loader.Options) { o.SkipInterpolation = true },
 	)
 	if err != nil {
 		return nil, err
 	}
 
-	// populate yaml in extensions
+	composeApp := (*ComposeApp)(project)
+
 	if composeApp.Extensions == nil {
-		composeApp.Extensions = make(map[string]interface{})
+		composeApp.Extensions = map[string]interface{}{}
 	}
 
-	// fix name
-	if err := fixName(composeApp); err != nil {
-		return nil, err
+	// fix compose app name
+	if composeApp.Name == "" {
+		composeAppStoreInfo, err := composeApp.StoreInfo(false)
+		if err != nil {
+			return nil, err
+		}
+
+		composeApp.Name = *composeAppStoreInfo.MainApp
 	}
 
-	return (*ComposeApp)(composeApp), nil
+	return composeApp, nil
 }
 
-func getNameFromYAML(composeYAML []byte) (string, error) {
+func getNameFrom(composeYAML []byte) string {
 	var baseStructure struct {
 		Name string `yaml:"name"`
 	}
 
 	if err := yaml.Unmarshal(composeYAML, &baseStructure); err != nil {
-		return "", err
+		return ""
 	}
 
-	return baseStructure.Name, nil
-}
-
-func fixName(composeApp *codegen.ComposeApp) error {
-	if composeApp.Name == "" {
-		_composeApp := (*ComposeApp)(composeApp)
-		storeInfo, err := _composeApp.StoreInfo(false)
-		if err != nil {
-			return err
-		}
-		composeApp.Name = *storeInfo.MainApp
-	}
-
-	return nil
+	return baseStructure.Name
 }

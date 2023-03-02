@@ -23,7 +23,7 @@ import (
 
 type ComposeService struct{}
 
-func (s *ComposeService) PrepareWorkingDirectory(name string, composeYAML []byte) (string, error) {
+func (s *ComposeService) PrepareWorkingDirectory(name string) (string, error) {
 	workingDirectory := filepath.Join(config.AppInfo.AppsPath, name)
 
 	if err := file.IsNotExistMkDir(workingDirectory); err != nil {
@@ -35,19 +35,19 @@ func (s *ComposeService) PrepareWorkingDirectory(name string, composeYAML []byte
 }
 
 func (s *ComposeService) Install(ctx context.Context, composeYAML []byte) error {
-	appID, err := getNameFromYAML(composeYAML)
+	// load compose app with env variable interpolation
+	composeApp, err := NewComposeAppFromYAML(composeYAML)
 	if err != nil {
 		return err
 	}
 
-	// update interpolation map in current context
-	interpolationMap := baseInterpolationMap()
-	interpolationMap["AppID"] = appID
-
-	// load compose app with env variable interpolation
-	composeApp, err := NewComposeAppFromYAML(composeYAML, interpolationMap)
-	if err != nil {
-		return err
+	// set store_app_id (by convention is the same as app name at install time if it does not exist)
+	if extension, ok := composeApp.Extensions[common.ComposeExtensionNameXCasaOS]; ok {
+		if composeAppStoreInfo, ok := extension.(map[string]interface{}); ok {
+			if _, ok := composeAppStoreInfo[common.ComposeExtensionPropertyNameStoreAppID]; !ok {
+				composeAppStoreInfo[common.ComposeExtensionPropertyNameStoreAppID] = composeApp.Name
+			}
+		}
 	}
 
 	composeYAMLInterpolated, err := yaml.Marshal(composeApp)
@@ -55,7 +55,7 @@ func (s *ComposeService) Install(ctx context.Context, composeYAML []byte) error 
 		return err
 	}
 
-	workingDirectory, err := s.PrepareWorkingDirectory(composeApp.Name, composeYAML)
+	workingDirectory, err := s.PrepareWorkingDirectory(composeApp.Name)
 	if err != nil {
 		return err
 	}
@@ -96,7 +96,7 @@ func (s *ComposeService) Install(ctx context.Context, composeYAML []byte) error 
 	}
 
 	eventProperties := common.PropertiesFromContext(ctx)
-	eventProperties[common.PropertyTypeAppName.Name] = appID
+	eventProperties[common.PropertyTypeAppName.Name] = composeApp.Name
 	eventProperties[common.PropertyTypeAppIcon.Name] = mainAppStoreInfo.Icon
 	eventProperties[common.PropertyTypeImageName.Name] = composeApp.App(*storeInfo.MainApp).Image
 

@@ -257,7 +257,7 @@ func buildCatalog(storeRoot string) (map[string]*ComposeApp, error) {
 			return nil
 		}
 
-		composeApp, err := NewComposeAppFromYAML(composeYAML, nil)
+		composeApp, err := NewComposeAppFromYAML(composeYAML)
 		if err != nil {
 			return err
 		}
