@@ -22,9 +22,28 @@ type AppStoreManagement struct {
 
 func (a *AppStoreManagement) AppStoreList() []codegen.AppStoreMetadata {
 	return lo.Map(config.ServerInfo.AppStoreList, func(appStoreURL string, id int) codegen.AppStoreMetadata {
+		appStore, err := NewAppStore(appStoreURL)
+		if err != nil {
+			logger.Error("failed to construct appstore", zap.Error(err), zap.String("appstoreURL", appStoreURL))
+			return codegen.AppStoreMetadata{}
+		}
+
+		workDir, err := appStore.WorkDir()
+		if err != nil {
+			logger.Error("failed to get appstore workdir", zap.Error(err), zap.String("appstoreURL", appStoreURL))
+			return codegen.AppStoreMetadata{}
+		}
+
+		storeRoot, err := storeRoot(workDir)
+		if err != nil {
+			logger.Error("failed to get appstore storeRoot", zap.Error(err), zap.String("appstoreURL", appStoreURL))
+			storeRoot = "internal error - store root not found"
+		}
+
 		return codegen.AppStoreMetadata{
-			ID:  &id,
-			URL: &appStoreURL,
+			ID:        &id,
+			URL:       &appStoreURL,
+			StoreRoot: &storeRoot,
 		}
 	})
 }

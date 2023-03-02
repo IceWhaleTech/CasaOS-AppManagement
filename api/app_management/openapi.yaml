@@ -815,6 +815,10 @@ components:
           readOnly: true
           example: "https://github.com/IceWhaleTech/CasaOS-AppStore/archive/refs/heads/main.zip"
           x-go-name: URL
+        store_root:
+          type: string
+          readOnly: true
+          example: "CasaOS-AppStore-main"
 
     ComposeAppStoreInfoLists:
       properties:
