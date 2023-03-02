@@ -35,7 +35,7 @@ func (a *AppManagement) RegisterAppStore(ctx echo.Context, params codegen.Regist
 	})
 
 	if isExist {
-		message := fmt.Sprintf("appstore of URL `%s` is already registered", *params.Url)
+		message := "appstore is already registered"
 		return ctx.JSON(http.StatusOK, codegen.AppStoreRegisterOK{Message: &message})
 	}
 
