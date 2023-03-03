@@ -667,8 +667,6 @@ components:
                     type: object
                     additionalProperties:
                       $ref: "#/components/schemas/ComposeAppWithStoreInfo"
-                    example:
-                      syncthing: {}
 
     ComposeAppInstallOK:
       description: OK
