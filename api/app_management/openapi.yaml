@@ -38,6 +38,10 @@ tags:
     description: |-
       methods for managing container app images
 
+  - name: Internal methods
+    description: |-
+      methods for internal use ONLY
+
   - name: AppStoreInfo
     description: |-
       <SchemaDefinition schemaRef="#/components/schemas/AppStoreInfo" />
@@ -441,6 +445,16 @@ paths:
         "500":
           $ref: "#/components/responses/ResponseInternalServerError"
 
+  /web/appgrid:
+    get:
+      summary: (internal use ONLY)
+      operationId: getAppGrid
+      tags:
+        - Internal methods
+      responses:
+        "200":
+          $ref: "#/components/responses/GetWebAppGridOK"
+
 components:
   securitySchemes:
     access_token:
@@ -757,6 +771,18 @@ components:
           schema:
             $ref: "#/components/schemas/BaseResponse"
 
+    GetWebAppGridOK:
+      description: OK
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: "#/components/schemas/BaseResponse"
+              - properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/WebAppGridItem"
   schemas:
     BaseResponse:
       properties:
@@ -1110,3 +1136,42 @@ components:
           example: "admin"
           x-oapi-codegen-extra-tags:
             yaml: ",omitempty"
+
+    WebAppGridItem:
+      description: (internal use ONLY)
+      properties:
+        store_app_id:
+          type: string
+          example: syncthing
+        status:
+          type: string
+          example: running
+        title:
+          type: object
+          additionalProperties:
+            type: string
+            example:
+              en_US: Syncthing
+        icon:
+          type: string
+          example: https://cdn.jsdelivr.net/gh/IceWhaleTech/CasaOS-AppStore@main/Apps/Syncthing/icon.png
+        type:
+          type: string
+          enum: 
+            - official
+            - community
+        protocol:
+          type: string
+          example: https
+        host:
+          type: string
+          example: 0.0.0.0
+        port:
+          type: string
+          example: 3000
+        index:
+          type: string
+          example: index
+        image:
+          type: string
+          example: gitea/gitea:1

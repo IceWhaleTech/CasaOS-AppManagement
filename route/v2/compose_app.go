@@ -22,35 +22,12 @@ import (
 var ErrComposeAppIDNotProvided = errors.New("compose AppID (compose project name) is not provided")
 
 func (a *AppManagement) MyComposeAppList(ctx echo.Context) error {
-	composeApps, err := service.MyService.Compose().List(ctx.Request().Context())
+	composeAppsWithStoreInfo, err := composeAppsWithStoreInfo(ctx.Request().Context())
 	if err != nil {
 		message := err.Error()
-		logger.Error("failed to list compose apps", zap.Error(err))
+		logger.Error("failed to list compose apps with store info", zap.Error(err))
 		return ctx.JSON(http.StatusInternalServerError, codegen.ResponseInternalServerError{Message: &message})
 	}
-
-	composeAppsWithStoreInfo := lo.MapValues(composeApps, func(composeApp *service.ComposeApp, id string) codegen.ComposeAppWithStoreInfo {
-		if composeApp == nil {
-			return codegen.ComposeAppWithStoreInfo{}
-		}
-
-		storeInfo, err := composeApp.StoreInfo(true)
-		if err != nil {
-			logger.Error("failed to get store info", zap.Error(err), zap.String("composeAppID", id))
-		}
-
-		status, err := service.MyService.Compose().Status(ctx.Request().Context(), composeApp.Name)
-		if err != nil {
-			status = "unknown"
-			logger.Error("failed to get compose app status", zap.Error(err), zap.String("composeAppID", id))
-		}
-
-		return codegen.ComposeAppWithStoreInfo{
-			Compose:   (*codegen.ComposeApp)(composeApp),
-			StoreInfo: storeInfo,
-			Status:    &status,
-		}
-	})
 
 	return ctx.JSON(http.StatusOK, codegen.ComposeAppListOK{
 		Data: &composeAppsWithStoreInfo,
@@ -348,4 +325,34 @@ func YAMLfromRequest(ctx echo.Context) ([]byte, error) {
 	}
 
 	return buf, nil
+}
+
+func composeAppsWithStoreInfo(ctx context.Context) (map[string]codegen.ComposeAppWithStoreInfo, error) {
+	composeApps, err := service.MyService.Compose().List(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return lo.MapValues(composeApps, func(composeApp *service.ComposeApp, id string) codegen.ComposeAppWithStoreInfo {
+		if composeApp == nil {
+			return codegen.ComposeAppWithStoreInfo{}
+		}
+
+		storeInfo, err := composeApp.StoreInfo(true)
+		if err != nil {
+			logger.Error("failed to get store info", zap.Error(err), zap.String("composeAppID", id))
+		}
+
+		status, err := service.MyService.Compose().Status(ctx, composeApp.Name)
+		if err != nil {
+			status = "unknown"
+			logger.Error("failed to get compose app status", zap.Error(err), zap.String("composeAppID", id))
+		}
+
+		return codegen.ComposeAppWithStoreInfo{
+			Compose:   (*codegen.ComposeApp)(composeApp),
+			StoreInfo: storeInfo,
+			Status:    &status,
+		}
+	}), nil
 }
