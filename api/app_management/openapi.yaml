@@ -794,6 +794,7 @@ components:
     Info:
       properties:
         architecture:
+          description: current architecture
           type: string
           readOnly: true
           example: "amd64"
@@ -833,6 +834,9 @@ components:
           title: Store app ID
           description: |
             Store app ID of the compose app (unique across all app stores)
+
+            > The `store_app_id` might be same as app name most of the time. However app name might change, due to cloning for example.
+            > If app name has changed, there is no way to associate it with the original app in the app store, unless we use the `store_app_id`.
           readOnly: true
           type: string
           example: "syncthing"
@@ -840,17 +844,8 @@ components:
           x-oapi-codegen-extra-tags:
             mapstructure: "store_app_id"
             yaml: "store_app_id,omitempty"
-        main_app:
-          title: name of the main container app in `apps`
-          description: |
-            The main container app is one of the container `apps` that the user will interact with.
-          type: string
-          example: "syncthing"
-          x-oapi-codegen-extra-tags:
-            mapstructure: "main_app"
-            yaml: "main_app,omitempty"
         apps:
-          title: container apps included in the compose app
+          title: store info of container apps included in the compose app
           description: |
             The key is the name of a container app, and the value is the StoreInfo of this container app.
           readOnly: true
@@ -861,7 +856,34 @@ components:
             syncthing: {}
           x-oapi-codegen-extra-tags:
             yaml: ",omitempty"
+        main_app:
+          title: name of the main container app in `apps`
+          description: |
+            The main container app is one of the container `apps` that the user will interact with.
+          type: string
+          example: "syncthing"
+          x-oapi-codegen-extra-tags:
+            mapstructure: "main_app"
+            yaml: "main_app,omitempty"
+        architectures:
+          title: architectures supported by the compose app
+          description: |
+            The architectures supported by the compose app. If the architecture of the host is not in this list, the compose app will not be installed.
+          type: array
+          items:
+            type: string
+          example:
+            - "amd64"
+            - "arm64"
+          x-oapi-codegen-extra-tags:
+            yaml: ",omitempty"
+        version:
+          type: string
+          description: |
+            version of this compose app
 
+            > This property helps to determine an installed compose app needs to be updated or not.
+          example: 1.18.2
     ComposeApp:
       type: object
       description: |-
