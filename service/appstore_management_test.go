@@ -18,6 +18,7 @@ func TestAppStoreList(t *testing.T) {
 	defer goleak.VerifyNone(t, goleak.IgnoreTopFunction("go.opencensus.io/stats/view.(*worker).start")) // https://github.com/census-instrumentation/opencensus-go/issues/1191
 
 	defer func() {
+		// workaround due to https://github.com/patrickmn/go-cache/issues/166
 		docker.Cache = nil
 		runtime.GC()
 	}()

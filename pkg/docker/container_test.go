@@ -49,6 +49,7 @@ func TestCloneContainer(t *testing.T) {
 	defer goleak.VerifyNone(t)
 
 	defer func() {
+		// workaround due to https://github.com/patrickmn/go-cache/issues/166
 		docker.Cache = nil
 		runtime.GC()
 	}()
