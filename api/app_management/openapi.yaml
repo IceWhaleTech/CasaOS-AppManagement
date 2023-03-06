@@ -877,13 +877,7 @@ components:
             - "arm64"
           x-oapi-codegen-extra-tags:
             yaml: ",omitempty"
-        version:
-          type: string
-          description: |
-            version of this compose app
 
-            > This property helps to determine an installed compose app needs to be updated or not.
-          example: 1.18.2
     ComposeApp:
       type: object
       description: |-

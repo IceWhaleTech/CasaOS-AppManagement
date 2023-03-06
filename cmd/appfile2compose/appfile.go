@@ -176,13 +176,6 @@ func (a *AppFile) AppStoreInfo() *codegen.AppStoreInfo {
 }
 
 func (a *AppFile) ComposeAppStoreInfo() *codegen.ComposeAppStoreInfo {
-	// get tag of a docker image
-	tag := "TBD"
-	imageAndTag := strings.Split(a.Container.Image, ":")
-	if len(imageAndTag) > 1 {
-		tag = imageAndTag[1]
-	}
-
 	architectures := []string{"amd64"}
 	_architectures, err := docker.GetArchitectures(a.Container.Image, false)
 	if err == nil {
@@ -191,7 +184,6 @@ func (a *AppFile) ComposeAppStoreInfo() *codegen.ComposeAppStoreInfo {
 
 	return &codegen.ComposeAppStoreInfo{
 		MainApp:       &a.Name,
-		Version:       &tag,
 		Architectures: &architectures,
 	}
 }
