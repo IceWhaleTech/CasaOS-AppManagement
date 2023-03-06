@@ -148,7 +148,7 @@ func TestBuildCatalog(t *testing.T) {
 	err = file.MkDir(filepath.Join(appsPath, "test1"))
 	assert.NilError(t, err)
 
-	err = file.WriteToFullPath([]byte(SampleComposeAppYAML), filepath.Join(appsPath, "test1", common.ComposeYAMLFileName), 0o644)
+	err = file.WriteToFullPath([]byte(common.SampleComposeAppYAML), filepath.Join(appsPath, "test1", common.ComposeYAMLFileName), 0o644)
 	assert.NilError(t, err)
 	catalog, err = buildCatalog(storeRoot)
 	assert.NilError(t, err)
