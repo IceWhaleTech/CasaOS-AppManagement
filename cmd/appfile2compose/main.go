@@ -9,6 +9,8 @@ import (
 	"github.com/IceWhaleTech/CasaOS-AppManagement/common"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/service"
 	"github.com/IceWhaleTech/CasaOS-Common/utils"
+
+	_logger "github.com/IceWhaleTech/CasaOS-Common/utils/logger"
 	"gopkg.in/yaml.v3"
 )
 
@@ -46,6 +48,8 @@ func main() {
 	logger = NewLogger()
 	logger.Info("input file: %s", *inputFlag)
 	logger.Info("output file: %s", *outputFlag)
+
+	_logger.LogInitConsoleOnly()
 
 	appFile, err := NewAppFile(*inputFlag)
 	if err != nil {

@@ -57,8 +57,8 @@ func TestMain(t *testing.T) {
 }
 
 func TestAll(t *testing.T) {
-	t.Skip("Tiger's own test - skip")
-	appsRootDir := "/home/wxh/dev/CasaOS-AppStore/Apps"
+	// t.Skip("Tiger's own test - skip")
+	appsRootDir := "/home/wxh/dev/icewhale/CasaOS-AppStore/Apps"
 
 	err := filepath.WalkDir(appsRootDir, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
@@ -91,7 +91,7 @@ func TestAll(t *testing.T) {
 		storeInfo2, err := composeApp2.StoreInfo(true)
 		assert.NilError(t, err)
 
-		assert.DeepEqual(t, storeInfo1, storeInfo2)
+		assert.DeepEqual(t, storeInfo1, storeInfo2, cmpopts.EquateEmpty())
 
 		mainApp1 := composeApp1.App(*storeInfo1.MainApp)
 		assert.Assert(t, mainApp1 != nil)

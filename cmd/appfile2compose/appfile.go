@@ -7,8 +7,8 @@ import (
 
 	"github.com/IceWhaleTech/CasaOS-AppManagement/codegen"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/common"
+	"github.com/IceWhaleTech/CasaOS-AppManagement/pkg/docker"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/service"
-	v1 "github.com/IceWhaleTech/CasaOS-AppManagement/service/v1"
 	"github.com/compose-spec/compose-go/types"
 	jsoniter "github.com/json-iterator/go"
 	"github.com/samber/lo"
@@ -184,7 +184,7 @@ func (a *AppFile) ComposeAppStoreInfo() *codegen.ComposeAppStoreInfo {
 	}
 
 	architectures := []string{"amd64"}
-	_architectures, err := v1.GetArchitectures(a.Container.Image, false)
+	_architectures, err := docker.GetArchitectures(a.Container.Image, false)
 	if err == nil {
 		architectures = _architectures
 	}
