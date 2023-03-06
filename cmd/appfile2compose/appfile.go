@@ -88,7 +88,7 @@ type AppFile struct {
 		} `json:"constraints"`
 		RestartPolicy string        `json:"restart_policy"`
 		Sysctls       []interface{} `json:"sysctls"`
-		CapAdd        struct{}      `json:"cap_add"`
+		CapAdd        []string      `json:"cap_add"`
 		Labels        []interface{} `json:"labels"`
 	} `json:"container"`
 	Abilities struct {
@@ -242,6 +242,7 @@ func (a *AppFile) ComposeApp() *service.ComposeApp {
 		Devices:        devices,
 		MemReservation: types.UnitBytes(a.Container.Constraints.MinMemory * 1024 * 1024),
 		Restart:        a.Container.RestartPolicy,
+		CapAdd:         a.Container.CapAdd,
 		Extensions: map[string]interface{}{
 			common.ComposeExtensionNameXCasaOS: a.AppStoreInfo(),
 		},
