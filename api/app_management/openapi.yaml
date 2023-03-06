@@ -1157,15 +1157,9 @@ components:
           example: https://cdn.jsdelivr.net/gh/IceWhaleTech/CasaOS-AppStore@main/Apps/Syncthing/icon.png
         type:
           type: string
-          enum: 
+          enum:
             - official
             - community
-        protocol:
-          type: string
-          example: https
-        host:
-          type: string
-          example: 0.0.0.0
         port:
           type: string
           example: 3000

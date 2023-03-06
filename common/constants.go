@@ -11,8 +11,11 @@ const (
 	ComposeExtensionNameXCasaOS            = "x-casaos"
 	ComposeExtensionPropertyNameStoreAppID = "store_app_id"
 	ComposeYAMLFileName                    = "docker-compose.yml"
-	RecommendListFileName                  = "recommend-list.json"
-	AppsDirectoryName                      = "Apps"
+
+	ComposeAppOfficialAuthor = "CasaOS Team"
+
+	RecommendListFileName = "recommend-list.json"
+	AppsDirectoryName     = "Apps"
 
 	MIMEApplicationYAML = "application/yaml"
 

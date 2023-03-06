@@ -2,7 +2,6 @@ package service
 
 import (
 	"crypto/md5" // nolint: gosec
-	_ "embed"
 	"fmt"
 	"net/url"
 	"os"
@@ -25,9 +24,6 @@ type AppStore struct {
 }
 
 var (
-	//go:embed fixtures/sample.docker-compose.yaml
-	SampleComposeAppYAML string
-
 	ErrNotAppStore             = fmt.Errorf("not an appstore")
 	ErrDefaultAppStoreNotFound = fmt.Errorf("default appstore not found")
 )
