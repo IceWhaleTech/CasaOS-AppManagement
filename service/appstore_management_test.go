@@ -1,4 +1,4 @@
-package service
+package service_test
 
 import (
 	"os"
@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/IceWhaleTech/CasaOS-AppManagement/pkg/config"
+	"github.com/IceWhaleTech/CasaOS-AppManagement/service"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/logger"
 	"go.uber.org/goleak"
 	"gotest.tools/v3/assert"
@@ -27,7 +28,7 @@ func TestAppStoreList(t *testing.T) {
 
 	defer os.RemoveAll(config.AppInfo.AppStorePath)
 
-	appStoreManagement := NewAppStoreManagement()
+	appStoreManagement := service.NewAppStoreManagement()
 
 	appStoreList := appStoreManagement.AppStoreList()
 	assert.Equal(t, len(appStoreList), 1)

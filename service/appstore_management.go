@@ -34,7 +34,7 @@ func (a *AppStoreManagement) AppStoreList() []codegen.AppStoreMetadata {
 			return codegen.AppStoreMetadata{}
 		}
 
-		storeRoot, err := storeRoot(workDir)
+		storeRoot, err := StoreRoot(workDir)
 		if err != nil {
 			logger.Error("failed to get appstore storeRoot", zap.Error(err), zap.String("appstoreURL", appStoreURL))
 			storeRoot = "internal error - store root not found"

@@ -22,7 +22,7 @@ func (a *AppManagement) GetAppGrid(ctx echo.Context) error {
 	}
 
 	appGridItems := lo.Map(lo.Values(composeAppsWithStoreInfo), func(app codegen.ComposeAppWithStoreInfo, i int) codegen.WebAppGridItem {
-		item, err := webAppGridItemAdapter(app)
+		item, err := WebAppGridItemAdapter(app)
 		if err != nil {
 			logger.Error("failed to adapte web app grid item", zap.Error(err), zap.String("app", app.Compose.Name))
 			return codegen.WebAppGridItem{}
@@ -36,7 +36,7 @@ func (a *AppManagement) GetAppGrid(ctx echo.Context) error {
 	})
 }
 
-func webAppGridItemAdapter(app codegen.ComposeAppWithStoreInfo) (*codegen.WebAppGridItem, error) {
+func WebAppGridItemAdapter(app codegen.ComposeAppWithStoreInfo) (*codegen.WebAppGridItem, error) {
 	if app.StoreInfo == nil {
 		return nil, fmt.Errorf("failed to get store info for compose app %s", app.Compose.Name)
 	}

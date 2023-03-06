@@ -1,4 +1,4 @@
-package main
+package main_test
 
 import (
 	"io/fs"
@@ -6,6 +6,8 @@ import (
 	"testing"
 
 	_logger "github.com/IceWhaleTech/CasaOS-Common/utils/logger"
+
+	main "github.com/IceWhaleTech/CasaOS-AppManagement/cmd/appfile2compose"
 
 	"github.com/IceWhaleTech/CasaOS-AppManagement/service"
 	"github.com/google/go-cmp/cmp/cmpopts"
@@ -16,7 +18,7 @@ import (
 func TestMain(t *testing.T) {
 	_logger.LogInitConsoleOnly()
 
-	appFile, err := NewAppFile(filepath.Join("fixtures", "appfile.json"))
+	appFile, err := main.NewAppFile(filepath.Join("fixtures", "appfile.json"))
 	assert.NilError(t, err)
 
 	composeApp1 := appFile.ComposeApp()
@@ -27,6 +29,9 @@ func TestMain(t *testing.T) {
 	composeApp2, err := service.NewComposeAppFromYAML(config)
 	assert.NilError(t, err)
 	assert.Assert(t, composeApp2 != nil)
+
+	err = main.Compare(composeApp1, composeApp2)
+	assert.NilError(t, err)
 
 	storeInfo1, err := composeApp1.StoreInfo(true)
 	assert.NilError(t, err)
@@ -68,7 +73,7 @@ func TestAll(t *testing.T) {
 			return nil
 		}
 
-		appFile, err := NewAppFile(path)
+		appFile, err := main.NewAppFile(path)
 		assert.NilError(t, err)
 
 		composeApp1 := appFile.ComposeApp()

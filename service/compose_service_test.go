@@ -1,10 +1,11 @@
-package service
+package service_test
 
 import (
 	"context"
 	"testing"
 
 	"github.com/IceWhaleTech/CasaOS-AppManagement/pkg/docker"
+	"github.com/IceWhaleTech/CasaOS-AppManagement/service"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/logger"
 	"go.uber.org/goleak"
 	"gotest.tools/v3/assert"
@@ -19,7 +20,7 @@ func TestList(t *testing.T) {
 
 	logger.LogInitConsoleOnly()
 
-	service := NewComposeService()
+	service := service.NewComposeService()
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()

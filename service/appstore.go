@@ -85,7 +85,7 @@ func (s *AppStore) UpdateCatalog() error {
 		return err
 	}
 
-	storeRoot, err := storeRoot(workdir)
+	storeRoot, err := StoreRoot(workdir)
 	if err != nil {
 		return err
 	}
@@ -95,7 +95,7 @@ func (s *AppStore) UpdateCatalog() error {
 		return err
 	}
 
-	s.catalog, err = buildCatalog(storeRoot)
+	s.catalog, err = BuildCatalog(storeRoot)
 	if err != nil {
 		return err
 	}
@@ -115,12 +115,12 @@ func (s *AppStore) Recommend() []string {
 		return nil
 	}
 
-	storeRoot, err := storeRoot(workdir)
+	storeRoot, err := StoreRoot(workdir)
 	if err != nil {
 		return nil
 	}
 
-	return loadRecommend(storeRoot)
+	return LoadRecommend(storeRoot)
 }
 
 func (s *AppStore) Catalog() map[string]*ComposeApp {
@@ -133,12 +133,12 @@ func (s *AppStore) Catalog() map[string]*ComposeApp {
 		return nil
 	}
 
-	storeRoot, err := storeRoot(workdir)
+	storeRoot, err := StoreRoot(workdir)
 	if err != nil {
 		return nil
 	}
 
-	catalog, err := buildCatalog(storeRoot)
+	catalog, err := BuildCatalog(storeRoot)
 	if err != nil {
 		return nil
 	}
@@ -188,7 +188,7 @@ func NewDefaultAppStore() (*AppStore, error) {
 		return nil, ErrDefaultAppStoreNotFound
 	}
 
-	catalog, err := buildCatalog(storeRoot)
+	catalog, err := BuildCatalog(storeRoot)
 	if err != nil {
 		return nil, err
 	}
@@ -199,7 +199,7 @@ func NewDefaultAppStore() (*AppStore, error) {
 	}, nil
 }
 
-func loadRecommend(storeRoot string) []string {
+func LoadRecommend(storeRoot string) []string {
 	recommendListFile := filepath.Join(storeRoot, common.RecommendListFileName)
 
 	// unmarsal recommend list
@@ -230,7 +230,7 @@ func loadRecommend(storeRoot string) []string {
 	return result
 }
 
-func buildCatalog(storeRoot string) (map[string]*ComposeApp, error) {
+func BuildCatalog(storeRoot string) (map[string]*ComposeApp, error) {
 	catalog := map[string]*ComposeApp{}
 
 	// walk through each folder under storeRoot/Apps and build the catalog
@@ -268,7 +268,7 @@ func buildCatalog(storeRoot string) (map[string]*ComposeApp, error) {
 	return catalog, nil
 }
 
-func storeRoot(workdir string) (string, error) {
+func StoreRoot(workdir string) (string, error) {
 	storeRoot := ""
 
 	// locate the path that contains the Apps directory

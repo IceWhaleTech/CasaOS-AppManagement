@@ -1,4 +1,4 @@
-package v2
+package v2_test
 
 import (
 	"os"
@@ -7,6 +7,7 @@ import (
 
 	"github.com/IceWhaleTech/CasaOS-AppManagement/codegen"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/common"
+	v2 "github.com/IceWhaleTech/CasaOS-AppManagement/route/v2"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/service"
 	"github.com/IceWhaleTech/CasaOS-Common/utils"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/file"
@@ -47,7 +48,7 @@ func TestWebAppGridItemAdapter(t *testing.T) {
 		Status:    utils.Ptr("running"),
 	}
 
-	gridItem, err := webAppGridItemAdapter(composeAppWithStoreInfo)
+	gridItem, err := v2.WebAppGridItemAdapter(composeAppWithStoreInfo)
 	assert.NilError(t, err)
 
 	assert.Equal(t, *gridItem.Icon, (*storeInfo.Apps)[*storeInfo.MainApp].Icon)
