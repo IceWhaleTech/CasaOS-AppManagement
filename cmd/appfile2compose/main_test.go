@@ -5,6 +5,8 @@ import (
 	"path/filepath"
 	"testing"
 
+	_logger "github.com/IceWhaleTech/CasaOS-Common/utils/logger"
+
 	"github.com/IceWhaleTech/CasaOS-AppManagement/service"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"gopkg.in/yaml.v3"
@@ -12,6 +14,8 @@ import (
 )
 
 func TestMain(t *testing.T) {
+	_logger.LogInitConsoleOnly()
+
 	appFile, err := NewAppFile(filepath.Join("fixtures", "appfile.json"))
 	assert.NilError(t, err)
 

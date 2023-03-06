@@ -231,7 +231,7 @@ func (o *appStore) GetServerAppInfo(id, t string, language string) (model.Server
 
 	// get architectures
 	imageName := fmt.Sprintf("%s:%s", info.Image, info.ImageVersion)
-	info.Architectures, err = getArchitectures(imageName, false)
+	info.Architectures, err = GetArchitectures(imageName, false)
 	if err != nil {
 		logger.Error("error when getting architectures", zap.Error(err), zap.Any("image", info.Image), zap.Any("version", info.ImageVersion))
 	}
@@ -341,7 +341,7 @@ func GetToken() string {
 	return auth
 }
 
-func getArchitectures(imageName string, noCache bool) ([]string, error) {
+func GetArchitectures(imageName string, noCache bool) ([]string, error) {
 	cacheKey := imageName + ":architectures"
 	if !noCache && Cache != nil {
 		if cached, ok := Cache.Get(cacheKey); ok {

@@ -8,6 +8,7 @@ import (
 	"github.com/IceWhaleTech/CasaOS-AppManagement/codegen"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/common"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/service"
+	v1 "github.com/IceWhaleTech/CasaOS-AppManagement/service/v1"
 	"github.com/compose-spec/compose-go/types"
 	jsoniter "github.com/json-iterator/go"
 	"github.com/samber/lo"
@@ -175,8 +176,23 @@ func (a *AppFile) AppStoreInfo() *codegen.AppStoreInfo {
 }
 
 func (a *AppFile) ComposeAppStoreInfo() *codegen.ComposeAppStoreInfo {
+	// get tag of a docker image
+	tag := "TBD"
+	imageAndTag := strings.Split(a.Container.Image, ":")
+	if len(imageAndTag) > 1 {
+		tag = imageAndTag[1]
+	}
+
+	architectures := []string{"amd64"}
+	_architectures, err := v1.GetArchitectures(a.Container.Image, false)
+	if err == nil {
+		architectures = _architectures
+	}
+
 	return &codegen.ComposeAppStoreInfo{
-		MainApp: &a.Name,
+		MainApp:       &a.Name,
+		Version:       &tag,
+		Architectures: &architectures,
 	}
 }
 
