@@ -986,6 +986,11 @@ components:
         - volumes
         - devices
       properties:
+        hostname:
+          type: string
+          example: ""
+          x-oapi-codegen-extra-tags:
+            yaml: ",omitempty"
         port_map:
           type: string
           example: "8384"
@@ -1160,6 +1165,9 @@ components:
           enum:
             - official
             - community
+        hostname:
+          type: string
+          example: ""
         port:
           type: string
           example: 3000

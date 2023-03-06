@@ -67,6 +67,7 @@ func webAppGridItemAdapter(app codegen.ComposeAppWithStoreInfo) (*codegen.WebApp
 	return &codegen.WebAppGridItem{
 		Icon:       &mainAppStoreInfo.Icon,
 		Image:      &mainApp.Image,
+		Hostname:   mainAppStoreInfo.Container.Hostname,
 		Index:      &mainAppStoreInfo.Container.Index,
 		Port:       &mainAppStoreInfo.Container.PortMap,
 		Status:     app.Status,
