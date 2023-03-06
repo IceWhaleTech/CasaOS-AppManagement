@@ -2,10 +2,12 @@ package service_test
 
 import (
 	"os"
+	"runtime"
 	"strings"
 	"testing"
 
 	"github.com/IceWhaleTech/CasaOS-AppManagement/pkg/config"
+	"github.com/IceWhaleTech/CasaOS-AppManagement/pkg/docker"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/service"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/logger"
 	"go.uber.org/goleak"
@@ -14,6 +16,11 @@ import (
 
 func TestAppStoreList(t *testing.T) {
 	defer goleak.VerifyNone(t, goleak.IgnoreTopFunction("go.opencensus.io/stats/view.(*worker).start")) // https://github.com/census-instrumentation/opencensus-go/issues/1191
+
+	defer func() {
+		docker.Cache = nil
+		runtime.GC()
+	}()
 
 	logger.LogInitConsoleOnly()
 

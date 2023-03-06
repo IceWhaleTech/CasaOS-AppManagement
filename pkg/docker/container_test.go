@@ -3,6 +3,7 @@ package docker_test
 import (
 	"context"
 	"io"
+	"runtime"
 	"testing"
 
 	"github.com/IceWhaleTech/CasaOS-AppManagement/pkg/docker"
@@ -46,6 +47,11 @@ func setupTestContainer(ctx context.Context, t *testing.T) *container.CreateResp
 
 func TestCloneContainer(t *testing.T) {
 	defer goleak.VerifyNone(t)
+
+	defer func() {
+		docker.Cache = nil
+		runtime.GC()
+	}()
 
 	if !docker.IsDaemonRunning() {
 		t.Skip("Docker daemon is not running")

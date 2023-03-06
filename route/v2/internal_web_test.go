@@ -3,10 +3,12 @@ package v2_test
 import (
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 
 	"github.com/IceWhaleTech/CasaOS-AppManagement/codegen"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/common"
+	"github.com/IceWhaleTech/CasaOS-AppManagement/pkg/docker"
 	v2 "github.com/IceWhaleTech/CasaOS-AppManagement/route/v2"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/service"
 	"github.com/IceWhaleTech/CasaOS-Common/utils"
@@ -17,6 +19,11 @@ import (
 
 func TestWebAppGridItemAdapter(t *testing.T) {
 	defer goleak.VerifyNone(t, goleak.IgnoreTopFunction("go.opencensus.io/stats/view.(*worker).start")) // https://github.com/census-instrumentation/opencensus-go/issues/1191
+
+	defer func() {
+		docker.Cache = nil
+		runtime.GC()
+	}()
 
 	storeRoot, err := os.MkdirTemp("", "internal-web-test-*")
 	assert.NilError(t, err)
