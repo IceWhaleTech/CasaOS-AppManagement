@@ -57,14 +57,13 @@ func TestMain(t *testing.T) {
 }
 
 func TestSingle(t *testing.T) {
-	// t.Skip("Tiger's own test - skip")
-
+	t.Skip("Tiger's own test - skip")
 	path := "/home/wxh/dev/CasaOS-AppStore/Apps/TailscaleDaemon/appfile.json"
 	validate(t, path)
 }
 
 func TestAll(t *testing.T) {
-	// t.Skip("Tiger's own test - skip")
+	t.Skip("Tiger's own test - skip")
 	appsRootDir := "/home/wxh/dev/CasaOS-AppStore/Apps"
 
 	err := filepath.WalkDir(appsRootDir, func(path string, d fs.DirEntry, err error) error {
