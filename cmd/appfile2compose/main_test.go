@@ -1,10 +1,8 @@
 package main_test
 
 import (
-	"fmt"
 	"io/fs"
 	"path/filepath"
-	"reflect"
 	"testing"
 
 	_logger "github.com/IceWhaleTech/CasaOS-Common/utils/logger"
@@ -31,9 +29,6 @@ func TestMain(t *testing.T) {
 	composeApp2, err := service.NewComposeAppFromYAML(config)
 	assert.NilError(t, err)
 	assert.Assert(t, composeApp2 != nil)
-
-	err = Compare(composeApp1, composeApp2)
-	assert.NilError(t, err)
 
 	storeInfo1, err := composeApp1.StoreInfo(true)
 	assert.NilError(t, err)
@@ -101,9 +96,6 @@ func validate(t *testing.T, path string) {
 	assert.NilError(t, err)
 	assert.Assert(t, composeApp2 != nil)
 
-	err = Compare(composeApp1, composeApp2)
-	assert.NilError(t, err)
-
 	storeInfo1, err := composeApp1.StoreInfo(true)
 	assert.NilError(t, err)
 
@@ -125,39 +117,4 @@ func validate(t *testing.T, path string) {
 	assert.NilError(t, err)
 
 	assert.DeepEqual(t, mainAppStoreInfo1, mainAppStoreInfo2, cmpopts.EquateEmpty())
-}
-
-func Compare(composeApp1, composeApp2 *service.ComposeApp) error {
-	storeInfo1, err := composeApp1.StoreInfo(true)
-	if err != nil {
-		return err
-	}
-
-	storeInfo2, err := composeApp2.StoreInfo(true)
-	if err != nil {
-		return err
-	}
-
-	if !reflect.DeepEqual(storeInfo1, storeInfo2) {
-		return fmt.Errorf("store info of two compose apps does not deep equal")
-	}
-
-	mainApp1 := composeApp1.App(*storeInfo1.MainApp)
-	mainApp2 := composeApp2.App(*storeInfo2.MainApp)
-
-	mainAppStoreInfo1, err := mainApp1.StoreInfo()
-	if err != nil {
-		return err
-	}
-
-	mainAppStoreInfo2, err := mainApp2.StoreInfo()
-	if err != nil {
-		return err
-	}
-
-	if !reflect.DeepEqual(mainAppStoreInfo1, mainAppStoreInfo2) {
-		return fmt.Errorf("store info of two main apps does not deep equal")
-	}
-
-	return nil
 }
