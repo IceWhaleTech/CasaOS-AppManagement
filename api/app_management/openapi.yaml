@@ -1002,6 +1002,14 @@ components:
         - volumes
         - devices
       properties:
+        scheme:
+          type: string
+          default: http
+          enum:
+            - http
+            - https
+          x-oapi-codegen-extra-tags:
+            yaml: ",omitempty"
         hostname:
           type: string
           example: ""
