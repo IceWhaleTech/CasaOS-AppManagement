@@ -80,7 +80,7 @@ func (a *AppManagement) ComposeAppStoreInfoList(ctx echo.Context, params codegen
 	catalog := service.MyService.V2AppStore().Catalog()
 
 	if params.Category != nil {
-		catalog = filterCatalogByCategory(catalog, *params.Category)
+		catalog = FilterCatalogByCategory(catalog, *params.Category)
 	}
 
 	// list
@@ -170,7 +170,7 @@ func (a *AppManagement) ComposeApp(ctx echo.Context, id codegen.StoreAppID) erro
 	})
 }
 
-func filterCatalogByCategory(catalog map[string]*service.ComposeApp, category string) map[string]*service.ComposeApp {
+func FilterCatalogByCategory(catalog map[string]*service.ComposeApp, category string) map[string]*service.ComposeApp {
 	if category == "" {
 		return catalog
 	}

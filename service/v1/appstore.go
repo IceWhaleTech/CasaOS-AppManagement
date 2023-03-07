@@ -1,7 +1,6 @@
 package v1
 
 import (
-	"context"
 	"fmt"
 	"io"
 	"path/filepath"
@@ -16,13 +15,9 @@ import (
 	"github.com/IceWhaleTech/CasaOS-Common/utils/file"
 	httpUtil "github.com/IceWhaleTech/CasaOS-Common/utils/http"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/logger"
-	"github.com/docker/distribution/manifest/manifestlist"
-	"github.com/docker/distribution/manifest/schema1"
 	jsoniter "github.com/json-iterator/go"
-	"github.com/mitchellh/mapstructure"
 	"github.com/patrickmn/go-cache"
 	"github.com/pkg/errors"
-	"github.com/samber/lo"
 	"go.uber.org/zap"
 )
 
@@ -231,7 +226,7 @@ func (o *appStore) GetServerAppInfo(id, t string, language string) (model.Server
 
 	// get architectures
 	imageName := fmt.Sprintf("%s:%s", info.Image, info.ImageVersion)
-	info.Architectures, err = getArchitectures(imageName, false)
+	info.Architectures, err = docker.GetArchitectures(imageName, false)
 	if err != nil {
 		logger.Error("error when getting architectures", zap.Error(err), zap.Any("image", info.Image), zap.Any("version", info.ImageVersion))
 	}
@@ -339,90 +334,4 @@ func GetToken() string {
 
 	Cache.SetDefault(keyName, auth)
 	return auth
-}
-
-func getArchitectures(imageName string, noCache bool) ([]string, error) {
-	cacheKey := imageName + ":architectures"
-	if !noCache && Cache != nil {
-		if cached, ok := Cache.Get(cacheKey); ok {
-			if archs, ok := cached.([]string); ok {
-				return archs, nil
-			}
-		}
-	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
-	manfest, contentType, err := docker.GetManifest(ctx, imageName)
-	if err != nil {
-		return nil, err
-	}
-
-	logger.Info("got manifest", zap.Any("image", imageName), zap.Any("contentType", contentType))
-
-	var architectures []string
-
-	architectures, err = tryGetArchitecturesFromManifestList(manfest)
-	if err != nil {
-		logger.Info("failed to get architectures from manifest list", zap.Error(err))
-	}
-
-	if len(architectures) == 0 {
-		architectures, err = tryGetArchitecturesFromV1SignedManifest(manfest)
-		if err != nil {
-			logger.Info("failed to get architectures from v1 signed manifest", zap.Error(err))
-		}
-	}
-
-	if Cache != nil && len(architectures) > 0 {
-		Cache.Set(cacheKey, architectures, 4*time.Hour)
-	} else {
-		logger.Info("WARNING: cache is not initialized - will still be getting container image manifest from network next time.")
-	}
-
-	return architectures, nil
-}
-
-func tryGetArchitecturesFromManifestList(manifest interface{}) ([]string, error) {
-	var listManifest manifestlist.ManifestList
-	decoder, err := mapstructure.NewDecoder(&mapstructure.DecoderConfig{Result: &listManifest, Squash: true})
-	if err != nil {
-		return nil, err
-	}
-
-	if err := decoder.Decode(manifest); err != nil {
-		return nil, err
-	}
-
-	architectures := []string{}
-	for _, platform := range listManifest.Manifests {
-		if platform.Platform.Architecture == "" || platform.Platform.Architecture == "unknown" {
-			continue
-		}
-
-		architectures = append(architectures, platform.Platform.Architecture)
-	}
-
-	architectures = lo.Uniq(architectures)
-
-	return architectures, nil
-}
-
-func tryGetArchitecturesFromV1SignedManifest(manifest interface{}) ([]string, error) {
-	var signedManifest schema1.SignedManifest
-	decoder, err := mapstructure.NewDecoder(&mapstructure.DecoderConfig{Result: &signedManifest, Squash: true})
-	if err != nil {
-		return nil, err
-	}
-
-	if err := decoder.Decode(manifest); err != nil {
-		return nil, err
-	}
-
-	if signedManifest.Architecture == "" || signedManifest.Architecture == "unknown" {
-		return []string{"amd64"}, nil // bad assumption, but works for 99% of the cases
-	}
-
-	return []string{signedManifest.Architecture}, nil
 }

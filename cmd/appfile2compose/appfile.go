@@ -7,6 +7,7 @@ import (
 
 	"github.com/IceWhaleTech/CasaOS-AppManagement/codegen"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/common"
+	"github.com/IceWhaleTech/CasaOS-AppManagement/pkg/docker"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/service"
 	"github.com/compose-spec/compose-go/types"
 	jsoniter "github.com/json-iterator/go"
@@ -87,7 +88,7 @@ type AppFile struct {
 		} `json:"constraints"`
 		RestartPolicy string        `json:"restart_policy"`
 		Sysctls       []interface{} `json:"sysctls"`
-		CapAdd        struct{}      `json:"cap_add"`
+		CapAdd        []string      `json:"cap_add"`
 		Labels        []interface{} `json:"labels"`
 	} `json:"container"`
 	Abilities struct {
@@ -175,8 +176,15 @@ func (a *AppFile) AppStoreInfo() *codegen.AppStoreInfo {
 }
 
 func (a *AppFile) ComposeAppStoreInfo() *codegen.ComposeAppStoreInfo {
+	architectures := []string{"amd64"}
+	_architectures, err := docker.GetArchitectures(a.Container.Image, false)
+	if err == nil {
+		architectures = _architectures
+	}
+
 	return &codegen.ComposeAppStoreInfo{
-		MainApp: &a.Name,
+		MainApp:       &a.Name,
+		Architectures: &architectures,
 	}
 }
 
@@ -226,6 +234,7 @@ func (a *AppFile) ComposeApp() *service.ComposeApp {
 		Devices:        devices,
 		MemReservation: types.UnitBytes(a.Container.Constraints.MinMemory * 1024 * 1024),
 		Restart:        a.Container.RestartPolicy,
+		CapAdd:         a.Container.CapAdd,
 		Extensions: map[string]interface{}{
 			common.ComposeExtensionNameXCasaOS: a.AppStoreInfo(),
 		},

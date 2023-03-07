@@ -1,10 +1,11 @@
-package docker
+package docker_test
 
 import (
 	"context"
 	"io"
 	"testing"
 
+	"github.com/IceWhaleTech/CasaOS-AppManagement/pkg/docker"
 	"github.com/docker/distribution/manifest/manifestlist"
 	"github.com/docker/distribution/manifest/schema1"
 	"github.com/docker/docker/api/types"
@@ -20,7 +21,7 @@ import (
 func TestCompareDigest(t *testing.T) {
 	defer goleak.VerifyNone(t)
 
-	if !IsDaemonRunning() {
+	if !docker.IsDaemonRunning() {
 		t.Skip("Docker daemon is not running")
 	}
 
@@ -44,7 +45,7 @@ func TestCompareDigest(t *testing.T) {
 	imageInfo, _, err := cli.ImageInspectWithRaw(ctx, imageName)
 	assert.NilError(t, err)
 
-	match, err := CompareDigest(imageName, imageInfo.RepoDigests)
+	match, err := docker.CompareDigest(imageName, imageInfo.RepoDigests)
 	assert.NilError(t, err)
 
 	assert.Assert(t, match)
@@ -53,7 +54,7 @@ func TestCompareDigest(t *testing.T) {
 func TestGetManifest1(t *testing.T) {
 	defer goleak.VerifyNone(t)
 
-	manifest, contentType, err := GetManifest(context.Background(), "hello-world:latest")
+	manifest, contentType, err := docker.GetManifest(context.Background(), "hello-world:latest")
 	assert.NilError(t, err)
 	assert.Equal(t, contentType, manifestlist.MediaTypeManifestList)
 
@@ -77,7 +78,7 @@ func TestGetManifest1(t *testing.T) {
 
 func TestGetManifest2(t *testing.T) {
 	defer goleak.VerifyNone(t)
-	manifest, contentType, err := GetManifest(context.Background(), "wangxiaohu/brother-cups:latest")
+	manifest, contentType, err := docker.GetManifest(context.Background(), "wangxiaohu/brother-cups:latest")
 	assert.NilError(t, err)
 	assert.Equal(t, contentType, schema1.MediaTypeSignedManifest)
 
@@ -93,7 +94,7 @@ func TestGetManifest2(t *testing.T) {
 
 func TestGetManifest3(t *testing.T) {
 	defer goleak.VerifyNone(t)
-	manifest, contentType, err := GetManifest(context.Background(), "2fauth/2fauth:latest")
+	manifest, contentType, err := docker.GetManifest(context.Background(), "2fauth/2fauth:latest")
 	assert.NilError(t, err)
 	assert.Equal(t, contentType, v1.MediaTypeImageIndex)
 

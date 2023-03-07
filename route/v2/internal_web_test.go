@@ -1,12 +1,15 @@
-package v2
+package v2_test
 
 import (
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 
 	"github.com/IceWhaleTech/CasaOS-AppManagement/codegen"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/common"
+	"github.com/IceWhaleTech/CasaOS-AppManagement/pkg/docker"
+	v2 "github.com/IceWhaleTech/CasaOS-AppManagement/route/v2"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/service"
 	"github.com/IceWhaleTech/CasaOS-Common/utils"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/file"
@@ -16,6 +19,12 @@ import (
 
 func TestWebAppGridItemAdapter(t *testing.T) {
 	defer goleak.VerifyNone(t, goleak.IgnoreTopFunction("go.opencensus.io/stats/view.(*worker).start")) // https://github.com/census-instrumentation/opencensus-go/issues/1191
+
+	defer func() {
+		// workaround due to https://github.com/patrickmn/go-cache/issues/166
+		docker.Cache = nil
+		runtime.GC()
+	}()
 
 	storeRoot, err := os.MkdirTemp("", "internal-web-test-*")
 	assert.NilError(t, err)
@@ -47,7 +56,7 @@ func TestWebAppGridItemAdapter(t *testing.T) {
 		Status:    utils.Ptr("running"),
 	}
 
-	gridItem, err := webAppGridItemAdapter(composeAppWithStoreInfo)
+	gridItem, err := v2.WebAppGridItemAdapter(composeAppWithStoreInfo)
 	assert.NilError(t, err)
 
 	assert.Equal(t, *gridItem.Icon, (*storeInfo.Apps)[*storeInfo.MainApp].Icon)

@@ -1,11 +1,14 @@
-package service
+package service_test
 
 import (
 	"os"
+	"runtime"
 	"strings"
 	"testing"
 
 	"github.com/IceWhaleTech/CasaOS-AppManagement/pkg/config"
+	"github.com/IceWhaleTech/CasaOS-AppManagement/pkg/docker"
+	"github.com/IceWhaleTech/CasaOS-AppManagement/service"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/logger"
 	"go.uber.org/goleak"
 	"gotest.tools/v3/assert"
@@ -13,6 +16,12 @@ import (
 
 func TestAppStoreList(t *testing.T) {
 	defer goleak.VerifyNone(t, goleak.IgnoreTopFunction("go.opencensus.io/stats/view.(*worker).start")) // https://github.com/census-instrumentation/opencensus-go/issues/1191
+
+	defer func() {
+		// workaround due to https://github.com/patrickmn/go-cache/issues/166
+		docker.Cache = nil
+		runtime.GC()
+	}()
 
 	logger.LogInitConsoleOnly()
 
@@ -27,7 +36,7 @@ func TestAppStoreList(t *testing.T) {
 
 	defer os.RemoveAll(config.AppInfo.AppStorePath)
 
-	appStoreManagement := NewAppStoreManagement()
+	appStoreManagement := service.NewAppStoreManagement()
 
 	appStoreList := appStoreManagement.AppStoreList()
 	assert.Equal(t, len(appStoreList), 1)

@@ -1,4 +1,4 @@
-package v2
+package v2_test
 
 import (
 	"testing"
@@ -6,6 +6,7 @@ import (
 	"gotest.tools/v3/assert"
 
 	"github.com/IceWhaleTech/CasaOS-AppManagement/common"
+	v2 "github.com/IceWhaleTech/CasaOS-AppManagement/route/v2"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/service"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/logger"
 	"github.com/compose-spec/compose-go/types"
@@ -16,7 +17,7 @@ func TestFilterCatalogByCategory(t *testing.T) {
 
 	catalog := map[string]*service.ComposeApp{}
 
-	filteredCatalog := filterCatalogByCategory(catalog, "test")
+	filteredCatalog := v2.FilterCatalogByCategory(catalog, "test")
 	assert.Equal(t, len(filteredCatalog), 0)
 
 	catalog["test"] = &service.ComposeApp{
@@ -37,7 +38,7 @@ func TestFilterCatalogByCategory(t *testing.T) {
 		},
 	}
 
-	filteredCatalog = filterCatalogByCategory(catalog, "test")
+	filteredCatalog = v2.FilterCatalogByCategory(catalog, "test")
 	assert.Equal(t, len(filteredCatalog), 1)
 
 	catalog["test2"] = &service.ComposeApp{
@@ -58,6 +59,6 @@ func TestFilterCatalogByCategory(t *testing.T) {
 		},
 	}
 
-	filteredCatalog = filterCatalogByCategory(catalog, "test")
+	filteredCatalog = v2.FilterCatalogByCategory(catalog, "test")
 	assert.Equal(t, len(filteredCatalog), 1)
 }

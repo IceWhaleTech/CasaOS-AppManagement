@@ -1,10 +1,12 @@
-package docker
+package docker_test
 
 import (
 	"context"
 	"io"
+	"runtime"
 	"testing"
 
+	"github.com/IceWhaleTech/CasaOS-AppManagement/pkg/docker"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/random"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
@@ -46,7 +48,13 @@ func setupTestContainer(ctx context.Context, t *testing.T) *container.CreateResp
 func TestCloneContainer(t *testing.T) {
 	defer goleak.VerifyNone(t)
 
-	if !IsDaemonRunning() {
+	defer func() {
+		// workaround due to https://github.com/patrickmn/go-cache/issues/166
+		docker.Cache = nil
+		runtime.GC()
+	}()
+
+	if !docker.IsDaemonRunning() {
 		t.Skip("Docker daemon is not running")
 	}
 
@@ -64,37 +72,37 @@ func TestCloneContainer(t *testing.T) {
 		assert.NilError(t, err)
 	}()
 
-	err = StartContainer(ctx, response.ID)
+	err = docker.StartContainer(ctx, response.ID)
 	assert.NilError(t, err)
 
 	defer func() {
-		err = StopContainer(ctx, response.ID)
+		err = docker.StopContainer(ctx, response.ID)
 		assert.NilError(t, err)
 	}()
 
-	newID, err := CloneContainer(ctx, response.ID, "test-"+random.RandomString(4, false))
+	newID, err := docker.CloneContainer(ctx, response.ID, "test-"+random.RandomString(4, false))
 	assert.NilError(t, err)
 
 	defer func() {
-		err := RemoveContainer(ctx, newID)
+		err := docker.RemoveContainer(ctx, newID)
 		assert.NilError(t, err)
 	}()
 
-	err = StartContainer(ctx, newID)
+	err = docker.StartContainer(ctx, newID)
 	assert.NilError(t, err)
 
 	defer func() {
-		err := StopContainer(ctx, newID)
+		err := docker.StopContainer(ctx, newID)
 		assert.NilError(t, err)
 	}()
 
-	containerInfo, err := Container(ctx, newID)
+	containerInfo, err := docker.Container(ctx, newID)
 	assert.NilError(t, err)
 	assert.Assert(t, lo.Contains(containerInfo.Config.Env, "FOO=BAR"))
 }
 
 func TestNonExistingContainer(t *testing.T) {
-	containerInfo, err := Container(context.Background(), "non-existing-container")
+	containerInfo, err := docker.Container(context.Background(), "non-existing-container")
 	assert.ErrorContains(t, err, "non-existing-container")
 	assert.Assert(t, containerInfo == nil)
 }
