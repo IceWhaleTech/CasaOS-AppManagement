@@ -1,6 +1,6 @@
 {
   "name": "casaos-appmanagement",
-  "version": "1.0.1",
+  "version": "1.0.0",
   "scripts": {
     "clean": "rm -rf dist",
     "generate:publish": "npx @openapitools/openapi-generator-cli generate -g typescript-axios -i ./api/app_management/openapi.yaml -o ./dist",
