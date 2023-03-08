@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "scripts": {
     "clean": "rm -rf dist",
-    "generate:publish": "npx openapi-typescript-codegen --input ./api/app_management/openapi.yaml --output ./dist",
+    "generate:publish": "npx @openapitools/openapi-generator-cli --input ./api/app_management/openapi.yaml --output ./dist",
     "generate:codegen": "npx openapi-typescript-codegen --input ./api/app_management/openapi.yaml --output ./codegen/app_management"
   },
   "homepage": "https://github.com/IceWhaleTech/CasaOS-AppManagement#readme",
