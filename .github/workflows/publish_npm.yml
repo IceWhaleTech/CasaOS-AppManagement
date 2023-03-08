@@ -1,0 +1,25 @@
+name: Collect Code Coverage
+
+on:
+  push:
+    branches:
+      - dev**
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  publish-npm:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v2
+        with:
+          node-version: 16
+          registry-url: https://registry.npmjs.org/
+      - run: npm ci
+      - run: npm run clean
+      - run: npm generate:publish
+        env:
+          NODE_AUTH_TOKEN: ${{secrets.npm_token}}
