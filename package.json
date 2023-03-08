@@ -3,7 +3,7 @@
   "version": "1.0.1",
   "scripts": {
     "clean": "rm -rf dist",
-    "generate:publish": "npx @openapitools/openapi-generator-cli generate -g typescript-axios -i ./api/app_management/openapi.yaml -o ./dist",
+    "generate:publish": "generate -g typescript-axios -i ./api/app_management/openapi.yaml -o ./dist",
     "generate": "npx @openapitools/openapi-generator-cli generate -g typescript-axios -i ./api/app_management/openapi.yaml -o ./dist",
     "generate:codegen": "npx openapi-typescript-codegen --input ./api/app_management/openapi.yaml --output ./codegen/app_management"
   },
@@ -14,7 +14,7 @@
     "SDK",
     "CasaOS-AppManagement Axios"
   ],
-  "main": "index.js",
+  "main": "dist/index.js",
   "dependencies": {
     "openapi-typescript-codegen": "^0.23.0",
     "@openapitools/openapi-generator-cli": "2.5.2"
