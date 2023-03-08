@@ -1084,18 +1084,12 @@ components:
     PortStoreInfo:
       required:
         - container
-        - protocol
         - description
         - configurable
       properties:
         container:
           type: string
           example: 8384
-        protocol:
-          type: string
-          enum:
-            - tcp
-            - udp
         description:
           type: object
           additionalProperties:

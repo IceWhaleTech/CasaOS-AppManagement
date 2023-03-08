@@ -61,6 +61,15 @@ func (a *ComposeApp) StoreInfo(includeApps bool) (*codegen.ComposeAppStoreInfo, 
 		storeInfo.Apps = &apps
 	}
 
+	// check if upgradable
+	// upgradable := false
+	// if storeInfo.StoreAppID != nil && *storeInfo.StoreAppID != "" {
+	// 	storeComposeApp := MyService.V2AppStore().ComposeApp(*storeInfo.StoreAppID)
+	// 	if storeComposeApp != nil {
+	// 		storeMainApp := storeComposeApp.App(*storeInfo.MainApp)
+	// 	}
+	// }
+
 	return &storeInfo, nil
 }
 

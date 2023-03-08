@@ -17,7 +17,15 @@ import (
 	"go.uber.org/zap"
 )
 
-type AppStore struct {
+type AppStore interface {
+	ComposeApp(id string) *ComposeApp
+	Catalog() map[string]*ComposeApp
+	UpdateCatalog() error
+	Recommend() []string
+	WorkDir() (string, error)
+}
+
+type appStore struct {
 	url       string
 	catalog   map[string]*ComposeApp
 	recommend []string
@@ -28,7 +36,7 @@ var (
 	ErrDefaultAppStoreNotFound = fmt.Errorf("default appstore not found")
 )
 
-func (s *AppStore) UpdateCatalog() error {
+func (s *appStore) UpdateCatalog() error {
 	if _, err := url.Parse(s.url); err != nil {
 		return err
 	}
@@ -105,7 +113,7 @@ func (s *AppStore) UpdateCatalog() error {
 	return nil
 }
 
-func (s *AppStore) Recommend() []string {
+func (s *appStore) Recommend() []string {
 	if s.recommend != nil && len(s.recommend) > 0 {
 		return s.recommend
 	}
@@ -123,7 +131,7 @@ func (s *AppStore) Recommend() []string {
 	return LoadRecommend(storeRoot)
 }
 
-func (s *AppStore) Catalog() map[string]*ComposeApp {
+func (s *appStore) Catalog() map[string]*ComposeApp {
 	if s.catalog != nil && len(s.catalog) > 0 {
 		return s.catalog
 	}
@@ -148,7 +156,7 @@ func (s *AppStore) Catalog() map[string]*ComposeApp {
 	return s.catalog
 }
 
-func (s *AppStore) ComposeApp(appStoreID string) *ComposeApp {
+func (s *appStore) ComposeApp(appStoreID string) *ComposeApp {
 	if composeApp, ok := s.catalog[appStoreID]; ok {
 		return composeApp
 	}
@@ -156,7 +164,7 @@ func (s *AppStore) ComposeApp(appStoreID string) *ComposeApp {
 	return nil
 }
 
-func (s *AppStore) WorkDir() (string, error) {
+func (s *appStore) WorkDir() (string, error) {
 	parsedURL, err := url.Parse(s.url)
 	if err != nil {
 		return "", err
@@ -167,7 +175,7 @@ func (s *AppStore) WorkDir() (string, error) {
 	return filepath.Join(config.AppInfo.AppStorePath, parsedURL.Host, hash), nil
 }
 
-func NewAppStore(appstoreURL string) (*AppStore, error) {
+func NewAppStore(appstoreURL string) (AppStore, error) {
 	appstoreURL = strings.ToLower(appstoreURL)
 
 	_, err := url.Parse(appstoreURL)
@@ -175,13 +183,13 @@ func NewAppStore(appstoreURL string) (*AppStore, error) {
 		return nil, err
 	}
 
-	return &AppStore{
+	return &appStore{
 		url:     appstoreURL,
 		catalog: map[string]*ComposeApp{},
 	}, nil
 }
 
-func NewDefaultAppStore() (*AppStore, error) {
+func NewDefaultAppStore() (AppStore, error) {
 	storeRoot := filepath.Join(config.AppInfo.AppStorePath, "default")
 
 	if !file.Exists(storeRoot) {
@@ -193,7 +201,7 @@ func NewDefaultAppStore() (*AppStore, error) {
 		return nil, err
 	}
 
-	return &AppStore{
+	return &appStore{
 		url:     "default",
 		catalog: catalog,
 	}, nil
