@@ -1058,17 +1058,11 @@ components:
             $ref: "#/components/schemas/DeviceStoreInfo"
           x-oapi-codegen-extra-tags:
             yaml: ",omitempty"
-        shell:
-          type: string
-          example: "/bin/sh"
-          x-oapi-codegen-extra-tags:
-            yaml: ",omitempty"
 
     EnvStoreInfo:
       required:
         - container
         - description
-        - configurable
       properties:
         container:
           type: string
@@ -1079,14 +1073,11 @@ components:
             type: string
           example:
             en_US: Time Zone
-        configurable:
-          $ref: "#/components/schemas/Configurable"
 
     PortStoreInfo:
       required:
         - container
         - description
-        - configurable
       properties:
         container:
           type: string
@@ -1097,14 +1088,11 @@ components:
             type: string
           example:
             en_US: Web UI
-        configurable:
-          $ref: "#/components/schemas/Configurable"
 
     VolumeStoreInfo:
       required:
         - container
         - description
-        - configurable
       properties:
         container:
           type: string
@@ -1115,8 +1103,6 @@ components:
             type: string
           example:
             en_US: Syncthing config directory
-        configurable:
-          $ref: "#/components/schemas/Configurable"
 
     DeviceStoreInfo:
       properties:
@@ -1129,8 +1115,6 @@ components:
             type: string
           example:
             en_US: GPU device
-        configurable:
-          $ref: "#/components/schemas/Configurable"
 
     TipsStoreInfo:
       required:
@@ -1143,14 +1127,6 @@ components:
           x-oapi-codegen-extra-tags:
             mapstructure: "before_install"
             yaml: "before_install,omitempty"
-
-    Configurable:
-      type: string
-      enum:
-        - yes
-        - no
-        - basic
-        - advanced
 
     Tip:
       required:
