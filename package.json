@@ -14,6 +14,11 @@
     "SDK",
     "CasaOS-AppManagement Axios"
   ],
+  "dependencies":{
+    "axios": "^0.24.0",
+    "openapi-typescript-codegen": "^0.23.0",
+    "@openapitools/openapi-generator-cli": "2.5.2"
+  },
   "devDependencies": {
     "openapi-typescript-codegen": "^0.23.0",
     "@openapitools/openapi-generator-cli": "2.5.2"
