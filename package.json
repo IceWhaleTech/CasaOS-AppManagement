@@ -1,5 +1,5 @@
 {
-  "name": "casaos-appmanagement",
+  "name": "casaos-appmanagement-openapi",
   "version": "1.0.0",
   "scripts": {
     "clean": "rm -rf dist",
@@ -14,8 +14,18 @@
     "SDK",
     "CasaOS-AppManagement Axios"
   ],
-  "main": "dist/index.js",
+  "main": "dist/index.ts",
+  "files": [
+    "LICENSE",
+    "README.md",
+    "dist"
+  ],
   "dependencies": {
+    "axios": "^1.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^18.8.3",
+    "typescript": "^4.7.4",
     "openapi-typescript-codegen": "^0.23.0",
     "@openapitools/openapi-generator-cli": "2.5.2"
   },
