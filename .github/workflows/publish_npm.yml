@@ -1,4 +1,4 @@
-name: Collect Code Coverage
+name: publish npm
 
 on:
   push:
