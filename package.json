@@ -1,6 +1,6 @@
 {
   "name": "casaos-appmanagement",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "scripts": {
     "clean": "rm -rf dist",
     "generate:publish": "npx @openapitools/openapi-generator-cli generate -g typescript-axios -i ./api/app_management/openapi.yaml -o ./dist",
@@ -19,24 +19,6 @@
     "@openapitools/openapi-generator-cli": "2.5.2"
   },
   "main": "index.js",
-  "dependencies": {
-    "argparse": "^2.0.1",
-    "call-me-maybe": "^1.0.2",
-    "camelcase": "^6.3.0",
-    "commander": "^9.5.0",
-    "fs-extra": "^10.1.0",
-    "graceful-fs": "^4.2.10",
-    "handlebars": "^4.7.7",
-    "js-yaml": "^4.1.0",
-    "json-schema-ref-parser": "^9.0.9",
-    "jsonfile": "^6.1.0",
-    "minimist": "^1.2.8",
-    "neo-async": "^2.6.2",
-    "source-map": "^0.6.1",
-    "uglify-js": "^3.17.4",
-    "universalify": "^2.0.0",
-    "wordwrap": "^1.0.0"
-  },
-  "author": "",
+  "author": "casaos",
   "license": "MIT"
 }
