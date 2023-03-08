@@ -20,9 +20,9 @@ jobs:
           registry-url: https://registry.npmjs.org/
       - name: Generate SDK
         run: |
+          npm cache clean --force
           npm install @openapitools/openapi-generator-cli -g
           make build
-      - run: npm cache clean --force
       - run: npm i
       - run: npm run clean
       - run: npm run generate:publish
