@@ -5,7 +5,7 @@ services:
       PGID: $PGID
       PUID: $PUID
       TZ: $TZ
-    image: linuxserver/syncthing:latest
+    image: linuxserver/syncthing:1.23.1
     deploy:
       resources:
         reservations:
@@ -49,7 +49,6 @@ services:
             container: PGID
             description:
               en_US: Run Syncthing as specified gid.
-        hostname: localhost
         index: /
         port_map: "8384"
         ports:
@@ -94,4 +93,8 @@ services:
       title:
         en_US: Syncthing
 x-casaos:
+  architectures:
+    - amd64
+    - arm
+    - arm64
   main_app: syncthing

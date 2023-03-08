@@ -844,13 +844,7 @@ components:
           x-oapi-codegen-extra-tags:
             mapstructure: "store_app_id"
             yaml: "store_app_id,omitempty"
-        upgradable:
-          title: Whether the compose app is upgradable
-          readOnly: true
-          type: boolean
-          example: true
-          x-oapi-codegen-extra-tags:
-            yaml: ",omitempty"
+
         apps:
           title: store info of container apps included in the compose app
           description: |
@@ -909,6 +903,13 @@ components:
           type: string
           readOnly: true
           example: running
+        upgradable:
+          title: Whether the compose app is upgradable
+          readOnly: true
+          type: boolean
+          example: true
+          x-oapi-codegen-extra-tags:
+            yaml: ",omitempty"
 
     AppStoreInfo:
       title: StoreInfo of an app

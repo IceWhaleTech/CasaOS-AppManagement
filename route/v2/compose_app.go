@@ -343,16 +343,27 @@ func composeAppsWithStoreInfo(ctx context.Context) (map[string]codegen.ComposeAp
 			logger.Error("failed to get store info", zap.Error(err), zap.String("composeAppID", id))
 		}
 
+		// get status
 		status, err := service.MyService.Compose().Status(ctx, composeApp.Name)
 		if err != nil {
 			status = "unknown"
 			logger.Error("failed to get compose app status", zap.Error(err), zap.String("composeAppID", id))
 		}
 
+		// check if upgradable
+		upgradable := false
+		if storeInfo.StoreAppID != nil && *storeInfo.StoreAppID != "" {
+			storeComposeApp := service.MyService.V2AppStore().ComposeApp(*storeInfo.StoreAppID)
+			if storeComposeApp != nil {
+				upgradable = service.IsUpgradable(composeApp, storeComposeApp)
+			}
+		}
+
 		return codegen.ComposeAppWithStoreInfo{
-			Compose:   (*codegen.ComposeApp)(composeApp),
-			StoreInfo: storeInfo,
-			Status:    &status,
+			Compose:    (*codegen.ComposeApp)(composeApp),
+			StoreInfo:  storeInfo,
+			Status:     &status,
+			Upgradable: &upgradable,
 		}
 	}), nil
 }
