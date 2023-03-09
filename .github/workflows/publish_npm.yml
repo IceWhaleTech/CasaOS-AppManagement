@@ -25,6 +25,7 @@ jobs:
           make build
       - run: npm i
       - run: npm run generate:local
+      - run: npm run build
       - run: npm publish
         env:
           NODE_AUTH_TOKEN: ${{secrets.npm_token}}
