@@ -17,7 +17,7 @@ type AppStoreManagement struct {
 	onAppStoreRegister   []func(string) error
 	onAppStoreUnregister []func(string) error
 
-	defaultAppStore *AppStore
+	defaultAppStore AppStore
 }
 
 func (a *AppStoreManagement) AppStoreList() []codegen.AppStoreMetadata {
@@ -108,6 +108,10 @@ func (a *AppStoreManagement) RegisterAppStore(appstoreURL string) (chan *codegen
 }
 
 func (a *AppStoreManagement) UnregisterAppStore(appStoreID uint) error {
+	if appStoreID >= uint(len(config.ServerInfo.AppStoreList)) {
+		return fmt.Errorf("appstore id %d out of range", appStoreID)
+	}
+
 	appStoreURL := config.ServerInfo.AppStoreList[appStoreID]
 
 	// remove appstore from list
@@ -145,6 +149,20 @@ func (a *AppStoreManagement) UnregisterAppStore(appStoreID uint) error {
 	}
 	return nil
 }
+
+func (a *AppStoreManagement) AppStoreMap() (map[string]AppStore, error) {
+	appStoreMap := lo.SliceToMap(config.ServerInfo.AppStoreList, func(appStoreURL string) (string, AppStore) {
+		appStore, err := NewAppStore(appStoreURL)
+		if err != nil {
+			return "", nil
+		}
+		return appStoreURL, appStore
+	})
+
+	return appStoreMap, nil
+}
+
+// AppStore interface
 
 func (a *AppStoreManagement) Recommend() []string {
 	appStoreMap, err := a.AppStoreMap()
@@ -190,11 +208,10 @@ func (a *AppStoreManagement) Catalog() map[string]*ComposeApp {
 	return catalog
 }
 
-func (a *AppStoreManagement) UpdateCatalog() {
+func (a *AppStoreManagement) UpdateCatalog() error {
 	appStoreMap, err := a.AppStoreMap()
 	if err != nil {
-		logger.Error("error while loading appstore map", zap.Error(err))
-		return
+		return err
 	}
 
 	for url, appStore := range appStoreMap {
@@ -202,6 +219,8 @@ func (a *AppStoreManagement) UpdateCatalog() {
 			logger.Error("error while updating catalog for app store", zap.Error(err), zap.String("url", url))
 		}
 	}
+
+	return nil
 }
 
 func (a *AppStoreManagement) ComposeApp(id string) *ComposeApp {
@@ -229,16 +248,8 @@ func (a *AppStoreManagement) ComposeApp(id string) *ComposeApp {
 	return a.defaultAppStore.ComposeApp(id)
 }
 
-func (a *AppStoreManagement) AppStoreMap() (map[string]*AppStore, error) {
-	appStoreMap := lo.SliceToMap(config.ServerInfo.AppStoreList, func(appStoreURL string) (string, *AppStore) {
-		appStore, err := NewAppStore(appStoreURL)
-		if err != nil {
-			return "", nil
-		}
-		return appStoreURL, appStore
-	})
-
-	return appStoreMap, nil
+func (a *AppStoreManagement) WorkDir() (string, error) {
+	panic("not implemented and will never be implemented - this is a virtual appstore")
 }
 
 func NewAppStoreManagement() *AppStoreManagement {

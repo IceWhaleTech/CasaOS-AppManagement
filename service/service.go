@@ -34,7 +34,7 @@ type Services interface {
 	AppStoreManagement() *AppStoreManagement
 
 	V1AppStore() v1.AppStore
-	V2AppStore() *AppStoreManagement
+	V2AppStore() AppStore
 
 	// Git() *GitService
 	Compose() *ComposeService
@@ -50,7 +50,8 @@ func NewService(RuntimePath string) Services {
 		panic(err)
 	}
 
-	v2appStore := NewAppStoreManagement()
+	v2appStore := AppStore(NewAppStoreManagement())
+
 	return &store{
 		gateway: gatewayManagement,
 		notify:  external.NewNotifyService(RuntimePath),
@@ -68,7 +69,7 @@ type store struct {
 	appStoreManagement *AppStoreManagement
 
 	v1appStore v1.AppStore
-	v2appStore *AppStoreManagement
+	v2appStore AppStore
 
 	// git     *GitService
 	compose *ComposeService
@@ -93,7 +94,7 @@ func (c *store) V1AppStore() v1.AppStore {
 	return c.v1appStore
 }
 
-func (c *store) V2AppStore() *AppStoreManagement {
+func (c *store) V2AppStore() AppStore {
 	return c.v2appStore
 }
 

@@ -24,7 +24,7 @@ var (
 
 	ServerInfo = &model.ServerModel{
 		ServerAPI:    "https://api.casaos.io/casaos-api",
-		AppStoreList: []string{"https://github.com/IceWhaleTech/CasaOS-AppStore.git"},
+		AppStoreList: []string{},
 	}
 
 	CasaOSGlobalVariables = &model.CasaOSGlobalVariables{}

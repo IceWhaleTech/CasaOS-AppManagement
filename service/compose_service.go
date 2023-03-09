@@ -42,13 +42,13 @@ func (s *ComposeService) Install(ctx context.Context, composeYAML []byte) error 
 	}
 
 	// set store_app_id (by convention is the same as app name at install time if it does not exist)
-	if extension, ok := composeApp.Extensions[common.ComposeExtensionNameXCasaOS]; ok {
-		if composeAppStoreInfo, ok := extension.(map[string]interface{}); ok {
-			if _, ok := composeAppStoreInfo[common.ComposeExtensionPropertyNameStoreAppID]; !ok {
-				composeAppStoreInfo[common.ComposeExtensionPropertyNameStoreAppID] = composeApp.Name
-			}
-		}
+	storeAppID, ok := composeApp.SetStoreAppID(composeApp.Name)
+	if !ok {
+		logger.Error("failed to set store app ID", zap.String("name", composeApp.Name))
+		return err
 	}
+
+	logger.Info("installing compose app", zap.String("store_app_id", storeAppID))
 
 	composeYAMLInterpolated, err := yaml.Marshal(composeApp)
 	if err != nil {

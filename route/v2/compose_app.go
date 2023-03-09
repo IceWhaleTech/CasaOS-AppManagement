@@ -81,14 +81,24 @@ func (a *AppManagement) MyComposeApp(ctx echo.Context, id codegen.ComposeAppID) 
 		logger.Error("failed to get compose app status", zap.Error(err), zap.String("composeAppID", id))
 	}
 
+	// check if upgradable
+	upgradable := false
+	if storeInfo != nil && storeInfo.StoreAppID != nil && *storeInfo.StoreAppID != "" {
+		storeComposeApp := service.MyService.V2AppStore().ComposeApp(*storeInfo.StoreAppID)
+		if storeComposeApp != nil {
+			upgradable = service.IsUpgradable(composeApp, storeComposeApp)
+		}
+	}
+
 	message := fmt.Sprintf("!! JSON format is for debugging purpose only - use `Accept: %s` HTTP header to get YAML instead !!", common.MIMEApplicationYAML)
 	return ctx.JSON(http.StatusOK, codegen.ComposeAppOK{
 		// extension properties aren't marshalled - https://github.com/golang/go/issues/6213
 		Message: &message,
 		Data: &codegen.ComposeAppWithStoreInfo{
-			StoreInfo: storeInfo,
-			Compose:   (*types.Project)(composeApp),
-			Status:    &status,
+			StoreInfo:  storeInfo,
+			Compose:    (*types.Project)(composeApp),
+			Status:     &status,
+			Upgradable: &upgradable,
 		},
 	})
 }
@@ -343,16 +353,27 @@ func composeAppsWithStoreInfo(ctx context.Context) (map[string]codegen.ComposeAp
 			logger.Error("failed to get store info", zap.Error(err), zap.String("composeAppID", id))
 		}
 
+		// get status
 		status, err := service.MyService.Compose().Status(ctx, composeApp.Name)
 		if err != nil {
 			status = "unknown"
 			logger.Error("failed to get compose app status", zap.Error(err), zap.String("composeAppID", id))
 		}
 
+		// check if upgradable
+		upgradable := false
+		if storeInfo != nil && storeInfo.StoreAppID != nil && *storeInfo.StoreAppID != "" {
+			storeComposeApp := service.MyService.V2AppStore().ComposeApp(*storeInfo.StoreAppID)
+			if storeComposeApp != nil {
+				upgradable = service.IsUpgradable(composeApp, storeComposeApp)
+			}
+		}
+
 		return codegen.ComposeAppWithStoreInfo{
-			Compose:   (*codegen.ComposeApp)(composeApp),
-			StoreInfo: storeInfo,
-			Status:    &status,
+			Compose:    (*codegen.ComposeApp)(composeApp),
+			StoreInfo:  storeInfo,
+			Status:     &status,
+			Upgradable: &upgradable,
 		}
 	}), nil
 }

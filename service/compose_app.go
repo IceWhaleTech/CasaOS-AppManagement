@@ -64,6 +64,71 @@ func (a *ComposeApp) StoreInfo(includeApps bool) (*codegen.ComposeAppStoreInfo, 
 	return &storeInfo, nil
 }
 
+func (a *ComposeApp) SetStoreAppID(storeAppID string) (string, bool) {
+	// set store_app_id (by convention is the same as app name at install time if it does not exist)
+	extension, ok := a.Extensions[common.ComposeExtensionNameXCasaOS]
+	if !ok {
+		logger.Info("compose app does not have x-casaos extension - might not be a compose app for CasaOS", zap.String("app", a.Name))
+		return "", false
+	}
+
+	composeAppStoreInfo, ok := extension.(map[string]interface{})
+	if !ok {
+		logger.Info("compose app does not have valid x-casaos extension - might not be a compose app for CasaOS", zap.String("app", a.Name))
+		return "", false
+	}
+
+	value, ok := composeAppStoreInfo[common.ComposeExtensionPropertyNameStoreAppID]
+	if ok {
+		currentStoreAppID, ok := value.(string)
+		if ok {
+			logger.Info("compose app already has store_app_id", zap.String("app", a.Name), zap.String("storeAppID", currentStoreAppID))
+			return currentStoreAppID, true
+		}
+	}
+
+	composeAppStoreInfo[common.ComposeExtensionPropertyNameStoreAppID] = storeAppID
+	return storeAppID, true
+}
+
+func IsUpgradable(localComposeApp, storeComposeApp *ComposeApp) bool {
+	storeComposeAppStoreInfo, err := storeComposeApp.StoreInfo(false)
+	if err != nil || storeComposeAppStoreInfo == nil {
+		logger.Error("failed to get store info of store compose app, thus not upgradable", zap.Error(err))
+		return false
+	}
+
+	mainAppName := *storeComposeAppStoreInfo.MainApp
+
+	mainApp := localComposeApp.App(mainAppName)
+	if mainApp == nil {
+		logger.Error("main app not found in local compose app, thus not upgradable", zap.String("name", mainAppName))
+		return false
+	}
+
+	storeMainApp := storeComposeApp.App(mainAppName)
+	if storeMainApp == nil {
+		logger.Error("main app not found in store compose app, thus not upgradable", zap.String("name", mainAppName))
+		return false
+	}
+
+	mainAppImage, mainAppTag := docker.ExtractImageAndTag(mainApp.Image)
+	storeMainAppImage, storeMainAppTag := docker.ExtractImageAndTag(storeMainApp.Image)
+
+	if mainAppImage != storeMainAppImage {
+		logger.Error("main app image not match for local app and store app, thus not upgradable", zap.String("local", mainApp.Image), zap.String("store", storeMainApp.Image))
+		return false
+	}
+
+	if mainAppTag == storeMainAppTag {
+		logger.Info("main apps of local app and store app have identical image tag, thus not upgradable", zap.String("local", mainApp.Image), zap.String("store", storeMainApp.Image))
+		return false
+	}
+
+	logger.Info("main apps of local app and store app have different image tag, thus upgradable", zap.String("local", mainApp.Image), zap.String("store", storeMainApp.Image))
+	return true
+}
+
 func (a *ComposeApp) App(name string) *App {
 	if name == "" {
 		return nil
