@@ -39,7 +39,7 @@ func TestAppStoreList(t *testing.T) {
 	appStoreManagement := service.NewAppStoreManagement()
 
 	appStoreList := appStoreManagement.AppStoreList()
-	assert.Equal(t, len(appStoreList), 1)
+	assert.Equal(t, len(appStoreList), 0)
 
 	registeredAppStoreList := []string{}
 	appStoreManagement.OnAppStoreRegister(func(appStoreURL string) error {
@@ -62,12 +62,12 @@ func TestAppStoreList(t *testing.T) {
 	assert.Assert(t, len(registeredAppStoreList) == 1)
 
 	appStoreList = appStoreManagement.AppStoreList()
-	assert.Equal(t, len(appStoreList), 2)
+	assert.Equal(t, len(appStoreList), 1)
 
-	actualAppStoreURL := *appStoreList[1].URL
+	actualAppStoreURL := *appStoreList[0].URL
 	assert.Equal(t, actualAppStoreURL, expectAppStoreURL)
 
-	err = appStoreManagement.UnregisterAppStore(1)
+	err = appStoreManagement.UnregisterAppStore(0)
 	assert.NilError(t, err)
 	assert.Assert(t, len(unregisteredAppStoreList) == 1)
 

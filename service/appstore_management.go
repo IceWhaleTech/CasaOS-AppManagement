@@ -108,6 +108,10 @@ func (a *AppStoreManagement) RegisterAppStore(appstoreURL string) (chan *codegen
 }
 
 func (a *AppStoreManagement) UnregisterAppStore(appStoreID uint) error {
+	if appStoreID >= uint(len(config.ServerInfo.AppStoreList)) {
+		return fmt.Errorf("appstore id %d out of range", appStoreID)
+	}
+
 	appStoreURL := config.ServerInfo.AppStoreList[appStoreID]
 
 	// remove appstore from list
