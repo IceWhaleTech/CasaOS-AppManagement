@@ -456,7 +456,7 @@ func LoadComposeAppFromConfigFile(appID string, configFile string) (*ComposeApp,
 	return (*ComposeApp)(project), err
 }
 
-func NewComposeAppFromYAML(yaml []byte) (*ComposeApp, error) {
+func NewComposeAppFromYAML(yaml []byte, skipInterpolation, skipValidation bool) (*ComposeApp, error) {
 	// env := baseInterpolationMap()
 	// appID := getNameFrom(yaml)
 	// if appID == "" {
@@ -472,7 +472,10 @@ func NewComposeAppFromYAML(yaml []byte) (*ComposeApp, error) {
 			},
 			Environment: map[string]string{},
 		},
-		func(o *loader.Options) { o.SkipInterpolation = true },
+		func(o *loader.Options) {
+			o.SkipInterpolation = skipInterpolation
+			o.SkipValidation = skipValidation
+		},
 	)
 	if err != nil {
 		return nil, err
