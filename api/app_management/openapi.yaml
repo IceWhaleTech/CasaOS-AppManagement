@@ -1011,13 +1011,7 @@ components:
         - devices
       properties:
         scheme:
-          type: string
-          default: http
-          enum:
-            - http
-            - https
-          x-oapi-codegen-extra-tags:
-            yaml: ",omitempty"
+          $ref: "#/components/schemas/Scheme"
         hostname:
           type: string
           example: ""
@@ -1144,6 +1138,15 @@ components:
           x-oapi-codegen-extra-tags:
             yaml: ",omitempty"
 
+    Scheme:
+      type: string
+      default: http
+      enum:
+        - http
+        - https
+      x-oapi-codegen-extra-tags:
+        yaml: ",omitempty"
+
     WebAppGridItem:
       description: (internal use ONLY)
       properties:
@@ -1151,13 +1154,12 @@ components:
           type: string
           example: syncthing
         scheme:
-          type: string
-          enum:
-            - http
-            - https
+          $ref: "#/components/schemas/Scheme"
         status:
           type: string
           example: running
+        name:
+          type: string
         title:
           type: object
           additionalProperties:

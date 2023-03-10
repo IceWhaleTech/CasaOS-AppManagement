@@ -65,11 +65,13 @@ func WebAppGridItemAdapter(app codegen.ComposeAppWithStoreInfo) (*codegen.WebApp
 	itemType := (codegen.WebAppGridItemType)(lo.If(mainAppStoreInfo.Author == common.ComposeAppOfficialAuthor, "official").Else("community"))
 
 	return &codegen.WebAppGridItem{
+		Hostname:   mainAppStoreInfo.Container.Hostname,
 		Icon:       &mainAppStoreInfo.Icon,
 		Image:      &mainApp.Image,
-		Hostname:   mainAppStoreInfo.Container.Hostname,
 		Index:      &mainAppStoreInfo.Container.Index,
+		Name:       &app.Compose.Name,
 		Port:       &mainAppStoreInfo.Container.PortMap,
+		Scheme:     mainAppStoreInfo.Container.Scheme,
 		Status:     app.Status,
 		StoreAppId: app.StoreInfo.StoreAppID,
 		Title:      &mainAppStoreInfo.Title,
