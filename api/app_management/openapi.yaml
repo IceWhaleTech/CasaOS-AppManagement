@@ -1150,6 +1150,11 @@ components:
         store_app_id:
           type: string
           example: syncthing
+        scheme:
+          type: string
+          enum:
+            - http
+            - https
         status:
           type: string
           example: running
