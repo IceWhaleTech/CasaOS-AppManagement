@@ -36,7 +36,7 @@ func (s *ComposeService) PrepareWorkingDirectory(name string) (string, error) {
 
 func (s *ComposeService) Install(ctx context.Context, composeYAML []byte) error {
 	// load compose app with env variable interpolation
-	composeApp, err := NewComposeAppFromYAML(composeYAML)
+	composeApp, err := NewComposeAppFromYAML(composeYAML, true, true)
 	if err != nil {
 		return err
 	}
