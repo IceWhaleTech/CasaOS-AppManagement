@@ -343,20 +343,18 @@ func (ds *dockerService) CreateContainerShellSession(container, row, col string)
 	}
 
 	ctx := context.Background()
-	// 执行/bin/bash命令
 	ir, err := cli.ContainerExecCreate(ctx, container, types.ExecConfig{
 		AttachStdin:  true,
 		AttachStdout: true,
 		AttachStderr: true,
 		Env:          []string{"COLUMNS=" + col, "LINES=" + row},
-		Cmd:          []string{"/bin/bash"},
+		Cmd:          []string{"/bin/sh"},
 		Tty:          true,
 	})
 	if err != nil {
 		return types.HijackedResponse{}, err
 	}
 
-	// 附加到上面创建的/bin/bash进程中
 	return cli.ContainerExecAttach(ctx, ir.ID, types.ExecStartCheck{Detach: false, Tty: true})
 }
 
