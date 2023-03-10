@@ -28,8 +28,3 @@ func (a *App) StoreInfo() (*codegen.AppStoreInfo, error) {
 
 	return &storeInfo, nil
 }
-
-func (a *App) State() error {
-	// TODO implement installation state
-	return nil
-}

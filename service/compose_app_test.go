@@ -1,7 +1,6 @@
 package service_test
 
 import (
-	"os"
 	"path/filepath"
 	"runtime"
 	"testing"
@@ -39,13 +38,7 @@ func TestIsUpgradable(t *testing.T) {
 	assert.NilError(t, err)
 
 	// mock local compose app
-	appsPath, err := os.MkdirTemp("", "compose-app-test-*")
-	assert.NilError(t, err)
-
-	err = file.MkDir(appsPath)
-	assert.NilError(t, err)
-
-	defer file.RMDir(appsPath)
+	appsPath := t.TempDir()
 
 	composeFilePath := filepath.Join(appsPath, common.ComposeYAMLFileName)
 

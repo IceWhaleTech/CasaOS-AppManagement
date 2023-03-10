@@ -1,7 +1,6 @@
 package downloadHelper
 
 import (
-	"os"
 	"testing"
 
 	"go.uber.org/goleak"
@@ -13,10 +12,8 @@ func TestDownload(t *testing.T) {
 
 	src := "https://github.com/IceWhaleTech/get/archive/refs/heads/main.zip"
 
-	dst, err := os.MkdirTemp("", "getter-test-*")
-	assert.NilError(t, err)
-	defer os.RemoveAll(dst)
+	dst := t.TempDir()
 
-	err = Download(src, dst)
+	err := Download(src, dst)
 	assert.NilError(t, err)
 }

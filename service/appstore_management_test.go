@@ -31,10 +31,7 @@ func TestAppStoreList(t *testing.T) {
 	defer os.Remove(file.Name())
 
 	config.InitSetup(file.Name())
-	config.AppInfo.AppStorePath, err = os.MkdirTemp("", "test-app-store-*")
-	assert.NilError(t, err)
-
-	defer os.RemoveAll(config.AppInfo.AppStorePath)
+	config.AppInfo.AppStorePath = t.TempDir()
 
 	appStoreManagement := service.NewAppStoreManagement()
 

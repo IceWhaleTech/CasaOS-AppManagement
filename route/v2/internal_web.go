@@ -6,6 +6,7 @@ import (
 
 	"github.com/IceWhaleTech/CasaOS-AppManagement/codegen"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/common"
+	"github.com/IceWhaleTech/CasaOS-AppManagement/service"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/logger"
 	"github.com/compose-spec/compose-go/types"
 	"github.com/labstack/echo/v4"
@@ -36,45 +37,57 @@ func (a *AppManagement) GetAppGrid(ctx echo.Context) error {
 	})
 }
 
-func WebAppGridItemAdapter(app codegen.ComposeAppWithStoreInfo) (*codegen.WebAppGridItem, error) {
-	if app.StoreInfo == nil {
-		return nil, fmt.Errorf("failed to get store info for compose app %s", app.Compose.Name)
+func WebAppGridItemAdapter(composeAppWithStoreInfo codegen.ComposeAppWithStoreInfo) (*codegen.WebAppGridItem, error) {
+	// validation
+	composeApp := (*service.ComposeApp)(composeAppWithStoreInfo.Compose)
+	if composeApp == nil {
+		return nil, fmt.Errorf("failed to get compose app")
 	}
 
-	if app.StoreInfo.Apps == nil {
-		return nil, fmt.Errorf("failed to get container apps for compose app %s", app.Compose.Name)
+	composeAppStoreInfo := composeAppWithStoreInfo.StoreInfo
+
+	if composeAppStoreInfo == nil {
+		return nil, fmt.Errorf("failed to get store info for compose app %s", composeApp.Name)
 	}
 
-	if app.StoreInfo.MainApp == nil || *app.StoreInfo.MainApp == "" {
-		return nil, fmt.Errorf("failed to get store info for main container app of compose app %s", app.Compose.Name)
+	if composeAppStoreInfo.Apps == nil {
+		return nil, fmt.Errorf("failed to get container apps for compose app %s", composeApp.Name)
 	}
 
-	mainAppStoreInfo := (*app.StoreInfo.Apps)[*app.StoreInfo.MainApp]
-
-	services := lo.Filter(app.Compose.Services, func(service types.ServiceConfig, i int) bool {
-		return service.Name == *app.StoreInfo.MainApp
-	})
-
-	if len(services) == 0 {
-		logger.Error("failed to get main app service", zap.String("app", app.Compose.Name))
-		return nil, fmt.Errorf("failed to get main container app for compose app %s", app.Compose.Name)
+	if composeAppStoreInfo.MainApp == nil || *composeAppStoreInfo.MainApp == "" {
+		return nil, fmt.Errorf("failed to get store info for main container app of compose app %s", composeApp.Name)
 	}
 
-	mainApp := services[0]
+	// identify the main app
+	var mainApp *types.ServiceConfig
+	for i, service := range composeApp.Services {
+		if service.Name == *composeAppStoreInfo.MainApp {
+			mainApp = &composeApp.Services[i]
+		}
+		break
+	}
 
+	if mainApp == nil {
+		logger.Error("failed to get main app service", zap.String("app", composeApp.Name))
+		return nil, fmt.Errorf("failed to get main container app for compose app %s", composeApp.Name)
+	}
+
+	// item type
+	mainAppStoreInfo := (*composeAppStoreInfo.Apps)[*composeAppStoreInfo.MainApp]
 	itemType := (codegen.WebAppGridItemType)(lo.If(mainAppStoreInfo.Author == common.ComposeAppOfficialAuthor, "official").Else("community"))
 
 	return &codegen.WebAppGridItem{
-		Hostname:   mainAppStoreInfo.Container.Hostname,
-		Icon:       &mainAppStoreInfo.Icon,
-		Image:      &mainApp.Image,
-		Index:      &mainAppStoreInfo.Container.Index,
-		Name:       &app.Compose.Name,
-		Port:       &mainAppStoreInfo.Container.PortMap,
-		Scheme:     mainAppStoreInfo.Container.Scheme,
-		Status:     app.Status,
-		StoreAppId: app.StoreInfo.StoreAppID,
-		Title:      &mainAppStoreInfo.Title,
+		Name:       &composeApp.Name,
+		Status:     composeAppWithStoreInfo.Status,
+		StoreAppId: composeAppStoreInfo.StoreAppID,
 		Type:       &itemType,
+
+		Hostname: mainAppStoreInfo.Container.Hostname,
+		Icon:     &mainAppStoreInfo.Icon,
+		Image:    &mainApp.Image,
+		Index:    &mainAppStoreInfo.Container.Index,
+		Port:     &mainAppStoreInfo.Container.PortMap,
+		Scheme:   mainAppStoreInfo.Container.Scheme,
+		Title:    &mainAppStoreInfo.Title,
 	}, nil
 }
