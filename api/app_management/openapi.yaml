@@ -821,8 +821,11 @@ components:
         recommend:
           type: array
           items:
-            type: string
-            example: "syncthing"
+            $ref: "#/components/schemas/StoreAppID"
+        installed:
+          type: array
+          items:
+            $ref: "#/components/schemas/StoreAppID"
         list:
           type: object
           additionalProperties:

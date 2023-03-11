@@ -94,18 +94,41 @@ func (a *AppManagement) ComposeAppStoreInfoList(ctx echo.Context, params codegen
 		return *storeInfo
 	})
 
+	data := &codegen.ComposeAppStoreInfoLists{
+		List: &list,
+	}
+
 	// recommend
 	recommend := service.MyService.V2AppStore().Recommend()
 	if params.Category != nil {
 		recommend = lo.Intersect(recommend, lo.Keys(catalog))
 	}
 
-	return ctx.JSON(http.StatusOK, codegen.ComposeAppStoreInfoListsOK{
-		Data: &codegen.ComposeAppStoreInfoLists{
-			List:      &list,
-			Recommend: &recommend,
-		},
+	data.Recommend = &recommend
+
+	// installed
+	installedComposeApps, err := service.MyService.Compose().List(ctx.Request().Context())
+	if err != nil {
+		message := err.Error()
+		logger.Error("failed to list installed compose apps", zap.Error(err))
+		return ctx.JSON(http.StatusOK, codegen.ComposeAppStoreInfoListsOK{
+			Message: &message,
+			Data:    data,
+		})
+	}
+
+	installed := lo.FilterMap(lo.Values(installedComposeApps), func(composeApp *service.ComposeApp, i int) (string, bool) {
+		storeInfo, err := composeApp.StoreInfo(false)
+		if err != nil {
+			logger.Error("failed to get store info", zap.Error(err), zap.String("name", composeApp.Name))
+			return "", false
+		}
+		return *storeInfo.StoreAppID, true
 	})
+
+	data.Installed = &installed
+
+	return ctx.JSON(http.StatusOK, codegen.ComposeAppStoreInfoListsOK{Data: data})
 }
 
 func (a *AppManagement) ComposeAppStoreInfo(ctx echo.Context, id codegen.StoreAppIDString) error {

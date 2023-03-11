@@ -23,17 +23,14 @@ func (a *AppManagement) GetAppGrid(ctx echo.Context) error {
 		return ctx.JSON(http.StatusInternalServerError, codegen.ResponseInternalServerError{Message: &message})
 	}
 
-	appGridItems := lo.Map(lo.Values(composeAppsWithStoreInfo), func(app codegen.ComposeAppWithStoreInfo, i int) codegen.WebAppGridItem {
+	appGridItems := lo.FilterMap(lo.Values(composeAppsWithStoreInfo), func(app codegen.ComposeAppWithStoreInfo, i int) (codegen.WebAppGridItem, bool) {
 		item, err := WebAppGridItemAdapter(app)
 		if err != nil {
 			logger.Error("failed to adapt web app grid item", zap.Error(err), zap.String("app", app.Compose.Name))
+			return codegen.WebAppGridItem{}, false
 		}
 
-		return *item
-	})
-
-	appGridItems = lo.Filter(appGridItems, func(item codegen.WebAppGridItem, i int) bool {
-		return item.StoreAppID != nil && *item.StoreAppID != ""
+		return *item, true
 	})
 
 	return ctx.JSON(http.StatusOK, codegen.GetWebAppGridOK{
