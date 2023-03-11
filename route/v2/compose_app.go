@@ -348,17 +348,20 @@ func composeAppsWithStoreInfo(ctx context.Context) (map[string]codegen.ComposeAp
 			return codegen.ComposeAppWithStoreInfo{}
 		}
 
+		composeAppWithStoreInfo := codegen.ComposeAppWithStoreInfo{
+			Compose:    (*codegen.ComposeApp)(composeApp),
+			StoreInfo:  nil,
+			Status:     utils.Ptr("unknown"),
+			Upgradable: utils.Ptr(false),
+		}
+
 		storeInfo, err := composeApp.StoreInfo(true)
 		if err != nil {
 			logger.Error("failed to get store info", zap.Error(err), zap.String("composeAppID", id))
+			return composeAppWithStoreInfo
 		}
 
-		// get status
-		status, err := service.MyService.Compose().Status(ctx, composeApp.Name)
-		if err != nil {
-			status = "unknown"
-			logger.Error("failed to get compose app status", zap.Error(err), zap.String("composeAppID", id))
-		}
+		composeAppWithStoreInfo.StoreInfo = storeInfo
 
 		// check if upgradable
 		upgradable := false
@@ -369,11 +372,28 @@ func composeAppsWithStoreInfo(ctx context.Context) (map[string]codegen.ComposeAp
 			}
 		}
 
-		return codegen.ComposeAppWithStoreInfo{
-			Compose:    (*codegen.ComposeApp)(composeApp),
-			StoreInfo:  storeInfo,
-			Status:     &status,
-			Upgradable: &upgradable,
+		composeAppWithStoreInfo.Upgradable = &upgradable
+
+		// status
+		if storeInfo.MainApp == nil {
+			logger.Error("failed to get main app", zap.String("composeAppID", id))
+			return composeAppWithStoreInfo
 		}
+
+		containerApps, err := composeApp.Containers(ctx)
+		if err != nil {
+			logger.Error("failed to get containers", zap.Error(err), zap.String("composeAppID", id))
+			return composeAppWithStoreInfo
+		}
+
+		mainAppContainer, ok := containerApps[*storeInfo.MainApp]
+		if !ok {
+			logger.Error("failed to get main app container", zap.String("composeAppID", id))
+			return composeAppWithStoreInfo
+		}
+
+		composeAppWithStoreInfo.Status = &mainAppContainer.State
+
+		return composeAppWithStoreInfo
 	}), nil
 }
