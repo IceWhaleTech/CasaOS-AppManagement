@@ -1,7 +1,6 @@
 package v2_test
 
 import (
-	"os"
 	"path/filepath"
 	"runtime"
 	"testing"
@@ -26,13 +25,10 @@ func TestWebAppGridItemAdapter(t *testing.T) {
 		runtime.GC()
 	}()
 
-	storeRoot, err := os.MkdirTemp("", "internal-web-test-*")
-	assert.NilError(t, err)
-
-	defer os.RemoveAll(storeRoot)
+	storeRoot := t.TempDir()
 
 	appsPath := filepath.Join(storeRoot, common.AppsDirectoryName)
-	err = file.MkDir(appsPath)
+	err := file.MkDir(appsPath)
 	assert.NilError(t, err)
 
 	// build test catalog

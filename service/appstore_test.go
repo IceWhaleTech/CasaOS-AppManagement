@@ -4,7 +4,6 @@ import (
 	_ "embed"
 	"encoding/json"
 	"io/fs"
-	"os"
 	"path/filepath"
 	"testing"
 
@@ -79,11 +78,10 @@ func TestWorkDir(t *testing.T) {
 func TestStoreRoot(t *testing.T) {
 	defer goleak.VerifyNone(t, goleak.IgnoreTopFunction("go.opencensus.io/stats/view.(*worker).start")) // https://github.com/census-instrumentation/opencensus-go/issues/1191
 
-	workdir, err := os.MkdirTemp("", "appstore-test-*")
-	assert.NilError(t, err)
+	workdir := t.TempDir()
 
 	expectedStoreRoot := filepath.Join(workdir, "github.com", "IceWhaleTech", "CasaOS-AppStore", "main")
-	err = file.MkDir(filepath.Join(expectedStoreRoot, common.AppsDirectoryName))
+	err := file.MkDir(filepath.Join(expectedStoreRoot, common.AppsDirectoryName))
 	assert.NilError(t, err)
 
 	actualStoreRoot, err := service.StoreRoot(workdir)
@@ -97,10 +95,7 @@ func TestLoadRecommend(t *testing.T) {
 
 	logger.LogInitConsoleOnly()
 
-	storeRoot, err := os.MkdirTemp("", "appstore-test-*")
-	assert.NilError(t, err)
-
-	defer os.RemoveAll(storeRoot)
+	storeRoot := t.TempDir()
 
 	recommendListFilePath := filepath.Join(storeRoot, common.RecommendListFileName)
 
@@ -128,13 +123,10 @@ func TestLoadRecommend(t *testing.T) {
 func TestBuildCatalog(t *testing.T) {
 	defer goleak.VerifyNone(t, goleak.IgnoreTopFunction("go.opencensus.io/stats/view.(*worker).start")) // https://github.com/census-instrumentation/opencensus-go/issues/1191
 
-	storeRoot, err := os.MkdirTemp("", "appstore-test-*")
-	assert.NilError(t, err)
-
-	defer os.RemoveAll(storeRoot)
+	storeRoot := t.TempDir()
 
 	// test for invalid storeRoot
-	_, err = service.BuildCatalog(storeRoot)
+	_, err := service.BuildCatalog(storeRoot)
 	assert.ErrorType(t, err, new(fs.PathError))
 
 	appsPath := filepath.Join(storeRoot, common.AppsDirectoryName)
