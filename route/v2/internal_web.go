@@ -7,6 +7,7 @@ import (
 	"github.com/IceWhaleTech/CasaOS-AppManagement/codegen"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/common"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/service"
+	"github.com/IceWhaleTech/CasaOS-Common/utils"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/logger"
 	"github.com/compose-spec/compose-go/types"
 	"github.com/labstack/echo/v4"
@@ -25,15 +26,19 @@ func (a *AppManagement) GetAppGrid(ctx echo.Context) error {
 	appGridItems := lo.Map(lo.Values(composeAppsWithStoreInfo), func(app codegen.ComposeAppWithStoreInfo, i int) codegen.WebAppGridItem {
 		item, err := WebAppGridItemAdapter(app)
 		if err != nil {
-			logger.Error("failed to adapte web app grid item", zap.Error(err), zap.String("app", app.Compose.Name))
-			return codegen.WebAppGridItem{}
+			logger.Error("failed to adapt web app grid item", zap.Error(err), zap.String("app", app.Compose.Name))
 		}
 
 		return *item
 	})
 
+	appGridItems = lo.Filter(appGridItems, func(item codegen.WebAppGridItem, i int) bool {
+		return item.StoreAppID != nil && *item.StoreAppID != ""
+	})
+
 	return ctx.JSON(http.StatusOK, codegen.GetWebAppGridOK{
-		Data: &appGridItems,
+		Message: utils.Ptr("This data is for internal use ONLY - will not be supported for public use."),
+		Data:    &appGridItems,
 	})
 }
 
@@ -44,21 +49,28 @@ func WebAppGridItemAdapter(composeAppWithStoreInfo codegen.ComposeAppWithStoreIn
 		return nil, fmt.Errorf("failed to get compose app")
 	}
 
+	item := &codegen.WebAppGridItem{
+		Name:   &composeApp.Name,
+		Status: composeAppWithStoreInfo.Status,
+	}
+
 	composeAppStoreInfo := composeAppWithStoreInfo.StoreInfo
 
 	if composeAppStoreInfo == nil {
-		return nil, fmt.Errorf("failed to get store info for compose app %s", composeApp.Name)
+		return item, fmt.Errorf("failed to get store info for compose app %s", composeApp.Name)
 	}
 
+	item.StoreAppID = composeAppStoreInfo.StoreAppID
+
+	// identify the main app
 	if composeAppStoreInfo.Apps == nil {
-		return nil, fmt.Errorf("failed to get container apps for compose app %s", composeApp.Name)
+		return item, fmt.Errorf("failed to get container apps for compose app %s", composeApp.Name)
 	}
 
 	if composeAppStoreInfo.MainApp == nil || *composeAppStoreInfo.MainApp == "" {
-		return nil, fmt.Errorf("failed to get store info for main container app of compose app %s", composeApp.Name)
+		return item, fmt.Errorf("failed to get store info for main container app of compose app %s", composeApp.Name)
 	}
 
-	// identify the main app
 	var mainApp *types.ServiceConfig
 	for i, service := range composeApp.Services {
 		if service.Name == *composeAppStoreInfo.MainApp {
@@ -67,27 +79,25 @@ func WebAppGridItemAdapter(composeAppWithStoreInfo codegen.ComposeAppWithStoreIn
 		break
 	}
 
+	// item image
 	if mainApp == nil {
 		logger.Error("failed to get main app service", zap.String("app", composeApp.Name))
-		return nil, fmt.Errorf("failed to get main container app for compose app %s", composeApp.Name)
+		return item, fmt.Errorf("failed to get main container app for compose app %s", composeApp.Name)
 	}
+	item.Image = &mainApp.Image
+
+	// item properties from store info
+	mainAppStoreInfo := (*composeAppStoreInfo.Apps)[*composeAppStoreInfo.MainApp]
+	item.Hostname = mainAppStoreInfo.Container.Hostname
+	item.Icon = &mainAppStoreInfo.Icon
+	item.Index = &mainAppStoreInfo.Container.Index
+	item.Port = &mainAppStoreInfo.Container.PortMap
+	item.Scheme = mainAppStoreInfo.Container.Scheme
+	item.Title = &mainAppStoreInfo.Title
 
 	// item type
-	mainAppStoreInfo := (*composeAppStoreInfo.Apps)[*composeAppStoreInfo.MainApp]
 	itemType := (codegen.WebAppGridItemType)(lo.If(mainAppStoreInfo.Author == common.ComposeAppOfficialAuthor, "official").Else("community"))
+	item.Type = &itemType
 
-	return &codegen.WebAppGridItem{
-		Name:       &composeApp.Name,
-		Status:     composeAppWithStoreInfo.Status,
-		StoreAppId: composeAppStoreInfo.StoreAppID,
-		Type:       &itemType,
-
-		Hostname: mainAppStoreInfo.Container.Hostname,
-		Icon:     &mainAppStoreInfo.Icon,
-		Image:    &mainApp.Image,
-		Index:    &mainAppStoreInfo.Container.Index,
-		Port:     &mainAppStoreInfo.Container.PortMap,
-		Scheme:   mainAppStoreInfo.Container.Scheme,
-		Title:    &mainAppStoreInfo.Title,
-	}, nil
+	return item, nil
 }

@@ -108,7 +108,7 @@ func (a *AppManagement) ComposeAppStoreInfoList(ctx echo.Context, params codegen
 	})
 }
 
-func (a *AppManagement) ComposeAppStoreInfo(ctx echo.Context, id codegen.StoreAppID) error {
+func (a *AppManagement) ComposeAppStoreInfo(ctx echo.Context, id codegen.StoreAppIDString) error {
 	composeApp := service.MyService.V2AppStore().ComposeApp(id)
 
 	if composeApp == nil {
@@ -129,7 +129,7 @@ func (a *AppManagement) ComposeAppStoreInfo(ctx echo.Context, id codegen.StoreAp
 	})
 }
 
-func (a *AppManagement) ComposeApp(ctx echo.Context, id codegen.StoreAppID) error {
+func (a *AppManagement) ComposeApp(ctx echo.Context, id codegen.StoreAppIDString) error {
 	composeApp := service.MyService.V2AppStore().ComposeApp(id)
 
 	if composeApp == nil {

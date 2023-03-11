@@ -200,7 +200,7 @@ paths:
       tags:
         - AppStore methods
       parameters:
-        - $ref: "#/components/parameters/StoreAppID"
+        - $ref: "#/components/parameters/StoreAppIDString"
       responses:
         "200":
           $ref: "#/components/responses/ComposeAppStoreInfoOK"
@@ -220,7 +220,7 @@ paths:
       tags:
         - AppStore methods
       parameters:
-        - $ref: "#/components/parameters/StoreAppID"
+        - $ref: "#/components/parameters/StoreAppIDString"
       responses:
         "200":
           $ref: "#/components/responses/ComposeAppOK"
@@ -480,7 +480,7 @@ components:
         type: integer
         example: 0
 
-    StoreAppID:
+    StoreAppIDString:
       name: id
       description: Store app ID of a compose app (unique across all app stores)
       in: path
@@ -831,19 +831,7 @@ components:
     ComposeAppStoreInfo:
       properties:
         store_app_id:
-          title: Store app ID
-          description: |
-            Store app ID of the compose app (unique across all app stores)
-
-            > The `store_app_id` might be same as app name most of the time. However app name might change, due to cloning for example.
-            > If app name has changed, there is no way to associate it with the original app in the app store, unless we use the `store_app_id`.
-          readOnly: true
-          type: string
-          example: "syncthing"
-          x-go-name: StoreAppID
-          x-oapi-codegen-extra-tags:
-            mapstructure: "store_app_id"
-            yaml: "store_app_id,omitempty"
+          $ref: "#/components/schemas/StoreAppID"
 
         apps:
           title: store info of container apps included in the compose app
@@ -1147,12 +1135,26 @@ components:
       x-oapi-codegen-extra-tags:
         yaml: ",omitempty"
 
+    StoreAppID:
+      title: Store app ID
+      description: |
+        Store app ID of the compose app (unique across all app stores)
+
+        > The `store_app_id` might be same as app name most of the time. However app name might change, due to cloning for example.
+        > If app name has changed, there is no way to associate it with the original app in the app store, unless we use the `store_app_id`.
+      readOnly: true
+      type: string
+      example: "syncthing"
+      x-go-name: StoreAppID
+      x-oapi-codegen-extra-tags:
+        mapstructure: "store_app_id"
+        yaml: "store_app_id,omitempty"
+
     WebAppGridItem:
       description: (internal use ONLY)
       properties:
         store_app_id:
-          type: string
-          example: syncthing
+          $ref: "#/components/schemas/StoreAppID"
         scheme:
           $ref: "#/components/schemas/Scheme"
         status:

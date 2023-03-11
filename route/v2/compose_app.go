@@ -348,10 +348,20 @@ func composeAppsWithStoreInfo(ctx context.Context) (map[string]codegen.ComposeAp
 			return codegen.ComposeAppWithStoreInfo{}
 		}
 
+		composeAppWithStoreInfo := codegen.ComposeAppWithStoreInfo{
+			Compose:    (*codegen.ComposeApp)(composeApp),
+			StoreInfo:  nil,
+			Status:     utils.Ptr("unknown"),
+			Upgradable: utils.Ptr(false),
+		}
+
 		storeInfo, err := composeApp.StoreInfo(true)
 		if err != nil {
 			logger.Error("failed to get store info", zap.Error(err), zap.String("composeAppID", id))
+			return composeAppWithStoreInfo
 		}
+
+		composeAppWithStoreInfo.StoreInfo = storeInfo
 
 		// check if upgradable
 		upgradable := false
@@ -362,12 +372,7 @@ func composeAppsWithStoreInfo(ctx context.Context) (map[string]codegen.ComposeAp
 			}
 		}
 
-		composeAppWithStoreInfo := codegen.ComposeAppWithStoreInfo{
-			Compose:    (*codegen.ComposeApp)(composeApp),
-			StoreInfo:  storeInfo,
-			Status:     utils.Ptr("unknown"),
-			Upgradable: &upgradable,
-		}
+		composeAppWithStoreInfo.Upgradable = &upgradable
 
 		// status
 		if storeInfo.MainApp == nil {
@@ -387,11 +392,8 @@ func composeAppsWithStoreInfo(ctx context.Context) (map[string]codegen.ComposeAp
 			return composeAppWithStoreInfo
 		}
 
-		return codegen.ComposeAppWithStoreInfo{
-			Compose:    (*codegen.ComposeApp)(composeApp),
-			StoreInfo:  storeInfo,
-			Status:     &mainAppContainer.State,
-			Upgradable: &upgradable,
-		}
+		composeAppWithStoreInfo.Status = &mainAppContainer.State
+
+		return composeAppWithStoreInfo
 	}), nil
 }
