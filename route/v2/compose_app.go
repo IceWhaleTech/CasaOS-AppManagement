@@ -131,6 +131,15 @@ func (a *AppManagement) UpdateComposeAppSettings(ctx echo.Context, id codegen.Co
 		})
 	}
 
+	// validate new compose yaml
+	_, err = service.NewComposeAppFromYAML(buf, true, true)
+	if err != nil {
+		message := err.Error()
+		return ctx.JSON(http.StatusBadRequest, codegen.ResponseBadRequest{
+			Message: &message,
+		})
+	}
+
 	// attach context key/value pairs from upstream
 	backgroundCtx := common.WithProperties(context.Background(), PropertiesFromQueryParams(ctx))
 
@@ -155,10 +164,19 @@ func (a *AppManagement) InstallComposeApp(ctx echo.Context) error {
 		})
 	}
 
+	// validate new compose yaml
+	composeApp, err := service.NewComposeAppFromYAML(buf, true, true)
+	if err != nil {
+		message := err.Error()
+		return ctx.JSON(http.StatusBadRequest, codegen.ResponseBadRequest{
+			Message: &message,
+		})
+	}
+
 	// attach context key/value pairs from upstream
 	backgroundCtx := common.WithProperties(context.Background(), PropertiesFromQueryParams(ctx))
 
-	if err := service.MyService.Compose().Install(backgroundCtx, buf); err != nil {
+	if err := service.MyService.Compose().Install(backgroundCtx, composeApp); err != nil {
 		message := err.Error()
 
 		if err == service.ErrComposeExtensionNameXCasaOSNotFound {
