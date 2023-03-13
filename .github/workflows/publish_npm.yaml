@@ -1,0 +1,24 @@
+name: publish npm
+
+on:
+  workflow_dispatch:
+
+jobs:
+  publish-npm:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v2
+        with:
+          node-version: 16
+          registry-url: https://registry.npmjs.org/
+      - name: Generate SDK
+        run: |
+          npm cache clean --force
+          npm install @openapitools/openapi-generator-cli -g
+          make build
+      - run: npm i
+      - run: npm run start
+      - run: npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{secrets.npm_token}}
