@@ -123,6 +123,11 @@ func (a *AppManagement) ComposeAppStoreInfoList(ctx echo.Context, params codegen
 			logger.Error("failed to get store info", zap.Error(err), zap.String("name", composeApp.Name))
 			return "", false
 		}
+
+		if storeInfo == nil {
+			logger.Error("failed to get store info - nil value", zap.String("name", composeApp.Name))
+			return "", false
+		}
 		return *storeInfo.StoreAppID, true
 	})
 
