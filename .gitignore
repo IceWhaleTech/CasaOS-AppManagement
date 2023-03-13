@@ -19,3 +19,9 @@ target/
 codegen/
 __debug_bin
 CasaOS-AppManagement 
+
+# node_modules
+node_modules
+package-lock.json
+
+.idea
