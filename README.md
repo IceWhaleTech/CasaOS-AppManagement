@@ -8,10 +8,11 @@ App management service manages CasaOS app lifecycle, such as installation, runni
 
 ## publish api to npm
 
+### edit version in package.json
+
+### run
 ```bash
-npm run clean
+yarn
 
-npm run build
-
-npm run generate:publish
+yarn start
 ```
