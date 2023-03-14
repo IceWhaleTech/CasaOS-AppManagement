@@ -245,14 +245,29 @@ func (a *AppManagement) SetComposeAppStatus(ctx echo.Context, id codegen.Compose
 		return ctx.JSON(http.StatusBadRequest, codegen.ResponseBadRequest{Message: &message})
 	}
 
-	switch action {
-	case codegen.RequestComposeAppStatusStart:
-	case codegen.RequestComposeAppStatusStop:
-	case codegen.RequestComposeAppStatusRestart:
-	default:
-		message := fmt.Sprintf("invalid action `%s`", action)
-		return ctx.JSON(http.StatusBadRequest, codegen.ResponseBadRequest{Message: &message})
+	composeApps, err := service.MyService.Compose().List(ctx.Request().Context())
+	if err != nil {
+		message := err.Error()
+		return ctx.JSON(http.StatusInternalServerError, codegen.ResponseInternalServerError{Message: &message})
 	}
+
+	composeApp, ok := composeApps[id]
+	if !ok {
+		message := fmt.Sprintf("compose app `%s` not found", id)
+		return ctx.JSON(http.StatusNotFound, codegen.ResponseNotFound{Message: &message})
+	}
+
+	backgroundCtx := common.WithProperties(context.Background(), PropertiesFromQueryParams(ctx))
+	if err := composeApp.SetStatus(backgroundCtx, action); err != nil {
+		message := err.Error()
+
+		if err == service.ErrInvalidComposeAppStatus {
+			return ctx.JSON(http.StatusBadRequest, codegen.ResponseBadRequest{Message: &message})
+		}
+
+		return ctx.JSON(http.StatusInternalServerError, codegen.ResponseInternalServerError{Message: &message})
+	}
+
 	return ctx.JSON(http.StatusOK, codegen.RequestComposeAppStatusOK{})
 }
 

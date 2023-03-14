@@ -14,4 +14,5 @@ var (
 	ErrComposeAppNotMatch                  = fmt.Errorf("compose app not match")
 	ErrComposeFileNotFound                 = fmt.Errorf("compose file not found")
 	ErrSetStoreAppID                       = fmt.Errorf("failed to set store app ID")
+	ErrInvalidComposeAppStatus             = fmt.Errorf("invalid compose app status")
 )
