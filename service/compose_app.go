@@ -406,6 +406,28 @@ func (a *ComposeApp) UpdateSettings(ctx context.Context, newComposeYAML []byte) 
 	return nil
 }
 
+func (a *ComposeApp) SetStatus(ctx context.Context, status codegen.RequestComposeAppStatus) error {
+	service, dockerClient, err := apiService()
+	if err != nil {
+		return err
+	}
+	defer dockerClient.Close()
+
+	switch status {
+	case codegen.RequestComposeAppStatusStart:
+		return service.Start(ctx, a.Name, api.StartOptions{
+			CascadeStop: true,
+			Wait:        true,
+		})
+	case codegen.RequestComposeAppStatusStop:
+		return service.Stop(ctx, a.Name, api.StopOptions{})
+	case codegen.RequestComposeAppStatusRestart:
+		return service.Restart(ctx, a.Name, api.RestartOptions{})
+	default:
+		return ErrInvalidComposeAppStatus
+	}
+}
+
 func (a *ComposeApp) Logs(ctx context.Context, lines int) ([]byte, error) {
 	service, dockerClient, err := apiService()
 	if err != nil {
