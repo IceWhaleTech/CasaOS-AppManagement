@@ -103,7 +103,7 @@ func (a *AppManagement) MyComposeApp(ctx echo.Context, id codegen.ComposeAppID) 
 	})
 }
 
-func (a *AppManagement) UpdateComposeAppSettings(ctx echo.Context, id codegen.ComposeAppID) error {
+func (a *AppManagement) ApplyComposeAppSettings(ctx echo.Context, id codegen.ComposeAppID) error {
 	if id == "" {
 		message := ErrComposeAppIDNotProvided.Error()
 		return ctx.JSON(http.StatusBadRequest, codegen.ResponseBadRequest{
@@ -228,6 +228,34 @@ func (a *AppManagement) UninstallComposeApp(ctx echo.Context, id codegen.Compose
 
 	return ctx.JSON(http.StatusOK, codegen.ComposeAppUninstallOK{
 		Message: utils.Ptr("compose app is being uninstalled asynchronously"),
+	})
+}
+
+func (a *AppManagement) UpdateComposeApp(ctx echo.Context, id codegen.ComposeAppID) error {
+	if id == "" {
+		message := ErrComposeAppIDNotProvided.Error()
+		return ctx.JSON(http.StatusBadRequest, codegen.ResponseBadRequest{
+			Message: &message,
+		})
+	}
+
+	composeApps, err := service.MyService.Compose().List(ctx.Request().Context())
+	if err != nil {
+		message := err.Error()
+		return ctx.JSON(http.StatusInternalServerError, codegen.ResponseInternalServerError{Message: &message})
+	}
+
+	composeApp, ok := composeApps[id]
+	if !ok {
+		message := fmt.Sprintf("compose app `%s` not found", id)
+		return ctx.JSON(http.StatusNotFound, codegen.ResponseNotFound{Message: &message})
+	}
+
+	backgroundCtx := common.WithProperties(context.Background(), PropertiesFromQueryParams(ctx))
+
+	message := fmt.Sprintf("compose app `%s` is being updated asynchronously", id)
+	return ctx.JSON(http.StatusOK, codegen.ComposeAppUpdateOK{
+		Message: &message,
 	})
 }
 
