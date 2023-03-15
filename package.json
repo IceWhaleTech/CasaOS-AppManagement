@@ -16,7 +16,7 @@
     "SDK",
     "CasaOS-AppManagement Axios"
   ],
-  "main": "dist/index",
+  "main": "dist/index.js",
   "files": [
     "LICENSE",
     "README.md",

@@ -1,7 +1,13 @@
 name: publish npm
 
 on:
+  push:
+    tags:
+      - v*.*.*
   workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   publish-npm:
@@ -12,6 +18,14 @@ jobs:
         with:
           node-version: 16
           registry-url: https://registry.npmjs.org/
+      - name: Get version
+        id: get_version
+        run: echo ::set-output name=VERSION::${GITHUB_REF/refs\/tags\//}
+      - name: Set version
+        run: |
+          apt install jq
+          jq '.version="${{ steps.get_version.outputs.VERSION }}"' package.json > package.json.new
+          mv package.json.new package.json
       - name: Generate SDK
         run: |
           npm cache clean --force
