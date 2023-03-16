@@ -1,6 +1,6 @@
 {
   "name": "casaos-appmanagement-openapi",
-  "version": "1.0.5",
+  "version": "0.0.1",
   "scripts": {
     "clean": "rm -rf generate",
     "build": "rm -rf dist && tsc && yarn clean",
