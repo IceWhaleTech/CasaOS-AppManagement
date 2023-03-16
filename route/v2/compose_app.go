@@ -145,7 +145,7 @@ func (a *AppManagement) ApplyComposeAppSettings(ctx echo.Context, id codegen.Com
 	}
 
 	return ctx.JSON(http.StatusOK, codegen.ComposeAppUpdateSettingsOK{
-		Message: utils.Ptr("compose app settings are updated"),
+		Message: utils.Ptr("compose app is being applied with changes asynchroniously"),
 	})
 }
 
