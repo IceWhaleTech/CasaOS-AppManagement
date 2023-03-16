@@ -145,7 +145,7 @@ func (a *AppManagement) ApplyComposeAppSettings(ctx echo.Context, id codegen.Com
 	}
 
 	return ctx.JSON(http.StatusOK, codegen.ComposeAppUpdateSettingsOK{
-		Message: utils.Ptr("compose app settings are updated"),
+		Message: utils.Ptr("compose app is being applied with changes asynchroniously"),
 	})
 }
 
@@ -304,7 +304,9 @@ func (a *AppManagement) SetComposeAppStatus(ctx echo.Context, id codegen.Compose
 		return ctx.JSON(http.StatusInternalServerError, codegen.ResponseInternalServerError{Message: &message})
 	}
 
-	return ctx.JSON(http.StatusOK, codegen.RequestComposeAppStatusOK{})
+	return ctx.JSON(http.StatusOK, codegen.RequestComposeAppStatusOK{
+		Message: utils.Ptr("compose app status is being changed asynchronously"),
+	})
 }
 
 func (a *AppManagement) ComposeAppLogs(ctx echo.Context, id codegen.ComposeAppID, params codegen.ComposeAppLogsParams) error {

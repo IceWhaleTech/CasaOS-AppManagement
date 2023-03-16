@@ -62,6 +62,10 @@ var EventTypes = []message_bus.EventType{
 	EventTypeAppInstallBegin, EventTypeAppInstallEnd, EventTypeAppInstallError,
 	EventTypeAppUninstallBegin, EventTypeAppUninstallEnd, EventTypeAppUninstallError,
 	EventTypeAppUpdateBegin, EventTypeAppUpdateEnd, EventTypeAppUpdateError,
+	EventTypeAppApplyChangesBegin, EventTypeAppApplyChangesEnd, EventTypeAppApplyChangesError,
+	EventTypeAppStartBegin, EventTypeAppStartEnd, EventTypeAppStartError,
+	EventTypeAppStopBegin, EventTypeAppStopEnd, EventTypeAppStopError,
+	EventTypeAppRestartBegin, EventTypeAppRestartEnd, EventTypeAppRestartError,
 
 	// image
 	EventTypeImagePullBegin, EventTypeImagePullProgress, EventTypeImagePullEnd, EventTypeImagePullError,
@@ -145,6 +149,101 @@ var (
 		SourceID: AppManagementServiceName,
 		Name:     "app:update-error",
 		PropertyTypeList: []message_bus.PropertyType{
+			PropertyTypeMessage,
+		},
+	}
+
+	EventTypeAppApplyChangesBegin = message_bus.EventType{
+		SourceID:         AppManagementServiceName,
+		Name:             "app:apply-changes-begin",
+		PropertyTypeList: []message_bus.PropertyType{},
+	}
+
+	EventTypeAppApplyChangesEnd = message_bus.EventType{
+		SourceID:         AppManagementServiceName,
+		Name:             "app:apply-changes-end",
+		PropertyTypeList: []message_bus.PropertyType{},
+	}
+
+	EventTypeAppApplyChangesError = message_bus.EventType{
+		SourceID: AppManagementServiceName,
+		Name:     "app:apply-changes-error",
+		PropertyTypeList: []message_bus.PropertyType{
+			PropertyTypeMessage,
+		},
+	}
+
+	EventTypeAppStartBegin = message_bus.EventType{
+		SourceID: AppManagementServiceName,
+		Name:     "app:start-begin",
+		PropertyTypeList: []message_bus.PropertyType{
+			PropertyTypeAppName,
+		},
+	}
+
+	EventTypeAppStartEnd = message_bus.EventType{
+		SourceID: AppManagementServiceName,
+		Name:     "app:start-end",
+		PropertyTypeList: []message_bus.PropertyType{
+			PropertyTypeAppName,
+		},
+	}
+
+	EventTypeAppStartError = message_bus.EventType{
+		SourceID: AppManagementServiceName,
+		Name:     "app:start-error",
+		PropertyTypeList: []message_bus.PropertyType{
+			PropertyTypeAppName,
+			PropertyTypeMessage,
+		},
+	}
+
+	EventTypeAppStopBegin = message_bus.EventType{
+		SourceID: AppManagementServiceName,
+		Name:     "app:stop-begin",
+		PropertyTypeList: []message_bus.PropertyType{
+			PropertyTypeAppName,
+		},
+	}
+
+	EventTypeAppStopEnd = message_bus.EventType{
+		SourceID: AppManagementServiceName,
+		Name:     "app:stop-end",
+		PropertyTypeList: []message_bus.PropertyType{
+			PropertyTypeAppName,
+		},
+	}
+
+	EventTypeAppStopError = message_bus.EventType{
+		SourceID: AppManagementServiceName,
+		Name:     "app:stop-error",
+		PropertyTypeList: []message_bus.PropertyType{
+			PropertyTypeAppName,
+			PropertyTypeMessage,
+		},
+	}
+
+	EventTypeAppRestartBegin = message_bus.EventType{
+		SourceID: AppManagementServiceName,
+		Name:     "app:restart-begin",
+		PropertyTypeList: []message_bus.PropertyType{
+			PropertyTypeAppName,
+		},
+	}
+
+	EventTypeAppRestartEnd = message_bus.EventType{
+		SourceID: AppManagementServiceName,
+		Name:     "app:restart-end",
+		PropertyTypeList: []message_bus.PropertyType{
+			PropertyTypeAppName,
+		},
+	}
+
+	EventTypeAppRestartError = message_bus.EventType{
+		SourceID: AppManagementServiceName,
+		Name:     "app:restart-error",
+		PropertyTypeList: []message_bus.PropertyType{
+			PropertyTypeAppName,
 			PropertyTypeMessage,
 		},
 	}

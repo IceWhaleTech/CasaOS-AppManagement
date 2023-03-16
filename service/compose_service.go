@@ -92,7 +92,6 @@ func (s *ComposeService) Install(ctx context.Context, composeApp *ComposeApp) er
 	eventProperties := common.PropertiesFromContext(ctx)
 	eventProperties[common.PropertyTypeAppName.Name] = composeApp.Name
 	eventProperties[common.PropertyTypeAppIcon.Name] = mainAppStoreInfo.Icon
-	eventProperties[common.PropertyTypeImageName.Name] = composeApp.App(*storeInfo.MainApp).Image
 
 	go func(ctx context.Context) {
 		go PublishEventWrapper(ctx, common.EventTypeAppInstallBegin, nil)
