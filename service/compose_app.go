@@ -156,7 +156,7 @@ func (a *ComposeApp) Update(ctx context.Context) error {
 		return err
 	}
 
-	if storeInfo == nil || storeInfo.StoreAppID == nil || *storeInfo.StoreAppID != "" {
+	if storeInfo == nil || storeInfo.StoreAppID == nil || *storeInfo.StoreAppID == "" {
 		return ErrStoreInfoNotFound
 	}
 
