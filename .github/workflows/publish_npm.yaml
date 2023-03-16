@@ -23,7 +23,7 @@ jobs:
         run: echo ::set-output name=VERSION::${GITHUB_REF/refs\/tags\//}
       - name: Set version
         run: |
-          apt-get install jq
+          sudo apt-get install jq
           jq '.version="${{ steps.get_version.outputs.VERSION }}"' package.json > package.json.new
           mv package.json.new package.json
       - name: Generate SDK
