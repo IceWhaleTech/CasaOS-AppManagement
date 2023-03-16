@@ -7,12 +7,14 @@ import (
 )
 
 var (
-	ErrComposeExtensionNameXCasaOSNotFound = fmt.Errorf("extension `%s` not found", common.ComposeExtensionNameXCasaOS)
-	ErrMainAppNotFound                     = fmt.Errorf("main app not found")
-	ErrNoAppFoundInComposeApp              = fmt.Errorf("no app found in compose app")
 	ErrComposeAppNotFound                  = fmt.Errorf("compose app not found")
 	ErrComposeAppNotMatch                  = fmt.Errorf("compose app not match")
+	ErrComposeExtensionNameXCasaOSNotFound = fmt.Errorf("extension `%s` not found", common.ComposeExtensionNameXCasaOS)
 	ErrComposeFileNotFound                 = fmt.Errorf("compose file not found")
-	ErrSetStoreAppID                       = fmt.Errorf("failed to set store app ID")
 	ErrInvalidComposeAppStatus             = fmt.Errorf("invalid compose app status")
+	ErrMainAppNotFound                     = fmt.Errorf("main app not found")
+	ErrNoAppFoundInComposeApp              = fmt.Errorf("no app found in compose app")
+	ErrNotFoundInAppStore                  = fmt.Errorf("not found in app store")
+	ErrSetStoreAppID                       = fmt.Errorf("failed to set store app ID")
+	ErrStoreInfoNotFound                   = fmt.Errorf("store info not found")
 )

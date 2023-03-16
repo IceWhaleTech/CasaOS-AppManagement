@@ -312,6 +312,7 @@ paths:
         - Compose methods
       parameters:
         - $ref: "#/components/parameters/ComposeAppID"
+        - $ref: "#/components/parameters/Force"
       responses:
         "200":
           $ref: "#/components/responses/ComposeAppUpdateOK"
@@ -917,8 +918,7 @@ components:
           type: string
           readOnly: true
           example: running
-        upgradable:
-          title: Whether the compose app is upgradable
+        update_available:
           readOnly: true
           type: boolean
           example: true

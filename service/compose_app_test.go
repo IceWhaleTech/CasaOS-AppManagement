@@ -51,11 +51,11 @@ func TestIsUpgradable(t *testing.T) {
 	localComposeApp, err := service.LoadComposeAppFromConfigFile(*storeComposeAppStoreInfo.StoreAppID, composeFilePath)
 	assert.NilError(t, err)
 
-	upgradable := service.IsUpgradable(localComposeApp, storeComposeApp)
+	upgradable := localComposeApp.IsUpdateAvailableWith(storeComposeApp)
 	assert.Assert(t, !upgradable)
 
 	storeComposeApp.Services[0].Image = storeMainAppImage + ":test"
 
-	upgradable = service.IsUpgradable(localComposeApp, storeComposeApp)
+	upgradable = localComposeApp.IsUpdateAvailableWith(storeComposeApp)
 	assert.Assert(t, upgradable)
 }

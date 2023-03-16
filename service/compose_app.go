@@ -91,24 +91,45 @@ func (a *ComposeApp) SetStoreAppID(storeAppID string) (string, bool) {
 	return storeAppID, true
 }
 
-func IsUpgradable(localComposeApp, storeComposeApp *ComposeApp) bool {
+func (a *ComposeApp) IsUpdateAvailable() bool {
+	storeInfo, err := a.StoreInfo(false)
+	if err != nil {
+		logger.Error("failed to get store info of compose app, thus no update available", zap.Error(err))
+		return false
+	}
+
+	if storeInfo == nil || storeInfo.StoreAppID == nil || *storeInfo.StoreAppID != "" {
+		logger.Error("store info of compose app is not valid, thus no update available")
+		return false
+	}
+
+	storeComposeApp := MyService.V2AppStore().ComposeApp(*storeInfo.StoreAppID)
+	if storeComposeApp == nil {
+		logger.Error("store compose app not found, thus no update available", zap.String("storeAppID", *storeInfo.StoreAppID))
+		return false
+	}
+
+	return a.IsUpdateAvailableWith(storeComposeApp)
+}
+
+func (a *ComposeApp) IsUpdateAvailableWith(storeComposeApp *ComposeApp) bool {
 	storeComposeAppStoreInfo, err := storeComposeApp.StoreInfo(false)
 	if err != nil || storeComposeAppStoreInfo == nil {
-		logger.Error("failed to get store info of store compose app, thus not upgradable", zap.Error(err))
+		logger.Error("failed to get store info of store compose app, thus no update available", zap.Error(err))
 		return false
 	}
 
 	mainAppName := *storeComposeAppStoreInfo.MainApp
 
-	mainApp := localComposeApp.App(mainAppName)
+	mainApp := a.App(mainAppName)
 	if mainApp == nil {
-		logger.Error("main app not found in local compose app, thus not upgradable", zap.String("name", mainAppName))
+		logger.Error("main app not found in local compose app, thus no update available", zap.String("name", mainAppName))
 		return false
 	}
 
 	storeMainApp := storeComposeApp.App(mainAppName)
 	if storeMainApp == nil {
-		logger.Error("main app not found in store compose app, thus not upgradable", zap.String("name", mainAppName))
+		logger.Error("main app not found in store compose app, thus no update available", zap.String("name", mainAppName))
 		return false
 	}
 
@@ -116,17 +137,59 @@ func IsUpgradable(localComposeApp, storeComposeApp *ComposeApp) bool {
 	storeMainAppImage, storeMainAppTag := docker.ExtractImageAndTag(storeMainApp.Image)
 
 	if mainAppImage != storeMainAppImage {
-		logger.Error("main app image not match for local app and store app, thus not upgradable", zap.String("local", mainApp.Image), zap.String("store", storeMainApp.Image))
+		logger.Error("main app image not match for local app and store app, thus no update available", zap.String("local", mainApp.Image), zap.String("store", storeMainApp.Image))
 		return false
 	}
 
 	if mainAppTag == storeMainAppTag {
-		logger.Info("main apps of local app and store app have identical image tag, thus not upgradable", zap.String("local", mainApp.Image), zap.String("store", storeMainApp.Image))
+		logger.Info("main apps of local app and store app have identical image tag, thus no update available", zap.String("local", mainApp.Image), zap.String("store", storeMainApp.Image))
 		return false
 	}
 
-	logger.Info("main apps of local app and store app have different image tag, thus upgradable", zap.String("local", mainApp.Image), zap.String("store", storeMainApp.Image))
+	logger.Info("main apps of local app and store app have different image tag, thus update is available", zap.String("local", mainApp.Image), zap.String("store", storeMainApp.Image))
 	return true
+}
+
+func (a *ComposeApp) Update(ctx context.Context) error {
+	storeInfo, err := a.StoreInfo(false)
+	if err != nil {
+		return err
+	}
+
+	if storeInfo == nil || storeInfo.StoreAppID == nil || *storeInfo.StoreAppID != "" {
+		return ErrStoreInfoNotFound
+	}
+
+	storeComposeApp := MyService.V2AppStore().ComposeApp(*storeInfo.StoreAppID)
+	if storeComposeApp == nil {
+		return ErrNotFoundInAppStore
+	}
+
+	localComposeAppServices := lo.Map(a.Services, func(service types.ServiceConfig, i int) string { return service.Name })
+	storeComposeAppServices := lo.Map(storeComposeApp.Services, func(service types.ServiceConfig, i int) string { return service.Name })
+
+	localAbsentOfStore, storeAbsentOfLocal := lo.Difference(localComposeAppServices, storeComposeAppServices)
+	if len(localAbsentOfStore) > 0 {
+		logger.Error("local compose app has container apps that are not present in store compose app, thus update is not possible", zap.Strings("absent", localAbsentOfStore))
+		return ErrComposeAppNotMatch
+	}
+
+	if len(storeAbsentOfLocal) > 0 {
+		logger.Error("store compose app has container apps that are not present in local compose app, thus update is not possible", zap.Strings("absent", storeAbsentOfLocal))
+		return ErrComposeAppNotMatch
+	}
+
+	for _, service := range storeComposeApp.Services {
+		localComposeAppService := a.App(service.Name)
+		localComposeAppService.Image = service.Image
+	}
+
+	newComposeAppYAML, err := yaml.Marshal(a)
+	if err != nil {
+		return err
+	}
+
+	return a.Apply(ctx, newComposeAppYAML)
 }
 
 func (a *ComposeApp) App(name string) *App {
@@ -329,7 +392,7 @@ func (a *ComposeApp) Uninstall(ctx context.Context, deleteConfigFolder bool) err
 	return nil
 }
 
-func (a *ComposeApp) UpdateSettings(ctx context.Context, newComposeYAML []byte) error {
+func (a *ComposeApp) Apply(ctx context.Context, newComposeYAML []byte) error {
 	// update interpolation map in current context
 	interpolationMap := baseInterpolationMap()
 	interpolationMap["AppID"] = a.Name
