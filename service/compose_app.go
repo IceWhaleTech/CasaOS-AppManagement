@@ -418,54 +418,91 @@ func (a *ComposeApp) Apply(ctx context.Context, newComposeYAML []byte) error {
 		logger.Error("failed to backup compose file", zap.Error(err), zap.String("src", currentComposeFile), zap.String("dst", backupComposeFile))
 	}
 
-	// start compose app
-	service, dockerClient, err := apiService()
-	if err != nil {
-		return err
-	}
-	defer dockerClient.Close()
+	eventProperties := common.PropertiesFromContext(ctx)
+	eventProperties[common.PropertyTypeAppName.Name] = a.Name
 
-	success := false
-	defer func() {
-		if !success {
-			if err := file.CopySingleFile(backupComposeFile, currentComposeFile, ""); err != nil {
-				logger.Error("failed to restore compose file", zap.Error(err), zap.String("src", backupComposeFile), zap.String("dst", currentComposeFile))
-			}
+	go func() {
+		go PublishEventWrapper(ctx, common.EventTypeAppApplyChangesBegin, nil)
 
-			if err := service.Up(ctx, (*codegen.ComposeApp)(a), api.UpOptions{
-				Start: api.StartOptions{
-					CascadeStop: true,
-					Wait:        true,
-				},
-			}); err != nil {
-				logger.Error("failed to start compose app", zap.Error(err), zap.String("name", a.Name))
-			}
+		defer PublishEventWrapper(ctx, common.EventTypeAppApplyChangesEnd, nil)
+
+		// start compose app
+		service, dockerClient, err := apiService()
+		if err != nil {
+			go PublishEventWrapper(ctx, common.EventTypeAppApplyChangesError, map[string]string{
+				common.PropertyTypeMessage.Name: err.Error(),
+			})
+
+			logger.Error("failed to get docker service", zap.Error(err))
+			return
 		}
+		defer dockerClient.Close()
+
+		success := false
+		defer func() {
+			if !success {
+				if err := file.CopySingleFile(backupComposeFile, currentComposeFile, ""); err != nil {
+					go PublishEventWrapper(ctx, common.EventTypeAppApplyChangesError, map[string]string{
+						common.PropertyTypeMessage.Name: err.Error(),
+					})
+
+					logger.Error("failed to restore original compose file", zap.Error(err), zap.String("src", backupComposeFile), zap.String("dst", currentComposeFile))
+					return
+				}
+
+				if err := service.Up(ctx, (*codegen.ComposeApp)(a), api.UpOptions{
+					Start: api.StartOptions{
+						CascadeStop: true,
+						Wait:        true,
+					},
+				}); err != nil {
+					go PublishEventWrapper(ctx, common.EventTypeAppApplyChangesError, map[string]string{
+						common.PropertyTypeMessage.Name: err.Error(),
+					})
+
+					logger.Error("failed to start original compose app", zap.Error(err), zap.String("name", a.Name))
+					return
+				}
+			}
+		}()
+
+		// save new compose file
+		if err := file.WriteToFullPath(newComposeYAML, currentComposeFile, 0o600); err != nil {
+			go PublishEventWrapper(ctx, common.EventTypeAppApplyChangesError, map[string]string{
+				common.PropertyTypeMessage.Name: err.Error(),
+			})
+
+			logger.Error("failed to save compose file", zap.Error(err), zap.String("path", currentComposeFile))
+			return
+		}
+
+		newComposeApp, err := LoadComposeAppFromConfigFile(a.Name, currentComposeFile)
+		if err != nil {
+			go PublishEventWrapper(ctx, common.EventTypeAppApplyChangesError, map[string]string{
+				common.PropertyTypeMessage.Name: err.Error(),
+			})
+
+			logger.Error("failed to load compose app from config file", zap.Error(err), zap.String("path", currentComposeFile))
+			return
+		}
+
+		if err := service.Up(ctx, (*codegen.ComposeApp)(newComposeApp), api.UpOptions{
+			Start: api.StartOptions{
+				CascadeStop: true,
+				Wait:        true,
+			},
+		}); err != nil {
+			go PublishEventWrapper(ctx, common.EventTypeAppApplyChangesError, map[string]string{
+				common.PropertyTypeMessage.Name: err.Error(),
+			})
+
+			logger.Error("failed to start compose app", zap.Error(err), zap.String("name", a.Name))
+			return
+		}
+
+		success = true
 	}()
 
-	// save new compose file
-	if err := file.WriteToFullPath(newComposeYAML, currentComposeFile, 0o600); err != nil {
-		logger.Error("failed to save compose file", zap.Error(err), zap.String("path", currentComposeFile))
-		return err
-	}
-
-	newComposeApp, err := LoadComposeAppFromConfigFile(a.Name, currentComposeFile)
-	if err != nil {
-		logger.Error("failed to load compose app from config file", zap.Error(err), zap.String("path", currentComposeFile))
-		return err
-	}
-
-	if err := service.Up(ctx, (*codegen.ComposeApp)(newComposeApp), api.UpOptions{
-		Start: api.StartOptions{
-			CascadeStop: true,
-			Wait:        true,
-		},
-	}); err != nil {
-		logger.Error("failed to start compose app", zap.Error(err), zap.String("name", a.Name))
-		return err
-	}
-
-	success = true
 	return nil
 }
 
