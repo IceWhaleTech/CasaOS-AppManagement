@@ -570,19 +570,60 @@ func (a *ComposeApp) SetStatus(ctx context.Context, status codegen.RequestCompos
 	}
 	defer dockerClient.Close()
 
+	eventProperties := common.PropertiesFromContext(ctx)
+	eventProperties[common.PropertyTypeAppName.Name] = a.Name
+
 	switch status {
 	case codegen.RequestComposeAppStatusStart:
-		return service.Start(ctx, a.Name, api.StartOptions{
-			CascadeStop: true,
-			Wait:        true,
-		})
+		go func(ctx context.Context) {
+			go PublishEventWrapper(ctx, common.EventTypeAppStartBegin, nil)
+
+			defer PublishEventWrapper(ctx, common.EventTypeAppStartEnd, nil)
+
+			if err := service.Start(ctx, a.Name, api.StartOptions{
+				CascadeStop: true,
+				Wait:        true,
+			}); err != nil {
+				go PublishEventWrapper(ctx, common.EventTypeAppStartError, map[string]string{
+					common.PropertyTypeMessage.Name: err.Error(),
+				})
+
+				logger.Error("failed to start compose app", zap.Error(err), zap.String("name", a.Name))
+			}
+		}(ctx)
 	case codegen.RequestComposeAppStatusStop:
-		return service.Stop(ctx, a.Name, api.StopOptions{})
+		go func(ctx context.Context) {
+			go PublishEventWrapper(ctx, common.EventTypeAppStopBegin, nil)
+
+			defer PublishEventWrapper(ctx, common.EventTypeAppStopEnd, nil)
+
+			if err := service.Stop(ctx, a.Name, api.StopOptions{}); err != nil {
+				go PublishEventWrapper(ctx, common.EventTypeAppStopError, map[string]string{
+					common.PropertyTypeMessage.Name: err.Error(),
+				})
+
+				logger.Error("failed to stop compose app", zap.Error(err), zap.String("name", a.Name))
+			}
+		}(ctx)
 	case codegen.RequestComposeAppStatusRestart:
-		return service.Restart(ctx, a.Name, api.RestartOptions{})
+		go func(ctx context.Context) {
+			go PublishEventWrapper(ctx, common.EventTypeAppRestartBegin, nil)
+
+			defer PublishEventWrapper(ctx, common.EventTypeAppRestartEnd, nil)
+
+			if err := service.Restart(ctx, a.Name, api.RestartOptions{}); err != nil {
+				go PublishEventWrapper(ctx, common.EventTypeAppRestartError, map[string]string{
+					common.PropertyTypeMessage.Name: err.Error(),
+				})
+
+				logger.Error("failed to restart compose app", zap.Error(err), zap.String("name", a.Name))
+			}
+		}(ctx)
 	default:
 		return ErrInvalidComposeAppStatus
 	}
+
+	return nil
 }
 
 func (a *ComposeApp) Logs(ctx context.Context, lines int) ([]byte, error) {
