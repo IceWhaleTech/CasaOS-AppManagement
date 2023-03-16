@@ -81,29 +81,23 @@ func (a *AppManagement) MyComposeApp(ctx echo.Context, id codegen.ComposeAppID) 
 		logger.Error("failed to get compose app status", zap.Error(err), zap.String("composeAppID", id))
 	}
 
-	// check if upgradable
-	upgradable := false
-	if storeInfo != nil && storeInfo.StoreAppID != nil && *storeInfo.StoreAppID != "" {
-		storeComposeApp := service.MyService.V2AppStore().ComposeApp(*storeInfo.StoreAppID)
-		if storeComposeApp != nil {
-			upgradable = service.IsUpgradable(composeApp, storeComposeApp)
-		}
-	}
+	// check if updateAvailable
+	updateAvailable := composeApp.IsUpdateAvailable()
 
 	message := fmt.Sprintf("!! JSON format is for debugging purpose only - use `Accept: %s` HTTP header to get YAML instead !!", common.MIMEApplicationYAML)
 	return ctx.JSON(http.StatusOK, codegen.ComposeAppOK{
 		// extension properties aren't marshalled - https://github.com/golang/go/issues/6213
 		Message: &message,
 		Data: &codegen.ComposeAppWithStoreInfo{
-			StoreInfo:  storeInfo,
-			Compose:    (*types.Project)(composeApp),
-			Status:     &status,
-			Upgradable: &upgradable,
+			StoreInfo:       storeInfo,
+			Compose:         (*types.Project)(composeApp),
+			Status:          &status,
+			UpdateAvailable: &updateAvailable,
 		},
 	})
 }
 
-func (a *AppManagement) UpdateComposeAppSettings(ctx echo.Context, id codegen.ComposeAppID) error {
+func (a *AppManagement) ApplyComposeAppSettings(ctx echo.Context, id codegen.ComposeAppID) error {
 	if id == "" {
 		message := ErrComposeAppIDNotProvided.Error()
 		return ctx.JSON(http.StatusBadRequest, codegen.ResponseBadRequest{
@@ -143,7 +137,7 @@ func (a *AppManagement) UpdateComposeAppSettings(ctx echo.Context, id codegen.Co
 	// attach context key/value pairs from upstream
 	backgroundCtx := common.WithProperties(context.Background(), PropertiesFromQueryParams(ctx))
 
-	if err := composeApp.UpdateSettings(backgroundCtx, buf); err != nil {
+	if err := composeApp.Apply(backgroundCtx, buf); err != nil {
 		message := err.Error()
 		return ctx.JSON(http.StatusInternalServerError, codegen.ResponseInternalServerError{
 			Message: &message,
@@ -228,6 +222,48 @@ func (a *AppManagement) UninstallComposeApp(ctx echo.Context, id codegen.Compose
 
 	return ctx.JSON(http.StatusOK, codegen.ComposeAppUninstallOK{
 		Message: utils.Ptr("compose app is being uninstalled asynchronously"),
+	})
+}
+
+func (a *AppManagement) UpdateComposeApp(ctx echo.Context, id codegen.ComposeAppID, params codegen.UpdateComposeAppParams) error {
+	if id == "" {
+		message := ErrComposeAppIDNotProvided.Error()
+		return ctx.JSON(http.StatusBadRequest, codegen.ResponseBadRequest{
+			Message: &message,
+		})
+	}
+
+	composeApps, err := service.MyService.Compose().List(ctx.Request().Context())
+	if err != nil {
+		message := err.Error()
+		return ctx.JSON(http.StatusInternalServerError, codegen.ResponseInternalServerError{Message: &message})
+	}
+
+	composeApp, ok := composeApps[id]
+	if !ok {
+		message := fmt.Sprintf("compose app `%s` not found", id)
+		return ctx.JSON(http.StatusNotFound, codegen.ResponseNotFound{Message: &message})
+	}
+
+	if params.Force != nil && !*params.Force {
+		// check if updateAvailable
+		if !composeApp.IsUpdateAvailable() {
+			message := fmt.Sprintf("compose app `%s` is up to date", id)
+			return ctx.JSON(http.StatusOK, codegen.ComposeAppUpdateOK{Message: &message})
+		}
+	}
+
+	backgroundCtx := common.WithProperties(context.Background(), PropertiesFromQueryParams(ctx))
+
+	if err := composeApp.Update(backgroundCtx); err != nil {
+		logger.Error("failed to update compose app", zap.Error(err), zap.String("appID", id))
+		message := err.Error()
+		return ctx.JSON(http.StatusInternalServerError, codegen.ResponseInternalServerError{Message: &message})
+	}
+
+	message := fmt.Sprintf("compose app `%s` is being updated asynchronously", id)
+	return ctx.JSON(http.StatusOK, codegen.ComposeAppUpdateOK{
+		Message: &message,
 	})
 }
 
@@ -382,10 +418,10 @@ func composeAppsWithStoreInfo(ctx context.Context) (map[string]codegen.ComposeAp
 		}
 
 		composeAppWithStoreInfo := codegen.ComposeAppWithStoreInfo{
-			Compose:    (*codegen.ComposeApp)(composeApp),
-			StoreInfo:  nil,
-			Status:     utils.Ptr("unknown"),
-			Upgradable: utils.Ptr(false),
+			Compose:         (*codegen.ComposeApp)(composeApp),
+			StoreInfo:       nil,
+			Status:          utils.Ptr("unknown"),
+			UpdateAvailable: utils.Ptr(false),
 		}
 
 		storeInfo, err := composeApp.StoreInfo(true)
@@ -396,16 +432,10 @@ func composeAppsWithStoreInfo(ctx context.Context) (map[string]codegen.ComposeAp
 
 		composeAppWithStoreInfo.StoreInfo = storeInfo
 
-		// check if upgradable
-		upgradable := false
-		if storeInfo != nil && storeInfo.StoreAppID != nil && *storeInfo.StoreAppID != "" {
-			storeComposeApp := service.MyService.V2AppStore().ComposeApp(*storeInfo.StoreAppID)
-			if storeComposeApp != nil {
-				upgradable = service.IsUpgradable(composeApp, storeComposeApp)
-			}
-		}
+		// check if updateAvailable
+		updateAvailable := composeApp.IsUpdateAvailable()
 
-		composeAppWithStoreInfo.Upgradable = &upgradable
+		composeAppWithStoreInfo.UpdateAvailable = &updateAvailable
 
 		// status
 		if storeInfo.MainApp == nil {

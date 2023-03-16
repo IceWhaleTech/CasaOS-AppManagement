@@ -283,10 +283,10 @@ paths:
           $ref: "#/components/responses/ResponseInternalServerError"
 
     put:
-      summary: Update settings of a compose app
+      summary: Apply settings to a compose app
       description: |
         TODO - add description
-      operationId: updateComposeAppSettings
+      operationId: applyComposeAppSettings
       tags:
         - Compose methods
       parameters:
@@ -303,6 +303,23 @@ paths:
         "500":
           $ref: "#/components/responses/ResponseInternalServerError"
 
+    patch:
+      summary: Update container images of compose app to match the compose app in AppStore.
+      description: |
+        TODO - add description
+      operationId: updateComposeApp
+      tags:
+        - Compose methods
+      parameters:
+        - $ref: "#/components/parameters/ComposeAppID"
+        - $ref: "#/components/parameters/Force"
+      responses:
+        "200":
+          $ref: "#/components/responses/ComposeAppUpdateOK"
+        "404":
+          $ref: "#/components/responses/ResponseNotFound"
+        "500":
+          $ref: "#/components/responses/ResponseInternalServerError"
     delete:
       summary: Uninstall a compose app
       description: |
@@ -696,6 +713,13 @@ components:
           schema:
             $ref: "#/components/schemas/BaseResponse"
 
+    ComposeAppUpdateOK:
+      description: OK
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/BaseResponse"
+
     ComposeAppOK:
       description: OK
       content:
@@ -894,8 +918,7 @@ components:
           type: string
           readOnly: true
           example: running
-        upgradable:
-          title: Whether the compose app is upgradable
+        update_available:
           readOnly: true
           type: boolean
           example: true
