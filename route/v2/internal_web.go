@@ -5,7 +5,6 @@ import (
 	"net/http"
 
 	"github.com/IceWhaleTech/CasaOS-AppManagement/codegen"
-	"github.com/IceWhaleTech/CasaOS-AppManagement/common"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/service"
 	"github.com/IceWhaleTech/CasaOS-Common/utils"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/logger"
@@ -93,7 +92,7 @@ func WebAppGridItemAdapter(composeAppWithStoreInfo codegen.ComposeAppWithStoreIn
 	item.Title = &mainAppStoreInfo.Title
 
 	// item type
-	itemType := (codegen.WebAppGridItemType)(lo.If(mainAppStoreInfo.Author == common.ComposeAppOfficialAuthor, "official").Else("community"))
+	itemType := composeApp.AuthorType()
 	item.Type = &itemType
 
 	return item, nil

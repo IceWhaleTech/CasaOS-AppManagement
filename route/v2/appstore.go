@@ -83,6 +83,11 @@ func (a *AppManagement) ComposeAppStoreInfoList(ctx echo.Context, params codegen
 		catalog = FilterCatalogByCategory(catalog, *params.Category)
 	}
 
+	if params.AuthorType != nil {
+		authorType := strings.ToLower(string(*params.AuthorType))
+		catalog = FilterCatalogByAuthorType(catalog, codegen.StoreAppAuthorType(authorType))
+	}
+
 	// list
 	list := lo.MapValues(catalog, func(composeApp *service.ComposeApp, appStoreID string) codegen.ComposeAppStoreInfo {
 		storeInfo, err := composeApp.StoreInfo(true)
@@ -224,5 +229,20 @@ func FilterCatalogByCategory(catalog map[string]*service.ComposeApp, category st
 		}
 
 		return strings.ToLower(mainAppStoreInfo.Category) == strings.ToLower(category)
+	})
+}
+
+func FilterCatalogByAuthorType(catalog map[string]*service.ComposeApp, authorType codegen.StoreAppAuthorType) map[string]*service.ComposeApp {
+	if !lo.Contains([]codegen.StoreAppAuthorType{
+		codegen.Official,
+		codegen.ByCasaos,
+		codegen.Community,
+	}, authorType) {
+		logger.Info("warning: unknown author type - returning empty catalog", zap.String("authorType", string(authorType)))
+		return map[string]*service.ComposeApp{}
+	}
+
+	return lo.PickBy(catalog, func(storeAppID string, composeApp *service.ComposeApp) bool {
+		return composeApp.AuthorType() == authorType
 	})
 }
