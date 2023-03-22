@@ -62,5 +62,5 @@ func TestWebAppGridItemAdapter(t *testing.T) {
 	assert.Equal(t, *gridItem.Index, (*storeInfo.Apps)[*storeInfo.MainApp].Container.Index)
 	assert.Equal(t, *gridItem.Status, "running")
 	assert.DeepEqual(t, *gridItem.Title, (*storeInfo.Apps)[*storeInfo.MainApp].Title)
-	assert.Equal(t, string(*gridItem.Type), "official")
+	assert.Equal(t, *gridItem.Type, codegen.ByCasaos)
 }

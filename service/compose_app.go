@@ -64,6 +64,37 @@ func (a *ComposeApp) StoreInfo(includeApps bool) (*codegen.ComposeAppStoreInfo, 
 	return &storeInfo, nil
 }
 
+func (a *ComposeApp) AuthorType() codegen.StoreAppAuthorType {
+	storeInfo, err := a.StoreInfo(true)
+	if err != nil {
+		return codegen.Unknown
+	}
+
+	mainApp := storeInfo.MainApp
+	if mainApp == nil || *mainApp == "" {
+		return codegen.Unknown
+	}
+
+	if storeInfo.Apps == nil || len(*storeInfo.Apps) == 0 {
+		return codegen.Unknown
+	}
+
+	mainAppStoreInfo, ok := (*storeInfo.Apps)[*mainApp]
+	if !ok {
+		return codegen.Unknown
+	}
+
+	if strings.ToLower(mainAppStoreInfo.Author) == strings.ToLower(mainAppStoreInfo.Developer) {
+		return codegen.Official
+	}
+
+	if strings.ToLower(mainAppStoreInfo.Author) == strings.ToLower(common.ComposeAppAuthorCasaOSTeam) {
+		return codegen.ByCasaos
+	}
+
+	return codegen.Community
+}
+
 func (a *ComposeApp) SetStoreAppID(storeAppID string) (string, bool) {
 	// set store_app_id (by convention is the same as app name at install time if it does not exist)
 	extension, ok := a.Extensions[common.ComposeExtensionNameXCasaOS]

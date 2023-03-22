@@ -182,7 +182,8 @@ paths:
       tags:
         - AppStore methods
       parameters:
-        - $ref: "#/components/parameters/StoreAppCategory"
+        - $ref: "#/components/parameters/StoreAppCategoryFilter"
+        - $ref: "#/components/parameters/StoreAppAuthorTypeFilter"
       responses:
         "200":
           $ref: "#/components/responses/ComposeAppStoreInfoListsOK"
@@ -506,13 +507,20 @@ components:
         type: string
         example: "syncthing"
 
-    StoreAppCategory:
+    StoreAppCategoryFilter:
       name: category
       description: Category of the store app
       in: query
       schema:
         type: string
         example: "chat"
+
+    StoreAppAuthorTypeFilter:
+      name: author_type
+      description: Author type of the store app
+      in: query
+      schema:
+        $ref: "#/components/schemas/StoreAppAuthorType"
 
     ComposeAppID:
       name: id
@@ -1176,6 +1184,28 @@ components:
         mapstructure: "store_app_id"
         yaml: "store_app_id,omitempty"
 
+
+    StoreAppAuthorType:
+      title: Store app author type
+      description: |
+        Type of the author of the app
+
+        - `official`: The app is contributed by the app owner, i.e. `author`` and `developer`` are the same.
+        - `by_casaos`: The app is contributed by CasaOS team, i.e. `author` is `CasaOS Team`
+        - `community`: The app is contributed by the community, i.e. any app that is not `official` or `by_casaos`
+      readOnly: true
+      type: string
+      enum:
+        - official
+        - by_casaos
+        - community
+        - unknown
+      x-enum-varnames:
+        - AuthorTypeOfficial
+        - AuthorTypeByCasaOS
+        - AuthorTypeCommunity
+        - AuthroTypeUnknown
+
     WebAppGridItem:
       description: (internal use ONLY)
       properties:
@@ -1198,10 +1228,7 @@ components:
           type: string
           example: https://cdn.jsdelivr.net/gh/IceWhaleTech/CasaOS-AppStore@main/Apps/Syncthing/icon.png
         type:
-          type: string
-          enum:
-            - official
-            - community
+          $ref: "#/components/schemas/StoreAppAuthorType"
         hostname:
           type: string
           example: ""
