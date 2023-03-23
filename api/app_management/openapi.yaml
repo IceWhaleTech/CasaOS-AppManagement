@@ -1136,6 +1136,9 @@ components:
       required:
         - before_install
       properties:
+        custom:
+          type: string
+          example: "custom tips by user"
         before_install:
           type: array
           items:
@@ -1183,7 +1186,6 @@ components:
       x-oapi-codegen-extra-tags:
         mapstructure: "store_app_id"
         yaml: "store_app_id,omitempty"
-
 
     StoreAppAuthorType:
       title: Store app author type
