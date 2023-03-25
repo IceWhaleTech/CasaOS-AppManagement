@@ -180,6 +180,7 @@ paths:
       parameters:
         - $ref: "#/components/parameters/StoreAppCategoryFilter"
         - $ref: "#/components/parameters/StoreAppAuthorTypeFilter"
+        - $ref: "#/components/parameters/StoreAppRecommendedFilter"
       responses:
         "200":
           $ref: "#/components/responses/ComposeAppStoreInfoListsOK"
@@ -517,6 +518,14 @@ components:
       in: query
       schema:
         $ref: "#/components/schemas/StoreAppAuthorType"
+
+    StoreAppRecommendedFilter:
+      name: recommend
+      description: The store app is recommended
+      in: query
+      schema:
+        type: boolean
+        default: false
 
     ComposeAppID:
       name: id
