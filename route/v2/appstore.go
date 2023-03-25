@@ -88,6 +88,12 @@ func (a *AppManagement) ComposeAppStoreInfoList(ctx echo.Context, params codegen
 		catalog = FilterCatalogByAuthorType(catalog, codegen.StoreAppAuthorType(authorType))
 	}
 
+	if params.Recommend != nil && *params.Recommend {
+		// recommend
+		recommendedList := service.MyService.V2AppStore().Recommend()
+		catalog = FilterCatalogByAppStoreID(catalog, recommendedList)
+	}
+
 	// list
 	list := lo.MapValues(catalog, func(composeApp *service.ComposeApp, appStoreID string) codegen.ComposeAppStoreInfo {
 		storeInfo, err := composeApp.StoreInfo(true)
@@ -102,14 +108,6 @@ func (a *AppManagement) ComposeAppStoreInfoList(ctx echo.Context, params codegen
 	data := &codegen.ComposeAppStoreInfoLists{
 		List: &list,
 	}
-
-	// recommend
-	recommend := service.MyService.V2AppStore().Recommend()
-	if params.Category != nil {
-		recommend = lo.Intersect(recommend, lo.Keys(catalog))
-	}
-
-	data.Recommend = &recommend
 
 	// installed
 	installedComposeApps, err := service.MyService.Compose().List(ctx.Request().Context())
@@ -244,5 +242,11 @@ func FilterCatalogByAuthorType(catalog map[string]*service.ComposeApp, authorTyp
 
 	return lo.PickBy(catalog, func(storeAppID string, composeApp *service.ComposeApp) bool {
 		return composeApp.AuthorType() == authorType
+	})
+}
+
+func FilterCatalogByAppStoreID(catalog map[string]*service.ComposeApp, appStoreIDs []string) map[string]*service.ComposeApp {
+	return lo.PickBy(catalog, func(storeAppID string, composeApp *service.ComposeApp) bool {
+		return lo.Contains(appStoreIDs, storeAppID)
 	})
 }

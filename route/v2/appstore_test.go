@@ -173,3 +173,63 @@ func TestFilterCatalogByAuthorType(t *testing.T) {
 	filteredCatalog = v2.FilterCatalogByAuthorType(catalog, codegen.Community)
 	assert.Equal(t, len(filteredCatalog), 1)
 }
+
+func TestFilterCatalogByAppStoreID(t *testing.T) {
+	logger.LogInitConsoleOnly()
+
+	catalog := map[string]*service.ComposeApp{}
+
+	filteredCatalog := v2.FilterCatalogByAppStoreID(catalog, []string{"test"})
+	assert.Equal(t, len(filteredCatalog), 0)
+
+	catalog["test"] = &service.ComposeApp{
+		Extensions: map[string]interface{}{
+			common.ComposeExtensionNameXCasaOS: map[string]interface{}{
+				"main_app": "test",
+			},
+		},
+		Services: []types.ServiceConfig{
+			{
+				Name: "test",
+				Extensions: map[string]interface{}{
+					common.ComposeExtensionNameXCasaOS: map[string]interface{}{
+						"app_store_id": "test",
+					},
+				},
+			},
+		},
+	}
+
+	filteredCatalog = v2.FilterCatalogByAppStoreID(catalog, []string{"test"})
+	assert.Equal(t, len(filteredCatalog), 1)
+
+	catalog["test2"] = &service.ComposeApp{
+		Extensions: map[string]interface{}{
+			common.ComposeExtensionNameXCasaOS: map[string]interface{}{
+				"main_app": "test2",
+			},
+		},
+		Services: []types.ServiceConfig{
+			{
+				Name: "test2",
+				Extensions: map[string]interface{}{
+					common.ComposeExtensionNameXCasaOS: map[string]interface{}{
+						"app_store_id": "test2",
+					},
+				},
+			},
+		},
+	}
+
+	filteredCatalog = v2.FilterCatalogByAppStoreID(catalog, []string{"test"})
+	assert.Equal(t, len(filteredCatalog), 1)
+
+	filteredCatalog = v2.FilterCatalogByAppStoreID(catalog, []string{"test", "test2"})
+	assert.Equal(t, len(filteredCatalog), 2)
+
+	filteredCatalog = v2.FilterCatalogByAppStoreID(catalog, []string{"test", "test2", "test3"})
+	assert.Equal(t, len(filteredCatalog), 2)
+
+	filteredCatalog = v2.FilterCatalogByAppStoreID(catalog, []string{"test1", "test2", "test3"})
+	assert.Equal(t, len(filteredCatalog), 1)
+}
