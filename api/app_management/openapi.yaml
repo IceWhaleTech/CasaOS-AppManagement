@@ -1136,33 +1136,19 @@ components:
       required:
         - before_install
       properties:
-        custom:
-          type: string
-          example: "custom tips by user"
         before_install:
-          type: array
-          items:
-            $ref: "#/components/schemas/Tip"
-          x-oapi-codegen-extra-tags:
-            mapstructure: "before_install"
-            yaml: "before_install,omitempty"
-
-    Tip:
-      required:
-        - content
-      properties:
-        content:
           type: object
           additionalProperties:
             type: string
           example:
-            en_US: "Username: "
-        value:
-          type: string
-          example: "admin"
+            en_US: |
+              Tips for users before install.
           x-oapi-codegen-extra-tags:
-            yaml: ",omitempty"
-
+            mapstructure: "before_install"
+            yaml: "before_install,omitempty"
+        custom:
+          type: string
+          example: "custom tips by user"
     Scheme:
       type: string
       default: http
