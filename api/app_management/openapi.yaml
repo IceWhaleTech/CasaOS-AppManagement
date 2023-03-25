@@ -174,10 +174,6 @@ paths:
       summary: Get app list from registered app stores
       description: |
         Get lists of StoreInfo of all compose apps from AppStore.
-
-        - `recommend` - Compose apps recommended by CasaOS team
-        - `list` - All compose apps
-        - `community` - Compose apps contributed by community
       operationId: composeAppStoreInfoList
       tags:
         - AppStore methods
@@ -850,10 +846,6 @@ components:
 
     ComposeAppStoreInfoLists:
       properties:
-        recommend:
-          type: array
-          items:
-            $ref: "#/components/schemas/StoreAppID"
         installed:
           type: array
           items:
