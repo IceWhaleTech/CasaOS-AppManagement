@@ -22,8 +22,8 @@ func (a *App) StoreInfo() (*codegen.AppStoreInfo, error) {
 		return nil, err
 	}
 
-	if storeInfo.Container.Scheme == nil || *storeInfo.Container.Scheme == "" {
-		storeInfo.Container.Scheme = utils.Ptr(codegen.Http)
+	if storeInfo.Scheme == nil || *storeInfo.Scheme == "" {
+		storeInfo.Scheme = utils.Ptr(codegen.Http)
 	}
 
 	return &storeInfo, nil

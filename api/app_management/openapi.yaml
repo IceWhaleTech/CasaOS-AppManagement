@@ -98,7 +98,6 @@ x-tagGroups:
       - ComposeAppStoreInfoLists
       - ComposeAppStoreInfo
       - ContainerSummary
-      - ContainerStoreInfo
       - EnvStoreInfo
       - PortStoreInfo
       - VolumeStoreInfo
@@ -995,38 +994,6 @@ components:
       description: |-
         > Do not mistake it as *information of AppStore* which does not exist.
       required:
-        - container
-      properties:
-        container:
-          $ref: "#/components/schemas/ContainerStoreInfo"
-
-    ComposeAppContainers:
-      description: |-
-        Schema for `ComposeAppContainersOK` response.
-      properties:
-        main:
-          type: string
-          example: "syncthing"
-        containers:
-          type: object
-          additionalProperties:
-            $ref: "#/components/schemas/ContainerSummary"
-          example:
-            "09e70f4a7dd3fc43de6a1bc40d45c79f857544e13679e5b1a47409034a7ce621":
-              {}
-
-    ContainerSummary:
-      type: object
-      description: |-
-        See [Go Doc](https://pkg.go.dev/github.com/docker/compose/v2@v2.14.2/pkg/api#ContainerSummary) for the schema structure of `ContainerSummary`.
-
-      x-go-type: api.ContainerSummary
-      x-go-type-import:
-        name: api
-        path: github.com/docker/compose/v2/pkg/api
-
-    ContainerStoreInfo:
-      required:
         - envs
         - index
         - port_map
@@ -1076,6 +1043,31 @@ components:
             $ref: "#/components/schemas/DeviceStoreInfo"
           x-oapi-codegen-extra-tags:
             yaml: ",omitempty"
+
+    ComposeAppContainers:
+      description: |-
+        Schema for `ComposeAppContainersOK` response.
+      properties:
+        main:
+          type: string
+          example: "syncthing"
+        containers:
+          type: object
+          additionalProperties:
+            $ref: "#/components/schemas/ContainerSummary"
+          example:
+            "09e70f4a7dd3fc43de6a1bc40d45c79f857544e13679e5b1a47409034a7ce621":
+              {}
+
+    ContainerSummary:
+      type: object
+      description: |-
+        See [Go Doc](https://pkg.go.dev/github.com/docker/compose/v2@v2.14.2/pkg/api#ContainerSummary) for the schema structure of `ContainerSummary`.
+
+      x-go-type: api.ContainerSummary
+      x-go-type-import:
+        name: api
+        path: github.com/docker/compose/v2/pkg/api
 
     EnvStoreInfo:
       required:

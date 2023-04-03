@@ -33,44 +33,43 @@ services:
         source: /DATA
         target: /DATA
     x-casaos:
-      container:
-        envs:
-          - container: TZ
-            description:
-              en_US: TimeZone
-          - container: PUID
-            description:
-              en_US: Run Syncthing as specified uid.
-          - container: PGID
-            description:
-              en_US: Run Syncthing as specified gid.
-        index: /
-        port_map: "8384"
-        ports:
-          - container: "8384"
-            description:
-              en_US: WebUI HTTP Port
+      envs:
+        - container: TZ
+          description:
+            en_US: TimeZone
+        - container: PUID
+          description:
+            en_US: Run Syncthing as specified uid.
+        - container: PGID
+          description:
+            en_US: Run Syncthing as specified gid.
+      index: /
+      port_map: "8384"
+      ports:
+        - container: "8384"
+          description:
+            en_US: WebUI HTTP Port
 
-          - container: "22000"
-            description:
-              en_US: Syncthing listening Port (TCP)
+        - container: "22000"
+          description:
+            en_US: Syncthing listening Port (TCP)
 
-          - container: "22000"
-            description:
-              en_US: Syncthing listening Port (UDP)
-            protocol: udp
-          - container: "21027"
-            description:
-              en_US: Syncthing protocol discovery Port (TCP)
-            protocol: udp
+        - container: "22000"
+          description:
+            en_US: Syncthing listening Port (UDP)
+          protocol: udp
+        - container: "21027"
+          description:
+            en_US: Syncthing protocol discovery Port (TCP)
+          protocol: udp
 
-        volumes:
-          - container: /config
-            description:
-              en_US: Syncthing config directory.
-          - container: /DATA
-            description:
-              en_US: Syncthing Accessible Directory.
+      volumes:
+        - container: /config
+          description:
+            en_US: Syncthing config directory.
+        - container: /DATA
+          description:
+            en_US: Syncthing Accessible Directory.
 
 x-casaos:
   author: CasaOS Team
