@@ -10,21 +10,21 @@ import (
 
 type App types.ServiceConfig
 
-func (a *App) StoreInfo() (*codegen.AppStoreInfo, error) {
-	ex, ok := a.Extensions[common.ComposeExtensionNameXCasaOS]
-	if !ok {
-		return nil, ErrComposeExtensionNameXCasaOSNotFound
-	}
-
+func (a *App) StoreInfo() (codegen.AppStoreInfo, error) {
 	var storeInfo codegen.AppStoreInfo
 
+	ex, ok := a.Extensions[common.ComposeExtensionNameXCasaOS]
+	if !ok {
+		return storeInfo, ErrComposeExtensionNameXCasaOSNotFound
+	}
+
 	if err := loader.Transform(ex, &storeInfo); err != nil {
-		return nil, err
+		return storeInfo, err
 	}
 
 	if storeInfo.Scheme == nil || *storeInfo.Scheme == "" {
 		storeInfo.Scheme = utils.Ptr(codegen.Http)
 	}
 
-	return &storeInfo, nil
+	return storeInfo, nil
 }

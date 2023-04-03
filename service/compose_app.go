@@ -53,9 +53,14 @@ func (a *ComposeApp) StoreInfo(includeApps bool) (*codegen.ComposeAppStoreInfo, 
 		for _, app := range a.Apps() {
 			appStoreInfo, err := app.StoreInfo()
 			if err != nil {
+				if err == ErrComposeExtensionNameXCasaOSNotFound {
+					logger.Info("App does not have x-casaos extension - skipp", zap.String("app", app.Name))
+					continue
+				}
+
 				return nil, err
 			}
-			apps[app.Name] = *appStoreInfo
+			apps[app.Name] = appStoreInfo
 		}
 
 		storeInfo.Apps = &apps
