@@ -24,17 +24,7 @@ func TestFilterCatalogByCategory(t *testing.T) {
 	catalog["test"] = &service.ComposeApp{
 		Extensions: map[string]interface{}{
 			common.ComposeExtensionNameXCasaOS: map[string]interface{}{
-				"main_app": "test",
-			},
-		},
-		Services: []types.ServiceConfig{
-			{
-				Name: "test",
-				Extensions: map[string]interface{}{
-					common.ComposeExtensionNameXCasaOS: map[string]interface{}{
-						"category": "test",
-					},
-				},
+				"category": "test",
 			},
 		},
 	}
@@ -45,17 +35,7 @@ func TestFilterCatalogByCategory(t *testing.T) {
 	catalog["test2"] = &service.ComposeApp{
 		Extensions: map[string]interface{}{
 			common.ComposeExtensionNameXCasaOS: map[string]interface{}{
-				"main_app": "test2",
-			},
-		},
-		Services: []types.ServiceConfig{
-			{
-				Name: "test2",
-				Extensions: map[string]interface{}{
-					common.ComposeExtensionNameXCasaOS: map[string]interface{}{
-						"category": "test2",
-					},
-				},
+				"category": "test2",
 			},
 		},
 	}
@@ -84,17 +64,7 @@ func TestFilterCatalogByAuthorType(t *testing.T) {
 	catalog["test"] = &service.ComposeApp{
 		Extensions: map[string]interface{}{
 			common.ComposeExtensionNameXCasaOS: map[string]interface{}{
-				"main_app": "test",
-			},
-		},
-		Services: []types.ServiceConfig{
-			{
-				Name: "test",
-				Extensions: map[string]interface{}{
-					common.ComposeExtensionNameXCasaOS: map[string]interface{}{
-						"author": common.ComposeAppAuthorCasaOSTeam,
-					},
-				},
+				"author": common.ComposeAppAuthorCasaOSTeam,
 			},
 		},
 	}
@@ -114,18 +84,8 @@ func TestFilterCatalogByAuthorType(t *testing.T) {
 	catalog["test2"] = &service.ComposeApp{
 		Extensions: map[string]interface{}{
 			common.ComposeExtensionNameXCasaOS: map[string]interface{}{
-				"main_app": "test2",
-			},
-		},
-		Services: []types.ServiceConfig{
-			{
-				Name: "test2",
-				Extensions: map[string]interface{}{
-					common.ComposeExtensionNameXCasaOS: map[string]interface{}{
-						"author":    "test2",
-						"developer": "test2",
-					},
-				},
+				"author":    "test2",
+				"developer": "test2",
 			},
 		},
 	}
@@ -145,18 +105,8 @@ func TestFilterCatalogByAuthorType(t *testing.T) {
 	catalog["test3"] = &service.ComposeApp{
 		Extensions: map[string]interface{}{
 			common.ComposeExtensionNameXCasaOS: map[string]interface{}{
-				"main_app": "test2",
-			},
-		},
-		Services: []types.ServiceConfig{
-			{
-				Name: "test2",
-				Extensions: map[string]interface{}{
-					common.ComposeExtensionNameXCasaOS: map[string]interface{}{
-						"author":    "test3",
-						"developer": "syncthing",
-					},
-				},
+				"author":    "test3",
+				"developer": "syncthing",
 			},
 		},
 	}

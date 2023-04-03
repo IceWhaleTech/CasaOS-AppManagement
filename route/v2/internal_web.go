@@ -85,11 +85,11 @@ func WebAppGridItemAdapter(composeAppWithStoreInfo codegen.ComposeAppWithStoreIn
 	// item properties from store info
 	mainAppStoreInfo := (*composeAppStoreInfo.Apps)[*composeAppStoreInfo.Main]
 	item.Hostname = mainAppStoreInfo.Container.Hostname
-	item.Icon = &mainAppStoreInfo.Icon
+	item.Icon = &composeAppStoreInfo.Icon
 	item.Index = &mainAppStoreInfo.Container.Index
 	item.Port = &mainAppStoreInfo.Container.PortMap
 	item.Scheme = mainAppStoreInfo.Container.Scheme
-	item.Title = &mainAppStoreInfo.Title
+	item.Title = &composeAppStoreInfo.Title
 
 	// item type
 	itemType := composeApp.AuthorType()

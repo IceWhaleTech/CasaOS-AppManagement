@@ -55,12 +55,12 @@ func TestWebAppGridItemAdapter(t *testing.T) {
 	gridItem, err := v2.WebAppGridItemAdapter(composeAppWithStoreInfo)
 	assert.NilError(t, err)
 
-	assert.Equal(t, *gridItem.Icon, (*storeInfo.Apps)[*storeInfo.Main].Icon)
+	assert.Equal(t, *gridItem.Icon, storeInfo.Icon)
 	assert.Equal(t, *gridItem.Image, composeApp.Services[0].Image)
 	assert.Equal(t, gridItem.Hostname, (*storeInfo.Apps)[*storeInfo.Main].Container.Hostname)
 	assert.Equal(t, *gridItem.Port, (*storeInfo.Apps)[*storeInfo.Main].Container.PortMap)
 	assert.Equal(t, *gridItem.Index, (*storeInfo.Apps)[*storeInfo.Main].Container.Index)
 	assert.Equal(t, *gridItem.Status, "running")
-	assert.DeepEqual(t, *gridItem.Title, (*storeInfo.Apps)[*storeInfo.Main].Title)
+	assert.DeepEqual(t, *gridItem.Title, storeInfo.Title)
 	assert.Equal(t, *gridItem.Type, codegen.ByCasaos)
 }

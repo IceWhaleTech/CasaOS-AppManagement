@@ -212,21 +212,7 @@ func FilterCatalogByCategory(catalog map[string]*service.ComposeApp, category st
 			return false
 		}
 
-		mainApp := storeInfo.Main
-		if mainApp == nil || *mainApp == "" {
-			return false
-		}
-
-		if storeInfo.Apps == nil || len(*storeInfo.Apps) == 0 {
-			return false
-		}
-
-		mainAppStoreInfo, ok := (*storeInfo.Apps)[*mainApp]
-		if !ok {
-			return false
-		}
-
-		return strings.ToLower(mainAppStoreInfo.Category) == strings.ToLower(category)
+		return strings.ToLower(storeInfo.Category) == strings.ToLower(category)
 	})
 }
 

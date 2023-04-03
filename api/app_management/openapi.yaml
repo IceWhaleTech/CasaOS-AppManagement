@@ -865,9 +865,66 @@ components:
             $ref: "#/components/schemas/ComposeAppStoreInfo"
 
     ComposeAppStoreInfo:
+      required:
+        - author
+        - category
+        - description
+        - developer
+        - icon
+        - screenshot_link
+        - tagline
+        - thumbnail
+        - title
+        - tips
+
       properties:
         store_app_id:
           $ref: "#/components/schemas/StoreAppID"
+        title:
+          type: object
+          additionalProperties:
+            type: string
+          example:
+            en_US: Syncthing
+        description:
+          type: object
+          additionalProperties:
+            type: string
+          example:
+            en_US: Syncthing is a continuous file synchronization program. It synchronizes files between two or more computers in real time, safely protected from prying eyes. Your data is your data alone and you deserve to choose where it is stored, whether it is shared with some third party, and how it's transmitted over the internet.
+        tagline:
+          type: object
+          additionalProperties:
+            type: string
+          example:
+            en_US: Free, secure, and distributed file synchronisation tool.
+        icon:
+          type: string
+          example: https://cdn.jsdelivr.net/gh/IceWhaleTech/CasaOS-AppStore@main/Apps/Syncthing/icon.png
+        screenshot_link:
+          type: array
+          items:
+            type: string
+          example:
+            - https://cdn.jsdelivr.net/gh/IceWhaleTech/CasaOS-AppStore@main/Apps/OpenSpeedTest/screenshot-1.png
+            - https://cdn.jsdelivr.net/gh/IceWhaleTech/CasaOS-AppStore@main/Apps/OpenSpeedTest/screenshot-2.png
+          x-oapi-codegen-extra-tags:
+            mapstructure: "screenshot_link"
+            yaml: "screenshot_link,omitempty"
+        thumbnail:
+          type: string
+          example: https://cdn.jsdelivr.net/gh/IceWhaleTech/CasaOS-AppStore@main/Apps/Jellyfin/thumbnail.jpg
+        author:
+          type: string
+          example: CasaOS Team
+        developer:
+          type: string
+          example: Syncthing
+        category:
+          type: string
+          example: Backup
+        tips:
+          $ref: "#/components/schemas/TipsStoreInfo"
 
         apps:
           title: store info of container apps included in the compose app
@@ -938,63 +995,8 @@ components:
       description: |-
         > Do not mistake it as *information of AppStore* which does not exist.
       required:
-        - author
-        - category
         - container
-        - description
-        - developer
-        - icon
-        - screenshot_link
-        - tagline
-        - thumbnail
-        - title
-        - tips
       properties:
-        title:
-          type: object
-          additionalProperties:
-            type: string
-          example:
-            en_US: Syncthing
-        description:
-          type: object
-          additionalProperties:
-            type: string
-          example:
-            en_US: Syncthing is a continuous file synchronization program. It synchronizes files between two or more computers in real time, safely protected from prying eyes. Your data is your data alone and you deserve to choose where it is stored, whether it is shared with some third party, and how it's transmitted over the internet.
-        tagline:
-          type: object
-          additionalProperties:
-            type: string
-          example:
-            en_US: Free, secure, and distributed file synchronisation tool.
-        icon:
-          type: string
-          example: https://cdn.jsdelivr.net/gh/IceWhaleTech/CasaOS-AppStore@main/Apps/Syncthing/icon.png
-        screenshot_link:
-          type: array
-          items:
-            type: string
-          example:
-            - https://cdn.jsdelivr.net/gh/IceWhaleTech/CasaOS-AppStore@main/Apps/OpenSpeedTest/screenshot-1.png
-            - https://cdn.jsdelivr.net/gh/IceWhaleTech/CasaOS-AppStore@main/Apps/OpenSpeedTest/screenshot-2.png
-          x-oapi-codegen-extra-tags:
-            mapstructure: "screenshot_link"
-            yaml: "screenshot_link,omitempty"
-        thumbnail:
-          type: string
-          example: https://cdn.jsdelivr.net/gh/IceWhaleTech/CasaOS-AppStore@main/Apps/Jellyfin/thumbnail.jpg
-        author:
-          type: string
-          example: CasaOS Team
-        developer:
-          type: string
-          example: Syncthing
-        category:
-          type: string
-          example: Backup
-        tips:
-          $ref: "#/components/schemas/TipsStoreInfo"
         container:
           $ref: "#/components/schemas/ContainerStoreInfo"
 

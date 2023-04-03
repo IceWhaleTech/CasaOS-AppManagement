@@ -65,30 +65,16 @@ func (a *ComposeApp) StoreInfo(includeApps bool) (*codegen.ComposeAppStoreInfo, 
 }
 
 func (a *ComposeApp) AuthorType() codegen.StoreAppAuthorType {
-	storeInfo, err := a.StoreInfo(true)
+	storeInfo, err := a.StoreInfo(false)
 	if err != nil {
 		return codegen.Unknown
 	}
 
-	mainApp := storeInfo.Main
-	if mainApp == nil || *mainApp == "" {
-		return codegen.Unknown
-	}
-
-	if storeInfo.Apps == nil || len(*storeInfo.Apps) == 0 {
-		return codegen.Unknown
-	}
-
-	mainAppStoreInfo, ok := (*storeInfo.Apps)[*mainApp]
-	if !ok {
-		return codegen.Unknown
-	}
-
-	if strings.ToLower(mainAppStoreInfo.Author) == strings.ToLower(mainAppStoreInfo.Developer) {
+	if strings.ToLower(storeInfo.Author) == strings.ToLower(storeInfo.Developer) {
 		return codegen.Official
 	}
 
-	if strings.ToLower(mainAppStoreInfo.Author) == strings.ToLower(common.ComposeAppAuthorCasaOSTeam) {
+	if strings.ToLower(storeInfo.Author) == strings.ToLower(common.ComposeAppAuthorCasaOSTeam) {
 		return codegen.ByCasaos
 	}
 
@@ -229,18 +215,9 @@ func (a *ComposeApp) Update(ctx context.Context) error {
 	}
 
 	// prepare for message bus events
-	if storeInfo.Apps == nil || len(*storeInfo.Apps) == 0 {
-		return ErrNoAppFoundInComposeApp
-	}
-
-	mainAppStoreInfo, ok := (*storeInfo.Apps)[*storeInfo.Main]
-	if !ok {
-		return ErrMainAppNotFound
-	}
-
 	eventProperties := common.PropertiesFromContext(ctx)
 	eventProperties[common.PropertyTypeAppName.Name] = a.Name
-	eventProperties[common.PropertyTypeAppIcon.Name] = mainAppStoreInfo.Icon
+	eventProperties[common.PropertyTypeAppIcon.Name] = storeInfo.Icon
 
 	go func(ctx context.Context) {
 		go PublishEventWrapper(ctx, common.EventTypeAppUpdateBegin, nil)
@@ -564,18 +541,9 @@ func (a *ComposeApp) Apply(ctx context.Context, newComposeYAML []byte) error {
 		return ErrStoreInfoNotFound
 	}
 
-	if storeInfo.Apps == nil || len(*storeInfo.Apps) == 0 {
-		return ErrNoAppFoundInComposeApp
-	}
-
-	mainAppStoreInfo, ok := (*storeInfo.Apps)[*storeInfo.Main]
-	if !ok {
-		return ErrMainAppNotFound
-	}
-
 	eventProperties := common.PropertiesFromContext(ctx)
 	eventProperties[common.PropertyTypeAppName.Name] = a.Name
-	eventProperties[common.PropertyTypeAppIcon.Name] = mainAppStoreInfo.Icon
+	eventProperties[common.PropertyTypeAppIcon.Name] = storeInfo.Icon
 
 	go func(ctx context.Context) {
 		go PublishEventWrapper(ctx, common.EventTypeAppApplyChangesBegin, nil)
