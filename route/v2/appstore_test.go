@@ -135,7 +135,7 @@ func TestFilterCatalogByAppStoreID(t *testing.T) {
 	catalog["test"] = &service.ComposeApp{
 		Extensions: map[string]interface{}{
 			common.ComposeExtensionNameXCasaOS: map[string]interface{}{
-				"main_app": "test",
+				"main": "test",
 			},
 		},
 		Services: []types.ServiceConfig{
@@ -156,7 +156,7 @@ func TestFilterCatalogByAppStoreID(t *testing.T) {
 	catalog["test2"] = &service.ComposeApp{
 		Extensions: map[string]interface{}{
 			common.ComposeExtensionNameXCasaOS: map[string]interface{}{
-				"main_app": "test2",
+				"main": "test2",
 			},
 		},
 		Services: []types.ServiceConfig{

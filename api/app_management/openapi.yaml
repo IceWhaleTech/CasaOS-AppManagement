@@ -192,7 +192,7 @@ paths:
       description: |
         Get StoreInfo of specific compose app.
 
-        > A compose app contains one or more container `apps`. One of the `apps` is the `main_app` of this compose app, whereas others are dependency `apps`.
+        > A compose app contains one or more container `apps`. One of the `apps` is the `main` of this compose app, whereas others are dependency `apps`.
       operationId: composeAppStoreInfo
       tags:
         - AppStore methods
