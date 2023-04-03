@@ -39,10 +39,10 @@ func (a *ComposeApp) StoreInfo(includeApps bool) (*codegen.ComposeAppStoreInfo, 
 	}
 
 	// locate main app
-	if storeInfo.MainApp == nil || *storeInfo.MainApp == "" {
+	if storeInfo.Main == nil || *storeInfo.Main == "" {
 		// if main app is not specified, use the first app
 		for _, app := range a.Apps() {
-			storeInfo.MainApp = &app.Name
+			storeInfo.Main = &app.Name
 			break
 		}
 	}
@@ -70,7 +70,7 @@ func (a *ComposeApp) AuthorType() codegen.StoreAppAuthorType {
 		return codegen.Unknown
 	}
 
-	mainApp := storeInfo.MainApp
+	mainApp := storeInfo.Main
 	if mainApp == nil || *mainApp == "" {
 		return codegen.Unknown
 	}
@@ -150,7 +150,7 @@ func (a *ComposeApp) IsUpdateAvailableWith(storeComposeApp *ComposeApp) bool {
 		return false
 	}
 
-	mainAppName := *storeComposeAppStoreInfo.MainApp
+	mainAppName := *storeComposeAppStoreInfo.Main
 
 	mainApp := a.App(mainAppName)
 	if mainApp == nil {
@@ -233,7 +233,7 @@ func (a *ComposeApp) Update(ctx context.Context) error {
 		return ErrNoAppFoundInComposeApp
 	}
 
-	mainAppStoreInfo, ok := (*storeInfo.Apps)[*storeInfo.MainApp]
+	mainAppStoreInfo, ok := (*storeInfo.Apps)[*storeInfo.Main]
 	if !ok {
 		return ErrMainAppNotFound
 	}
@@ -568,7 +568,7 @@ func (a *ComposeApp) Apply(ctx context.Context, newComposeYAML []byte) error {
 		return ErrNoAppFoundInComposeApp
 	}
 
-	mainAppStoreInfo, ok := (*storeInfo.Apps)[*storeInfo.MainApp]
+	mainAppStoreInfo, ok := (*storeInfo.Apps)[*storeInfo.Main]
 	if !ok {
 		return ErrMainAppNotFound
 	}
@@ -745,7 +745,7 @@ func NewComposeAppFromYAML(yaml []byte, skipInterpolation, skipValidation bool) 
 			return nil, err
 		}
 
-		composeApp.Name = *composeAppStoreInfo.MainApp
+		composeApp.Name = *composeAppStoreInfo.Main
 	}
 
 	return composeApp, nil

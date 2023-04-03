@@ -881,15 +881,14 @@ components:
             syncthing: {}
           x-oapi-codegen-extra-tags:
             yaml: ",omitempty"
-        main_app:
-          title: name of the main container app in `apps`
+        main:
+          title: name of the main service in `services`
           description: |
-            The main container app is one of the container `apps` that the user will interact with.
+            The main service is one of the services that the user will interact with.
           type: string
           example: "syncthing"
           x-oapi-codegen-extra-tags:
-            mapstructure: "main_app"
-            yaml: "main_app,omitempty"
+            yaml: ",omitempty"
         architectures:
           title: architectures supported by the compose app
           description: |

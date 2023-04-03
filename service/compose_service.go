@@ -84,7 +84,7 @@ func (s *ComposeService) Install(ctx context.Context, composeApp *ComposeApp) er
 		return ErrNoAppFoundInComposeApp
 	}
 
-	mainAppStoreInfo, ok := (*storeInfo.Apps)[*storeInfo.MainApp]
+	mainAppStoreInfo, ok := (*storeInfo.Apps)[*storeInfo.Main]
 	if !ok {
 		return ErrMainAppNotFound
 	}
@@ -121,7 +121,7 @@ func (s *ComposeService) Uninstall(ctx context.Context, composeApp *ComposeApp, 
 		return ErrNoAppFoundInComposeApp
 	}
 
-	mainAppStoreInfo, ok := (*storeInfo.Apps)[*storeInfo.MainApp]
+	mainAppStoreInfo, ok := (*storeInfo.Apps)[*storeInfo.Main]
 	if !ok {
 		return ErrMainAppNotFound
 	}
