@@ -63,13 +63,13 @@ func WebAppGridItemAdapter(composeAppWithStoreInfo codegen.ComposeAppWithStoreIn
 		return item, fmt.Errorf("failed to get container apps for compose app %s", composeApp.Name)
 	}
 
-	if composeAppStoreInfo.MainApp == nil || *composeAppStoreInfo.MainApp == "" {
+	if composeAppStoreInfo.Main == nil || *composeAppStoreInfo.Main == "" {
 		return item, fmt.Errorf("failed to get store info for main container app of compose app %s", composeApp.Name)
 	}
 
 	var mainApp *types.ServiceConfig
 	for i, service := range composeApp.Services {
-		if service.Name == *composeAppStoreInfo.MainApp {
+		if service.Name == *composeAppStoreInfo.Main {
 			mainApp = &composeApp.Services[i]
 		}
 		break
@@ -83,13 +83,13 @@ func WebAppGridItemAdapter(composeAppWithStoreInfo codegen.ComposeAppWithStoreIn
 	item.Image = &mainApp.Image
 
 	// item properties from store info
-	mainAppStoreInfo := (*composeAppStoreInfo.Apps)[*composeAppStoreInfo.MainApp]
-	item.Hostname = mainAppStoreInfo.Container.Hostname
-	item.Icon = &mainAppStoreInfo.Icon
-	item.Index = &mainAppStoreInfo.Container.Index
-	item.Port = &mainAppStoreInfo.Container.PortMap
-	item.Scheme = mainAppStoreInfo.Container.Scheme
-	item.Title = &mainAppStoreInfo.Title
+	mainAppStoreInfo := (*composeAppStoreInfo.Apps)[*composeAppStoreInfo.Main]
+	item.Hostname = mainAppStoreInfo.Hostname
+	item.Icon = &composeAppStoreInfo.Icon
+	item.Index = &mainAppStoreInfo.Index
+	item.Port = &mainAppStoreInfo.PortMap
+	item.Scheme = mainAppStoreInfo.Scheme
+	item.Title = &composeAppStoreInfo.Title
 
 	// item type
 	itemType := composeApp.AuthorType()

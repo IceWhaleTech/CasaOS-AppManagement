@@ -13,7 +13,6 @@ var (
 	ErrComposeFileNotFound                 = fmt.Errorf("compose file not found")
 	ErrInvalidComposeAppStatus             = fmt.Errorf("invalid compose app status")
 	ErrMainAppNotFound                     = fmt.Errorf("main app not found")
-	ErrNoAppFoundInComposeApp              = fmt.Errorf("no app found in compose app")
 	ErrNotFoundInAppStore                  = fmt.Errorf("not found in app store")
 	ErrSetStoreAppID                       = fmt.Errorf("failed to set store app ID")
 	ErrStoreInfoNotFound                   = fmt.Errorf("store info not found")

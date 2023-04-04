@@ -39,10 +39,10 @@ func (a *ComposeApp) StoreInfo(includeApps bool) (*codegen.ComposeAppStoreInfo, 
 	}
 
 	// locate main app
-	if storeInfo.MainApp == nil || *storeInfo.MainApp == "" {
+	if storeInfo.Main == nil || *storeInfo.Main == "" {
 		// if main app is not specified, use the first app
 		for _, app := range a.Apps() {
-			storeInfo.MainApp = &app.Name
+			storeInfo.Main = &app.Name
 			break
 		}
 	}
@@ -53,9 +53,14 @@ func (a *ComposeApp) StoreInfo(includeApps bool) (*codegen.ComposeAppStoreInfo, 
 		for _, app := range a.Apps() {
 			appStoreInfo, err := app.StoreInfo()
 			if err != nil {
+				if err == ErrComposeExtensionNameXCasaOSNotFound {
+					logger.Info("App does not have x-casaos extension - skipp", zap.String("app", app.Name))
+					continue
+				}
+
 				return nil, err
 			}
-			apps[app.Name] = *appStoreInfo
+			apps[app.Name] = appStoreInfo
 		}
 
 		storeInfo.Apps = &apps
@@ -65,30 +70,16 @@ func (a *ComposeApp) StoreInfo(includeApps bool) (*codegen.ComposeAppStoreInfo, 
 }
 
 func (a *ComposeApp) AuthorType() codegen.StoreAppAuthorType {
-	storeInfo, err := a.StoreInfo(true)
+	storeInfo, err := a.StoreInfo(false)
 	if err != nil {
 		return codegen.Unknown
 	}
 
-	mainApp := storeInfo.MainApp
-	if mainApp == nil || *mainApp == "" {
-		return codegen.Unknown
-	}
-
-	if storeInfo.Apps == nil || len(*storeInfo.Apps) == 0 {
-		return codegen.Unknown
-	}
-
-	mainAppStoreInfo, ok := (*storeInfo.Apps)[*mainApp]
-	if !ok {
-		return codegen.Unknown
-	}
-
-	if strings.ToLower(mainAppStoreInfo.Author) == strings.ToLower(mainAppStoreInfo.Developer) {
+	if strings.ToLower(storeInfo.Author) == strings.ToLower(storeInfo.Developer) {
 		return codegen.Official
 	}
 
-	if strings.ToLower(mainAppStoreInfo.Author) == strings.ToLower(common.ComposeAppAuthorCasaOSTeam) {
+	if strings.ToLower(storeInfo.Author) == strings.ToLower(common.ComposeAppAuthorCasaOSTeam) {
 		return codegen.ByCasaos
 	}
 
@@ -150,7 +141,7 @@ func (a *ComposeApp) IsUpdateAvailableWith(storeComposeApp *ComposeApp) bool {
 		return false
 	}
 
-	mainAppName := *storeComposeAppStoreInfo.MainApp
+	mainAppName := *storeComposeAppStoreInfo.Main
 
 	mainApp := a.App(mainAppName)
 	if mainApp == nil {
@@ -229,18 +220,9 @@ func (a *ComposeApp) Update(ctx context.Context) error {
 	}
 
 	// prepare for message bus events
-	if storeInfo.Apps == nil || len(*storeInfo.Apps) == 0 {
-		return ErrNoAppFoundInComposeApp
-	}
-
-	mainAppStoreInfo, ok := (*storeInfo.Apps)[*storeInfo.MainApp]
-	if !ok {
-		return ErrMainAppNotFound
-	}
-
 	eventProperties := common.PropertiesFromContext(ctx)
 	eventProperties[common.PropertyTypeAppName.Name] = a.Name
-	eventProperties[common.PropertyTypeAppIcon.Name] = mainAppStoreInfo.Icon
+	eventProperties[common.PropertyTypeAppIcon.Name] = storeInfo.Icon
 
 	go func(ctx context.Context) {
 		go PublishEventWrapper(ctx, common.EventTypeAppUpdateBegin, nil)
@@ -564,18 +546,9 @@ func (a *ComposeApp) Apply(ctx context.Context, newComposeYAML []byte) error {
 		return ErrStoreInfoNotFound
 	}
 
-	if storeInfo.Apps == nil || len(*storeInfo.Apps) == 0 {
-		return ErrNoAppFoundInComposeApp
-	}
-
-	mainAppStoreInfo, ok := (*storeInfo.Apps)[*storeInfo.MainApp]
-	if !ok {
-		return ErrMainAppNotFound
-	}
-
 	eventProperties := common.PropertiesFromContext(ctx)
 	eventProperties[common.PropertyTypeAppName.Name] = a.Name
-	eventProperties[common.PropertyTypeAppIcon.Name] = mainAppStoreInfo.Icon
+	eventProperties[common.PropertyTypeAppIcon.Name] = storeInfo.Icon
 
 	go func(ctx context.Context) {
 		go PublishEventWrapper(ctx, common.EventTypeAppApplyChangesBegin, nil)
@@ -745,7 +718,7 @@ func NewComposeAppFromYAML(yaml []byte, skipInterpolation, skipValidation bool) 
 			return nil, err
 		}
 
-		composeApp.Name = *composeAppStoreInfo.MainApp
+		composeApp.Name = *composeAppStoreInfo.Main
 	}
 
 	return composeApp, nil

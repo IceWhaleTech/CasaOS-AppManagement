@@ -98,7 +98,6 @@ x-tagGroups:
       - ComposeAppStoreInfoLists
       - ComposeAppStoreInfo
       - ContainerSummary
-      - ContainerStoreInfo
       - EnvStoreInfo
       - PortStoreInfo
       - VolumeStoreInfo
@@ -193,7 +192,7 @@ paths:
       description: |
         Get StoreInfo of specific compose app.
 
-        > A compose app contains one or more container `apps`. One of the `apps` is the `main_app` of this compose app, whereas others are dependency `apps`.
+        > A compose app contains one or more container `apps`. One of the `apps` is the `main` of this compose app, whereas others are dependency `apps`.
       operationId: composeAppStoreInfo
       tags:
         - AppStore methods
@@ -865,9 +864,66 @@ components:
             $ref: "#/components/schemas/ComposeAppStoreInfo"
 
     ComposeAppStoreInfo:
+      required:
+        - author
+        - category
+        - description
+        - developer
+        - icon
+        - screenshot_link
+        - tagline
+        - thumbnail
+        - title
+        - tips
+
       properties:
         store_app_id:
           $ref: "#/components/schemas/StoreAppID"
+        title:
+          type: object
+          additionalProperties:
+            type: string
+          example:
+            en_US: Syncthing
+        description:
+          type: object
+          additionalProperties:
+            type: string
+          example:
+            en_US: Syncthing is a continuous file synchronization program. It synchronizes files between two or more computers in real time, safely protected from prying eyes. Your data is your data alone and you deserve to choose where it is stored, whether it is shared with some third party, and how it's transmitted over the internet.
+        tagline:
+          type: object
+          additionalProperties:
+            type: string
+          example:
+            en_US: Free, secure, and distributed file synchronisation tool.
+        icon:
+          type: string
+          example: https://cdn.jsdelivr.net/gh/IceWhaleTech/CasaOS-AppStore@main/Apps/Syncthing/icon.png
+        screenshot_link:
+          type: array
+          items:
+            type: string
+          example:
+            - https://cdn.jsdelivr.net/gh/IceWhaleTech/CasaOS-AppStore@main/Apps/OpenSpeedTest/screenshot-1.png
+            - https://cdn.jsdelivr.net/gh/IceWhaleTech/CasaOS-AppStore@main/Apps/OpenSpeedTest/screenshot-2.png
+          x-oapi-codegen-extra-tags:
+            mapstructure: "screenshot_link"
+            yaml: "screenshot_link,omitempty"
+        thumbnail:
+          type: string
+          example: https://cdn.jsdelivr.net/gh/IceWhaleTech/CasaOS-AppStore@main/Apps/Jellyfin/thumbnail.jpg
+        author:
+          type: string
+          example: CasaOS Team
+        developer:
+          type: string
+          example: Syncthing
+        category:
+          type: string
+          example: Backup
+        tips:
+          $ref: "#/components/schemas/TipsStoreInfo"
 
         apps:
           title: store info of container apps included in the compose app
@@ -881,15 +937,14 @@ components:
             syncthing: {}
           x-oapi-codegen-extra-tags:
             yaml: ",omitempty"
-        main_app:
-          title: name of the main container app in `apps`
+        main:
+          title: name of the main service in `services`
           description: |
-            The main container app is one of the container `apps` that the user will interact with.
+            The main service is one of the services that the user will interact with.
           type: string
           example: "syncthing"
           x-oapi-codegen-extra-tags:
-            mapstructure: "main_app"
-            yaml: "main_app,omitempty"
+            yaml: ",omitempty"
         architectures:
           title: architectures supported by the compose app
           description: |
@@ -938,93 +993,6 @@ components:
       title: StoreInfo of an app
       description: |-
         > Do not mistake it as *information of AppStore* which does not exist.
-      required:
-        - author
-        - category
-        - container
-        - description
-        - developer
-        - icon
-        - screenshot_link
-        - tagline
-        - thumbnail
-        - title
-        - tips
-      properties:
-        title:
-          type: object
-          additionalProperties:
-            type: string
-          example:
-            en_US: Syncthing
-        description:
-          type: object
-          additionalProperties:
-            type: string
-          example:
-            en_US: Syncthing is a continuous file synchronization program. It synchronizes files between two or more computers in real time, safely protected from prying eyes. Your data is your data alone and you deserve to choose where it is stored, whether it is shared with some third party, and how it's transmitted over the internet.
-        tagline:
-          type: object
-          additionalProperties:
-            type: string
-          example:
-            en_US: Free, secure, and distributed file synchronisation tool.
-        icon:
-          type: string
-          example: https://cdn.jsdelivr.net/gh/IceWhaleTech/CasaOS-AppStore@main/Apps/Syncthing/icon.png
-        screenshot_link:
-          type: array
-          items:
-            type: string
-          example:
-            - https://cdn.jsdelivr.net/gh/IceWhaleTech/CasaOS-AppStore@main/Apps/OpenSpeedTest/screenshot-1.png
-            - https://cdn.jsdelivr.net/gh/IceWhaleTech/CasaOS-AppStore@main/Apps/OpenSpeedTest/screenshot-2.png
-          x-oapi-codegen-extra-tags:
-            mapstructure: "screenshot_link"
-            yaml: "screenshot_link,omitempty"
-        thumbnail:
-          type: string
-          example: https://cdn.jsdelivr.net/gh/IceWhaleTech/CasaOS-AppStore@main/Apps/Jellyfin/thumbnail.jpg
-        author:
-          type: string
-          example: CasaOS Team
-        developer:
-          type: string
-          example: Syncthing
-        category:
-          type: string
-          example: Backup
-        tips:
-          $ref: "#/components/schemas/TipsStoreInfo"
-        container:
-          $ref: "#/components/schemas/ContainerStoreInfo"
-
-    ComposeAppContainers:
-      description: |-
-        Schema for `ComposeAppContainersOK` response.
-      properties:
-        main:
-          type: string
-          example: "syncthing"
-        containers:
-          type: object
-          additionalProperties:
-            $ref: "#/components/schemas/ContainerSummary"
-          example:
-            "09e70f4a7dd3fc43de6a1bc40d45c79f857544e13679e5b1a47409034a7ce621":
-              {}
-
-    ContainerSummary:
-      type: object
-      description: |-
-        See [Go Doc](https://pkg.go.dev/github.com/docker/compose/v2@v2.14.2/pkg/api#ContainerSummary) for the schema structure of `ContainerSummary`.
-
-      x-go-type: api.ContainerSummary
-      x-go-type-import:
-        name: api
-        path: github.com/docker/compose/v2/pkg/api
-
-    ContainerStoreInfo:
       required:
         - envs
         - index
@@ -1075,6 +1043,31 @@ components:
             $ref: "#/components/schemas/DeviceStoreInfo"
           x-oapi-codegen-extra-tags:
             yaml: ",omitempty"
+
+    ComposeAppContainers:
+      description: |-
+        Schema for `ComposeAppContainersOK` response.
+      properties:
+        main:
+          type: string
+          example: "syncthing"
+        containers:
+          type: object
+          additionalProperties:
+            $ref: "#/components/schemas/ContainerSummary"
+          example:
+            "09e70f4a7dd3fc43de6a1bc40d45c79f857544e13679e5b1a47409034a7ce621":
+              {}
+
+    ContainerSummary:
+      type: object
+      description: |-
+        See [Go Doc](https://pkg.go.dev/github.com/docker/compose/v2@v2.14.2/pkg/api#ContainerSummary) for the schema structure of `ContainerSummary`.
+
+      x-go-type: api.ContainerSummary
+      x-go-type-import:
+        name: api
+        path: github.com/docker/compose/v2/pkg/api
 
     EnvStoreInfo:
       required:

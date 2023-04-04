@@ -80,18 +80,9 @@ func (s *ComposeService) Install(ctx context.Context, composeApp *ComposeApp) er
 		return err
 	}
 
-	if storeInfo.Apps == nil || len(*storeInfo.Apps) == 0 {
-		return ErrNoAppFoundInComposeApp
-	}
-
-	mainAppStoreInfo, ok := (*storeInfo.Apps)[*storeInfo.MainApp]
-	if !ok {
-		return ErrMainAppNotFound
-	}
-
 	eventProperties := common.PropertiesFromContext(ctx)
 	eventProperties[common.PropertyTypeAppName.Name] = composeApp.Name
-	eventProperties[common.PropertyTypeAppIcon.Name] = mainAppStoreInfo.Icon
+	eventProperties[common.PropertyTypeAppIcon.Name] = storeInfo.Icon
 
 	go func(ctx context.Context) {
 		go PublishEventWrapper(ctx, common.EventTypeAppInstallBegin, nil)
@@ -117,18 +108,9 @@ func (s *ComposeService) Uninstall(ctx context.Context, composeApp *ComposeApp, 
 		return err
 	}
 
-	if storeInfo.Apps == nil || len(*storeInfo.Apps) == 0 {
-		return ErrNoAppFoundInComposeApp
-	}
-
-	mainAppStoreInfo, ok := (*storeInfo.Apps)[*storeInfo.MainApp]
-	if !ok {
-		return ErrMainAppNotFound
-	}
-
 	eventProperties := common.PropertiesFromContext(ctx)
 	eventProperties[common.PropertyTypeAppName.Name] = composeApp.Name
-	eventProperties[common.PropertyTypeAppIcon.Name] = mainAppStoreInfo.Icon
+	eventProperties[common.PropertyTypeAppIcon.Name] = storeInfo.Icon
 
 	go func(ctx context.Context) {
 		go PublishEventWrapper(ctx, common.EventTypeAppUninstallBegin, nil)

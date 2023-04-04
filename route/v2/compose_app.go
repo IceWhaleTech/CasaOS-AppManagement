@@ -373,7 +373,7 @@ func (a *AppManagement) ComposeAppContainers(ctx echo.Context, id codegen.Compos
 
 	return ctx.JSON(http.StatusOK, codegen.ComposeAppContainersOK{
 		Data: &codegen.ComposeAppContainers{
-			Main:       storeInfo.MainApp,
+			Main:       storeInfo.Main,
 			Containers: &containers,
 		},
 	})
@@ -440,7 +440,7 @@ func composeAppsWithStoreInfo(ctx context.Context) (map[string]codegen.ComposeAp
 		composeAppWithStoreInfo.UpdateAvailable = &updateAvailable
 
 		// status
-		if storeInfo.MainApp == nil {
+		if storeInfo.Main == nil {
 			logger.Error("failed to get main app", zap.String("composeAppID", id))
 			return composeAppWithStoreInfo
 		}
@@ -451,7 +451,7 @@ func composeAppsWithStoreInfo(ctx context.Context) (map[string]codegen.ComposeAp
 			return composeAppWithStoreInfo
 		}
 
-		mainAppContainer, ok := containerApps[*storeInfo.MainApp]
+		mainAppContainer, ok := containerApps[*storeInfo.Main]
 		if !ok {
 			logger.Error("failed to get main app container", zap.String("composeAppID", id))
 			return composeAppWithStoreInfo
