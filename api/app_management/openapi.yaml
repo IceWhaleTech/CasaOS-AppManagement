@@ -1209,8 +1209,15 @@ components:
         icon:
           type: string
           example: https://cdn.jsdelivr.net/gh/IceWhaleTech/CasaOS-AppStore@main/Apps/Syncthing/icon.png
-        type:
+        author_type:
           $ref: "#/components/schemas/StoreAppAuthorType"
+        app_type:
+          type: string
+          enum:
+            - v2app
+            - v1app
+            - container
+            - link
         hostname:
           type: string
           example: ""

@@ -92,8 +92,8 @@ func WebAppGridItemAdapter(composeAppWithStoreInfo codegen.ComposeAppWithStoreIn
 	item.Title = &composeAppStoreInfo.Title
 
 	// item type
-	itemType := composeApp.AuthorType()
-	item.Type = &itemType
+	itemAuthorType := composeApp.AuthorType()
+	item.AuthorType = &itemAuthorType
 
 	return item, nil
 }
