@@ -15,6 +15,7 @@ import (
 )
 
 func (a *AppManagement) GetAppGrid(ctx echo.Context) error {
+	// v2 Apps
 	composeAppsWithStoreInfo, err := composeAppsWithStoreInfo(ctx.Request().Context())
 	if err != nil {
 		message := err.Error()
@@ -31,6 +32,11 @@ func (a *AppManagement) GetAppGrid(ctx echo.Context) error {
 
 		return *item, true
 	})
+
+	// v1 Apps
+	casaOSApps, localApps := service.MyService.Docker().GetContainerAppList(nil, nil, nil)
+
+	// TODO: add v1 apps to appGridItems
 
 	return ctx.JSON(http.StatusOK, codegen.GetWebAppGridOK{
 		Message: utils.Ptr("This data is for internal use ONLY - will not be supported for public use."),
