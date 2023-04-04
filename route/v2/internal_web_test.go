@@ -52,7 +52,7 @@ func TestWebAppGridItemAdapter(t *testing.T) {
 		Status:    utils.Ptr("running"),
 	}
 
-	gridItem, err := v2.WebAppGridItemAdapter(composeAppWithStoreInfo)
+	gridItem, err := v2.WebAppGridItemAdapterV2(&composeAppWithStoreInfo)
 	assert.NilError(t, err)
 
 	assert.Equal(t, *gridItem.Icon, storeInfo.Icon)
@@ -62,5 +62,5 @@ func TestWebAppGridItemAdapter(t *testing.T) {
 	assert.Equal(t, *gridItem.Index, (*storeInfo.Apps)[*storeInfo.Main].Index)
 	assert.Equal(t, *gridItem.Status, "running")
 	assert.DeepEqual(t, *gridItem.Title, storeInfo.Title)
-	assert.Equal(t, *gridItem.Type, codegen.ByCasaos)
+	assert.Equal(t, *gridItem.AuthorType, codegen.ByCasaos)
 }
