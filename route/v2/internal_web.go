@@ -35,7 +35,7 @@ func (a *AppManagement) GetAppGrid(ctx echo.Context) error {
 	})
 
 	// v1 Apps
-	casaOSApps, _ := service.MyService.Docker().GetContainerAppList(nil, nil, nil)
+	casaOSApps, containers := service.MyService.Docker().GetContainerAppList(nil, nil, nil)
 
 	v1AppGridItems := lo.Map(*casaOSApps, func(app model.MyAppList, i int) codegen.WebAppGridItem {
 		item, err := WebAppGridItemAdapterV1(&app)
@@ -46,36 +46,41 @@ func (a *AppManagement) GetAppGrid(ctx echo.Context) error {
 		return *item
 	})
 
+	// containers
+	composeAppContainers := lo.FlatMap(lo.Values(composeAppsWithStoreInfo), func(app codegen.ComposeAppWithStoreInfo, i int) []codegen.ContainerSummary {
+		composeApp := (service.ComposeApp)(*app.Compose)
+		containers, err := composeApp.Containers(ctx.Request().Context())
+		if err != nil {
+			logger.Error("failed to get containers for compose app", zap.Error(err), zap.String("app", composeApp.Name))
+			return nil
+		}
+		return lo.Values(containers)
+	})
+
+	containerAppGridItems := lo.FilterMap(*containers, func(app model.MyAppList, i int) (codegen.WebAppGridItem, bool) {
+		if lo.ContainsBy(composeAppContainers, func(container codegen.ContainerSummary) bool { return container.ID == app.ID }) {
+			// already exists as compose app, skipping...
+			return codegen.WebAppGridItem{}, false
+		}
+
+		item, err := WebAppGridItemAdapterContainer(&app)
+		if err != nil {
+			logger.Error("failed to adapt web app grid item", zap.Error(err), zap.String("app", app.Name))
+			return codegen.WebAppGridItem{}, false
+		}
+		return *item, true
+	})
+
 	// merge v1 and v2 apps
-	appGridItems := append(v1AppGridItems, v2AppGridItems...)
+	var appGridItems []codegen.WebAppGridItem
+	appGridItems = append(appGridItems, v2AppGridItems...)
+	appGridItems = append(appGridItems, v1AppGridItems...)
+	appGridItems = append(appGridItems, containerAppGridItems...)
 
 	return ctx.JSON(http.StatusOK, codegen.GetWebAppGridOK{
 		Message: utils.Ptr("This data is for internal use ONLY - will not be supported for public use."),
 		Data:    &appGridItems,
 	})
-}
-
-func WebAppGridItemAdapterV1(app *model.MyAppList) (*codegen.WebAppGridItem, error) {
-	if app == nil {
-		return nil, fmt.Errorf("v1 app is nil")
-	}
-
-	item := &codegen.WebAppGridItem{
-		AppType:  codegen.V1app,
-		Name:     &app.ID,
-		Status:   &app.State,
-		Image:    &app.Image,
-		Hostname: &app.Host,
-		Icon:     &app.Icon,
-		Index:    &app.Index,
-		Port:     &app.Port,
-		Scheme:   (*codegen.Scheme)(&app.Protocol),
-		Title: &map[string]string{
-			"en_US": app.Name,
-		},
-	}
-
-	return item, nil
 }
 
 func WebAppGridItemAdapterV2(composeAppWithStoreInfo *codegen.ComposeAppWithStoreInfo) (*codegen.WebAppGridItem, error) {
@@ -139,6 +144,47 @@ func WebAppGridItemAdapterV2(composeAppWithStoreInfo *codegen.ComposeAppWithStor
 	// item type
 	itemAuthorType := composeApp.AuthorType()
 	item.AuthorType = &itemAuthorType
+
+	return item, nil
+}
+
+func WebAppGridItemAdapterV1(app *model.MyAppList) (*codegen.WebAppGridItem, error) {
+	if app == nil {
+		return nil, fmt.Errorf("v1 app is nil")
+	}
+
+	item := &codegen.WebAppGridItem{
+		AppType:  codegen.V1app,
+		Name:     &app.ID,
+		Status:   &app.State,
+		Image:    &app.Image,
+		Hostname: &app.Host,
+		Icon:     &app.Icon,
+		Index:    &app.Index,
+		Port:     &app.Port,
+		Scheme:   (*codegen.Scheme)(&app.Protocol),
+		Title: &map[string]string{
+			"en_US": app.Name,
+		},
+	}
+
+	return item, nil
+}
+
+func WebAppGridItemAdapterContainer(container *model.MyAppList) (*codegen.WebAppGridItem, error) {
+	if container == nil {
+		return nil, fmt.Errorf("container is nil")
+	}
+
+	item := &codegen.WebAppGridItem{
+		AppType: codegen.Container,
+		Name:    &container.ID,
+		Status:  &container.State,
+		Image:   &container.Image,
+		Title: &map[string]string{
+			"en_US": container.Name,
+		},
+	}
 
 	return item, nil
 }
