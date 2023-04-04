@@ -1190,6 +1190,8 @@ components:
 
     WebAppGridItem:
       description: (internal use ONLY)
+      required:
+        - app_type
       properties:
         store_app_id:
           $ref: "#/components/schemas/StoreAppID"
