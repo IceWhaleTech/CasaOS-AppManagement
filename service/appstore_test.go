@@ -20,7 +20,7 @@ import (
 func TestGetComposeApp(t *testing.T) {
 	defer goleak.VerifyNone(t, goleak.IgnoreTopFunction("go.opencensus.io/stats/view.(*worker).start")) // https://github.com/census-instrumentation/opencensus-go/issues/1191
 
-	appStore, err := service.NewAppStore("https://github.com/IceWhaleTech/CasaOS-AppStore/archive/refs/heads/main.zip")
+	appStore, err := service.AppStoreByURL("https://github.com/IceWhaleTech/CasaOS-AppStore/archive/refs/heads/main.zip")
 	assert.NilError(t, err)
 
 	for storeAppID, composeApp := range appStore.Catalog() {
@@ -33,7 +33,7 @@ func TestGetComposeApp(t *testing.T) {
 func TestGetApp(t *testing.T) {
 	defer goleak.VerifyNone(t, goleak.IgnoreTopFunction("go.opencensus.io/stats/view.(*worker).start")) // https://github.com/census-instrumentation/opencensus-go/issues/1191
 
-	appStore, err := service.NewAppStore("https://github.com/IceWhaleTech/CasaOS-AppStore/archive/refs/heads/main.zip")
+	appStore, err := service.AppStoreByURL("https://github.com/IceWhaleTech/CasaOS-AppStore/archive/refs/heads/main.zip")
 	assert.NilError(t, err)
 
 	for _, composeApp := range appStore.Catalog() {
@@ -49,7 +49,7 @@ func TestWorkDir(t *testing.T) {
 
 	// test for http
 	hostport := "localhost:8080"
-	appStore, err := service.NewAppStore("http://" + hostport)
+	appStore, err := service.AppStoreByURL("http://" + hostport)
 	assert.NilError(t, err)
 
 	workdir, err := appStore.WorkDir()
@@ -57,7 +57,7 @@ func TestWorkDir(t *testing.T) {
 	assert.Equal(t, workdir, filepath.Join(config.AppInfo.AppStorePath, hostport, "d41d8cd98f00b204e9800998ecf8427e"))
 
 	// test for https
-	appStore, err = service.NewAppStore("https://" + hostport)
+	appStore, err = service.AppStoreByURL("https://" + hostport)
 	assert.NilError(t, err)
 
 	workdir, err = appStore.WorkDir()
@@ -67,7 +67,7 @@ func TestWorkDir(t *testing.T) {
 	// test for github
 	hostname := "github.com"
 	path := "/IceWhaleTech/CasaOS-AppStore/archive/refs/heads/main.zip"
-	appStore, err = service.NewAppStore("https://" + hostname + path)
+	appStore, err = service.AppStoreByURL("https://" + hostname + path)
 	assert.NilError(t, err)
 
 	workdir, err = appStore.WorkDir()
