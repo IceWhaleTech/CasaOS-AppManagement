@@ -22,7 +22,7 @@ type AppStoreManagement struct {
 
 func (a *AppStoreManagement) AppStoreList() []codegen.AppStoreMetadata {
 	return lo.Map(config.ServerInfo.AppStoreList, func(appStoreURL string, id int) codegen.AppStoreMetadata {
-		appStore, err := NewAppStore(appStoreURL)
+		appStore, err := AppStoreByURL(appStoreURL)
 		if err != nil {
 			logger.Error("failed to construct appstore", zap.Error(err), zap.String("appstoreURL", appStoreURL))
 			return codegen.AppStoreMetadata{}
@@ -71,7 +71,7 @@ func (a *AppStoreManagement) RegisterAppStore(appstoreURL string) (chan *codegen
 		}
 	}
 
-	appstore, err := NewAppStore(appstoreURL)
+	appstore, err := AppStoreByURL(appstoreURL)
 	if err != nil {
 		return nil, err
 	}
@@ -125,7 +125,7 @@ func (a *AppStoreManagement) UnregisterAppStore(appStoreID uint) error {
 
 	// remove appstore workdir
 	{
-		appStore, err := NewAppStore(appStoreURL)
+		appStore, err := AppStoreByURL(appStoreURL)
 		if err != nil {
 			return err
 		}
@@ -152,7 +152,7 @@ func (a *AppStoreManagement) UnregisterAppStore(appStoreID uint) error {
 
 func (a *AppStoreManagement) AppStoreMap() (map[string]AppStore, error) {
 	appStoreMap := lo.SliceToMap(config.ServerInfo.AppStoreList, func(appStoreURL string) (string, AppStore) {
-		appStore, err := NewAppStore(appStoreURL)
+		appStore, err := AppStoreByURL(appStoreURL)
 		if err != nil {
 			return "", nil
 		}

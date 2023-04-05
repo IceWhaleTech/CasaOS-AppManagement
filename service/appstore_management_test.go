@@ -50,7 +50,7 @@ func TestAppStoreList(t *testing.T) {
 		return nil
 	})
 
-	expectAppStoreURL := strings.ToLower("https://github.com/IceWhaleTech/CasaOS-AppStore/archive/refs/heads/main.zip")
+	expectAppStoreURL := strings.ToLower("https://github.com/IceWhaleTech/_appstore/archive/refs/heads/main.zip")
 	ch, err := appStoreManagement.RegisterAppStore(expectAppStoreURL)
 	assert.NilError(t, err)
 

@@ -32,6 +32,8 @@ type appStore struct {
 }
 
 var (
+	appStoreMap = make(map[string]*appStore)
+
 	ErrNotAppStore             = fmt.Errorf("not an appstore")
 	ErrDefaultAppStoreNotFound = fmt.Errorf("default appstore not found")
 )
@@ -157,7 +159,13 @@ func (s *appStore) Catalog() map[string]*ComposeApp {
 }
 
 func (s *appStore) ComposeApp(appStoreID string) *ComposeApp {
-	if composeApp, ok := s.catalog[appStoreID]; ok {
+	catalog := s.Catalog()
+
+	if catalog == nil {
+		return nil
+	}
+
+	if composeApp, ok := catalog[appStoreID]; ok {
 		return composeApp
 	}
 
@@ -175,7 +183,7 @@ func (s *appStore) WorkDir() (string, error) {
 	return filepath.Join(config.AppInfo.AppStorePath, parsedURL.Host, hash), nil
 }
 
-func NewAppStore(appstoreURL string) (AppStore, error) {
+func AppStoreByURL(appstoreURL string) (AppStore, error) {
 	appstoreURL = strings.ToLower(appstoreURL)
 
 	_, err := url.Parse(appstoreURL)
@@ -183,10 +191,16 @@ func NewAppStore(appstoreURL string) (AppStore, error) {
 		return nil, err
 	}
 
-	return &appStore{
+	if appstore, ok := appStoreMap[appstoreURL]; ok {
+		return appstore, nil
+	}
+
+	appStoreMap[appstoreURL] = &appStore{
 		url:     appstoreURL,
 		catalog: map[string]*ComposeApp{},
-	}, nil
+	}
+
+	return appStoreMap[appstoreURL], nil
 }
 
 func NewDefaultAppStore() (AppStore, error) {
