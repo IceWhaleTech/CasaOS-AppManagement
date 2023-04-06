@@ -884,19 +884,19 @@ components:
           additionalProperties:
             type: string
           example:
-            en_US: Syncthing
+            en_us: Syncthing
         description:
           type: object
           additionalProperties:
             type: string
           example:
-            en_US: Syncthing is a continuous file synchronization program. It synchronizes files between two or more computers in real time, safely protected from prying eyes. Your data is your data alone and you deserve to choose where it is stored, whether it is shared with some third party, and how it's transmitted over the internet.
+            en_us: Syncthing is a continuous file synchronization program. It synchronizes files between two or more computers in real time, safely protected from prying eyes. Your data is your data alone and you deserve to choose where it is stored, whether it is shared with some third party, and how it's transmitted over the internet.
         tagline:
           type: object
           additionalProperties:
             type: string
           example:
-            en_US: Free, secure, and distributed file synchronisation tool.
+            en_us: Free, secure, and distributed file synchronisation tool.
         icon:
           type: string
           example: https://cdn.jsdelivr.net/gh/IceWhaleTech/CasaOS-AppStore@main/Apps/Syncthing/icon.png
@@ -1082,7 +1082,7 @@ components:
           additionalProperties:
             type: string
           example:
-            en_US: Time Zone
+            en_us: Time Zone
 
     PortStoreInfo:
       required:
@@ -1097,7 +1097,7 @@ components:
           additionalProperties:
             type: string
           example:
-            en_US: Web UI
+            en_us: Web UI
 
     VolumeStoreInfo:
       required:
@@ -1112,7 +1112,7 @@ components:
           additionalProperties:
             type: string
           example:
-            en_US: Syncthing config directory
+            en_us: Syncthing config directory
 
     DeviceStoreInfo:
       properties:
@@ -1124,7 +1124,7 @@ components:
           additionalProperties:
             type: string
           example:
-            en_US: GPU device
+            en_us: GPU device
 
     TipsStoreInfo:
       required:
@@ -1135,7 +1135,7 @@ components:
           additionalProperties:
             type: string
           example:
-            en_US: |
+            en_us: |
               Tips for users before install.
           x-oapi-codegen-extra-tags:
             mapstructure: "before_install"
@@ -1207,7 +1207,7 @@ components:
           additionalProperties:
             type: string
             example:
-              en_US: Syncthing
+              en_us: Syncthing
         icon:
           type: string
           example: https://cdn.jsdelivr.net/gh/IceWhaleTech/CasaOS-AppStore@main/Apps/Syncthing/icon.png

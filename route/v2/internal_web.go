@@ -164,7 +164,7 @@ func WebAppGridItemAdapterV1(app *model.MyAppList) (*codegen.WebAppGridItem, err
 		Port:     &app.Port,
 		Scheme:   (*codegen.Scheme)(&app.Protocol),
 		Title: &map[string]string{
-			"en_US": app.Name,
+			"en_us": app.Name,
 		},
 	}
 
@@ -182,7 +182,7 @@ func WebAppGridItemAdapterContainer(container *model.MyAppList) (*codegen.WebApp
 		Status:  &container.State,
 		Image:   &container.Image,
 		Title: &map[string]string{
-			"en_US": container.Name,
+			"en_us": container.Name,
 		},
 	}
 
