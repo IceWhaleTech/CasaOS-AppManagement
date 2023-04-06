@@ -36,54 +36,54 @@ services:
       envs:
         - container: TZ
           description:
-            en_US: TimeZone
+            en_us: TimeZone
         - container: PUID
           description:
-            en_US: Run Syncthing as specified uid.
+            en_us: Run Syncthing as specified uid.
         - container: PGID
           description:
-            en_US: Run Syncthing as specified gid.
+            en_us: Run Syncthing as specified gid.
       index: /
       port_map: "8384"
       ports:
         - container: "8384"
           description:
-            en_US: WebUI HTTP Port
+            en_us: WebUI HTTP Port
 
         - container: "22000"
           description:
-            en_US: Syncthing listening Port (TCP)
+            en_us: Syncthing listening Port (TCP)
 
         - container: "22000"
           description:
-            en_US: Syncthing listening Port (UDP)
+            en_us: Syncthing listening Port (UDP)
           protocol: udp
         - container: "21027"
           description:
-            en_US: Syncthing protocol discovery Port (TCP)
+            en_us: Syncthing protocol discovery Port (TCP)
           protocol: udp
 
       volumes:
         - container: /config
           description:
-            en_US: Syncthing config directory.
+            en_us: Syncthing config directory.
         - container: /DATA
           description:
-            en_US: Syncthing Accessible Directory.
+            en_us: Syncthing Accessible Directory.
 
 x-casaos:
   author: CasaOS Team
   category: Backup
   description:
-    en_US: Syncthing is a continuous file synchronization program. It synchronizes files between two or more computers in real time, safely protected from prying eyes. Your data is your data alone and you deserve to choose where it is stored, whether it is shared with some third party, and how it's transmitted over the internet.
+    en_us: Syncthing is a continuous file synchronization program. It synchronizes files between two or more computers in real time, safely protected from prying eyes. Your data is your data alone and you deserve to choose where it is stored, whether it is shared with some third party, and how it's transmitted over the internet.
   developer: Syncthing
   icon: https://cdn.jsdelivr.net/gh/IceWhaleTech/CasaOS-AppStore@main/Apps/Syncthing/icon.png
   tagline:
-    en_US: Free, secure, and distributed file synchronisation tool.
+    en_us: Free, secure, and distributed file synchronisation tool.
   thumbnail: https://cdn.jsdelivr.net/gh/IceWhaleTech/CasaOS-AppStore@main/Apps/Jellyfin/thumbnail.jpg
   tips: {}
   title:
-    en_US: Syncthing
+    en_us: Syncthing
 
   architectures:
     - amd64
