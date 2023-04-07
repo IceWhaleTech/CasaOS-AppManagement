@@ -825,7 +825,39 @@ components:
         message:
           description: message returned by server side if there is any
           type: string
-          example: ""
+          example:
+            data:
+              - app_type: v2app
+                author_type: by_casaos
+                icon: 'https://cdn.jsdelivr.net/gh/IceWhaleTech/CasaOS-AppStore@main/Apps/Bazarr/icon.png'
+                image: 'linuxserver/bazarr:1.2.0'
+                index: ''
+                name: bazarr
+                port: '6767'
+                scheme: http
+                status: running
+                store_app_id: bazarr
+                title:
+                  en_US: Bazarr
+              - app_type: v1app
+                hostname: ''
+                icon: 'https://cdn.jsdelivr.net/gh/IceWhaleTech/CasaOS-AppStore@main/Apps/Embystat/icon.png'
+                image: 'linuxserver/embystat:latest'
+                index: ''
+                name: f17e51e8a7691e9f99d92076b772c552760e9e68f328cda3c797ec3765927d4c
+                port: '6555'
+                scheme: http
+                status: running
+                title:
+                  en_US: Embystat
+              - app_type: container
+                image: 'idoop/zentao:latest'
+                name: 64b45c3a869bc60d751b6f28d191f75e19a3e55ee837577726ceb9c544c0988d
+                status: created
+                title:
+                  en_US: 64b45c3a869bc60d751b6f28d191f75e19a3e55ee837577726ceb9c544c0988d
+            message: This data is for internal use ONLY - will not be supported for public use.
+
 
     Info:
       properties:
