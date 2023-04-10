@@ -838,7 +838,7 @@ components:
                 status: running
                 store_app_id: bazarr
                 title:
-                  en_US: Bazarr
+                  en_us: Bazarr
               - app_type: v1app
                 hostname: ''
                 icon: 'https://cdn.jsdelivr.net/gh/IceWhaleTech/CasaOS-AppStore@main/Apps/Embystat/icon.png'
@@ -849,13 +849,13 @@ components:
                 scheme: http
                 status: running
                 title:
-                  en_US: Embystat
+                  en_us: Embystat
               - app_type: container
                 image: 'idoop/zentao:latest'
                 name: 64b45c3a869bc60d751b6f28d191f75e19a3e55ee837577726ceb9c544c0988d
                 status: created
                 title:
-                  en_US: 64b45c3a869bc60d751b6f28d191f75e19a3e55ee837577726ceb9c544c0988d
+                  en_us: 64b45c3a869bc60d751b6f28d191f75e19a3e55ee837577726ceb9c544c0988d
             message: This data is for internal use ONLY - will not be supported for public use.
 
 
