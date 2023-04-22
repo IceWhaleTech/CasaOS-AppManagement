@@ -27,11 +27,7 @@ func InitV1Router() *gin.Engine {
 
 	v1Group := r.Group("/v1")
 
-	v1Group.Use(jwt.ExceptLocalhost(
-		func() (*ecdsa.PublicKey, error) {
-			return external.GetPublicKey(config.CommonInfo.RuntimePath)
-		},
-	))
+	v1Group.Use(jwt.ExceptLocalhost(func() (*ecdsa.PublicKey, error) { return external.GetPublicKey(config.CommonInfo.RuntimePath) }))
 	{
 		v1AppsGroup := v1Group.Group("/apps")
 		v1AppsGroup.Use()

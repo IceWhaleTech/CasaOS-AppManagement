@@ -67,12 +67,7 @@ func InitV2Router() http.Handler {
 			return c.RealIP() == "::1" || c.RealIP() == "127.0.0.1"
 		},
 		ParseTokenFunc: func(token string, c echo.Context) (interface{}, error) {
-			valid, claims, err := jwt.Validate(
-				token,
-				func() (*ecdsa.PublicKey, error) {
-					return external.GetPublicKey(config.CommonInfo.RuntimePath)
-				},
-			)
+			valid, claims, err := jwt.Validate(token, func() (*ecdsa.PublicKey, error) { return external.GetPublicKey(config.CommonInfo.RuntimePath) })
 			if err != nil || !valid {
 				return nil, echo.ErrUnauthorized
 			}
