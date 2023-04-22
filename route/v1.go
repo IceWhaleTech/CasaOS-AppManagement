@@ -1,9 +1,12 @@
 package route
 
 import (
+	"crypto/ecdsa"
 	"os"
 
+	"github.com/IceWhaleTech/CasaOS-AppManagement/pkg/config"
 	v1 "github.com/IceWhaleTech/CasaOS-AppManagement/route/v1"
+	"github.com/IceWhaleTech/CasaOS-Common/external"
 	"github.com/IceWhaleTech/CasaOS-Common/middleware"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/jwt"
 	"github.com/gin-contrib/gzip"
@@ -24,7 +27,7 @@ func InitV1Router() *gin.Engine {
 
 	v1Group := r.Group("/v1")
 
-	v1Group.Use(jwt.ExceptLocalhost())
+	v1Group.Use(jwt.ExceptLocalhost(func() (*ecdsa.PublicKey, error) { return external.GetPublicKey(config.CommonInfo.RuntimePath) }))
 	{
 		v1AppsGroup := v1Group.Group("/apps")
 		v1AppsGroup.Use()
