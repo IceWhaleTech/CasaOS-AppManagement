@@ -653,6 +653,9 @@ func (a *ComposeApp) Logs(ctx context.Context, lines int) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
+func (a *ComposeApp) GetPortsInUse(ctx context.Context) ([]int, error) {
+}
+
 func LoadComposeAppFromConfigFile(appID string, configFile string) (*ComposeApp, error) {
 	options := composeCmd.ProjectOptions{
 		ProjectDir:  filepath.Dir(configFile),

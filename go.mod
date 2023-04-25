@@ -15,7 +15,7 @@ require (
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/opencontainers/image-spec v1.1.0-rc2
 	github.com/robfig/cron/v3 v3.0.1
-	github.com/samber/lo v1.37.0
+	github.com/samber/lo v1.38.1
 	gopkg.in/yaml.v3 v3.0.1
 	gotest.tools/v3 v3.4.0
 )
@@ -203,7 +203,7 @@ require (
 )
 
 require (
-	github.com/IceWhaleTech/CasaOS-Common v0.4.4-alpha2
+	github.com/IceWhaleTech/CasaOS-Common v0.4.4-alpha3.0.20230425162414-c4d2078046ef
 	github.com/compose-spec/compose-go v1.9.0
 	github.com/coreos/go-systemd v0.0.0-20191104093116-d3cd4ed1dbcf
 	github.com/docker/cli v23.0.0+incompatible

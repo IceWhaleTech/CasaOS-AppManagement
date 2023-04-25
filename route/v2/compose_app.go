@@ -149,7 +149,7 @@ func (a *AppManagement) ApplyComposeAppSettings(ctx echo.Context, id codegen.Com
 	})
 }
 
-func (a *AppManagement) InstallComposeApp(ctx echo.Context) error {
+func (a *AppManagement) InstallComposeApp(ctx echo.Context, params codegen.InstallComposeAppParams) error {
 	buf, err := YAMLfromRequest(ctx)
 	if err != nil {
 		message := err.Error()
@@ -164,6 +164,12 @@ func (a *AppManagement) InstallComposeApp(ctx echo.Context) error {
 		message := err.Error()
 		return ctx.JSON(http.StatusBadRequest, codegen.ResponseBadRequest{
 			Message: &message,
+		})
+	}
+
+	if params.DryRun != nil && *params.DryRun {
+		return ctx.JSON(http.StatusOK, codegen.ComposeAppInstallOK{
+			Message: lo.ToPtr("only validation has been done because `dry_run` is specified - skipping compose app installation"),
 		})
 	}
 
@@ -182,7 +188,7 @@ func (a *AppManagement) InstallComposeApp(ctx echo.Context) error {
 	}
 
 	return ctx.JSON(http.StatusOK, codegen.ComposeAppInstallOK{
-		Message: utils.Ptr("compose app is being installed asynchronously"),
+		Message: lo.ToPtr("compose app is being installed asynchronously"),
 	})
 }
 
