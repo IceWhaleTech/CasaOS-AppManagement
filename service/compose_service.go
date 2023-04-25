@@ -105,12 +105,14 @@ func (s *ComposeService) Uninstall(ctx context.Context, composeApp *ComposeApp, 
 	// prepare for message bus events
 	storeInfo, err := composeApp.StoreInfo(true)
 	if err != nil {
-		return err
+		logger.Error("failed to get store info", zap.Error(err), zap.String("name", composeApp.Name))
 	}
 
 	eventProperties := common.PropertiesFromContext(ctx)
 	eventProperties[common.PropertyTypeAppName.Name] = composeApp.Name
-	eventProperties[common.PropertyTypeAppIcon.Name] = storeInfo.Icon
+	if storeInfo != nil {
+		eventProperties[common.PropertyTypeAppIcon.Name] = storeInfo.Icon
+	}
 
 	go func(ctx context.Context) {
 		go PublishEventWrapper(ctx, common.EventTypeAppUninstallBegin, nil)
