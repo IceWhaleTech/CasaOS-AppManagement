@@ -14,6 +14,7 @@ import (
 	"github.com/IceWhaleTech/CasaOS-AppManagement/pkg/docker"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/file"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/logger"
+	"github.com/IceWhaleTech/CasaOS-Common/utils/port"
 	"github.com/compose-spec/compose-go/cli"
 	"github.com/compose-spec/compose-go/loader"
 	"github.com/compose-spec/compose-go/types"
@@ -651,6 +652,42 @@ func (a *ComposeApp) Logs(ctx context.Context, lines int) ([]byte, error) {
 	}
 
 	return buf.Bytes(), nil
+}
+
+func (a *ComposeApp) GetPortsInUse() (*codegen.ComposeAppValidationErrorsPortsInUse, error) {
+	tcpPorts, udpPorts, err := port.ListPortsInUse()
+	if err != nil {
+		return nil, err
+	}
+
+	allPortsInUse := lo.Union(tcpPorts, udpPorts)
+
+	tcpPortInUse := []string{}
+	udpPortInUse := []string{}
+
+	for _, s := range a.Services {
+		for _, p := range s.Ports {
+			if lo.ContainsBy(allPortsInUse, func(port int) bool { return strconv.Itoa(port) == p.Published }) {
+				switch strings.ToLower(p.Protocol) {
+				case "tcp":
+					tcpPortInUse = append(tcpPortInUse, p.Published)
+				case "udp":
+					udpPortInUse = append(udpPortInUse, p.Published)
+				}
+			}
+		}
+	}
+
+	if len(tcpPortInUse) == 0 && len(udpPortInUse) == 0 {
+		return nil, nil
+	}
+
+	portsInUse := struct {
+		TCP *codegen.PortList "json:\"TCP,omitempty\""
+		UDP *codegen.PortList "json:\"UDP,omitempty\""
+	}{TCP: &tcpPortInUse, UDP: &udpPortInUse}
+
+	return &codegen.ComposeAppValidationErrorsPortsInUse{PortsInUse: &portsInUse}, nil
 }
 
 func LoadComposeAppFromConfigFile(appID string, configFile string) (*ComposeApp, error) {

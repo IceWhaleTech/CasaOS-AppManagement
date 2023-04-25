@@ -97,7 +97,7 @@ func (a *AppManagement) MyComposeApp(ctx echo.Context, id codegen.ComposeAppID) 
 	})
 }
 
-func (a *AppManagement) ApplyComposeAppSettings(ctx echo.Context, id codegen.ComposeAppID) error {
+func (a *AppManagement) ApplyComposeAppSettings(ctx echo.Context, id codegen.ComposeAppID, params codegen.ApplyComposeAppSettingsParams) error {
 	if id == "" {
 		message := ErrComposeAppIDNotProvided.Error()
 		return ctx.JSON(http.StatusBadRequest, codegen.ResponseBadRequest{
@@ -134,6 +134,37 @@ func (a *AppManagement) ApplyComposeAppSettings(ctx echo.Context, id codegen.Com
 		})
 	}
 
+	// validation 1 - check if there are ports in use
+	validation, err := composeApp.GetPortsInUse()
+	if err != nil {
+		message := err.Error()
+		return ctx.JSON(http.StatusInternalServerError, codegen.ResponseInternalServerError{
+			Message: &message,
+		})
+	}
+
+	if validation != nil {
+		validationErrors := codegen.ComposeAppValidationErrors{}
+		if err := validationErrors.FromComposeAppValidationErrorsPortsInUse(*validation); err != nil {
+			message := err.Error()
+			return ctx.JSON(http.StatusInternalServerError, codegen.ResponseInternalServerError{
+				Message: &message,
+			})
+		}
+
+		message := "there are ports in use"
+		return ctx.JSON(http.StatusBadRequest, codegen.ComposeAppBadRequest{
+			Message: &message,
+			Data:    &validationErrors,
+		})
+	}
+
+	if params.DryRun != nil && *params.DryRun {
+		return ctx.JSON(http.StatusOK, codegen.ComposeAppInstallOK{
+			Message: lo.ToPtr("only validation has been done because `dry_run` is specified - skipping compose app installation"),
+		})
+	}
+
 	// attach context key/value pairs from upstream
 	backgroundCtx := common.WithProperties(context.Background(), PropertiesFromQueryParams(ctx))
 
@@ -149,7 +180,7 @@ func (a *AppManagement) ApplyComposeAppSettings(ctx echo.Context, id codegen.Com
 	})
 }
 
-func (a *AppManagement) InstallComposeApp(ctx echo.Context) error {
+func (a *AppManagement) InstallComposeApp(ctx echo.Context, params codegen.InstallComposeAppParams) error {
 	buf, err := YAMLfromRequest(ctx)
 	if err != nil {
 		message := err.Error()
@@ -164,6 +195,37 @@ func (a *AppManagement) InstallComposeApp(ctx echo.Context) error {
 		message := err.Error()
 		return ctx.JSON(http.StatusBadRequest, codegen.ResponseBadRequest{
 			Message: &message,
+		})
+	}
+
+	// validation 1 - check if there are ports in use
+	validation, err := composeApp.GetPortsInUse()
+	if err != nil {
+		message := err.Error()
+		return ctx.JSON(http.StatusInternalServerError, codegen.ResponseInternalServerError{
+			Message: &message,
+		})
+	}
+
+	if validation != nil {
+		validationErrors := codegen.ComposeAppValidationErrors{}
+		if err := validationErrors.FromComposeAppValidationErrorsPortsInUse(*validation); err != nil {
+			message := err.Error()
+			return ctx.JSON(http.StatusInternalServerError, codegen.ResponseInternalServerError{
+				Message: &message,
+			})
+		}
+
+		message := "there are ports in use"
+		return ctx.JSON(http.StatusBadRequest, codegen.ComposeAppBadRequest{
+			Message: &message,
+			Data:    &validationErrors,
+		})
+	}
+
+	if params.DryRun != nil && *params.DryRun {
+		return ctx.JSON(http.StatusOK, codegen.ComposeAppInstallOK{
+			Message: lo.ToPtr("only validation has been done because `dry_run` is specified - skipping compose app installation"),
 		})
 	}
 
@@ -182,7 +244,7 @@ func (a *AppManagement) InstallComposeApp(ctx echo.Context) error {
 	}
 
 	return ctx.JSON(http.StatusOK, codegen.ComposeAppInstallOK{
-		Message: utils.Ptr("compose app is being installed asynchronously"),
+		Message: lo.ToPtr("compose app is being installed asynchronously"),
 	})
 }
 

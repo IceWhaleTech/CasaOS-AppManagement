@@ -82,6 +82,18 @@ tags:
     description: |-
       <SchemaDefinition schemaRef="#/components/schemas/DeviceStoreInfo" />
 
+  - name: ComposeAppValidationErrors
+    description: |-
+      <SchemaDefinition schemaRef="#/components/schemas/ComposeAppValidationErrors" />
+
+  - name: ComposeAppValidationErrorsPortsInUse
+    description: |-
+      <SchemaDefinition schemaRef="#/components/schemas/ComposeAppValidationErrorsPortsInUse" />
+
+  - name: ComposeAppValidationErrorsPortsOutOfRange
+    description: |-
+      <SchemaDefinition schemaRef="#/components/schemas/ComposeAppValidationErrorsPortsOutOfRange" />
+
 x-tagGroups:
   - name: Methods
     tags:
@@ -102,6 +114,12 @@ x-tagGroups:
       - PortStoreInfo
       - VolumeStoreInfo
       - DeviceStoreInfo
+
+  - name: Errors
+    tags:
+      - ComposeAppValidationErrorsPortsInUse
+      - ComposeAppValidationErrorsPortsOutOfRange
+      - ComposeAppValidationErrors
 
 security:
   - access_token: []
@@ -243,17 +261,23 @@ paths:
     post:
       summary: Install a compose app
       description: |
-        TODO - add description
+        Install a compose app from the Docker Compose YAML content provided in the request.
+
+        > - The request has to be `content-type: application/yaml` and the body has to follow [Compose Specification](https://compose-spec.io).
+        > - When `dry_run=true` is provided in the query string, it only validates the YAML content.
+
       operationId: installComposeApp
       tags:
         - Compose methods
+      parameters:
+        - $ref: "#/components/parameters/DryRun"
       requestBody:
         $ref: "#/components/requestBodies/RequestComposeApp"
       responses:
         "200":
           $ref: "#/components/responses/ComposeAppInstallOK"
         "400":
-          $ref: "#/components/responses/ResponseBadRequest"
+          $ref: "#/components/responses/ComposeAppBadRequest"
         "500":
           $ref: "#/components/responses/ResponseInternalServerError"
 
@@ -282,19 +306,24 @@ paths:
     put:
       summary: Apply settings to a compose app
       description: |
-        TODO - add description
+        Apply settings to a compose app from the Docker Compose YAML content provided in the request.
+
+        > - The request has to be `content-type: application/yaml` and the body has to follow [Compose Specification](https://compose-spec.io).
+        > - When `dry_run=true` is provided in the query string, it only validates the YAML content.
+
       operationId: applyComposeAppSettings
       tags:
         - Compose methods
       parameters:
         - $ref: "#/components/parameters/ComposeAppID"
+        - $ref: "#/components/parameters/DryRun"
       requestBody:
         $ref: "#/components/requestBodies/RequestComposeApp"
       responses:
         "200":
           $ref: "#/components/responses/ComposeAppUpdateSettingsOK"
         "400":
-          $ref: "#/components/responses/ResponseBadRequest"
+          $ref: "#/components/responses/ComposeAppBadRequest"
         "404":
           $ref: "#/components/responses/ResponseNotFound"
         "500":
@@ -575,6 +604,18 @@ components:
         type: boolean
         default: false
 
+    DryRun:
+      name: dry_run
+      description: |
+        Dry run the request without actually excuting it, useful for validation and testing.
+
+        - `true` - validate only
+        - `false` - validate and execute the request
+      in: query
+      schema:
+        type: boolean
+        default: false
+
   requestBodies:
     RequestComposeApp:
       description: Compose app YAML content
@@ -710,6 +751,17 @@ components:
                     type: object
                     additionalProperties:
                       $ref: "#/components/schemas/ComposeAppWithStoreInfo"
+
+    ComposeAppBadRequest:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: "#/components/schemas/BaseResponse"
+              - properties:
+                  data:
+                    $ref: "#/components/schemas/ComposeAppValidationErrors"
 
     ComposeAppInstallOK:
       description: OK
@@ -989,6 +1041,42 @@ components:
           x-oapi-codegen-extra-tags:
             yaml: ",omitempty"
 
+    ComposeAppValidationErrors:
+      description: |-
+        for list of `ComposeAppValidationErrors`, see **ERRORS** at the bottom of navigation bar.
+      type: object
+      readOnly: true
+      anyOf:
+        - $ref: "#/components/schemas/ComposeAppValidationErrorsPortsInUse"
+        - $ref: "#/components/schemas/ComposeAppValidationErrorsPortsOutOfRange"
+
+    ComposeAppValidationErrorsPortsInUse:
+      description: |-
+        This is one of the `ComposeAppValidationErrors` that can be included in the response body of compose app installation.
+      type: object
+      readOnly: true
+      properties:
+        ports_in_use:
+          readOnly: true
+          properties:
+            TCP:
+              $ref: "#/components/schemas/PortList"
+            UDP:
+              $ref: "#/components/schemas/PortList"
+
+    ComposeAppValidationErrorsPortsOutOfRange:
+      description: |-
+        This is one of the `ComposeAppValidationErrors` that can be included in the response body of compose app installation.
+      type: object
+      readOnly: true
+      properties:
+        ports_out_of_range:
+          readOnly: true
+          type: array
+          items:
+            type: string
+            example: "8384"
+
     AppStoreInfo:
       title: StoreInfo of an app
       description: |-
@@ -1098,6 +1186,13 @@ components:
             type: string
           example:
             en_us: Web UI
+
+    PortList:
+      type: array
+      readOnly: true
+      items:
+        type: string
+        example: "8384"
 
     VolumeStoreInfo:
       required:
