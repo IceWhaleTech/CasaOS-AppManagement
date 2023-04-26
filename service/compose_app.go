@@ -48,6 +48,10 @@ func (a *ComposeApp) StoreInfo(includeApps bool) (*codegen.ComposeAppStoreInfo, 
 		}
 	}
 
+	if storeInfo.Scheme == nil || *storeInfo.Scheme == "" {
+		storeInfo.Scheme = lo.ToPtr(codegen.Http)
+	}
+
 	if includeApps {
 		apps := map[string]codegen.AppStoreInfo{}
 

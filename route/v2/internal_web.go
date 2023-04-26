@@ -109,10 +109,6 @@ func WebAppGridItemAdapterV2(composeAppWithStoreInfo *codegen.ComposeAppWithStor
 	item.StoreAppID = composeAppStoreInfo.StoreAppID
 
 	// identify the main app
-	if composeAppStoreInfo.Apps == nil {
-		return item, fmt.Errorf("failed to get container apps for compose app %s", composeApp.Name)
-	}
-
 	if composeAppStoreInfo.Main == nil || *composeAppStoreInfo.Main == "" {
 		return item, fmt.Errorf("failed to get store info for main container app of compose app %s", composeApp.Name)
 	}
