@@ -57,7 +57,7 @@ func TestWebAppGridItemAdapter(t *testing.T) {
 
 	assert.Equal(t, *gridItem.Icon, storeInfo.Icon)
 	assert.Equal(t, *gridItem.Image, composeApp.Services[0].Image)
-	assert.Equal(t, gridItem.Hostname, *storeInfo.Hostname)
+	assert.Equal(t, gridItem.Hostname, storeInfo.Hostname)
 	assert.Equal(t, *gridItem.Port, storeInfo.PortMap)
 	assert.Equal(t, *gridItem.Index, storeInfo.Index)
 	assert.Equal(t, *gridItem.Status, "running")
