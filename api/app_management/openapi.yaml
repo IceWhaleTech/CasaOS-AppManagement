@@ -927,7 +927,8 @@ components:
         - thumbnail
         - title
         - tips
-
+        - index
+        - port_map
       properties:
         store_app_id:
           $ref: "#/components/schemas/StoreAppID"
@@ -976,7 +977,22 @@ components:
           example: Backup
         tips:
           $ref: "#/components/schemas/TipsStoreInfo"
-
+        hostname:
+          type: string
+          example: ""
+          x-oapi-codegen-extra-tags:
+            yaml: ",omitempty"
+        port_map:
+          type: string
+          example: "8384"
+          x-oapi-codegen-extra-tags:
+            mapstructure: "port_map"
+            yaml: "port_map,omitempty"
+        index:
+          type: string
+          example: "/"
+          x-oapi-codegen-extra-tags:
+            yaml: ",omitempty"
         apps:
           title: store info of container apps included in the compose app
           description: |
@@ -1083,30 +1099,12 @@ components:
         > Do not mistake it as *information of AppStore* which does not exist.
       required:
         - envs
-        - index
-        - port_map
         - ports
         - volumes
         - devices
       properties:
         scheme:
           $ref: "#/components/schemas/Scheme"
-        hostname:
-          type: string
-          example: ""
-          x-oapi-codegen-extra-tags:
-            yaml: ",omitempty"
-        port_map:
-          type: string
-          example: "8384"
-          x-oapi-codegen-extra-tags:
-            mapstructure: "port_map"
-            yaml: "port_map,omitempty"
-        index:
-          type: string
-          example: "/"
-          x-oapi-codegen-extra-tags:
-            yaml: ",omitempty"
         envs:
           type: array
           items:

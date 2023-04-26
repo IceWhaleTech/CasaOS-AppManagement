@@ -134,10 +134,10 @@ func WebAppGridItemAdapterV2(composeAppWithStoreInfo *codegen.ComposeAppWithStor
 
 	// item properties from store info
 	mainAppStoreInfo := (*composeAppStoreInfo.Apps)[*composeAppStoreInfo.Main]
-	item.Hostname = mainAppStoreInfo.Hostname
+	item.Hostname = composeAppStoreInfo.Hostname
 	item.Icon = &composeAppStoreInfo.Icon
-	item.Index = &mainAppStoreInfo.Index
-	item.Port = &mainAppStoreInfo.PortMap
+	item.Index = &composeAppStoreInfo.Index
+	item.Port = &composeAppStoreInfo.PortMap
 	item.Scheme = mainAppStoreInfo.Scheme
 	item.Title = &composeAppStoreInfo.Title
 
