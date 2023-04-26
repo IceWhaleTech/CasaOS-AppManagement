@@ -977,6 +977,8 @@ components:
           example: Backup
         tips:
           $ref: "#/components/schemas/TipsStoreInfo"
+        scheme:
+          $ref: "#/components/schemas/Scheme"
         hostname:
           type: string
           example: ""
@@ -1103,8 +1105,6 @@ components:
         - volumes
         - devices
       properties:
-        scheme:
-          $ref: "#/components/schemas/Scheme"
         envs:
           type: array
           items:
