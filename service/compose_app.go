@@ -802,7 +802,7 @@ func NewComposeAppFromYAML(yaml []byte, skipInterpolation, skipValidation bool) 
 		logger.Info("compose app name is not specified, trying to get a name from somewhere...")
 		if composeAppStoreInfo, err := composeApp.StoreInfo(false); err != nil || composeAppStoreInfo.Main == nil || *composeAppStoreInfo.Main == "" {
 			logger.Info("compose app store info `x-casaos` does not exist, generating a random name", zap.Error(err))
-			composeApp.Name = random.Name(lo.ToPtr(random.String(4, true)))
+			composeApp.Name = random.Name(nil)
 		} else {
 			composeApp.Name = *composeAppStoreInfo.Main
 		}

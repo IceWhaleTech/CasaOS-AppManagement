@@ -36,13 +36,12 @@ func (s *ComposeService) PrepareWorkingDirectory(name string) (string, error) {
 
 func (s *ComposeService) Install(ctx context.Context, composeApp *ComposeApp) error {
 	// set store_app_id (by convention is the same as app name at install time if it does not exist)
-	storeAppID, ok := composeApp.SetStoreAppID(composeApp.Name)
-	if !ok {
-		logger.Error("failed to set store app ID", zap.String("name", composeApp.Name))
-		return ErrSetStoreAppID
+	_, isStoreApp := composeApp.SetStoreAppID(composeApp.Name)
+	if !isStoreApp {
+		logger.Info("the compose app getting installed is not a store app, skipping store app id setting.")
 	}
 
-	logger.Info("installing compose app", zap.String("store_app_id", storeAppID))
+	logger.Info("installing compose app", zap.String("name", composeApp.Name))
 
 	composeYAMLInterpolated, err := yaml.Marshal(composeApp)
 	if err != nil {
