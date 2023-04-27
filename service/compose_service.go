@@ -74,14 +74,13 @@ func (s *ComposeService) Install(ctx context.Context, composeApp *ComposeApp) er
 	}
 
 	// prepare for message bus events
-	storeInfo, err := composeApp.StoreInfo(true)
-	if err != nil {
-		return err
-	}
-
 	eventProperties := common.PropertiesFromContext(ctx)
 	eventProperties[common.PropertyTypeAppName.Name] = composeApp.Name
-	eventProperties[common.PropertyTypeAppIcon.Name] = storeInfo.Icon
+
+	storeInfo, err := composeApp.StoreInfo(true)
+	if err == nil && storeInfo != nil {
+		eventProperties[common.PropertyTypeAppIcon.Name] = storeInfo.Icon
+	}
 
 	go func(ctx context.Context) {
 		go PublishEventWrapper(ctx, common.EventTypeAppInstallBegin, nil)

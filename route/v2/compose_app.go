@@ -263,13 +263,13 @@ func (a *AppManagement) InstallComposeApp(ctx echo.Context, params codegen.Insta
 	backgroundCtx := common.WithProperties(context.Background(), PropertiesFromQueryParams(ctx))
 
 	if err := service.MyService.Compose().Install(backgroundCtx, composeApp); err != nil {
-		message := err.Error()
+		logger.Error("failed to start compose app installation", zap.Error(err))
 
+		message := err.Error()
 		if err == service.ErrComposeExtensionNameXCasaOSNotFound {
 			return ctx.JSON(http.StatusBadRequest, codegen.ResponseBadRequest{Message: &message})
 		}
 
-		logger.Error("failed to start compose app installation", zap.Error(err))
 		return ctx.JSON(http.StatusInternalServerError, codegen.ResponseInternalServerError{Message: &message})
 	}
 

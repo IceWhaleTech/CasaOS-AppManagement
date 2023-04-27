@@ -785,6 +785,16 @@ func NewComposeAppFromYAML(yaml []byte, skipInterpolation, skipValidation bool) 
 		func(o *loader.Options) {
 			o.SkipInterpolation = skipInterpolation
 			o.SkipValidation = skipValidation
+
+			if getNameFrom(yaml) != "" {
+				return
+			}
+
+			// fix compose app name
+			logger.Info("compose app name is not specified, getting a name from one of our contributors :)")
+			projectName := random.Name(nil)
+			logger.Info("compose app name is given", zap.String("name", projectName))
+			o.SetProjectName(projectName, false)
 		},
 	)
 	if err != nil {
@@ -795,18 +805,6 @@ func NewComposeAppFromYAML(yaml []byte, skipInterpolation, skipValidation bool) 
 
 	if composeApp.Extensions == nil {
 		composeApp.Extensions = map[string]interface{}{}
-	}
-
-	// fix compose app name
-	if composeApp.Name == "" {
-		logger.Info("compose app name is not specified, trying to get a name from somewhere...")
-		if composeAppStoreInfo, err := composeApp.StoreInfo(false); err != nil || composeAppStoreInfo.Main == nil || *composeAppStoreInfo.Main == "" {
-			logger.Info("compose app store info `x-casaos` does not exist, generating a random name", zap.Error(err))
-			composeApp.Name = random.Name(nil)
-		} else {
-			composeApp.Name = *composeAppStoreInfo.Main
-		}
-		logger.Info("compose app name is given", zap.String("name", composeApp.Name))
 	}
 
 	return composeApp, nil
