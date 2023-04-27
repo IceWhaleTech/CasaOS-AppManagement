@@ -471,6 +471,42 @@ func (a *AppManagement) ComposeAppContainers(ctx echo.Context, id codegen.Compos
 	})
 }
 
+func (a *AppManagement) CheckComposeAppHealthByID(ctx echo.Context, id codegen.ComposeAppID) error {
+	if id == "" {
+		message := ErrComposeAppIDNotProvided.Error()
+		return ctx.JSON(http.StatusBadRequest, codegen.ResponseBadRequest{
+			Message: &message,
+		})
+	}
+
+	composeApps, err := service.MyService.Compose().List(ctx.Request().Context())
+	if err != nil {
+		message := err.Error()
+		return ctx.JSON(http.StatusInternalServerError, codegen.ResponseInternalServerError{Message: &message})
+	}
+
+	composeApp, ok := composeApps[id]
+	if !ok {
+		message := fmt.Sprintf("compose app `%s` not found", id)
+		return ctx.JSON(http.StatusNotFound, codegen.ResponseNotFound{Message: &message})
+	}
+
+	result, err := composeApp.HealthCheck()
+	if err != nil {
+		message := err.Error()
+		return ctx.JSON(http.StatusServiceUnavailable, codegen.ResponseServiceUnavailable{Message: &message})
+	}
+
+	if !result {
+		return ctx.JSON(http.StatusServiceUnavailable, codegen.ResponseServiceUnavailable{})
+	}
+
+	message := fmt.Sprintf("compose app `%s` passed the health check", id)
+	return ctx.JSON(http.StatusOK, codegen.ComposeAppHealthCheckOK{
+		Message: &message,
+	})
+}
+
 func YAMLfromRequest(ctx echo.Context) ([]byte, error) {
 	var buf []byte
 
