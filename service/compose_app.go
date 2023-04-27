@@ -17,6 +17,7 @@ import (
 	"github.com/IceWhaleTech/CasaOS-Common/utils/file"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/logger"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/port"
+	"github.com/IceWhaleTech/CasaOS-Common/utils/random"
 	"github.com/compose-spec/compose-go/cli"
 	"github.com/compose-spec/compose-go/loader"
 	"github.com/compose-spec/compose-go/types"
@@ -784,6 +785,16 @@ func NewComposeAppFromYAML(yaml []byte, skipInterpolation, skipValidation bool) 
 		func(o *loader.Options) {
 			o.SkipInterpolation = skipInterpolation
 			o.SkipValidation = skipValidation
+
+			if getNameFrom(yaml) != "" {
+				return
+			}
+
+			// fix compose app name
+			logger.Info("compose app name is not specified, getting a name from one of our contributors :)")
+			projectName := random.Name(nil)
+			logger.Info("compose app name is given", zap.String("name", projectName))
+			o.SetProjectName(projectName, false)
 		},
 	)
 	if err != nil {
@@ -794,16 +805,6 @@ func NewComposeAppFromYAML(yaml []byte, skipInterpolation, skipValidation bool) 
 
 	if composeApp.Extensions == nil {
 		composeApp.Extensions = map[string]interface{}{}
-	}
-
-	// fix compose app name
-	if composeApp.Name == "" {
-		composeAppStoreInfo, err := composeApp.StoreInfo(false)
-		if err != nil {
-			return nil, err
-		}
-
-		composeApp.Name = *composeAppStoreInfo.Main
 	}
 
 	return composeApp, nil
