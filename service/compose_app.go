@@ -702,10 +702,20 @@ func (a *ComposeApp) HealthCheck() (bool, error) {
 		return false, err
 	}
 
+	scheme := "http"
+	if storeInfo.Scheme != nil {
+		scheme = string(*storeInfo.Scheme)
+	}
+
+	hostname := common.Localhost
+	if storeInfo.Hostname != nil {
+		hostname = *storeInfo.Hostname
+	}
+
 	url := fmt.Sprintf(
 		"%s://%s:%s/%s",
-		lo.If(storeInfo.Scheme == nil, "http").Else(string(*storeInfo.Scheme)),
-		lo.If(storeInfo.Hostname == nil, common.Localhost).Else(*storeInfo.Hostname),
+		scheme,
+		hostname,
 		storeInfo.PortMap,
 		strings.TrimLeft(storeInfo.Index, "/"),
 	)
