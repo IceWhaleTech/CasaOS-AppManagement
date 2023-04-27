@@ -17,6 +17,7 @@ import (
 	"github.com/IceWhaleTech/CasaOS-Common/utils/file"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/logger"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/port"
+	"github.com/IceWhaleTech/CasaOS-Common/utils/random"
 	"github.com/compose-spec/compose-go/cli"
 	"github.com/compose-spec/compose-go/loader"
 	"github.com/compose-spec/compose-go/types"
@@ -798,12 +799,14 @@ func NewComposeAppFromYAML(yaml []byte, skipInterpolation, skipValidation bool) 
 
 	// fix compose app name
 	if composeApp.Name == "" {
-		composeAppStoreInfo, err := composeApp.StoreInfo(false)
-		if err != nil {
-			return nil, err
+		logger.Info("compose app name is not specified, trying to get a name from somewhere...")
+		if composeAppStoreInfo, err := composeApp.StoreInfo(false); err != nil || composeAppStoreInfo.Main == nil || *composeAppStoreInfo.Main == "" {
+			logger.Info("compose app store info `x-casaos` does not exist, generating a random name", zap.Error(err))
+			composeApp.Name = random.Name(lo.ToPtr(random.String(4, true)))
+		} else {
+			composeApp.Name = *composeAppStoreInfo.Main
 		}
-
-		composeApp.Name = *composeAppStoreInfo.Main
+		logger.Info("compose app name is given", zap.String("name", composeApp.Name))
 	}
 
 	return composeApp, nil
