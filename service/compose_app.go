@@ -5,9 +5,11 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"net/http"
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/IceWhaleTech/CasaOS-AppManagement/codegen"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/common"
@@ -21,6 +23,7 @@ import (
 	composeCmd "github.com/docker/compose/v2/cmd/compose"
 	"github.com/docker/compose/v2/cmd/formatter"
 	"github.com/docker/compose/v2/pkg/api"
+	"github.com/go-resty/resty/v2"
 	"github.com/samber/lo"
 	"go.uber.org/zap"
 	"gopkg.in/yaml.v3"
@@ -691,6 +694,38 @@ func (a *ComposeApp) GetPortsInUse() (*codegen.ComposeAppValidationErrorsPortsIn
 	}{TCP: &tcpPortInUse, UDP: &udpPortInUse}
 
 	return &codegen.ComposeAppValidationErrorsPortsInUse{PortsInUse: &portsInUse}, nil
+}
+
+func (a *ComposeApp) HealthCheck() (bool, error) {
+	storeInfo, err := a.StoreInfo(false)
+	if err != nil {
+		return false, err
+	}
+
+	url := fmt.Sprintf(
+		"%s://%s:%s/%s",
+		lo.If(storeInfo.Scheme == nil, "http").Else(string(*storeInfo.Scheme)),
+		lo.If(storeInfo.Hostname == nil, common.Localhost).Else(*storeInfo.Hostname),
+		storeInfo.PortMap,
+		strings.TrimLeft(storeInfo.Index, "/"),
+	)
+
+	logger.Info("checking compose app health at the specified web port...", zap.String("name", a.Name), zap.Any("url", url))
+
+	client := resty.New()
+	client.SetTimeout(30 * time.Second)
+	client.SetHeader("Accept", "text/html")
+	response, err := client.R().Get(url)
+	if err != nil {
+		logger.Error("failed to check container health", zap.Error(err), zap.String("name", a.Name))
+		return false, err
+	}
+	if response.StatusCode() == http.StatusOK || response.StatusCode() == http.StatusUnauthorized {
+		return true, nil
+	}
+
+	logger.Error("compose app health check failed at the specified web port", zap.Any("name", a.Name), zap.Any("url", url), zap.String("status", fmt.Sprint(response.StatusCode())))
+	return false, nil
 }
 
 func LoadComposeAppFromConfigFile(appID string, configFile string) (*ComposeApp, error) {

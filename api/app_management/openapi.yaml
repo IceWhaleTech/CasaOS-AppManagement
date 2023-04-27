@@ -431,6 +431,26 @@ paths:
         "500":
           $ref: "#/components/responses/ResponseInternalServerError"
 
+  /compose/{id}/healthcheck:
+    get:
+      summary: Check if the compose app is running healthy
+      description: |
+        By default this method simply check if the `port_map` of the compose app returns `200 OK` status code.
+
+        Custom health check procedure will be implemented in the future.
+      operationId: checkComposeAppHealthByID
+      tags:
+        - Compose methods
+      parameters:
+        - $ref: "#/components/parameters/ComposeAppID"
+      responses:
+        "200":
+          $ref: "#/components/responses/ComposeAppHealthCheckOK"
+        "404":
+          $ref: "#/components/responses/ResponseNotFound"
+        "503":
+          $ref: "#/components/responses/ResponseServiceUnavailable"
+
   /container/{id}:
     patch:
       summary: Recreate the container app
@@ -453,11 +473,15 @@ paths:
 
   /container/{id}/healthcheck:
     get:
+      deprecated: true
       summary: Check if the container app is running healthy
       description: |
         By default this method simply check if the WebUI port of the app returns `200 OK` status code.
 
         Custom health check procedure will be implemented in the future.
+
+        > This method works for legacy apps running on CasaOS v0.4.3 and earlier.
+        > For compose app, use `GET /compose/{id}/healthcheck` instead.
       operationId: checkContainerHealthByID
       tags:
         - Container methods
@@ -835,6 +859,15 @@ components:
                   data:
                     type: string
                     example: <logs...>
+
+    ComposeAppHealthCheckOK:
+      description: OK
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/BaseResponse"
+          example:
+            message: "pong"
 
     ContainerHealthCheckOK:
       description: OK
