@@ -125,7 +125,7 @@ func (a *ComposeApp) IsUpdateAvailable() bool {
 		return false
 	}
 
-	if storeInfo == nil || storeInfo.StoreAppID == nil || *storeInfo.StoreAppID != "" {
+	if storeInfo == nil || storeInfo.StoreAppID == nil || *storeInfo.StoreAppID == "" {
 		logger.Error("store info of compose app is not valid, thus no update available")
 		return false
 	}
@@ -169,7 +169,6 @@ func (a *ComposeApp) IsUpdateAvailableWith(storeComposeApp *ComposeApp) bool {
 	}
 
 	if mainAppTag == storeMainAppTag {
-		logger.Info("main apps of local app and store app have identical image tag, thus no update available", zap.String("local", mainApp.Image), zap.String("store", storeMainApp.Image))
 		return false
 	}
 
