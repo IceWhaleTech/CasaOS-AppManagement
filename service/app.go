@@ -3,7 +3,6 @@ package service
 import (
 	"github.com/IceWhaleTech/CasaOS-AppManagement/codegen"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/common"
-	"github.com/IceWhaleTech/CasaOS-Common/utils"
 	"github.com/compose-spec/compose-go/loader"
 	"github.com/compose-spec/compose-go/types"
 )
@@ -20,10 +19,6 @@ func (a *App) StoreInfo() (codegen.AppStoreInfo, error) {
 
 	if err := loader.Transform(ex, &storeInfo); err != nil {
 		return storeInfo, err
-	}
-
-	if storeInfo.Scheme == nil || *storeInfo.Scheme == "" {
-		storeInfo.Scheme = utils.Ptr(codegen.Http)
 	}
 
 	return storeInfo, nil

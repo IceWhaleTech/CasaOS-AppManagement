@@ -109,10 +109,6 @@ func WebAppGridItemAdapterV2(composeAppWithStoreInfo *codegen.ComposeAppWithStor
 	item.StoreAppID = composeAppStoreInfo.StoreAppID
 
 	// identify the main app
-	if composeAppStoreInfo.Apps == nil {
-		return item, fmt.Errorf("failed to get container apps for compose app %s", composeApp.Name)
-	}
-
 	if composeAppStoreInfo.Main == nil || *composeAppStoreInfo.Main == "" {
 		return item, fmt.Errorf("failed to get store info for main container app of compose app %s", composeApp.Name)
 	}
@@ -133,12 +129,11 @@ func WebAppGridItemAdapterV2(composeAppWithStoreInfo *codegen.ComposeAppWithStor
 	item.Image = &mainApp.Image
 
 	// item properties from store info
-	mainAppStoreInfo := (*composeAppStoreInfo.Apps)[*composeAppStoreInfo.Main]
-	item.Hostname = mainAppStoreInfo.Hostname
+	item.Hostname = composeAppStoreInfo.Hostname
 	item.Icon = &composeAppStoreInfo.Icon
-	item.Index = &mainAppStoreInfo.Index
-	item.Port = &mainAppStoreInfo.PortMap
-	item.Scheme = mainAppStoreInfo.Scheme
+	item.Index = &composeAppStoreInfo.Index
+	item.Port = &composeAppStoreInfo.PortMap
+	item.Scheme = composeAppStoreInfo.Scheme
 	item.Title = &composeAppStoreInfo.Title
 
 	// item type

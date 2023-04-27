@@ -43,8 +43,6 @@ services:
         - container: PGID
           description:
             en_us: Run Syncthing as specified gid.
-      index: /
-      port_map: "8384"
       ports:
         - container: "8384"
           description:
@@ -90,3 +88,5 @@ x-casaos:
     - arm
     - arm64
   main: syncthing
+  index: /
+  port_map: "8384"
