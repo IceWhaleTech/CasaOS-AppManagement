@@ -687,7 +687,7 @@ func (a *ComposeApp) GetPortsInUse() (*codegen.ComposeAppValidationErrorsPortsIn
 
 	for _, s := range a.Services {
 		for _, p := range s.Ports {
-			if lo.ContainsBy(allPortsInUse, func(port int) bool { return strconv.Itoa(port) == p.Published }) {
+			if lo.ContainsBy(allPortsInUse, func(portInUse int) bool { return strconv.Itoa(portInUse) == p.Published }) {
 				switch strings.ToLower(p.Protocol) {
 				case "tcp":
 					tcpPortInUse = append(tcpPortInUse, p.Published)

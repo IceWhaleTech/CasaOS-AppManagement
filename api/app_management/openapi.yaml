@@ -271,6 +271,7 @@ paths:
         - Compose methods
       parameters:
         - $ref: "#/components/parameters/DryRun"
+        - $ref: "#/components/parameters/CheckPortConflict"
       requestBody:
         $ref: "#/components/requestBodies/RequestComposeApp"
       responses:
@@ -317,6 +318,7 @@ paths:
       parameters:
         - $ref: "#/components/parameters/ComposeAppID"
         - $ref: "#/components/parameters/DryRun"
+        - $ref: "#/components/parameters/CheckPortConflict"
       requestBody:
         $ref: "#/components/requestBodies/RequestComposeApp"
       responses:
@@ -635,6 +637,18 @@ components:
 
         - `true` - validate only
         - `false` - validate and execute the request
+      in: query
+      schema:
+        type: boolean
+        default: false
+
+    CheckPortConflict:
+      name: check_port_conflict
+      description: |
+        Check if the port of the app conflicts with ports already in use.
+
+        - `true` - check port conflict
+        - `false` - skip port conflict check
       in: query
       schema:
         type: boolean

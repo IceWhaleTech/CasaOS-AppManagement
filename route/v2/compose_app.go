@@ -133,59 +133,60 @@ func (a *AppManagement) ApplyComposeAppSettings(ctx echo.Context, id codegen.Com
 			Message: &message,
 		})
 	}
+	if params.CheckPortConflict != nil && *params.CheckPortConflict {
 
-	// validation 1 - check if there are ports in use
-	validation, err := newComposeApp.GetPortsInUse()
-	if err != nil {
-		message := err.Error()
-		return ctx.JSON(http.StatusInternalServerError, codegen.ResponseInternalServerError{
-			Message: &message,
-		})
-	}
-
-	if validation != nil && validation.PortsInUse != nil {
-
-		// we want to ignore the ports being used by current compose app
-		for _, service := range composeApp.Services {
-			for _, portToSkip := range service.Ports {
-				if validation.PortsInUse.TCP != nil {
-					tcpPortsInUse := []string{}
-					for _, tcpPort := range *validation.PortsInUse.TCP {
-						if tcpPort != portToSkip.Published {
-							tcpPortsInUse = append(tcpPortsInUse, tcpPort)
-						}
-					}
-					validation.PortsInUse.TCP = &tcpPortsInUse
-				}
-
-				if validation.PortsInUse.UDP != nil {
-					udpPortsInUse := []string{}
-					for _, udpPort := range *validation.PortsInUse.UDP {
-						if udpPort != portToSkip.Published {
-							udpPortsInUse = append(udpPortsInUse, udpPort)
-						}
-					}
-					validation.PortsInUse.UDP = &udpPortsInUse
-				}
-			}
+		// validation 1 - check if there are ports in use
+		validation, err := newComposeApp.GetPortsInUse()
+		if err != nil {
+			message := err.Error()
+			return ctx.JSON(http.StatusInternalServerError, codegen.ResponseInternalServerError{
+				Message: &message,
+			})
 		}
 
-		if (validation.PortsInUse.TCP != nil && len(*validation.PortsInUse.TCP) > 0) ||
-			(validation.PortsInUse.UDP != nil && len(*validation.PortsInUse.UDP) > 0) {
+		if validation != nil && validation.PortsInUse != nil {
+			// we want to ignore the ports being used by current compose app
+			for _, service := range composeApp.Services {
+				for _, portToSkip := range service.Ports {
+					if validation.PortsInUse.TCP != nil {
+						tcpPortsInUse := []string{}
+						for _, tcpPort := range *validation.PortsInUse.TCP {
+							if tcpPort != portToSkip.Published {
+								tcpPortsInUse = append(tcpPortsInUse, tcpPort)
+							}
+						}
+						validation.PortsInUse.TCP = &tcpPortsInUse
+					}
 
-			validationErrors := codegen.ComposeAppValidationErrors{}
-			if err := validationErrors.FromComposeAppValidationErrorsPortsInUse(*validation); err != nil {
-				message := err.Error()
-				return ctx.JSON(http.StatusInternalServerError, codegen.ResponseInternalServerError{
-					Message: &message,
-				})
+					if validation.PortsInUse.UDP != nil {
+						udpPortsInUse := []string{}
+						for _, udpPort := range *validation.PortsInUse.UDP {
+							if udpPort != portToSkip.Published {
+								udpPortsInUse = append(udpPortsInUse, udpPort)
+							}
+						}
+						validation.PortsInUse.UDP = &udpPortsInUse
+					}
+				}
 			}
 
-			message := "there are ports in use"
-			return ctx.JSON(http.StatusBadRequest, codegen.ComposeAppBadRequest{
-				Message: &message,
-				Data:    &validationErrors,
-			})
+			if (validation.PortsInUse.TCP != nil && len(*validation.PortsInUse.TCP) > 0) ||
+				(validation.PortsInUse.UDP != nil && len(*validation.PortsInUse.UDP) > 0) {
+
+				validationErrors := codegen.ComposeAppValidationErrors{}
+				if err := validationErrors.FromComposeAppValidationErrorsPortsInUse(*validation); err != nil {
+					message := err.Error()
+					return ctx.JSON(http.StatusInternalServerError, codegen.ResponseInternalServerError{
+						Message: &message,
+					})
+				}
+
+				message := "there are ports in use"
+				return ctx.JSON(http.StatusBadRequest, codegen.ComposeAppBadRequest{
+					Message: &message,
+					Data:    &validationErrors,
+				})
+			}
 		}
 	}
 
@@ -228,29 +229,31 @@ func (a *AppManagement) InstallComposeApp(ctx echo.Context, params codegen.Insta
 		})
 	}
 
-	// validation 1 - check if there are ports in use
-	validation, err := composeApp.GetPortsInUse()
-	if err != nil {
-		message := err.Error()
-		return ctx.JSON(http.StatusInternalServerError, codegen.ResponseInternalServerError{
-			Message: &message,
-		})
-	}
-
-	if validation != nil {
-		validationErrors := codegen.ComposeAppValidationErrors{}
-		if err := validationErrors.FromComposeAppValidationErrorsPortsInUse(*validation); err != nil {
+	if params.CheckPortConflict != nil && *params.CheckPortConflict {
+		// validation 1 - check if there are ports in use
+		validation, err := composeApp.GetPortsInUse()
+		if err != nil {
 			message := err.Error()
 			return ctx.JSON(http.StatusInternalServerError, codegen.ResponseInternalServerError{
 				Message: &message,
 			})
 		}
 
-		message := "there are ports in use"
-		return ctx.JSON(http.StatusBadRequest, codegen.ComposeAppBadRequest{
-			Message: &message,
-			Data:    &validationErrors,
-		})
+		if validation != nil {
+			validationErrors := codegen.ComposeAppValidationErrors{}
+			if err := validationErrors.FromComposeAppValidationErrorsPortsInUse(*validation); err != nil {
+				message := err.Error()
+				return ctx.JSON(http.StatusInternalServerError, codegen.ResponseInternalServerError{
+					Message: &message,
+				})
+			}
+
+			message := "there are ports in use"
+			return ctx.JSON(http.StatusBadRequest, codegen.ComposeAppBadRequest{
+				Message: &message,
+				Data:    &validationErrors,
+			})
+		}
 	}
 
 	if params.DryRun != nil && *params.DryRun {
