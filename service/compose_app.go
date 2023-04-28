@@ -382,6 +382,19 @@ func (a *ComposeApp) PullAndApply(ctx context.Context, newComposeYAML []byte) er
 
 	defer PublishEventWrapper(ctx, common.EventTypeContainerStartEnd, nil)
 
+	// prepare source path for volumes if not exist
+	for _, app := range newComposeApp.Services {
+		for _, volume := range app.Volumes {
+			path := volume.Source
+			if err := file.IsNotExistMkDir(path); err != nil {
+				go PublishEventWrapper(ctx, common.EventTypeContainerStartError, map[string]string{
+					common.PropertyTypeMessage.Name: err.Error(),
+				})
+				return err
+			}
+		}
+	}
+
 	if err := service.Up(ctx, (*codegen.ComposeApp)(newComposeApp), api.UpOptions{
 		Start: api.StartOptions{
 			CascadeStop: true,
@@ -704,12 +717,12 @@ func (a *ComposeApp) HealthCheck() (bool, error) {
 	}
 
 	scheme := "http"
-	if storeInfo.Scheme != nil {
+	if storeInfo.Scheme != nil && *storeInfo.Scheme != "" {
 		scheme = string(*storeInfo.Scheme)
 	}
 
 	hostname := common.Localhost
-	if storeInfo.Hostname != nil {
+	if storeInfo.Hostname != nil && *storeInfo.Hostname != "" {
 		hostname = *storeInfo.Hostname
 	}
 
