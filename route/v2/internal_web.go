@@ -97,44 +97,33 @@ func WebAppGridItemAdapterV2(composeAppWithStoreInfo *codegen.ComposeAppWithStor
 	item := &codegen.WebAppGridItem{
 		AppType: codegen.V2app,
 		Name:    &composeApp.Name,
-		Status:  composeAppWithStoreInfo.Status,
+		Title: lo.ToPtr(map[string]string{
+			"en_us": composeApp.Name,
+		}),
 	}
 
 	composeAppStoreInfo := composeAppWithStoreInfo.StoreInfo
+	if composeAppStoreInfo != nil {
 
-	if composeAppStoreInfo == nil {
-		return item, fmt.Errorf("failed to get store info for compose app %s", composeApp.Name)
-	}
+		// item properties from store info
+		item.Hostname = composeAppStoreInfo.Hostname
+		item.Icon = &composeAppStoreInfo.Icon
+		item.Index = &composeAppStoreInfo.Index
+		item.Port = &composeAppStoreInfo.PortMap
+		item.Scheme = composeAppStoreInfo.Scheme
+		item.Status = composeAppWithStoreInfo.Status
+		item.StoreAppID = composeAppStoreInfo.StoreAppID
+		item.Title = &composeAppStoreInfo.Title
 
-	item.StoreAppID = composeAppStoreInfo.StoreAppID
-
-	// identify the main app
-	if composeAppStoreInfo.Main == nil || *composeAppStoreInfo.Main == "" {
-		return item, fmt.Errorf("failed to get store info for main container app of compose app %s", composeApp.Name)
-	}
-
-	var mainApp *types.ServiceConfig
-	for i, service := range composeApp.Services {
-		if service.Name == *composeAppStoreInfo.Main {
-			mainApp = &composeApp.Services[i]
+		var mainApp *types.ServiceConfig
+		for i, service := range composeApp.Services {
+			if service.Name == *composeAppStoreInfo.Main {
+				mainApp = &composeApp.Services[i]
+				item.Image = &mainApp.Image // Hengxin needs this image property for some reason...
+			}
+			break
 		}
-		break
 	}
-
-	// item image
-	if mainApp == nil {
-		logger.Error("failed to get main app service", zap.String("app", composeApp.Name))
-		return item, fmt.Errorf("failed to get main container app for compose app %s", composeApp.Name)
-	}
-	item.Image = &mainApp.Image
-
-	// item properties from store info
-	item.Hostname = composeAppStoreInfo.Hostname
-	item.Icon = &composeAppStoreInfo.Icon
-	item.Index = &composeAppStoreInfo.Index
-	item.Port = &composeAppStoreInfo.PortMap
-	item.Scheme = composeAppStoreInfo.Scheme
-	item.Title = &composeAppStoreInfo.Title
 
 	// item type
 	itemAuthorType := composeApp.AuthorType()
