@@ -63,7 +63,7 @@ func (a *ComposeApp) StoreInfo(includeApps bool) (*codegen.ComposeAppStoreInfo, 
 			appStoreInfo, err := app.StoreInfo()
 			if err != nil {
 				if err == ErrComposeExtensionNameXCasaOSNotFound {
-					logger.Info("App does not have x-casaos extension - skipp", zap.String("app", app.Name))
+					logger.Info("App does not have x-casaos extension - skipping", zap.String("app", app.Name))
 					continue
 				}
 
