@@ -383,7 +383,7 @@ func (a *ComposeApp) PullAndApply(ctx context.Context, newComposeYAML []byte) er
 	defer PublishEventWrapper(ctx, common.EventTypeContainerStartEnd, nil)
 
 	// prepare source path for volumes if not exist
-	for _, app := range newComposeApp.Services {
+	for i, app := range newComposeApp.Services {
 		for _, volume := range app.Volumes {
 			path := volume.Source
 			if err := file.IsNotExistMkDir(path); err != nil {
@@ -393,6 +393,18 @@ func (a *ComposeApp) PullAndApply(ctx context.Context, newComposeYAML []byte) er
 				return err
 			}
 		}
+
+		// check if each required device exists
+		deviceMapFiltered := []string{}
+		for _, deviceMap := range app.Devices {
+			devicePath := strings.SplitN(deviceMap, ":", 2)[0]
+			if file.CheckNotExist(devicePath) {
+				logger.Info("device not found", zap.String("device", devicePath))
+				continue
+			}
+			deviceMapFiltered = append(deviceMapFiltered, deviceMap)
+		}
+		newComposeApp.Services[i].Devices = deviceMapFiltered
 	}
 
 	if err := service.Up(ctx, (*codegen.ComposeApp)(newComposeApp), api.UpOptions{
