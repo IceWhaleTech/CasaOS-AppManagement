@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/IceWhaleTech/CasaOS-AppManagement/codegen"
+	"github.com/IceWhaleTech/CasaOS-AppManagement/common"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/model"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/service"
 	"github.com/IceWhaleTech/CasaOS-Common/utils"
@@ -98,7 +99,7 @@ func WebAppGridItemAdapterV2(composeAppWithStoreInfo *codegen.ComposeAppWithStor
 		AppType: codegen.V2app,
 		Name:    &composeApp.Name,
 		Title: lo.ToPtr(map[string]string{
-			"en_us": composeApp.Name,
+			common.DefaultLanguage: composeApp.Name,
 		}),
 	}
 
@@ -148,7 +149,7 @@ func WebAppGridItemAdapterV1(app *model.MyAppList) (*codegen.WebAppGridItem, err
 		Port:     &app.Port,
 		Scheme:   (*codegen.Scheme)(&app.Protocol),
 		Title: &map[string]string{
-			"en_us": app.Name,
+			common.DefaultLanguage: app.Name,
 		},
 	}
 
@@ -166,7 +167,7 @@ func WebAppGridItemAdapterContainer(container *model.MyAppList) (*codegen.WebApp
 		Status:  &container.State,
 		Image:   &container.Image,
 		Title: &map[string]string{
-			"en_us": container.Name,
+			common.DefaultLanguage: container.Name,
 		},
 	}
 

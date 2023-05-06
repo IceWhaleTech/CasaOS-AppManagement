@@ -1,26 +1,28 @@
 package common
 
 const (
-	Localhost = "127.0.0.1"
-
-	AppManagementVersion     = "0.4.4"
 	AppManagementServiceName = "app-management"
+	AppManagementVersion     = "0.4.4"
 
-	ContainerLabelV1AppStoreID = "io.casaos.v1.app.store.id"
-
-	ComposeExtensionNameXCasaOS            = "x-casaos"
-	ComposeExtensionPropertyNameStoreAppID = "store_app_id"
-	ComposeYAMLFileName                    = "docker-compose.yml"
+	AppsDirectoryName = "Apps"
 
 	ComposeAppAuthorCasaOSTeam = "CasaOS Team"
 
-	RecommendListFileName = "recommend-list.json"
-	AppsDirectoryName     = "Apps"
+	ComposeExtensionNameXCasaOS            = "x-casaos"
+	ComposeExtensionPropertyNameStoreAppID = "store_app_id"
+	ComposeExtensionPropertyNameTitle      = "title"
 
-	MIMEApplicationYAML = "application/yaml"
+	ComposeYAMLFileName = "docker-compose.yml"
 
+	ContainerLabelV1AppStoreID = "io.casaos.v1.app.store.id"
+
+	DefaultLanguage = "en_us"
 	DefaultPassword = "casaos"
-	DefaultUserName = "admin"
-	DefaultPUID     = "1000"
 	DefaultPGID     = "1000"
+	DefaultPUID     = "1000"
+	DefaultUserName = "admin"
+
+	Localhost             = "127.0.0.1"
+	MIMEApplicationYAML   = "application/yaml"
+	RecommendListFileName = "recommend-list.json"
 )

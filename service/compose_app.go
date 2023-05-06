@@ -63,7 +63,7 @@ func (a *ComposeApp) StoreInfo(includeApps bool) (*codegen.ComposeAppStoreInfo, 
 			appStoreInfo, err := app.StoreInfo()
 			if err != nil {
 				if err == ErrComposeExtensionNameXCasaOSNotFound {
-					logger.Info("App does not have x-casaos extension - skipp", zap.String("app", app.Name))
+					logger.Info("App does not have x-casaos extension - skipping", zap.String("app", app.Name))
 					continue
 				}
 
@@ -120,6 +120,38 @@ func (a *ComposeApp) SetStoreAppID(storeAppID string) (string, bool) {
 
 	composeAppStoreInfo[common.ComposeExtensionPropertyNameStoreAppID] = storeAppID
 	return storeAppID, true
+}
+
+func (a *ComposeApp) SetTitle(title, lang string) {
+	if a.Extensions == nil {
+		a.Extensions = make(map[string]interface{})
+	}
+
+	extension, ok := a.Extensions[common.ComposeExtensionNameXCasaOS]
+	if !ok {
+		extension = map[string]interface{}{}
+		a.Extensions[common.ComposeExtensionNameXCasaOS] = extension
+	}
+
+	composeAppStoreInfo, ok := extension.(map[string]interface{})
+	if !ok {
+		logger.Info("compose app does not have valid x-casaos extension - might not be a compose app for CasaOS", zap.String("app", a.Name))
+		return
+	}
+
+	if _, ok := composeAppStoreInfo[common.ComposeExtensionPropertyNameTitle]; !ok {
+		composeAppStoreInfo[common.ComposeExtensionPropertyNameTitle] = map[string]string{}
+	}
+
+	titleMap, ok := composeAppStoreInfo[common.ComposeExtensionPropertyNameTitle].(map[string]string)
+	if !ok {
+		logger.Info("compose app does not have valid title map in its x-casaos extension - might not be a compose app for CasaOS", zap.String("app", a.Name))
+		return
+	}
+
+	if _, ok := titleMap[lang]; !ok {
+		titleMap[lang] = title
+	}
 }
 
 func (a *ComposeApp) IsUpdateAvailable() bool {
@@ -842,6 +874,12 @@ func NewComposeAppFromYAML(yaml []byte, skipInterpolation, skipValidation bool) 
 
 	if composeApp.Extensions == nil {
 		composeApp.Extensions = map[string]interface{}{}
+	}
+
+	storeInfo, err := composeApp.StoreInfo(false)
+	if err != nil || storeInfo == nil || storeInfo.Title == nil {
+		logger.Info("compose app does not have store info with title set, re-using app name as title", zap.String("app", composeApp.Name))
+		composeApp.SetTitle(composeApp.Name, common.DefaultLanguage)
 	}
 
 	return composeApp, nil
