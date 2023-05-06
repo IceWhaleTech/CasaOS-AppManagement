@@ -430,8 +430,8 @@ func (a *ComposeApp) PullAndInstall(ctx context.Context) error {
 
 		defer PublishEventWrapper(ctx, common.EventTypeContainerCreateEnd, nil)
 
-		// prepare source path for volumes if not exist
 		for _, app := range a.Services {
+			// prepare source path for volumes if not exist
 			for _, volume := range app.Volumes {
 				path := volume.Source
 				if err := file.IsNotExistMkDir(path); err != nil {
@@ -440,6 +440,11 @@ func (a *ComposeApp) PullAndInstall(ctx context.Context) error {
 					})
 					return err
 				}
+			}
+
+			// check if each required device exists
+			for _, device := range app.Devices {
+				logger.Info("check device", zap.String("device", device))
 			}
 		}
 
