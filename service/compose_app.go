@@ -430,7 +430,7 @@ func (a *ComposeApp) PullAndInstall(ctx context.Context) error {
 
 		defer PublishEventWrapper(ctx, common.EventTypeContainerCreateEnd, nil)
 
-		for _, app := range a.Services {
+		for i, app := range a.Services {
 			// prepare source path for volumes if not exist
 			for _, volume := range app.Volumes {
 				path := volume.Source
@@ -443,9 +443,16 @@ func (a *ComposeApp) PullAndInstall(ctx context.Context) error {
 			}
 
 			// check if each required device exists
-			for _, device := range app.Devices {
-				logger.Info("check device", zap.String("device", device))
+			deviceMapFiltered := []string{}
+			for _, deviceMap := range app.Devices {
+				devicePath := strings.SplitN(deviceMap, ":", 2)[0]
+				if file.CheckNotExist(devicePath) {
+					logger.Info("device not found", zap.String("device", devicePath))
+					continue
+				}
+				deviceMapFiltered = append(deviceMapFiltered, deviceMap)
 			}
+			a.Services[i].Devices = deviceMapFiltered
 		}
 
 		if err := service.Create(ctx, (*codegen.ComposeApp)(a), api.CreateOptions{}); err != nil {
