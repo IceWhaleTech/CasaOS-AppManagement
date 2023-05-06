@@ -59,3 +59,27 @@ func TestIsUpgradable(t *testing.T) {
 	upgradable = localComposeApp.IsUpdateAvailableWith(storeComposeApp)
 	assert.Assert(t, upgradable)
 }
+
+func TestNameAndTitle(t *testing.T) {
+	defer goleak.VerifyNone(t, goleak.IgnoreTopFunction("go.opencensus.io/stats/view.(*worker).start")) // https://github.com/census-instrumentation/opencensus-go/issues/1191
+
+	defer func() {
+		// workaround due to https://github.com/patrickmn/go-cache/issues/166
+		docker.Cache = nil
+		runtime.GC()
+	}()
+
+	logger.LogInitConsoleOnly()
+
+	// mock store compose app
+	storeComposeApp, err := service.NewComposeAppFromYAML([]byte(common.SampleVanillaComposeAppYAML), true, false)
+	assert.NilError(t, err)
+
+	assert.Assert(t, len(storeComposeApp.Name) > 0)
+
+	storeInfo, err := storeComposeApp.StoreInfo(false)
+	assert.NilError(t, err)
+
+	assert.Assert(t, len(storeInfo.Title) > 0)
+	assert.Equal(t, storeComposeApp.Name, storeInfo.Title[common.DefaultLanguage])
+}
