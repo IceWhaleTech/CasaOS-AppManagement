@@ -11,6 +11,8 @@ import (
 	"strings"
 	"time"
 
+	v1 "github.com/IceWhaleTech/CasaOS-AppManagement/service/v1"
+
 	"github.com/IceWhaleTech/CasaOS-AppManagement/codegen"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/common"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/pkg/docker"
@@ -877,9 +879,22 @@ func NewComposeAppFromYAML(yaml []byte, skipInterpolation, skipValidation bool) 
 	}
 
 	storeInfo, err := composeApp.StoreInfo(false)
+
 	if err != nil || storeInfo == nil || storeInfo.Title == nil {
 		logger.Info("compose app does not have store info with title set, re-using app name as title", zap.String("app", composeApp.Name))
 		composeApp.SetTitle(composeApp.Name, common.DefaultLanguage)
+	}
+
+	// pass icon information to v1 label for backward compatibility, because we are
+	// still using `func getContainerStats()` from `container.go` to get container stats
+	// (we are being lazy to upgrade that v1 API to v2 - please help if you can :D)
+	if err == nil && storeInfo != nil && storeInfo.Icon != "" {
+		for i := range composeApp.Services {
+			if composeApp.Services[i].Labels == nil {
+				composeApp.Services[i].Labels = map[string]string{}
+			}
+			composeApp.Services[i].Labels[v1.V1LabelIcon] = storeInfo.Icon
+		}
 	}
 
 	return composeApp, nil

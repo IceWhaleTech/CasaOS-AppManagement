@@ -21,6 +21,7 @@ import (
 	"github.com/IceWhaleTech/CasaOS-AppManagement/pkg/config"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/pkg/docker"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/pkg/utils/envHelper"
+	v1 "github.com/IceWhaleTech/CasaOS-AppManagement/service/v1"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/file"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/logger"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/random"
@@ -76,6 +77,7 @@ type DockerService interface {
 
 type dockerService struct{}
 
+// FIXME - should use WebSocket or SocketIO instead of HTTP polling (tiger)
 func getContainerStats() {
 	cli, err := client2.NewClientWithOpts(client2.FromEnv, client2.WithAPIVersionNegotiation())
 	if err != nil {
@@ -86,16 +88,13 @@ func getContainerStats() {
 	ctx := context.Background()
 	ctx, cancel := context.WithCancel(ctx)
 
-	fts := filters.NewArgs()
-	fts.Add("label", "casaos=casaos")
-	// fts.Add("status", "running")
-	containers, err := cli.ContainerList(context.Background(), types.ContainerListOptions{All: true, Filters: fts})
+	containers, err := cli.ContainerList(context.Background(), types.ContainerListOptions{All: true})
 	if err != nil {
 		logger.Error("Failed to get container_list", zap.Any("err", err))
 	}
 	for i := 0; i < 100; i++ {
 		if i%10 == 0 {
-			containers, err = cli.ContainerList(context.Background(), types.ContainerListOptions{All: true, Filters: fts})
+			containers, err = cli.ContainerList(context.Background(), types.ContainerListOptions{All: true})
 			if err != nil {
 				logger.Error("Failed to get container_list", zap.Any("err", err))
 				continue
@@ -123,6 +122,8 @@ func getContainerStats() {
 					return
 				}
 				decoder := json.NewDecoder(stats.Body)
+
+				// data
 				var data interface{}
 				if err := decoder.Decode(&data); err == io.EOF {
 					return
@@ -132,8 +133,13 @@ func getContainerStats() {
 				if m != nil {
 					dockerStats.Previous = m.(model.DockerStatsModel).Data
 				}
+
+				// icon
+				if icon, ok := v.Labels[v1.V1LabelIcon]; ok {
+					dockerStats.Icon = icon
+				}
+
 				dockerStats.Data = data
-				dockerStats.Icon = v.Labels["icon"]
 				dockerStats.Title = strings.ReplaceAll(v.Names[0], "/", "")
 
 				// @tiger - 不建议直接把依赖的数据结构封装返回。
