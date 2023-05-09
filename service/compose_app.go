@@ -419,6 +419,11 @@ func (a *ComposeApp) PullAndApply(ctx context.Context, newComposeYAML []byte) er
 	// prepare source path for volumes if not exist
 	for i, app := range newComposeApp.Services {
 		for _, volume := range app.Volumes {
+			if _, ok := a.Volumes[volume.Source]; ok {
+				// this is a internal volume, so skip.
+				continue
+			}
+
 			path := volume.Source
 			if err := file.IsNotExistMkDir(path); err != nil {
 				go PublishEventWrapper(ctx, common.EventTypeContainerStartError, map[string]string{
@@ -479,6 +484,11 @@ func (a *ComposeApp) PullAndInstall(ctx context.Context) error {
 		for i, app := range a.Services {
 			// prepare source path for volumes if not exist
 			for _, volume := range app.Volumes {
+				if _, ok := a.Volumes[volume.Source]; ok {
+					// this is a internal volume, so skip.
+					continue
+				}
+
 				path := volume.Source
 				if err := file.IsNotExistMkDir(path); err != nil {
 					go PublishEventWrapper(ctx, common.EventTypeContainerCreateError, map[string]string{
