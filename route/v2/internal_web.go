@@ -11,6 +11,7 @@ import (
 	"github.com/IceWhaleTech/CasaOS-Common/utils"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/logger"
 	"github.com/compose-spec/compose-go/types"
+	"github.com/docker/compose/v2/pkg/api"
 	"github.com/labstack/echo/v4"
 	"github.com/samber/lo"
 	"go.uber.org/zap"
@@ -62,6 +63,30 @@ func (a *AppManagement) GetAppGrid(ctx echo.Context) error {
 		if lo.ContainsBy(composeAppContainers, func(container codegen.ContainerSummary) bool { return container.ID == app.ID }) {
 			// already exists as compose app, skipping...
 			return codegen.WebAppGridItem{}, false
+		}
+
+		// check if this is a replacement container for a compose app when applying new settings or updating.
+		//
+		// we need this logic so that user does not see the temporary replacement container in the UI.
+		{
+			container, err := service.MyService.Docker().GetContainerByName(app.Name)
+			if err != nil {
+				logger.Error("failed to get container by name", zap.Error(err), zap.String("container", app.Name))
+				return codegen.WebAppGridItem{}, false
+			}
+
+			// see recreateContainer() func from https://github.com/docker/compose/blob/v2/pkg/compose/convergence.go
+			if replaceLabel, ok := container.Labels[api.ContainerReplaceLabel]; ok {
+				if lo.ContainsBy(
+					composeAppContainers,
+					func(container codegen.ContainerSummary) bool {
+						return container.ID == replaceLabel
+					},
+				) {
+					// this is a replacement container for a compose app, skipping...
+					return codegen.WebAppGridItem{}, false
+				}
+			}
 		}
 
 		item, err := WebAppGridItemAdapterContainer(&app)
