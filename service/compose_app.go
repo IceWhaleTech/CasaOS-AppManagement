@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -834,6 +835,8 @@ func LoadComposeAppFromConfigFile(appID string, configFile string) (*ComposeApp,
 	// load project
 	project, err := options.ToProject(
 		nil,
+		cli.WithWorkingDirectory(options.ProjectDir), // this has to be the first option, otherwise it will assume the dir where this program is running is the working directory.
+
 		cli.WithOsEnv,
 		cli.WithDotEnv,
 		cli.WithEnv(env),
@@ -841,18 +844,17 @@ func LoadComposeAppFromConfigFile(appID string, configFile string) (*ComposeApp,
 		cli.WithDefaultConfigPath,
 		cli.WithEnvFile(options.EnvFile),
 		cli.WithName(options.ProjectName),
-		cli.WithWorkingDirectory(options.ProjectDir),
 	)
 
 	return (*ComposeApp)(project), err
 }
 
 func NewComposeAppFromYAML(yaml []byte, skipInterpolation, skipValidation bool) (*ComposeApp, error) {
-	// env := baseInterpolationMap()
-	// appID := getNameFrom(yaml)
-	// if appID == "" {
-	// 	env["AppID"] = appID
-	// }
+	tmpWorkingDir, err := os.MkdirTemp("", "casaos-compose-app-*")
+	if err != nil {
+		return nil, err
+	}
+	defer os.RemoveAll(tmpWorkingDir)
 
 	project, err := loader.Load(
 		types.ConfigDetails{
@@ -862,6 +864,10 @@ func NewComposeAppFromYAML(yaml []byte, skipInterpolation, skipValidation bool) 
 				},
 			},
 			Environment: map[string]string{},
+
+			// need to set a working dir because loader/normalize.go from github.com/compose-spec/compose-go makes
+			// wrong assumption that the working dir is the same as the dir where this program is launched.
+			WorkingDir: tmpWorkingDir,
 		},
 		func(o *loader.Options) {
 			o.SkipInterpolation = skipInterpolation
