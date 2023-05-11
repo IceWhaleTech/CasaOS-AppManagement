@@ -16,13 +16,16 @@ const (
 
 	ContainerLabelV1AppStoreID = "io.casaos.v1.app.store.id"
 
-	DefaultLanguage = "en_us"
-	DefaultPassword = "casaos"
-	DefaultPGID     = "1000"
-	DefaultPUID     = "1000"
-	DefaultUserName = "admin"
+	DefaultCategoryFont = "grid"
+	DefaultLanguage     = "en_us"
+	DefaultPassword     = "casaos"
+	DefaultPGID         = "1000"
+	DefaultPUID         = "1000"
+	DefaultUserName     = "admin"
 
-	Localhost             = "127.0.0.1"
-	MIMEApplicationYAML   = "application/yaml"
+	Localhost           = "127.0.0.1"
+	MIMEApplicationYAML = "application/yaml"
+
+	CategoryListFileName  = "category-list.json"
 	RecommendListFileName = "recommend-list.json"
 )

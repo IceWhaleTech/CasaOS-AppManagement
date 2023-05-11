@@ -186,6 +186,18 @@ paths:
         "500":
           $ref: "#/components/responses/ResponseInternalServerError"
 
+  /app-categories:
+    get:
+      summary: Get the list of app categories
+      description: |
+        (TODO)
+      operationId: CategoryList
+      tags:
+        - AppStore methods
+      responses:
+        "200":
+          $ref: "#/components/responses/CategoryListOK"
+
   /apps:
     get:
       summary: Get app list from registered app stores
@@ -755,6 +767,19 @@ components:
             allOf:
               - $ref: "#/components/schemas/BaseResponse"
 
+    CategoryListOK:
+      description: OK
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: "#/components/schemas/BaseResponse"
+              - properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/CategoryInfo"
+
     ComposeAppStoreInfoListsOK:
       description: OK
       content:
@@ -950,6 +975,26 @@ components:
           type: string
           readOnly: true
           example: "CasaOS-AppStore-main"
+
+    CategoryInfo:
+      properties:
+        id:
+          type: integer
+          minimum: 0
+          readOnly: true
+          x-go-name: ID
+        name:
+          type: string
+          readOnly: true
+          example: "Backup"
+        font:
+          type: string
+          readOnly: true
+          example: "backup-restore"
+        description:
+          type: string
+          readOnly: true
+          example: "File and Data Backup Apps"
 
     ComposeAppStoreInfoLists:
       properties:

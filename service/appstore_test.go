@@ -5,10 +5,12 @@ import (
 	"encoding/json"
 	"io/fs"
 	"path/filepath"
+	"runtime"
 	"testing"
 
 	"github.com/IceWhaleTech/CasaOS-AppManagement/common"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/pkg/config"
+	"github.com/IceWhaleTech/CasaOS-AppManagement/pkg/docker"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/service"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/file"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/logger"
@@ -88,6 +90,44 @@ func TestStoreRoot(t *testing.T) {
 	assert.NilError(t, err)
 
 	assert.Equal(t, actualStoreRoot, expectedStoreRoot)
+}
+
+func TestLoadCategoryList(t *testing.T) {
+	defer goleak.VerifyNone(t, goleak.IgnoreTopFunction("go.opencensus.io/stats/view.(*worker).start")) //
+
+	defer func() {
+		// workaround due to https://github.com/patrickmn/go-cache/issues/166
+		docker.Cache = nil
+		runtime.GC()
+	}()
+
+	logger.LogInitConsoleOnly()
+
+	storeRoot := t.TempDir()
+
+	categoryListFilePath := filepath.Join(storeRoot, common.CategoryListFileName)
+
+	err := file.WriteToFullPath([]byte(common.SampleCategoryListJSON), categoryListFilePath, 0o644)
+	assert.NilError(t, err)
+
+	dummyList := []interface{}{}
+	buf := file.ReadFullFile(categoryListFilePath)
+	err = json.Unmarshal(buf, &dummyList)
+	assert.NilError(t, err)
+
+	actualCategoryList := service.LoadCategoryList(storeRoot)
+	assert.Assert(t, actualCategoryList != nil)
+	assert.Equal(t, len(actualCategoryList), len(dummyList))
+
+	for _, category := range actualCategoryList {
+		assert.Assert(t, category.Name != nil)
+		assert.Assert(t, *category.Name != "")
+
+		assert.Assert(t, category.Font != nil)
+		assert.Assert(t, *category.Font != "")
+
+		assert.Assert(t, category.Description != nil)
+	}
 }
 
 func TestLoadRecommend(t *testing.T) {

@@ -201,6 +201,14 @@ func (a *AppManagement) ComposeApp(ctx echo.Context, id codegen.StoreAppIDString
 	})
 }
 
+func (a *AppManagement) CategoryList(ctx echo.Context) error {
+	categoryList := service.MyService.AppStoreManagement().CategoryList()
+
+	return ctx.JSON(http.StatusOK, codegen.CategoryListOK{
+		Data: &categoryList,
+	})
+}
+
 func FilterCatalogByCategory(catalog map[string]*service.ComposeApp, category string) map[string]*service.ComposeApp {
 	if category == "" {
 		return catalog

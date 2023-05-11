@@ -2,6 +2,7 @@ package service
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 
 	"github.com/IceWhaleTech/CasaOS-AppManagement/codegen"
@@ -163,6 +164,43 @@ func (a *AppStoreManagement) AppStoreMap() (map[string]AppStore, error) {
 }
 
 // AppStore interface
+func (a *AppStoreManagement) CategoryList() []codegen.CategoryInfo {
+	appStoreMap, err := a.AppStoreMap()
+	if err != nil {
+		return nil
+	}
+
+	categoryList := []codegen.CategoryInfo{}
+	for _, appStore := range appStoreMap {
+		categoryList = lo.Union(categoryList, appStore.CategoryList())
+	}
+
+	// remove any category with nil name
+	categoryList = lo.Filter(categoryList, func(category codegen.CategoryInfo, i int) bool { return category.Name != nil })
+
+	// remove any duplicate category by name
+	categoryList = lo.UniqBy(categoryList, func(category codegen.CategoryInfo) string { return *category.Name })
+
+	// sort by name
+	sort.Slice(categoryList, func(i, j int) bool { return *categoryList[i].Name < *categoryList[j].Name })
+
+	// add "All" category
+	categoryList = append([]codegen.CategoryInfo{
+		{
+			Name:        utils.Ptr("All"),
+			Font:        utils.Ptr("apps"),
+			Description: utils.Ptr("All apps"),
+		},
+	}, categoryList...)
+
+	// assign ID
+	categoryList = lo.Map(categoryList, func(category codegen.CategoryInfo, i int) codegen.CategoryInfo {
+		category.ID = utils.Ptr(i)
+		return category
+	})
+
+	return categoryList
+}
 
 func (a *AppStoreManagement) Recommend() []string {
 	appStoreMap, err := a.AppStoreMap()

@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/IceWhaleTech/CasaOS-AppManagement/codegen"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/common"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/pkg/config"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/pkg/utils/downloadHelper"
@@ -18,17 +19,18 @@ import (
 )
 
 type AppStore interface {
-	ComposeApp(id string) *ComposeApp
-	Catalog() map[string]*ComposeApp
-	UpdateCatalog() error
+	CategoryList() []codegen.CategoryInfo
 	Recommend() []string
+
+	Catalog() map[string]*ComposeApp
+	ComposeApp(id string) *ComposeApp
+	UpdateCatalog() error
 	WorkDir() (string, error)
 }
 
 type appStore struct {
-	url       string
-	catalog   map[string]*ComposeApp
-	recommend []string
+	catalog map[string]*ComposeApp
+	url     string
 }
 
 var (
@@ -37,6 +39,20 @@ var (
 	ErrNotAppStore             = fmt.Errorf("not an appstore")
 	ErrDefaultAppStoreNotFound = fmt.Errorf("default appstore not found")
 )
+
+func (s *appStore) CategoryList() []codegen.CategoryInfo {
+	workdir, err := s.WorkDir()
+	if err != nil {
+		return nil
+	}
+
+	storeRoot, err := StoreRoot(workdir)
+	if err != nil {
+		return nil
+	}
+
+	return LoadCategoryList(storeRoot)
+}
 
 func (s *appStore) UpdateCatalog() error {
 	if _, err := url.Parse(s.url); err != nil {
@@ -116,10 +132,6 @@ func (s *appStore) UpdateCatalog() error {
 }
 
 func (s *appStore) Recommend() []string {
-	if s.recommend != nil && len(s.recommend) > 0 {
-		return s.recommend
-	}
-
 	workdir, err := s.WorkDir()
 	if err != nil {
 		return nil
@@ -219,6 +231,39 @@ func NewDefaultAppStore() (AppStore, error) {
 		url:     "default",
 		catalog: catalog,
 	}, nil
+}
+
+func LoadCategoryList(storeRoot string) []codegen.CategoryInfo {
+	categoryListFile := filepath.Join(storeRoot, common.CategoryListFileName)
+
+	// unmarsal category list
+	categoryList := []codegen.CategoryInfo{}
+
+	if file.Exists(categoryListFile) {
+		buf := file.ReadFullFile(categoryListFile)
+
+		if err := json.Unmarshal(buf, &categoryList); err != nil {
+			logger.Error("failed to unmarshal category list", zap.Error(err), zap.String("categoryListFile", categoryListFile))
+		}
+	}
+
+	categoryList = lo.Filter(categoryList, func(category codegen.CategoryInfo, i int) bool {
+		return category.Name != nil && *category.Name != ""
+	})
+
+	categoryList = lo.Map(categoryList, func(category codegen.CategoryInfo, i int) codegen.CategoryInfo {
+		if category.Font == nil || *category.Font == "" {
+			category.Font = lo.ToPtr(common.DefaultCategoryFont)
+		}
+
+		if category.Description == nil {
+			category.Description = lo.ToPtr("")
+		}
+
+		return category
+	})
+
+	return categoryList
 }
 
 func LoadRecommend(storeRoot string) []string {

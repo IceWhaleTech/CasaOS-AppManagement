@@ -2,6 +2,9 @@ package common
 
 import _ "embed"
 
+//go:embed fixtures/sample-category-list.json
+var SampleCategoryListJSON string
+
 //go:embed fixtures/sample.docker-compose.yaml
 var SampleComposeAppYAML string
 
