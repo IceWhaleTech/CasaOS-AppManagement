@@ -29,13 +29,6 @@ func InitV1Router() *gin.Engine {
 
 	v1Group.Use(jwt.ExceptLocalhost(func() (*ecdsa.PublicKey, error) { return external.GetPublicKey(config.CommonInfo.RuntimePath) }))
 	{
-		v1AppsGroup := v1Group.Group("/apps")
-		v1AppsGroup.Use()
-		{
-			v1AppsGroup.GET("", v1.AppList) // list
-			v1AppsGroup.GET("/:id", v1.AppInfo)
-		}
-
 		v1ContainerGroup := v1Group.Group("/container")
 		v1ContainerGroup.Use()
 		{
@@ -60,12 +53,6 @@ func InitV1Router() *gin.Engine {
 			v1ContainerGroup.PUT("/info", v1.PutDockerDaemonConfiguration)
 
 		}
-		v1AppCategoriesGroup := v1Group.Group("/app-categories")
-		v1AppCategoriesGroup.Use()
-		{
-			v1AppCategoriesGroup.GET("", v1.CategoryList)
-		}
-
 	}
 
 	return r

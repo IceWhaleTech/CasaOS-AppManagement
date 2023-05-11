@@ -24,6 +24,7 @@ import (
 	"github.com/docker/docker/errdefs"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
+	jsoniter "github.com/json-iterator/go"
 	"github.com/samber/lo"
 	uuid "github.com/satori/go.uuid"
 	"go.uber.org/zap"
@@ -33,6 +34,8 @@ const (
 	dockerRootDirFilePath             = "/var/lib/casaos/docker_root"
 	dockerDaemonConfigurationFilePath = "/etc/docker/daemon.json"
 )
+
+var json = jsoniter.ConfigCompatibleWithStandardLibrary
 
 var upgrader = websocket.Upgrader{
 	ReadBufferSize:   1024,
