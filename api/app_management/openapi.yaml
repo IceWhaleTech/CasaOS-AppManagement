@@ -652,7 +652,7 @@ components:
       in: query
       schema:
         type: boolean
-        default: false
+        default: true
 
   requestBodies:
     RequestComposeApp:
