@@ -133,7 +133,7 @@ func (a *AppManagement) ApplyComposeAppSettings(ctx echo.Context, id codegen.Com
 			Message: &message,
 		})
 	}
-	if params.CheckPortConflict != nil && *params.CheckPortConflict {
+	if params.CheckPortConflict == nil || *params.CheckPortConflict {
 
 		// validation 1 - check if there are ports in use
 		validation, err := newComposeApp.GetPortsInUse()
@@ -229,7 +229,7 @@ func (a *AppManagement) InstallComposeApp(ctx echo.Context, params codegen.Insta
 		})
 	}
 
-	if params.CheckPortConflict != nil && *params.CheckPortConflict {
+	if params.CheckPortConflict == nil || *params.CheckPortConflict {
 		// validation 1 - check if there are ports in use
 		validation, err := composeApp.GetPortsInUse()
 		if err != nil {
