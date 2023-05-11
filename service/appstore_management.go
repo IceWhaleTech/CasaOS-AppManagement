@@ -163,6 +163,43 @@ func (a *AppStoreManagement) AppStoreMap() (map[string]AppStore, error) {
 }
 
 // AppStore interface
+func (a *AppStoreManagement) CategoryMap() map[string]codegen.CategoryInfo {
+	appStoreMap, err := a.AppStoreMap()
+	if err != nil {
+		return nil
+	}
+
+	categoryMap := map[string]codegen.CategoryInfo{}
+	for _, appStore := range appStoreMap {
+		for name, category := range appStore.CategoryMap() {
+			categoryMap[name] = category
+		}
+	}
+
+	for name, category := range categoryMap {
+		category.Count = utils.Ptr(0)
+		categoryMap[name] = category
+	}
+
+	catalog := a.Catalog()
+	for _, app := range catalog {
+		storeInfo, err := app.StoreInfo(false)
+		if err != nil {
+			continue
+		}
+
+		category, ok := categoryMap[storeInfo.Category]
+		if !ok {
+			continue
+		}
+
+		category.Count = lo.ToPtr(*category.Count + 1)
+
+		categoryMap[storeInfo.Category] = category
+	}
+
+	return categoryMap
+}
 
 func (a *AppStoreManagement) Recommend() []string {
 	appStoreMap, err := a.AppStoreMap()

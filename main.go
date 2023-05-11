@@ -17,11 +17,9 @@ import (
 	"github.com/IceWhaleTech/CasaOS-AppManagement/pkg/config"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/route"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/service"
-	v1 "github.com/IceWhaleTech/CasaOS-AppManagement/service/v1"
 	"github.com/IceWhaleTech/CasaOS-Common/model"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/logger"
 	"github.com/coreos/go-systemd/daemon"
-	"github.com/patrickmn/go-cache"
 	"github.com/robfig/cron/v3"
 	"go.uber.org/zap"
 
@@ -68,27 +66,11 @@ func main() {
 		}
 
 		service.MyService = service.NewService(config.CommonInfo.RuntimePath)
-
-		v1.Cache = cache.New(5*time.Minute, 60*time.Second)
-		v1.GetToken()
 	}
 
 	// setup cron
 	{
 		crontab := cron.New(cron.WithSeconds())
-
-		// schedule async v1job to get v1 appstore list
-		v1job := func() {
-			if _, err := service.MyService.V1AppStore().AsyncGetServerList(); err != nil {
-				logger.Error("error when trying to get appstore list", zap.Error(err))
-			}
-		}
-
-		go v1job() // run once at startup
-
-		if _, err := crontab.AddFunc("@every 8h", v1job); err != nil {
-			panic(err)
-		}
 
 		// schedule async v2job to get v2 appstore list
 		go func() {

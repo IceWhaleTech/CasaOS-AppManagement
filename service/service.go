@@ -17,7 +17,6 @@ import (
 	"github.com/IceWhaleTech/CasaOS-AppManagement/codegen/message_bus"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/common"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/pkg/config"
-	v1 "github.com/IceWhaleTech/CasaOS-AppManagement/service/v1"
 	"github.com/IceWhaleTech/CasaOS-Common/external"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/logger"
 	jsoniter "github.com/json-iterator/go"
@@ -33,7 +32,6 @@ var (
 type Services interface {
 	AppStoreManagement() *AppStoreManagement
 
-	V1AppStore() v1.AppStore
 	V2AppStore() AppStore
 
 	// Git() *GitService
@@ -58,7 +56,6 @@ func NewService(RuntimePath string) Services {
 
 		appStoreManagement: NewAppStoreManagement(),
 
-		v1appStore: v1.NewAppService(),
 		v2appStore: v2appStore,
 		compose:    NewComposeService(),
 		docker:     NewDockerService(),
@@ -68,7 +65,6 @@ func NewService(RuntimePath string) Services {
 type store struct {
 	appStoreManagement *AppStoreManagement
 
-	v1appStore v1.AppStore
 	v2appStore AppStore
 
 	// git     *GitService
@@ -88,10 +84,6 @@ func (c *store) Notify() external.NotifyService {
 
 func (c *store) AppStoreManagement() *AppStoreManagement {
 	return c.appStoreManagement
-}
-
-func (c *store) V1AppStore() v1.AppStore {
-	return c.v1appStore
 }
 
 func (c *store) V2AppStore() AppStore {

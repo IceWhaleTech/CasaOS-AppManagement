@@ -3,6 +3,7 @@ package v2
 import (
 	"fmt"
 	"net/http"
+	"sort"
 	"strings"
 
 	"github.com/IceWhaleTech/CasaOS-AppManagement/codegen"
@@ -198,6 +199,36 @@ func (a *AppManagement) ComposeApp(ctx echo.Context, id codegen.StoreAppIDString
 			StoreInfo: storeInfo,
 			Compose:   (*codegen.ComposeApp)(composeApp),
 		},
+	})
+}
+
+func (a *AppManagement) CategoryList(ctx echo.Context) error {
+	categoryMap := service.MyService.AppStoreManagement().CategoryMap()
+
+	categoryList := lo.Values(categoryMap)
+
+	sort.Slice(categoryList, func(i, j int) bool { return strings.Compare(*categoryList[i].Name, *categoryList[j].Name) < 0 })
+
+	totalCount := 0
+	for _, category := range categoryList {
+		if category.Count == nil {
+			continue
+		}
+
+		totalCount += *category.Count
+	}
+
+	categoryList = append([]codegen.CategoryInfo{
+		{
+			Name:        utils.Ptr("All"),
+			Font:        utils.Ptr("apps"),
+			Description: utils.Ptr("All apps"),
+			Count:       &totalCount,
+		},
+	}, categoryList...)
+
+	return ctx.JSON(http.StatusOK, codegen.CategoryListOK{
+		Data: &categoryList,
 	})
 }
 
