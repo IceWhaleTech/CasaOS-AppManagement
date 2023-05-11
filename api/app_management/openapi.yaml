@@ -186,7 +186,7 @@ paths:
         "500":
           $ref: "#/components/responses/ResponseInternalServerError"
 
-  /app-categories:
+  /categories:
     get:
       summary: Get the list of app categories
       description: |
