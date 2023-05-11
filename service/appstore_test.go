@@ -115,13 +115,13 @@ func TestLoadCategoryList(t *testing.T) {
 	err = json.Unmarshal(buf, &dummyList)
 	assert.NilError(t, err)
 
-	actualCategoryList := service.LoadCategoryList(storeRoot)
-	assert.Assert(t, actualCategoryList != nil)
-	assert.Equal(t, len(actualCategoryList), len(dummyList))
+	actualCategoryMap := service.LoadCategoryMap(storeRoot)
+	assert.Assert(t, actualCategoryMap != nil)
+	assert.Equal(t, len(actualCategoryMap), len(dummyList))
 
-	for _, category := range actualCategoryList {
+	for name, category := range actualCategoryMap {
 		assert.Assert(t, category.Name != nil)
-		assert.Assert(t, *category.Name != "")
+		assert.Assert(t, *category.Name == name)
 
 		assert.Assert(t, category.Font != nil)
 		assert.Assert(t, *category.Font != "")

@@ -2,7 +2,6 @@ package service
 
 import (
 	"fmt"
-	"sort"
 	"strings"
 
 	"github.com/IceWhaleTech/CasaOS-AppManagement/codegen"
@@ -164,42 +163,42 @@ func (a *AppStoreManagement) AppStoreMap() (map[string]AppStore, error) {
 }
 
 // AppStore interface
-func (a *AppStoreManagement) CategoryList() []codegen.CategoryInfo {
+func (a *AppStoreManagement) CategoryMap() map[string]codegen.CategoryInfo {
 	appStoreMap, err := a.AppStoreMap()
 	if err != nil {
 		return nil
 	}
 
-	categoryList := []codegen.CategoryInfo{}
+	categoryMap := map[string]codegen.CategoryInfo{}
 	for _, appStore := range appStoreMap {
-		categoryList = lo.Union(categoryList, appStore.CategoryList())
+		for name, category := range appStore.CategoryMap() {
+			categoryMap[name] = category
+		}
 	}
 
-	// remove any category with nil name
-	categoryList = lo.Filter(categoryList, func(category codegen.CategoryInfo, i int) bool { return category.Name != nil })
+	for name, category := range categoryMap {
+		category.Count = utils.Ptr(0)
+		categoryMap[name] = category
+	}
 
-	// remove any duplicate category by name
-	categoryList = lo.UniqBy(categoryList, func(category codegen.CategoryInfo) string { return *category.Name })
+	catalog := a.Catalog()
+	for _, app := range catalog {
+		storeInfo, err := app.StoreInfo(false)
+		if err != nil {
+			continue
+		}
 
-	// sort by name
-	sort.Slice(categoryList, func(i, j int) bool { return *categoryList[i].Name < *categoryList[j].Name })
+		category, ok := categoryMap[storeInfo.Category]
+		if !ok {
+			continue
+		}
 
-	// add "All" category
-	categoryList = append([]codegen.CategoryInfo{
-		{
-			Name:        utils.Ptr("All"),
-			Font:        utils.Ptr("apps"),
-			Description: utils.Ptr("All apps"),
-		},
-	}, categoryList...)
+		category.Count = lo.ToPtr(*category.Count + 1)
 
-	// assign ID
-	categoryList = lo.Map(categoryList, func(category codegen.CategoryInfo, i int) codegen.CategoryInfo {
-		category.ID = utils.Ptr(i)
-		return category
-	})
+		categoryMap[storeInfo.Category] = category
+	}
 
-	return categoryList
+	return categoryMap
 }
 
 func (a *AppStoreManagement) Recommend() []string {

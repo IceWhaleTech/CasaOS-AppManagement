@@ -983,6 +983,7 @@ components:
           minimum: 0
           readOnly: true
           x-go-name: ID
+          example: 1
         name:
           type: string
           readOnly: true
@@ -991,6 +992,11 @@ components:
           type: string
           readOnly: true
           example: "backup-restore"
+        count:
+          type: integer
+          minimum: 0
+          readOnly: true
+          example: 3
         description:
           type: string
           readOnly: true

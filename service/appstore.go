@@ -19,7 +19,7 @@ import (
 )
 
 type AppStore interface {
-	CategoryList() []codegen.CategoryInfo
+	CategoryMap() map[string]codegen.CategoryInfo
 	Recommend() []string
 
 	Catalog() map[string]*ComposeApp
@@ -40,7 +40,7 @@ var (
 	ErrDefaultAppStoreNotFound = fmt.Errorf("default appstore not found")
 )
 
-func (s *appStore) CategoryList() []codegen.CategoryInfo {
+func (s *appStore) CategoryMap() map[string]codegen.CategoryInfo {
 	workdir, err := s.WorkDir()
 	if err != nil {
 		return nil
@@ -51,7 +51,7 @@ func (s *appStore) CategoryList() []codegen.CategoryInfo {
 		return nil
 	}
 
-	return LoadCategoryList(storeRoot)
+	return LoadCategoryMap(storeRoot)
 }
 
 func (s *appStore) UpdateCatalog() error {
@@ -233,7 +233,7 @@ func NewDefaultAppStore() (AppStore, error) {
 	}, nil
 }
 
-func LoadCategoryList(storeRoot string) []codegen.CategoryInfo {
+func LoadCategoryMap(storeRoot string) map[string]codegen.CategoryInfo {
 	categoryListFile := filepath.Join(storeRoot, common.CategoryListFileName)
 
 	// unmarsal category list
@@ -263,7 +263,9 @@ func LoadCategoryList(storeRoot string) []codegen.CategoryInfo {
 		return category
 	})
 
-	return categoryList
+	return lo.SliceToMap(categoryList, func(category codegen.CategoryInfo) (string, codegen.CategoryInfo) {
+		return *category.Name, category
+	})
 }
 
 func LoadRecommend(storeRoot string) []string {
