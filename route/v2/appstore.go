@@ -227,6 +227,11 @@ func (a *AppManagement) CategoryList(ctx echo.Context) error {
 		},
 	}, categoryList...)
 
+	categoryList = lo.Map(categoryList, func(category codegen.CategoryInfo, i int) codegen.CategoryInfo {
+		category.ID = &i
+		return category
+	})
+
 	return ctx.JSON(http.StatusOK, codegen.CategoryListOK{
 		Data: &categoryList,
 	})
