@@ -19,19 +19,19 @@ import (
 )
 
 type AppStore interface {
-	CategoryMap() map[string]codegen.CategoryInfo
-	Recommend() []string
-
-	Catalog() map[string]*ComposeApp
-	ComposeApp(id string) *ComposeApp
+	Catalog() (map[string]*ComposeApp, error)
+	CategoryMap() (map[string]codegen.CategoryInfo, error)
+	ComposeApp(id string) (*ComposeApp, error)
+	Recommend() ([]string, error)
 	UpdateCatalog() error
 	WorkDir() (string, error)
 }
 
 type appStore struct {
-	catalog   map[string]*ComposeApp
-	recommend []string
-	url       string
+	categoryMap map[string]codegen.CategoryInfo
+	catalog     map[string]*ComposeApp
+	recommend   []string
+	url         string
 }
 
 var (
@@ -41,18 +41,29 @@ var (
 	ErrDefaultAppStoreNotFound = fmt.Errorf("default appstore not found")
 )
 
-func (s *appStore) CategoryMap() map[string]codegen.CategoryInfo {
+func (s *appStore) CategoryMap() (map[string]codegen.CategoryInfo, error) {
+	if s.categoryMap != nil {
+		return s.categoryMap, nil
+	}
+
 	workdir, err := s.WorkDir()
 	if err != nil {
-		return nil
+		return nil, err
 	}
 
 	storeRoot, err := StoreRoot(workdir)
 	if err != nil {
-		return nil
+		return nil, err
 	}
 
-	return LoadCategoryMap(storeRoot)
+	categoryMap := LoadCategoryMap(storeRoot)
+	if err != nil {
+		return nil, err
+	}
+
+	s.categoryMap = categoryMap
+
+	return s.categoryMap, nil
 }
 
 func (s *appStore) UpdateCatalog() error {
@@ -127,6 +138,8 @@ func (s *appStore) UpdateCatalog() error {
 		return err
 	}
 
+	s.categoryMap = LoadCategoryMap(storeRoot)
+
 	s.recommend = LoadRecommend(storeRoot)
 
 	isSuccessful = true
@@ -134,63 +147,60 @@ func (s *appStore) UpdateCatalog() error {
 	return nil
 }
 
-func (s *appStore) Recommend() []string {
+func (s *appStore) Recommend() ([]string, error) {
 	if s.recommend != nil && len(s.recommend) > 0 {
-		return s.recommend
+		return s.recommend, nil
 	}
 
 	workdir, err := s.WorkDir()
 	if err != nil {
-		return nil
+		return nil, err
 	}
 
 	storeRoot, err := StoreRoot(workdir)
 	if err != nil {
-		return nil
+		return nil, err
 	}
 
-	s.recommend = LoadRecommend(storeRoot)
-
-	return s.recommend
+	return LoadRecommend(storeRoot), nil
 }
 
-func (s *appStore) Catalog() map[string]*ComposeApp {
+func (s *appStore) Catalog() (map[string]*ComposeApp, error) {
 	if s.catalog != nil && len(s.catalog) > 0 {
-		return s.catalog
+		return s.catalog, nil
 	}
 
 	workdir, err := s.WorkDir()
 	if err != nil {
-		return nil
+		return nil, err
 	}
 
 	storeRoot, err := StoreRoot(workdir)
 	if err != nil {
-		return nil
+		return nil, err
 	}
 
 	catalog, err := BuildCatalog(storeRoot)
 	if err != nil {
-		return nil
+		return nil, err
 	}
 
 	s.catalog = catalog
 
-	return s.catalog
+	return s.catalog, nil
 }
 
-func (s *appStore) ComposeApp(appStoreID string) *ComposeApp {
-	catalog := s.Catalog()
-
-	if catalog == nil {
-		return nil
+func (s *appStore) ComposeApp(appStoreID string) (*ComposeApp, error) {
+	catalog, err := s.Catalog()
+	if err != nil {
+		return nil, err
 	}
 
 	if composeApp, ok := catalog[appStoreID]; ok {
-		return composeApp
+		return composeApp, nil
 	}
 
-	return nil
+	return nil, nil
 }
 
 func (s *appStore) WorkDir() (string, error) {
@@ -235,6 +245,8 @@ func NewDefaultAppStore() (AppStore, error) {
 		return nil, ErrDefaultAppStoreNotFound
 	}
 
+	categoryMap := LoadCategoryMap(storeRoot)
+
 	catalog, err := BuildCatalog(storeRoot)
 	if err != nil {
 		return nil, err
@@ -243,9 +255,10 @@ func NewDefaultAppStore() (AppStore, error) {
 	recommend := LoadRecommend(storeRoot)
 
 	return &appStore{
-		url:       "default",
-		catalog:   catalog,
-		recommend: recommend,
+		url:         "default",
+		categoryMap: categoryMap,
+		catalog:     catalog,
+		recommend:   recommend,
 	}, nil
 }
 
@@ -255,12 +268,15 @@ func LoadCategoryMap(storeRoot string) map[string]codegen.CategoryInfo {
 	// unmarsal category list
 	categoryList := []codegen.CategoryInfo{}
 
-	if file.Exists(categoryListFile) {
-		buf := file.ReadFullFile(categoryListFile)
+	if !file.Exists(categoryListFile) {
+		return map[string]codegen.CategoryInfo{}
+	}
 
-		if err := json.Unmarshal(buf, &categoryList); err != nil {
-			logger.Error("failed to unmarshal category list", zap.Error(err), zap.String("categoryListFile", categoryListFile))
-		}
+	buf := file.ReadFullFile(categoryListFile)
+
+	if err := json.Unmarshal(buf, &categoryList); err != nil {
+		logger.Error("failed to unmarshal category list", zap.Error(err), zap.String("categoryListFile", categoryListFile))
+		return map[string]codegen.CategoryInfo{}
 	}
 
 	categoryList = lo.Filter(categoryList, func(category codegen.CategoryInfo, i int) bool {

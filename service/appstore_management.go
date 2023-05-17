@@ -165,16 +165,35 @@ func (a *AppStoreManagement) AppStoreMap() (map[string]AppStore, error) {
 }
 
 // AppStore interface
-func (a *AppStoreManagement) CategoryMap() map[string]codegen.CategoryInfo {
+func (a *AppStoreManagement) CategoryMap() (map[string]codegen.CategoryInfo, error) {
 	appStoreMap, err := a.AppStoreMap()
 	if err != nil {
-		return nil
+		return nil, err
 	}
+
+	allFailed := true
 
 	categoryMap := map[string]codegen.CategoryInfo{}
 	for _, appStore := range appStoreMap {
-		for name, category := range appStore.CategoryMap() {
+		c, err := appStore.CategoryMap()
+		if err != nil {
+			logger.Error("error while loading category map", zap.Error(err))
+			continue
+		}
+
+		allFailed = false
+
+		for name, category := range c {
 			categoryMap[name] = category
+		}
+	}
+
+	if allFailed {
+		logger.Info("all appstores failed to load category map, using default")
+
+		categoryMap, err = a.defaultAppStore.CategoryMap()
+		if err != nil {
+			return nil, err
 		}
 	}
 
@@ -183,7 +202,11 @@ func (a *AppStoreManagement) CategoryMap() map[string]codegen.CategoryInfo {
 		categoryMap[name] = category
 	}
 
-	catalog := a.Catalog()
+	catalog, err := a.Catalog()
+	if err != nil {
+		return nil, err
+	}
+
 	for _, app := range catalog {
 		storeInfo, err := app.StoreInfo(false)
 		if err != nil {
@@ -200,51 +223,91 @@ func (a *AppStoreManagement) CategoryMap() map[string]codegen.CategoryInfo {
 		categoryMap[storeInfo.Category] = category
 	}
 
-	return categoryMap
+	return categoryMap, nil
 }
 
-func (a *AppStoreManagement) Recommend() []string {
+func (a *AppStoreManagement) Recommend() ([]string, error) {
 	appStoreMap, err := a.AppStoreMap()
 	if err != nil {
 		logger.Error("error while loading appstore map", zap.Error(err))
-		return []string{}
+		return nil, err
 	}
+
+	allFailed := true
 
 	recommend := []string{}
 	for _, appStore := range appStoreMap {
-		recommend = lo.Union(recommend, appStore.Recommend())
+		r, err := appStore.Recommend()
+		if err != nil {
+			logger.Error("error while getting appstore recommend", zap.Error(err))
+			continue
+		}
+
+		allFailed = false
+		recommend = lo.Union(recommend, r)
 	}
 
-	return recommend
+	if !allFailed {
+		return recommend, nil
+	}
+
+	logger.Info("No appstore registered")
+	if a.defaultAppStore == nil {
+		logger.Info("WARNING - no default appstore")
+		return nil, nil
+	}
+
+	logger.Info("Using default appstore")
+	recommend, err = a.defaultAppStore.Recommend()
+	if err != nil {
+		logger.Error("error while getting default appstore recommend list", zap.Error(err))
+		return nil, err
+	}
+
+	return recommend, nil
 }
 
-func (a *AppStoreManagement) Catalog() map[string]*ComposeApp {
+func (a *AppStoreManagement) Catalog() (map[string]*ComposeApp, error) {
 	catalog := map[string]*ComposeApp{}
 
 	appStoreMap, err := a.AppStoreMap()
 	if err != nil {
-		logger.Error("error while loading appstore map", zap.Error(err))
-		return map[string]*ComposeApp{}
+		return nil, err
 	}
 
+	allFailed := true
+
 	for _, appStore := range appStoreMap {
-		for storeAppID, composeApp := range appStore.Catalog() {
+
+		c, err := appStore.Catalog()
+		if err != nil {
+			logger.Error("error while getting appstore catalog", zap.Error(err))
+			continue
+		}
+
+		allFailed = false
+		for storeAppID, composeApp := range c {
 			catalog[storeAppID] = composeApp
 		}
 	}
 
-	if len(catalog) == 0 {
-		logger.Info("No appstore registered")
-		if a.defaultAppStore == nil {
-			logger.Info("WARNING - no default appstore")
-			return map[string]*ComposeApp{}
-		}
-
-		logger.Info("Using default appstore")
-		return a.defaultAppStore.Catalog()
+	if !allFailed {
+		return catalog, nil
 	}
 
-	return catalog
+	logger.Info("No appstore registered")
+	if a.defaultAppStore == nil {
+		logger.Info("WARNING - no default appstore")
+		return map[string]*ComposeApp{}, nil
+	}
+
+	logger.Info("Using default appstore")
+	catalog, err = a.defaultAppStore.Catalog()
+	if err != nil {
+		return map[string]*ComposeApp{}, err
+	}
+
+	return catalog, nil
 }
 
 func (a *AppStoreManagement) UpdateCatalog() error {
@@ -262,29 +325,39 @@ func (a *AppStoreManagement) UpdateCatalog() error {
 	return nil
 }
 
-func (a *AppStoreManagement) ComposeApp(id string) *ComposeApp {
+func (a *AppStoreManagement) ComposeApp(id string) (*ComposeApp, error) {
 	appStoreMap, err := a.AppStoreMap()
 	if err != nil {
-		logger.Error("error while loading appstore map", zap.Error(err))
-		return nil
+		return nil, err
 	}
 
 	for _, appStore := range appStoreMap {
-		if composeApp := appStore.ComposeApp(id); composeApp != nil {
-			return composeApp
+		composeApp, err := appStore.ComposeApp(id)
+		if err != nil {
+			logger.Error("error while getting appstore compose app", zap.Error(err))
+			continue
+		}
+
+		if composeApp != nil {
+			return composeApp, nil
 		}
 	}
 
-	logger.Info("No appstore registered")
+	logger.Info("app not found in any appstore", zap.String("id", id))
 
 	if a.defaultAppStore == nil {
 		logger.Info("WARNING - no default appstore")
-		return nil
+		return nil, nil
 	}
 
 	logger.Info("Using default appstore")
 
-	return a.defaultAppStore.ComposeApp(id)
+	composeApp, err := a.defaultAppStore.ComposeApp(id)
+	if err != nil {
+		return nil, err
+	}
+
+	return composeApp, nil
 }
 
 func (a *AppStoreManagement) WorkDir() (string, error) {
