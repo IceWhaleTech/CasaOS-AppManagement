@@ -169,7 +169,12 @@ func (a *ComposeApp) IsUpdateAvailable() bool {
 		return false
 	}
 
-	storeComposeApp := MyService.V2AppStore().ComposeApp(*storeInfo.StoreAppID)
+	storeComposeApp, err := MyService.V2AppStore().ComposeApp(*storeInfo.StoreAppID)
+	if err != nil {
+		logger.Error("failed to get store compose app, thus no update available", zap.Error(err))
+		return false
+	}
+
 	if storeComposeApp == nil {
 		logger.Error("store compose app not found, thus no update available", zap.String("storeAppID", *storeInfo.StoreAppID))
 		return false
@@ -233,7 +238,11 @@ func (a *ComposeApp) Update(ctx context.Context) error {
 		return ErrStoreInfoNotFound
 	}
 
-	storeComposeApp := MyService.V2AppStore().ComposeApp(*storeInfo.StoreAppID)
+	storeComposeApp, err := MyService.V2AppStore().ComposeApp(*storeInfo.StoreAppID)
+	if err != nil {
+		return err
+	}
+
 	if storeComposeApp == nil {
 		return ErrNotFoundInAppStore
 	}

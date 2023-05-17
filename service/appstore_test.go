@@ -4,6 +4,7 @@ import (
 	_ "embed"
 	"encoding/json"
 	"io/fs"
+	"os"
 	"path/filepath"
 	"runtime"
 	"testing"
@@ -22,23 +23,59 @@ import (
 func TestGetComposeApp(t *testing.T) {
 	defer goleak.VerifyNone(t, goleak.IgnoreTopFunction("go.opencensus.io/stats/view.(*worker).start")) // https://github.com/census-instrumentation/opencensus-go/issues/1191
 
-	appStore, err := service.AppStoreByURL("https://github.com/IceWhaleTech/CasaOS-AppStore/archive/refs/heads/main.zip")
+	defer func() {
+		// workaround due to https://github.com/patrickmn/go-cache/issues/166
+		docker.Cache = nil
+		runtime.GC()
+	}()
+
+	appStorePath, err := os.MkdirTemp("", "appstore")
 	assert.NilError(t, err)
 
-	for storeAppID, composeApp := range appStore.Catalog() {
-		storeInfo, err := composeApp.StoreInfo(true)
-		assert.NilError(t, err)
-		assert.Equal(t, *storeInfo.StoreAppID, storeAppID)
+	defer os.RemoveAll(appStorePath)
+
+	config.AppInfo.AppStorePath = appStorePath
+
+	appStore, err := service.AppStoreByURL("https://github.com/IceWhaleTech/_appstore/archive/refs/heads/main.zip")
+	assert.NilError(t, err)
+
+	err = appStore.UpdateCatalog()
+	assert.NilError(t, err)
+
+	catalog, err := appStore.Catalog()
+	assert.NilError(t, err)
+
+	for name, composeApp := range catalog {
+		assert.Equal(t, name, composeApp.Name)
 	}
 }
 
 func TestGetApp(t *testing.T) {
 	defer goleak.VerifyNone(t, goleak.IgnoreTopFunction("go.opencensus.io/stats/view.(*worker).start")) // https://github.com/census-instrumentation/opencensus-go/issues/1191
 
-	appStore, err := service.AppStoreByURL("https://github.com/IceWhaleTech/CasaOS-AppStore/archive/refs/heads/main.zip")
+	defer func() {
+		// workaround due to https://github.com/patrickmn/go-cache/issues/166
+		docker.Cache = nil
+		runtime.GC()
+	}()
+
+	appStorePath, err := os.MkdirTemp("", "appstore")
 	assert.NilError(t, err)
 
-	for _, composeApp := range appStore.Catalog() {
+	defer os.RemoveAll(appStorePath)
+
+	config.AppInfo.AppStorePath = appStorePath
+
+	appStore, err := service.AppStoreByURL("https://github.com/IceWhaleTech/_appstore/archive/refs/heads/main.zip")
+	assert.NilError(t, err)
+
+	err = appStore.UpdateCatalog()
+	assert.NilError(t, err)
+
+	catalog, err := appStore.Catalog()
+	assert.NilError(t, err)
+
+	for _, composeApp := range catalog {
 		for _, service := range composeApp.Services {
 			app := composeApp.App(service.Name)
 			assert.Equal(t, app.Name, service.Name)
@@ -48,6 +85,12 @@ func TestGetApp(t *testing.T) {
 
 func TestWorkDir(t *testing.T) {
 	defer goleak.VerifyNone(t, goleak.IgnoreTopFunction("go.opencensus.io/stats/view.(*worker).start")) // https://github.com/census-instrumentation/opencensus-go/issues/1191
+
+	defer func() {
+		// workaround due to https://github.com/patrickmn/go-cache/issues/166
+		docker.Cache = nil
+		runtime.GC()
+	}()
 
 	// test for http
 	hostport := "localhost:8080"
@@ -79,6 +122,12 @@ func TestWorkDir(t *testing.T) {
 
 func TestStoreRoot(t *testing.T) {
 	defer goleak.VerifyNone(t, goleak.IgnoreTopFunction("go.opencensus.io/stats/view.(*worker).start")) // https://github.com/census-instrumentation/opencensus-go/issues/1191
+
+	defer func() {
+		// workaround due to https://github.com/patrickmn/go-cache/issues/166
+		docker.Cache = nil
+		runtime.GC()
+	}()
 
 	workdir := t.TempDir()
 
@@ -133,6 +182,12 @@ func TestLoadCategoryList(t *testing.T) {
 func TestLoadRecommend(t *testing.T) {
 	defer goleak.VerifyNone(t, goleak.IgnoreTopFunction("go.opencensus.io/stats/view.(*worker).start")) //
 
+	defer func() {
+		// workaround due to https://github.com/patrickmn/go-cache/issues/166
+		docker.Cache = nil
+		runtime.GC()
+	}()
+
 	logger.LogInitConsoleOnly()
 
 	storeRoot := t.TempDir()
@@ -162,6 +217,12 @@ func TestLoadRecommend(t *testing.T) {
 
 func TestBuildCatalog(t *testing.T) {
 	defer goleak.VerifyNone(t, goleak.IgnoreTopFunction("go.opencensus.io/stats/view.(*worker).start")) // https://github.com/census-instrumentation/opencensus-go/issues/1191
+
+	defer func() {
+		// workaround due to https://github.com/patrickmn/go-cache/issues/166
+		docker.Cache = nil
+		runtime.GC()
+	}()
 
 	storeRoot := t.TempDir()
 

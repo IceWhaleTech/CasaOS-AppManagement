@@ -78,7 +78,12 @@ func (a *AppManagement) UnregisterAppStore(ctx echo.Context, id codegen.AppStore
 }
 
 func (a *AppManagement) ComposeAppStoreInfoList(ctx echo.Context, params codegen.ComposeAppStoreInfoListParams) error {
-	catalog := service.MyService.V2AppStore().Catalog()
+	catalog, err := service.MyService.V2AppStore().Catalog()
+	if err != nil {
+		message := err.Error()
+		logger.Error("failed to get catalog", zap.Error(err))
+		return ctx.JSON(http.StatusInternalServerError, codegen.ResponseInternalServerError{Message: &message})
+	}
 
 	if params.Category != nil {
 		catalog = FilterCatalogByCategory(catalog, *params.Category)
@@ -91,7 +96,13 @@ func (a *AppManagement) ComposeAppStoreInfoList(ctx echo.Context, params codegen
 
 	if params.Recommend != nil && *params.Recommend {
 		// recommend
-		recommendedList := service.MyService.V2AppStore().Recommend()
+		recommendedList, err := service.MyService.V2AppStore().Recommend()
+		if err != nil {
+			message := err.Error()
+			logger.Error("failed to get recommend list", zap.Error(err))
+			return ctx.JSON(http.StatusInternalServerError, codegen.ResponseInternalServerError{Message: &message})
+		}
+
 		catalog = FilterCatalogByAppStoreID(catalog, recommendedList)
 	}
 
@@ -141,7 +152,11 @@ func (a *AppManagement) ComposeAppStoreInfoList(ctx echo.Context, params codegen
 }
 
 func (a *AppManagement) ComposeAppStoreInfo(ctx echo.Context, id codegen.StoreAppIDString) error {
-	composeApp := service.MyService.V2AppStore().ComposeApp(id)
+	composeApp, err := service.MyService.V2AppStore().ComposeApp(id)
+	if err != nil {
+		message := err.Error()
+		return ctx.JSON(http.StatusInternalServerError, codegen.ResponseInternalServerError{Message: &message})
+	}
 
 	if composeApp == nil {
 		return ctx.JSON(http.StatusNotFound, codegen.ResponseNotFound{
@@ -162,7 +177,11 @@ func (a *AppManagement) ComposeAppStoreInfo(ctx echo.Context, id codegen.StoreAp
 }
 
 func (a *AppManagement) ComposeApp(ctx echo.Context, id codegen.StoreAppIDString) error {
-	composeApp := service.MyService.V2AppStore().ComposeApp(id)
+	composeApp, err := service.MyService.V2AppStore().ComposeApp(id)
+	if err != nil {
+		message := err.Error()
+		return ctx.JSON(http.StatusInternalServerError, codegen.ResponseInternalServerError{Message: &message})
+	}
 
 	if composeApp == nil {
 		return ctx.JSON(http.StatusNotFound, codegen.ResponseNotFound{
@@ -203,7 +222,11 @@ func (a *AppManagement) ComposeApp(ctx echo.Context, id codegen.StoreAppIDString
 }
 
 func (a *AppManagement) CategoryList(ctx echo.Context) error {
-	categoryMap := service.MyService.AppStoreManagement().CategoryMap()
+	categoryMap, err := service.MyService.AppStoreManagement().CategoryMap()
+	if err != nil {
+		message := err.Error()
+		return ctx.JSON(http.StatusInternalServerError, codegen.ResponseInternalServerError{Message: &message})
+	}
 
 	categoryList := lo.Values(categoryMap)
 
