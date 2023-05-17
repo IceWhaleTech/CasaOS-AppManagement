@@ -48,16 +48,20 @@ func (a *AppManagement) GetAppGrid(ctx echo.Context) error {
 		return *item
 	})
 
-	// containers
-	composeAppContainers := lo.FlatMap(lo.Values(composeAppsWithStoreInfo), func(app codegen.ComposeAppWithStoreInfo, i int) []codegen.ContainerSummary {
+	// containers from compose apps
+	composeAppContainers := []codegen.ContainerSummary{}
+	for _, app := range composeAppsWithStoreInfo {
 		composeApp := (service.ComposeApp)(*app.Compose)
-		containers, err := composeApp.Containers(ctx.Request().Context())
+		containerLists, err := composeApp.Containers(ctx.Request().Context())
 		if err != nil {
 			logger.Error("failed to get containers for compose app", zap.Error(err), zap.String("app", composeApp.Name))
 			return nil
 		}
-		return lo.Values(containers)
-	})
+
+		for _, containcontainerList := range containerLists {
+			composeAppContainers = append(composeAppContainers, containcontainerList...)
+		}
+	}
 
 	containerAppGridItems := lo.FilterMap(*containers, func(app model.MyAppList, i int) (codegen.WebAppGridItem, bool) {
 		if lo.ContainsBy(composeAppContainers, func(container codegen.ContainerSummary) bool { return container.ID == app.ID }) {
