@@ -317,7 +317,7 @@ func (a *ComposeApp) Apps() map[string]*App {
 	return apps
 }
 
-func (a *ComposeApp) Containers(ctx context.Context) (map[string]api.ContainerSummary, error) {
+func (a *ComposeApp) Containers(ctx context.Context) (map[string][]api.ContainerSummary, error) {
 	service, dockerClient, err := apiService()
 	if err != nil {
 		return nil, err
@@ -331,14 +331,11 @@ func (a *ComposeApp) Containers(ctx context.Context) (map[string]api.ContainerSu
 		return nil, err
 	}
 
-	containerMap := lo.SliceToMap(
-		containers,
-		func(c api.ContainerSummary) (string, api.ContainerSummary) {
-			return c.Service, c
-		},
-	)
-
-	return containerMap, nil
+	// it is possible a `service` contains multiple containers.
+	// See https://docs.docker.com/compose/compose-file/deploy/#replicas
+	return lo.GroupBy(containers, func(container api.ContainerSummary) string {
+		return container.Service
+	}), nil
 }
 
 func (a *ComposeApp) Pull(ctx context.Context) error {
