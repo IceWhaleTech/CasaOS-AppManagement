@@ -29,8 +29,9 @@ type AppStore interface {
 }
 
 type appStore struct {
-	catalog map[string]*ComposeApp
-	url     string
+	catalog   map[string]*ComposeApp
+	recommend []string
+	url       string
 }
 
 var (
@@ -126,12 +127,18 @@ func (s *appStore) UpdateCatalog() error {
 		return err
 	}
 
+	s.recommend = LoadRecommend(storeRoot)
+
 	isSuccessful = true
 
 	return nil
 }
 
 func (s *appStore) Recommend() []string {
+	if s.recommend != nil && len(s.recommend) > 0 {
+		return s.recommend
+	}
+
 	workdir, err := s.WorkDir()
 	if err != nil {
 		return nil
@@ -142,7 +149,9 @@ func (s *appStore) Recommend() []string {
 		return nil
 	}
 
-	return LoadRecommend(storeRoot)
+	s.recommend = LoadRecommend(storeRoot)
+
+	return s.recommend
 }
 
 func (s *appStore) Catalog() map[string]*ComposeApp {
@@ -185,6 +194,10 @@ func (s *appStore) ComposeApp(appStoreID string) *ComposeApp {
 }
 
 func (s *appStore) WorkDir() (string, error) {
+	if s.url == "default" {
+		return filepath.Join(config.AppInfo.AppStorePath, s.url), nil
+	}
+
 	parsedURL, err := url.Parse(s.url)
 	if err != nil {
 		return "", err
@@ -227,9 +240,12 @@ func NewDefaultAppStore() (AppStore, error) {
 		return nil, err
 	}
 
+	recommend := LoadRecommend(storeRoot)
+
 	return &appStore{
-		url:     "default",
-		catalog: catalog,
+		url:       "default",
+		catalog:   catalog,
+		recommend: recommend,
 	}, nil
 }
 
@@ -274,12 +290,15 @@ func LoadRecommend(storeRoot string) []string {
 	// unmarsal recommend list
 	recommendList := []interface{}{}
 
-	if file.Exists(recommendListFile) {
-		buf := file.ReadFullFile(recommendListFile)
+	if !file.Exists(recommendListFile) {
+		logger.Info("recommend list file not found", zap.String("recommendListFile", recommendListFile))
+		return []string{}
+	}
 
-		if err := json.Unmarshal(buf, &recommendList); err != nil {
-			logger.Error("failed to unmarshal recommend list", zap.Error(err), zap.String("recommendListFile", recommendListFile))
-		}
+	buf := file.ReadFullFile(recommendListFile)
+	if err := json.Unmarshal(buf, &recommendList); err != nil {
+		logger.Error("failed to unmarshal recommend list", zap.Error(err), zap.String("recommendListFile", recommendListFile))
+		return []string{}
 	}
 
 	result := lo.Map(recommendList, func(item interface{}, i int) string {

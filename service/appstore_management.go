@@ -159,6 +159,8 @@ func (a *AppStoreManagement) AppStoreMap() (map[string]AppStore, error) {
 		return appStoreURL, appStore
 	})
 
+	delete(appStoreMap, "")
+
 	return appStoreMap, nil
 }
 
