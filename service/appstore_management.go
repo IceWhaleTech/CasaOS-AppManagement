@@ -57,16 +57,9 @@ func (a *AppStoreManagement) OnAppStoreUnregister(fn func(string) error) {
 }
 
 func (a *AppStoreManagement) RegisterAppStore(appstoreURL string) (chan *codegen.AppStoreMetadata, error) {
-	appstoreURL = strings.ToLower(appstoreURL)
-
 	// check if appstore already exists
-	config.ServerInfo.AppStoreList = lo.Map(config.ServerInfo.AppStoreList,
-		func(url string, id int) string {
-			return strings.ToLower(url)
-		})
-
 	for _, url := range config.ServerInfo.AppStoreList {
-		if url == appstoreURL {
+		if strings.ToLower(url) == strings.ToLower(appstoreURL) {
 			return nil, nil
 		}
 	}
@@ -81,6 +74,8 @@ func (a *AppStoreManagement) RegisterAppStore(appstoreURL string) (chan *codegen
 	go func() {
 		if err := appstore.UpdateCatalog(); err != nil {
 			logger.Error("failed to update appstore catalog", zap.Error(err), zap.String("appstoreURL", appstoreURL))
+
+			c <- nil
 			return
 		}
 
