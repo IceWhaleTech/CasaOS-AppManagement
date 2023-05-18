@@ -213,7 +213,9 @@ func (s *appStore) WorkDir() (string, error) {
 		return "", err
 	}
 
-	hash := fmt.Sprintf("%x", md5.Sum([]byte(parsedURL.Path))) //nolint: gosec
+	appstoreKey := strings.ToLower(parsedURL.Path)
+
+	hash := fmt.Sprintf("%x", md5.Sum([]byte(appstoreKey))) //nolint: gosec
 
 	return filepath.Join(config.AppInfo.AppStorePath, parsedURL.Host, hash), nil
 }

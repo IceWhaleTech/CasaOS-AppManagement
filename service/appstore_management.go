@@ -74,6 +74,8 @@ func (a *AppStoreManagement) RegisterAppStore(appstoreURL string) (chan *codegen
 	go func() {
 		if err := appstore.UpdateCatalog(); err != nil {
 			logger.Error("failed to update appstore catalog", zap.Error(err), zap.String("appstoreURL", appstoreURL))
+
+			c <- nil
 			return
 		}
 
