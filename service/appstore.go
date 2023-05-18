@@ -219,23 +219,23 @@ func (s *appStore) WorkDir() (string, error) {
 }
 
 func AppStoreByURL(appstoreURL string) (AppStore, error) {
-	appstoreURL = strings.ToLower(appstoreURL)
-
 	_, err := url.Parse(appstoreURL)
 	if err != nil {
 		return nil, err
 	}
 
-	if appstore, ok := appStoreMap[appstoreURL]; ok {
+	// a appstoreKey is a normalized appstore url where everything is in lowercase
+	appstoreKey := strings.ToLower(appstoreURL)
+	if appstore, ok := appStoreMap[appstoreKey]; ok {
 		return appstore, nil
 	}
 
-	appStoreMap[appstoreURL] = &appStore{
+	appStoreMap[appstoreKey] = &appStore{
 		url:     appstoreURL,
 		catalog: map[string]*ComposeApp{},
 	}
 
-	return appStoreMap[appstoreURL], nil
+	return appStoreMap[appstoreKey], nil
 }
 
 func NewDefaultAppStore() (AppStore, error) {
