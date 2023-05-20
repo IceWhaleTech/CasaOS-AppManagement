@@ -23,7 +23,6 @@ var (
 	}
 
 	ServerInfo = &model.ServerModel{
-		ServerAPI:    "https://api.casaos.io/casaos-api",
 		AppStoreList: []string{},
 	}
 

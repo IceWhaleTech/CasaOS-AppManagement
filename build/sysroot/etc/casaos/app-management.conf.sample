@@ -10,5 +10,4 @@ AppStorePath = /var/lib/casaos/appstore
 AppsPath = /var/lib/casaos/apps
 
 [server]
-ServerAPI = https://api.casaos.io/casaos-api
 appstore = https://github.com/IceWhaleTech/_appstore/archive/refs/heads/main.zip
