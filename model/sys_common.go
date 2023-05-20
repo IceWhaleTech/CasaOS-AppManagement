@@ -14,7 +14,6 @@ type APPModel struct {
 }
 
 type ServerModel struct {
-	ServerAPI    string
 	AppStoreList []string `ini:"appstore,,allowshadow"`
 }
 
