@@ -2,6 +2,9 @@ package common
 
 import _ "embed"
 
+//go:embed fixtures/sample-appfile-export.json
+var SampleLegacyAppfileExportJSON string
+
 //go:embed fixtures/sample-category-list.json
 var SampleCategoryListJSON string
 

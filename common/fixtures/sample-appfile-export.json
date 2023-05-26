@@ -1,0 +1,48 @@
+{
+  "host": "",
+  "protocol": "http",
+  "port_map": "32400",
+  "cpu_shares": 50,
+  "restart": "unless-stopped",
+  "label": "Plex",
+  "position": false,
+  "index": "/web/index.html",
+  "icon": "https://cdn.jsdelivr.net/gh/IceWhaleTech/CasaOS-AppStore@main/Apps/Plex/icon.png",
+  "network_model": "host",
+  "image": "linuxserver/plex:latest",
+  "description": "Plex organizes video, music and photos from personal media libraries and streams them to smart TVs, streaming boxes and mobile devices. This container is packaged as a standalone Plex Media Server has always been a top priority. Straightforward design and bulk actions mean getting things done faster.",
+  "origin": "official",
+  "ports": [],
+  "volumes": [
+    {
+      "container": "/data",
+      "host": "/media/public",
+      "type": 0,
+      "desc": ""
+    },
+    {
+      "container": "/config",
+      "host": "/opt/plex",
+      "type": 0,
+      "desc": ""
+    }
+  ],
+  "envs": [],
+  "devices": [
+    {
+      "container": "/dev/dri",
+      "host": "/dev/dri",
+      "type": 0,
+      "desc": ""
+    }
+  ],
+  "cap_add": [],
+  "cmd": [],
+  "privileged": false,
+  "host_name": "Plex",
+  "container_name": "Plex",
+  "appstore_id": 0,
+  "custom_id": "bf5790d4-4a66-4057-81c4-252008f83f0a",
+  "enable_upnp": false,
+  "version": "1.0"
+}

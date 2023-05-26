@@ -119,20 +119,22 @@ func (c *CustomizationPostData) ComposeAppStoreInfo() codegen.ComposeAppStoreInf
 	currentArchitecture := currentArchitecture()
 	name := strings.ToLower(c.ContainerName)
 
+	message := "This is a compose app converted from CasaOS legacy app (v0.4.3 and earlier)"
+
 	return codegen.ComposeAppStoreInfo{
 		Architectures: &[]string{currentArchitecture},
-		Main:          &name,
 		Author:        "custom",
-		Description: map[string]string{
-			common.DefaultLanguage: c.Description,
-		},
-		Developer: "unknown",
-		Icon:      c.Icon,
-		Title: map[string]string{
-			common.DefaultLanguage: c.Label,
-		},
-		Index:   c.Index,
-		PortMap: c.PortMap,
+		Category:      "unknown",
+		Description:   map[string]string{common.DefaultLanguage: c.Description},
+		Developer:     "unknown",
+		Icon:          c.Icon,
+		Index:         c.Index,
+		Main:          &name,
+		PortMap:       c.PortMap,
+		Scheme:        (*codegen.Scheme)(&c.Protocol),
+		Tagline:       map[string]string{common.DefaultLanguage: message},
+		Tips:          codegen.TipsStoreInfo{Custom: &message},
+		Title:         map[string]string{common.DefaultLanguage: c.Label},
 	}
 }
 
@@ -140,7 +142,7 @@ func (c *CustomizationPostData) Services() types.Services {
 	return types.Services{
 		{
 			CapAdd:      c.CapAdd,
-			Command:     c.Cmd,
+			Command:     emtpySliceThenNil(c.Cmd),
 			CPUShares:   c.CPUShares,
 			Devices:     c.Devices.ToSlice(),
 			Environment: c.Envs.ToMappingWithEquals(),
@@ -159,8 +161,8 @@ func (c *CustomizationPostData) Services() types.Services {
 	}
 }
 
-func (c *CustomizationPostData) Compose() *codegen.ComposeApp {
-	return &codegen.ComposeApp{
+func (c *CustomizationPostData) Compose() codegen.ComposeApp {
+	return codegen.ComposeApp{
 		Name:     strings.ToLower(c.ContainerName),
 		Services: c.Services(),
 		Extensions: map[string]interface{}{
@@ -177,4 +179,12 @@ func currentArchitecture() string {
 	}
 
 	return arch
+}
+
+func emtpySliceThenNil[T any](arr []T) []T {
+	if len(arr) == 0 {
+		return nil
+	}
+
+	return arr
 }
