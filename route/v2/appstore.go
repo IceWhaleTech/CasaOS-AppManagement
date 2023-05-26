@@ -3,11 +3,13 @@ package v2
 import (
 	"fmt"
 	"net/http"
+	"path/filepath"
 	"sort"
 	"strings"
 
 	"github.com/IceWhaleTech/CasaOS-AppManagement/codegen"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/common"
+	"github.com/IceWhaleTech/CasaOS-AppManagement/pkg/config"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/service"
 	"github.com/IceWhaleTech/CasaOS-Common/utils"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/logger"
@@ -49,8 +51,10 @@ func (a *AppManagement) RegisterAppStore(ctx echo.Context, params codegen.Regist
 		return ctx.JSON(http.StatusInternalServerError, codegen.ResponseInternalServerError{Message: &message})
 	}
 
+	logFilepath := filepath.Join(config.AppInfo.LogPath, fmt.Sprintf("%s.%s", config.AppInfo.LogSaveName, config.AppInfo.LogFileExt))
+	message := fmt.Sprintf("trying to register app store asynchronously - see %s for any errors.", logFilepath)
 	return ctx.JSON(http.StatusOK, codegen.AppStoreRegisterOK{
-		Message: utils.Ptr("trying to register app store asynchronously - might fail if app store cannot be validated."),
+		Message: &message,
 	})
 }
 
