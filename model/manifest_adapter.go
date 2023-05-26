@@ -119,11 +119,11 @@ func (c *CustomizationPostData) ComposeAppStoreInfo() codegen.ComposeAppStoreInf
 	currentArchitecture := currentArchitecture()
 	name := strings.ToLower(c.ContainerName)
 
-	message := "This is a compose app converted from CasaOS legacy app (v0.4.3 and earlier)"
+	message := "This is a compose app converted from a legacy app (CasaOS v0.4.3 or earlier)"
 
 	return codegen.ComposeAppStoreInfo{
 		Architectures: &[]string{currentArchitecture},
-		Author:        "custom",
+		Author:        "yourself",
 		Category:      "unknown",
 		Description:   map[string]string{common.DefaultLanguage: c.Description},
 		Developer:     "unknown",
