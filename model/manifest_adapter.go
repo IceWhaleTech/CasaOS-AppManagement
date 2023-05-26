@@ -12,25 +12,34 @@ import (
 	"github.com/samber/lo"
 )
 
-func (p *PortArray) ToServicePorts() []types.ServicePortConfig {
+func (p *PortMap) ServicePortConfig() (types.ServicePortConfig, error) {
+	target, err := strconv.Atoi(p.ContainerPort)
+	if err != nil {
+		return types.ServicePortConfig{}, err
+	}
+
+	return types.ServicePortConfig{
+		Target:    uint32(target),
+		Published: p.CommendPort,
+		Protocol:  p.Protocol,
+	}, nil
+}
+
+func (p *PortArray) ServicePortConfigList() []types.ServicePortConfig {
 	ports := []types.ServicePortConfig{}
 
 	for _, port := range *p {
-		target, err := strconv.Atoi(port.ContainerPort)
+		servicePortConfig, err := port.ServicePortConfig()
 		if err != nil {
 			continue
 		}
 
-		ports = append(ports, types.ServicePortConfig{
-			Target:    uint32(target),
-			Published: port.CommendPort,
-			Protocol:  port.Protocol,
-		})
+		ports = append(ports, servicePortConfig)
 	}
 	return ports
 }
 
-func (p *PortArray) ToPortStoreInfo() []codegen.PortStoreInfo {
+func (p *PortArray) PortStoreInfoList() []codegen.PortStoreInfo {
 	return lo.Map(*p, func(p PortMap, i int) codegen.PortStoreInfo {
 		return codegen.PortStoreInfo{
 			Container:   p.ContainerPort,
@@ -39,7 +48,7 @@ func (p *PortArray) ToPortStoreInfo() []codegen.PortStoreInfo {
 	})
 }
 
-func (p *PathArray) ToServiceVolumes() []types.ServiceVolumeConfig {
+func (p *PathArray) ServiceVolumeConfigList() []types.ServiceVolumeConfig {
 	volumes := []types.ServiceVolumeConfig{}
 
 	for _, path := range *p {
@@ -64,7 +73,7 @@ func (p *PathArray) ToSlice() []string {
 	})
 }
 
-func (p *PathArray) ToDeviceStoreInfoList() []codegen.DeviceStoreInfo {
+func (p *PathArray) DeviceStoreInfoList() []codegen.DeviceStoreInfo {
 	return lo.Map(*p, func(p PathMap, i int) codegen.DeviceStoreInfo {
 		return codegen.DeviceStoreInfo{
 			Container:   &p.ContainerPath,
@@ -73,7 +82,7 @@ func (p *PathArray) ToDeviceStoreInfoList() []codegen.DeviceStoreInfo {
 	})
 }
 
-func (p *PathArray) ToVolumeStoreInfoList() []codegen.VolumeStoreInfo {
+func (p *PathArray) VolumeStoreInfoList() []codegen.VolumeStoreInfo {
 	return lo.Map(*p, func(p PathMap, i int) codegen.VolumeStoreInfo {
 		return codegen.VolumeStoreInfo{
 			Container:   p.ContainerPath,
@@ -88,7 +97,7 @@ func (ea *EnvArray) ToMappingWithEquals() types.MappingWithEquals {
 	})
 }
 
-func (ea *EnvArray) ToEnvStoreInfoList() []codegen.EnvStoreInfo {
+func (ea *EnvArray) EnvStoreInfoList() []codegen.EnvStoreInfo {
 	return lo.Map(*ea, func(e Env, i int) codegen.EnvStoreInfo {
 		return codegen.EnvStoreInfo{
 			Container:   e.Name,
@@ -99,10 +108,10 @@ func (ea *EnvArray) ToEnvStoreInfoList() []codegen.EnvStoreInfo {
 
 func (c *CustomizationPostData) AppStoreInfo() codegen.AppStoreInfo {
 	return codegen.AppStoreInfo{
-		Devices: c.Devices.ToDeviceStoreInfoList(),
-		Envs:    c.Envs.ToEnvStoreInfoList(),
-		Ports:   c.Ports.ToPortStoreInfo(),
-		Volumes: c.Volumes.ToVolumeStoreInfoList(),
+		Devices: c.Devices.DeviceStoreInfoList(),
+		Envs:    c.Envs.EnvStoreInfoList(),
+		Ports:   c.Ports.PortStoreInfoList(),
+		Volumes: c.Volumes.VolumeStoreInfoList(),
 	}
 }
 
@@ -138,10 +147,10 @@ func (c *CustomizationPostData) Services() types.Services {
 			Image:       c.Image,
 			Name:        strings.ToLower(c.ContainerName),
 			NetworkMode: c.NetworkModel,
-			Ports:       c.Ports.ToServicePorts(),
+			Ports:       c.Ports.ServicePortConfigList(),
 			Privileged:  c.Privileged,
 			Restart:     c.Restart,
-			Volumes:     c.Volumes.ToServiceVolumes(),
+			Volumes:     c.Volumes.ServiceVolumeConfigList(),
 
 			Extensions: map[string]interface{}{
 				common.ComposeExtensionNameXCasaOS: c.AppStoreInfo(),
