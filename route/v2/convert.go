@@ -33,7 +33,7 @@ func (a *AppManagement) Convert(ctx echo.Context, params codegen.ConvertParams) 
 			return ctx.JSON(http.StatusBadRequest, codegen.ResponseBadRequest{Message: &message})
 		}
 
-		return ctx.JSON(http.StatusOK, string(yaml))
+		return ctx.String(http.StatusOK, string(yaml))
 
 	default:
 		message := fmt.Sprintf("unsupported file type: %s", fileType)
