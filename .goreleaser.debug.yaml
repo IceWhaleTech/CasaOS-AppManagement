@@ -26,6 +26,10 @@ builds:
       - linux
     goarch:
       - amd64
+    hooks:
+      post:
+        - cmd: go build -v -tags 'musl netgo osusergo' -o build/sysroot/usr/bin/appfile2compose github.com/IceWhaleTech/CasaOS-AppManagement/cmd/appfile2compose
+          output: true
   - id: casaos-app-management-arm64
     binary: build/sysroot/usr/bin/casaos-app-management
     env:
@@ -44,6 +48,10 @@ builds:
       - linux
     goarch:
       - arm64
+    hooks:
+      post:
+        - cmd: go build -v -tags 'musl netgo osusergo' -o build/sysroot/usr/bin/appfile2compose github.com/IceWhaleTech/CasaOS-AppManagement/cmd/appfile2compose
+          output: true
   - id: casaos-app-management-arm-7
     binary: build/sysroot/usr/bin/casaos-app-management
     env:
@@ -64,6 +72,10 @@ builds:
       - arm
     goarm:
       - "7"
+    hooks:
+      post:
+        - cmd: go build -v -tags 'musl netgo osusergo' -o build/sysroot/usr/bin/appfile2compose github.com/IceWhaleTech/CasaOS-AppManagement/cmd/appfile2compose
+          output: true
   - id: casaos-app-management-migration-tool-amd64
     binary: build/sysroot/usr/bin/casaos-app-management-migration-tool
     main: ./cmd/migration-tool
