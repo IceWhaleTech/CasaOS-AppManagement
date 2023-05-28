@@ -122,7 +122,7 @@ func (c *CustomizationPostData) ComposeAppStoreInfo() codegen.ComposeAppStoreInf
 
 	return codegen.ComposeAppStoreInfo{
 		Architectures: &[]string{runtime.GOARCH},
-		Author:        "yourself",
+		Author:        "CasaOS User",
 		Category:      "unknown",
 		Description:   map[string]string{common.DefaultLanguage: c.Description},
 		Developer:     "unknown",
