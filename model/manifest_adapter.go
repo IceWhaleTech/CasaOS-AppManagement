@@ -116,13 +116,12 @@ func (c *CustomizationPostData) AppStoreInfo() codegen.AppStoreInfo {
 }
 
 func (c *CustomizationPostData) ComposeAppStoreInfo() codegen.ComposeAppStoreInfo {
-	currentArchitecture := currentArchitecture()
 	name := strings.ToLower(c.ContainerName)
 
 	message := "This is a compose app converted from a legacy app (CasaOS v0.4.3 or earlier)"
 
 	return codegen.ComposeAppStoreInfo{
-		Architectures: &[]string{currentArchitecture},
+		Architectures: &[]string{runtime.GOARCH},
 		Author:        "yourself",
 		Category:      "unknown",
 		Description:   map[string]string{common.DefaultLanguage: c.Description},
@@ -169,16 +168,6 @@ func (c *CustomizationPostData) Compose() codegen.ComposeApp {
 			common.ComposeExtensionNameXCasaOS: c.ComposeAppStoreInfo(),
 		},
 	}
-}
-
-func currentArchitecture() string {
-	arch := runtime.GOARCH
-
-	if arch == "arm" {
-		arch = "arm-7"
-	}
-
-	return arch
 }
 
 func emtpySliceThenNil[T any](arr []T) []T {

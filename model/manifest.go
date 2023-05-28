@@ -1,13 +1,5 @@
 package model
 
-import (
-	"database/sql/driver"
-
-	jsoniter "github.com/json-iterator/go"
-)
-
-var json = jsoniter.ConfigCompatibleWithStandardLibrary
-
 type TCPPorts struct {
 	Desc          string `json:"desc"`
 	ContainerPort int    `json:"container_port"`
@@ -29,16 +21,6 @@ type PortMap struct {
 
 type PortArray []PortMap
 
-// Value 实现方法
-func (p PortArray) Value() (driver.Value, error) {
-	return json.Marshal(p)
-}
-
-// Scan 实现方法
-func (p *PortArray) Scan(input interface{}) error {
-	return json.Unmarshal(input.([]byte), p)
-}
-
 /************************************************************************/
 
 /*******************使用gorm支持json************************************/
@@ -50,20 +32,7 @@ type Env struct {
 	Type  int    `json:"type"`
 }
 
-type JSON jsoniter.RawMessage
-
 type EnvArray []Env
-
-// Value 实现方法
-func (p EnvArray) Value() (driver.Value, error) {
-	return json.Marshal(p)
-	// return .MarshalJSON()
-}
-
-// Scan 实现方法
-func (p *EnvArray) Scan(input interface{}) error {
-	return json.Unmarshal(input.([]byte), p)
-}
 
 /************************************************************************/
 
@@ -77,16 +46,6 @@ type PathMap struct {
 }
 
 type PathArray []PathMap
-
-// Value 实现方法
-func (p PathArray) Value() (driver.Value, error) {
-	return json.Marshal(p)
-}
-
-// Scan 实现方法
-func (p *PathArray) Scan(input interface{}) error {
-	return json.Unmarshal(input.([]byte), p)
-}
 
 /************************************************************************/
 

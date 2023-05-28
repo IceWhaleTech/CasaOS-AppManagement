@@ -25,3 +25,4 @@ node_modules
 package-lock.json
 
 .idea
+build/sysroot/usr/bin/appfile2compose

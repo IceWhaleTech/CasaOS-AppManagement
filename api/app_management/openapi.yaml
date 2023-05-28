@@ -137,6 +137,31 @@ paths:
         "500":
           $ref: "#/components/responses/ResponseInternalServerError"
 
+  /convert:
+    post:
+      summary: Convert to compose app from another file format
+      operationId: convert
+      tags:
+        - Common methods
+      parameters:
+        - name: type
+          in: query
+          schema:
+            type: string
+            enum:
+              - appfile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          $ref: "#/components/responses/ComposeAppOK"
+        "400":
+          $ref: "#/components/responses/ResponseBadRequest"
+
   /appstore:
     get:
       summary: Get the list of registered app stores
