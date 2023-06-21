@@ -902,6 +902,16 @@ func NewComposeAppFromYAML(yaml []byte, skipInterpolation, skipValidation bool) 
 
 	storeInfo, err := composeApp.StoreInfo(false)
 
+	if err != nil {
+		fmt.Println("err", err)
+	}
+	if storeInfo == nil {
+		fmt.Println("storeInfo is nil")
+	}
+	if storeInfo.Title == nil {
+		fmt.Println("storeInfo.Title is nil")
+	}
+
 	if err != nil || storeInfo == nil || storeInfo.Title == nil {
 		logger.Info("compose app does not have store info with title set, re-using app name as title", zap.String("app", composeApp.Name))
 		composeApp.SetTitle(composeApp.Name, common.DefaultLanguage)
