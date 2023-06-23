@@ -6,7 +6,6 @@ before:
     - go generate
     - go run github.com/google/go-licenses@latest check . --disallowed_types=restricted
     - go mod tidy
-    - go test -race -v ./... -timeout 30m
 builds:
   - id: casaos-app-management-amd64
     binary: build/sysroot/usr/bin/casaos-app-management
