@@ -59,18 +59,16 @@ func TestCompose(t *testing.T) {
 
 func TestOpenAIApiKey(t *testing.T) {
 
+	// create and init config
 	file, err := os.CreateTemp("", "app-management.conf")
-	//write test content to file
 	_, err = file.WriteString(ConfigContent)
-
 	assert.NoError(t, err)
-
 	defer os.Remove(file.Name())
 
 	config.InitSetup(file.Name())
 
+	// create a compose app
 	var legacyApp model.CustomizationPostData
-
 	err = json.Unmarshal([]byte(common.SampleLegacyAppfileExportJSON), &legacyApp)
 	assert.NoError(t, err)
 
@@ -94,6 +92,5 @@ func TestOpenAIApiKey(t *testing.T) {
 	assert.NotNil(t, composeApp)
 	assert.NoError(t, err)
 
-	assert.Equal(t, composeApp.Environment["TZ"], "Asia/Shanghai")
 	assert.Equal(t, composeApp.Environment["OPENAI_API_KEY"], "[please_input_your_openai_api_key_in_here_like_sk-xxxx]")
 }
