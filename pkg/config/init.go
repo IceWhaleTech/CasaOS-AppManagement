@@ -20,7 +20,7 @@ var (
 		LogPath:      "/var/log/casaos",
 		LogSaveName:  common.AppManagementServiceName,
 		LogFileExt:   "log",
-		OpenAIApiKEY: "sk-123456",
+		OpenAIAPIKey: "sk-123456",
 	}
 
 	ServerInfo = &model.ServerModel{
