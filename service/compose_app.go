@@ -879,6 +879,26 @@ func NewComposeAppFromYAML(yaml []byte, skipInterpolation, skipValidation bool) 
 			o.SkipInterpolation = skipInterpolation
 			o.SkipValidation = skipValidation
 
+			o.Interpolate.LookupValue = func(key string) (string, bool) {
+				fmt.Println("现在在找的是" + key)
+				switch key {
+				case "WEBUI_PORT":
+					port, err := port.GetAvailablePort("tcp")
+					if err != nil {
+						return "", false
+					}
+					return strconv.Itoa(port), true
+				}
+
+				for k, v := range baseInterpolationMap() {
+					if k == key {
+						return v, true
+					}
+				}
+
+				return os.LookupEnv(key)
+			}
+
 			if getNameFrom(yaml) != "" {
 				return
 			}

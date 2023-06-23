@@ -6,15 +6,12 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"strconv"
-	"strings"
 
 	"github.com/IceWhaleTech/CasaOS-AppManagement/codegen"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/common"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/service"
 	"github.com/IceWhaleTech/CasaOS-Common/utils"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/logger"
-	"github.com/IceWhaleTech/CasaOS-Common/utils/port"
 	"github.com/compose-spec/compose-go/types"
 	"github.com/labstack/echo/v4"
 	"github.com/samber/lo"
@@ -225,18 +222,18 @@ func (a *AppManagement) InstallComposeApp(ctx echo.Context, params codegen.Insta
 
 	// if yaml contains $WEBUI_PORT, replace it with a random available port
 
-	if strings.Contains(string(buf), "$WEBUI_PORT") {
-		port, _ := port.GetAvailablePort("tcp")
-		fmt.Println("port", port)
-		// replace $WEBUI_PORT with port in yaml
-		// fmt.Println(string(yaml))
-		buf = []byte(strings.ReplaceAll(string(buf), "$WEBUI_PORT", "\""+strconv.Itoa(port)+"\""))
-		// fmt.Println(string(yaml))
-		// os.Setenv("WEBUI_PORT", strconv.Itoa(port))
-	}
+	// if strings.Contains(string(buf), "$WEBUI_PORT") {
+	// 	port, _ := port.GetAvailablePort("tcp")
+	// 	fmt.Println("port", port)
+	// 	// replace $WEBUI_PORT with port in yaml
+	// 	// fmt.Println(string(yaml))
+	// 	buf = []byte(strings.ReplaceAll(string(buf), "$WEBUI_PORT", "\""+strconv.Itoa(port)+"\""))
+	// 	// fmt.Println(string(yaml))
+	// 	// os.Setenv("WEBUI_PORT", strconv.Itoa(port))
+	// }
 
 	// validate new compose yaml
-	composeApp, err := service.NewComposeAppFromYAML(buf, true, true)
+	composeApp, err := service.NewComposeAppFromYAML(buf, false, true)
 	if err != nil {
 		message := err.Error()
 		return ctx.JSON(http.StatusBadRequest, codegen.ResponseBadRequest{
