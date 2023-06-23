@@ -8,6 +8,7 @@ LogFileExt = log
 DBPath     = /var/lib/casaos/db
 AppStorePath = /var/lib/casaos/appstore
 AppsPath = /var/lib/casaos/apps
+OpenAPIKey = sk-1234567
 
 [server]
 appstore = https://github.com/IceWhaleTech/_appstore/archive/refs/heads/main.zip

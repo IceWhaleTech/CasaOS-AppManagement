@@ -11,6 +11,7 @@ type APPModel struct {
 	DBPath       string
 	AppStorePath string
 	AppsPath     string
+	OpenAIApiKEY string
 }
 
 type ServerModel struct {
