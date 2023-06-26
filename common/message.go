@@ -78,6 +78,34 @@ var EventTypes = []message_bus.EventType{
 	EventTypeContainerRemoveBegin, EventTypeContainerRemoveEnd, EventTypeContainerRemoveError,
 }
 
+// event types for app-store
+var (
+	EventTypeAppStoreRegisterBegin = message_bus.EventType{
+		SourceID:         AppManagementServiceName,
+		Name:             "app-store:register-begin",
+		PropertyTypeList: []message_bus.PropertyType{
+			// TODO: add more properties
+		},
+	}
+
+	EventTypeAppStoreRegisterEnd = message_bus.EventType{
+		SourceID:         AppManagementServiceName,
+		Name:             "app-store:register-end",
+		PropertyTypeList: []message_bus.PropertyType{
+			// TODO: add more properties
+		},
+	}
+
+	EventTypeAppStoreRegisterError = message_bus.EventType{
+		SourceID: AppManagementServiceName,
+		Name:     "app-store:register-error",
+		PropertyTypeList: []message_bus.PropertyType{
+			PropertyTypeMessage,
+			// TODO: add more properties
+		},
+	}
+)
+
 // event types for app
 var (
 	EventTypeAppInstallBegin = message_bus.EventType{
