@@ -1,6 +1,7 @@
 package v2
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"path/filepath"
@@ -42,7 +43,9 @@ func (a *AppManagement) RegisterAppStore(ctx echo.Context, params codegen.Regist
 		return ctx.JSON(http.StatusOK, codegen.AppStoreRegisterOK{Message: &message})
 	}
 
-	if _, err := service.MyService.AppStoreManagement().RegisterAppStore(*params.Url); err != nil {
+	backgroundCtx := common.WithProperties(context.Background(), PropertiesFromQueryParams(ctx))
+
+	if err := service.MyService.AppStoreManagement().RegisterAppStore(backgroundCtx, *params.Url); err != nil {
 		message := err.Error()
 		if err == service.ErrNotAppStore {
 			return ctx.JSON(http.StatusBadRequest, codegen.ResponseBadRequest{Message: &message})
