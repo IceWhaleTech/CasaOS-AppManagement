@@ -13,6 +13,15 @@ var (
 	}
 )
 
+// appstore properties
+var (
+	PropertyTypeAppStoreURL = message_bus.PropertyType{
+		Name:        "appstore:url",
+		Description: utils.Ptr("URL of the appstore"),
+		Example:     utils.Ptr("https://github.com/IceWhaleTech/_appstore/archive/refs/heads/main.zip"),
+	}
+)
+
 // app properties
 var (
 	PropertyTypeAppName = message_bus.PropertyType{
@@ -58,6 +67,9 @@ var (
 )
 
 var EventTypes = []message_bus.EventType{
+	// app-store
+	EventTypeAppStoreRegisterBegin, EventTypeAppStoreRegisterEnd, EventTypeAppStoreRegisterError,
+
 	// app
 	EventTypeAppInstallBegin, EventTypeAppInstallEnd, EventTypeAppInstallError,
 	EventTypeAppUninstallBegin, EventTypeAppUninstallEnd, EventTypeAppUninstallError,
@@ -81,18 +93,18 @@ var EventTypes = []message_bus.EventType{
 // event types for app-store
 var (
 	EventTypeAppStoreRegisterBegin = message_bus.EventType{
-		SourceID:         AppManagementServiceName,
-		Name:             "app-store:register-begin",
+		SourceID: AppManagementServiceName,
+		Name:     "app-store:register-begin",
 		PropertyTypeList: []message_bus.PropertyType{
-			// TODO: add more properties
+			PropertyTypeAppStoreURL,
 		},
 	}
 
 	EventTypeAppStoreRegisterEnd = message_bus.EventType{
-		SourceID:         AppManagementServiceName,
-		Name:             "app-store:register-end",
+		SourceID: AppManagementServiceName,
+		Name:     "app-store:register-end",
 		PropertyTypeList: []message_bus.PropertyType{
-			// TODO: add more properties
+			PropertyTypeAppStoreURL,
 		},
 	}
 
@@ -101,7 +113,7 @@ var (
 		Name:     "app-store:register-error",
 		PropertyTypeList: []message_bus.PropertyType{
 			PropertyTypeMessage,
-			// TODO: add more properties
+			PropertyTypeAppStoreURL,
 		},
 	}
 )

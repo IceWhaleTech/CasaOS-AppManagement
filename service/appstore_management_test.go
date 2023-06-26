@@ -11,6 +11,7 @@ import (
 	"github.com/IceWhaleTech/CasaOS-AppManagement/service"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/logger"
 	"go.uber.org/goleak"
+	"golang.org/x/net/context"
 	"gotest.tools/v3/assert"
 )
 
@@ -50,8 +51,11 @@ func TestAppStoreList(t *testing.T) {
 		return nil
 	})
 
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	expectAppStoreURL := strings.ToLower("https://github.com/IceWhaleTech/_appstore/archive/refs/heads/main.zip")
-	ch, err := appStoreManagement.RegisterAppStore(expectAppStoreURL)
+	ch, err := appStoreManagement.RegisterAppStore(ctx, expectAppStoreURL)
 	assert.NilError(t, err)
 
 	appStoreMetadata := <-ch
