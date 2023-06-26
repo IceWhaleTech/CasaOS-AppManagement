@@ -58,6 +58,9 @@ var (
 )
 
 var EventTypes = []message_bus.EventType{
+	// app-store
+	EventTypeAppStoreRegisterBegin, EventTypeAppStoreRegisterEnd, EventTypeAppStoreRegisterError,
+
 	// app
 	EventTypeAppInstallBegin, EventTypeAppInstallEnd, EventTypeAppInstallError,
 	EventTypeAppUninstallBegin, EventTypeAppUninstallEnd, EventTypeAppUninstallError,
@@ -77,6 +80,29 @@ var EventTypes = []message_bus.EventType{
 	EventTypeContainerRenameBegin, EventTypeContainerRenameEnd, EventTypeContainerRenameError,
 	EventTypeContainerRemoveBegin, EventTypeContainerRemoveEnd, EventTypeContainerRemoveError,
 }
+
+// event types for app-store
+var (
+	EventTypeAppStoreRegisterBegin = message_bus.EventType{
+		SourceID:         AppManagementServiceName,
+		Name:             "app-store:register-begin",
+		PropertyTypeList: []message_bus.PropertyType{},
+	}
+
+	EventTypeAppStoreRegisterEnd = message_bus.EventType{
+		SourceID:         AppManagementServiceName,
+		Name:             "app-store:register-end",
+		PropertyTypeList: []message_bus.PropertyType{},
+	}
+
+	EventTypeAppStoreRegisterError = message_bus.EventType{
+		SourceID: AppManagementServiceName,
+		Name:     "app-store:register-error",
+		PropertyTypeList: []message_bus.PropertyType{
+			PropertyTypeMessage,
+		},
+	}
+)
 
 // event types for app
 var (
