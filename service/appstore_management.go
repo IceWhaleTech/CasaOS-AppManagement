@@ -58,24 +58,18 @@ func (a *AppStoreManagement) OnAppStoreUnregister(fn func(string) error) {
 	a.onAppStoreUnregister = append(a.onAppStoreUnregister, fn)
 }
 
-func (a *AppStoreManagement) RegisterAppStore(ctx context.Context, appstoreURL string) (chan *codegen.AppStoreMetadata, error) {
+func (a *AppStoreManagement) RegisterAppStore(ctx context.Context, appstoreURL string, callbacks ...func(*codegen.AppStoreMetadata)) error {
 	// check if appstore already exists
 	for _, url := range config.ServerInfo.AppStoreList {
 		if strings.ToLower(url) == strings.ToLower(appstoreURL) {
-			return nil, nil
+			return nil
 		}
 	}
 
 	appstore, err := AppStoreByURL(appstoreURL)
 	if err != nil {
-		return nil, err
+		return err
 	}
-
-	c := make(chan *codegen.AppStoreMetadata)
-
-	// prepare for message bus events
-	eventProperties := common.PropertiesFromContext(ctx)
-	eventProperties[common.PropertyTypeAppStoreURL.Name] = appstoreURL
 
 	go func() {
 		go PublishEventWrapper(ctx, common.EventTypeAppStoreRegisterBegin, nil)
@@ -97,7 +91,6 @@ func (a *AppStoreManagement) RegisterAppStore(ctx context.Context, appstoreURL s
 		if err = appstore.UpdateCatalog(); err != nil {
 			logger.Error("failed to update appstore catalog", zap.Error(err), zap.String("appstoreURL", appstoreURL))
 
-			c <- nil
 			return
 		}
 
@@ -115,13 +108,17 @@ func (a *AppStoreManagement) RegisterAppStore(ctx context.Context, appstoreURL s
 			}
 		}
 
-		c <- &codegen.AppStoreMetadata{
+		appStoreMetadata := &codegen.AppStoreMetadata{
 			ID:  utils.Ptr(len(config.ServerInfo.AppStoreList) - 1),
 			URL: &appstoreURL,
 		}
+
+		for _, callback := range callbacks {
+			callback(appStoreMetadata)
+		}
 	}()
 
-	return c, nil
+	return nil
 }
 
 func (a *AppStoreManagement) UnregisterAppStore(appStoreID uint) error {

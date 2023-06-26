@@ -45,7 +45,7 @@ func (a *AppManagement) RegisterAppStore(ctx echo.Context, params codegen.Regist
 
 	backgroundCtx := common.WithProperties(context.Background(), PropertiesFromQueryParams(ctx))
 
-	if _, err := service.MyService.AppStoreManagement().RegisterAppStore(backgroundCtx, *params.Url); err != nil {
+	if err := service.MyService.AppStoreManagement().RegisterAppStore(backgroundCtx, *params.Url); err != nil {
 		message := err.Error()
 		if err == service.ErrNotAppStore {
 			return ctx.JSON(http.StatusBadRequest, codegen.ResponseBadRequest{Message: &message})
