@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/IceWhaleTech/CasaOS-AppManagement/common"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/pkg/config"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/pkg/docker"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/service"
@@ -53,6 +54,8 @@ func TestAppStoreList(t *testing.T) {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
+
+	ctx = common.WithProperties(ctx, map[string]string{})
 
 	expectAppStoreURL := strings.ToLower("https://github.com/IceWhaleTech/_appstore/archive/refs/heads/main.zip")
 	ch, err := appStoreManagement.RegisterAppStore(ctx, expectAppStoreURL)
