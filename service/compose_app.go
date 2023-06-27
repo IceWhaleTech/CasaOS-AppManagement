@@ -368,6 +368,30 @@ func (a *ComposeApp) Pull(ctx context.Context) error {
 	return nil
 }
 
+func injectEnvVariable(a *ComposeApp) {
+	for _, service := range a.Services {
+		for k, v := range baseEnvironmentMap() {
+			service.Environment[k] = &v
+		}
+	}
+}
+
+func (a *ComposeApp) Up(ctx context.Context, service api.Service) error {
+
+	injectEnvVariable(a)
+
+	if err := service.Up(ctx, (*codegen.ComposeApp)(a), api.UpOptions{
+		Start: api.StartOptions{
+			CascadeStop: true,
+			Wait:        true,
+		},
+	}); err != nil {
+		logger.Error("failed to start original compose app", zap.Error(err), zap.String("name", a.Name))
+		return err
+	}
+	return nil
+}
+
 func (a *ComposeApp) PullAndApply(ctx context.Context, newComposeYAML []byte) error {
 	// backup current compose file
 	currentComposeFile := a.ComposeFiles[0]
@@ -393,15 +417,11 @@ func (a *ComposeApp) PullAndApply(ctx context.Context, newComposeYAML []byte) er
 				return
 			}
 
-			if err := service.Up(ctx, (*codegen.ComposeApp)(a), api.UpOptions{
-				Start: api.StartOptions{
-					CascadeStop: true,
-					Wait:        true,
-				},
-			}); err != nil {
+			if err := a.Up(ctx, service); err != nil {
 				logger.Error("failed to start original compose app", zap.Error(err), zap.String("name", a.Name))
 				return
 			}
+
 		}
 	}()
 
@@ -470,6 +490,11 @@ func (a *ComposeApp) PullAndApply(ctx context.Context, newComposeYAML []byte) er
 	return err
 }
 
+func (a *ComposeApp) Create(ctx context.Context, options api.CreateOptions, service api.Service) error {
+	injectEnvVariable(a)
+	return service.Create(ctx, (*codegen.ComposeApp)(a), api.CreateOptions{})
+}
+
 func (a *ComposeApp) PullAndInstall(ctx context.Context) error {
 	service, dockerClient, err := apiService()
 	if err != nil {
@@ -518,7 +543,7 @@ func (a *ComposeApp) PullAndInstall(ctx context.Context) error {
 			a.Services[i].Devices = deviceMapFiltered
 		}
 
-		if err := service.Create(ctx, (*codegen.ComposeApp)(a), api.CreateOptions{}); err != nil {
+		if err := a.Create(ctx, api.CreateOptions{}, service); err != nil {
 			go PublishEventWrapper(ctx, common.EventTypeContainerCreateError, map[string]string{
 				common.PropertyTypeMessage.Name: err.Error(),
 			})
@@ -535,6 +560,7 @@ func (a *ComposeApp) PullAndInstall(ctx context.Context) error {
 	defer PublishEventWrapper(ctx, common.EventTypeContainerStartEnd, nil)
 
 	if err := service.Start(ctx, a.Name, api.StartOptions{
+		Project:     (*types.Project)(a),
 		CascadeStop: true,
 		Wait:        true,
 	}); err != nil {
@@ -680,7 +706,11 @@ func (a *ComposeApp) SetStatus(ctx context.Context, status codegen.RequestCompos
 
 			defer PublishEventWrapper(ctx, common.EventTypeAppStartEnd, nil)
 
+			fmt.Println("start compose app, 它的env是", a.Environment)
+			a.Environment["OPENAI_API_KEY"] = "nice"
+			fmt.Println("start compose app, 它的env是", a.Environment)
 			if err := service.Start(ctx, a.Name, api.StartOptions{
+				Project:     (*types.Project)(a),
 				CascadeStop: true,
 				Wait:        true,
 			}); err != nil {

@@ -198,6 +198,12 @@ func baseInterpolationMap() map[string]string {
 	}
 }
 
+func baseEnvironmentMap() map[string]string {
+	return map[string]string{
+		"OPENAI_API_KEY": config.AppInfo.OpenAIAPIKey,
+	}
+}
+
 func apiService() (api.Service, client.APIClient, error) {
 	dockerCli, err := command.NewDockerCli()
 	if err != nil {
