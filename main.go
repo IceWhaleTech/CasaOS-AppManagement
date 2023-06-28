@@ -143,6 +143,24 @@ func main() {
 		},
 	}
 
+	// check compose app env var and apply compose
+	{
+		ctx := context.TODO()
+		composeAppsWithStoreInfo, err := service.MyService.Compose().List(ctx)
+		if err != nil {
+
+		}
+		for _, value := range composeAppsWithStoreInfo {
+			for _, app := range value.Services {
+				if app.Environment["OPENAI_API_KEY"] != &config.AppInfo.OpenAIAPIKey {
+					// it mean container need to apply
+					// value.PullAndApply(ctx)
+				}
+			}
+		}
+
+	}
+
 	// notify systemd that we are ready
 	{
 		if supported, err := daemon.SdNotify(false, daemon.SdNotifyReady); err != nil {
