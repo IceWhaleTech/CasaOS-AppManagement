@@ -392,6 +392,51 @@ func (a *ComposeApp) Up(ctx context.Context, service api.Service) error {
 	return nil
 }
 
+func (a *ComposeApp) ReUp(ctx context.Context, service api.Service) error {
+	// prepare source path for volumes if not exist
+	for i, app := range a.Services {
+		for _, volume := range app.Volumes {
+			if _, ok := a.Volumes[volume.Source]; ok {
+				// this is a internal volume, so skip.
+				continue
+			}
+
+			path := volume.Source
+			if err := file.IsNotExistMkDir(path); err != nil {
+				go PublishEventWrapper(ctx, common.EventTypeContainerStartError, map[string]string{
+					common.PropertyTypeMessage.Name: err.Error(),
+				})
+				return err
+			}
+		}
+
+		// check if each required device exists
+		deviceMapFiltered := []string{}
+		for _, deviceMap := range app.Devices {
+			devicePath := strings.SplitN(deviceMap, ":", 2)[0]
+			if file.CheckNotExist(devicePath) {
+				logger.Info("device not found", zap.String("device", devicePath))
+				continue
+			}
+			deviceMapFiltered = append(deviceMapFiltered, deviceMap)
+		}
+		a.Services[i].Devices = deviceMapFiltered
+	}
+
+	if err := service.Up(ctx, (*codegen.ComposeApp)(a), api.UpOptions{
+		Start: api.StartOptions{
+			CascadeStop: true,
+			Wait:        true,
+		},
+	}); err != nil {
+		go PublishEventWrapper(ctx, common.EventTypeContainerStartError, map[string]string{
+			common.PropertyTypeMessage.Name: err.Error(),
+		})
+		return err
+	}
+	return nil
+}
+
 func (a *ComposeApp) PullAndApply(ctx context.Context, newComposeYAML []byte) error {
 	// backup current compose file
 	currentComposeFile := a.ComposeFiles[0]
@@ -443,47 +488,7 @@ func (a *ComposeApp) PullAndApply(ctx context.Context, newComposeYAML []byte) er
 
 	defer PublishEventWrapper(ctx, common.EventTypeContainerStartEnd, nil)
 
-	// prepare source path for volumes if not exist
-	for i, app := range newComposeApp.Services {
-		for _, volume := range app.Volumes {
-			if _, ok := a.Volumes[volume.Source]; ok {
-				// this is a internal volume, so skip.
-				continue
-			}
-
-			path := volume.Source
-			if err := file.IsNotExistMkDir(path); err != nil {
-				go PublishEventWrapper(ctx, common.EventTypeContainerStartError, map[string]string{
-					common.PropertyTypeMessage.Name: err.Error(),
-				})
-				return err
-			}
-		}
-
-		// check if each required device exists
-		deviceMapFiltered := []string{}
-		for _, deviceMap := range app.Devices {
-			devicePath := strings.SplitN(deviceMap, ":", 2)[0]
-			if file.CheckNotExist(devicePath) {
-				logger.Info("device not found", zap.String("device", devicePath))
-				continue
-			}
-			deviceMapFiltered = append(deviceMapFiltered, deviceMap)
-		}
-		newComposeApp.Services[i].Devices = deviceMapFiltered
-	}
-
-	if err := service.Up(ctx, (*codegen.ComposeApp)(newComposeApp), api.UpOptions{
-		Start: api.StartOptions{
-			CascadeStop: true,
-			Wait:        true,
-		},
-	}); err != nil {
-		go PublishEventWrapper(ctx, common.EventTypeContainerStartError, map[string]string{
-			common.PropertyTypeMessage.Name: err.Error(),
-		})
-		return err
-	}
+	err = newComposeApp.ReUp(ctx, service)
 
 	success = true
 

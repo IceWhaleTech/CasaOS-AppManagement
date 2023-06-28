@@ -150,11 +150,17 @@ func main() {
 		if err != nil {
 
 		}
-		for _, value := range composeAppsWithStoreInfo {
-			for _, app := range value.Services {
+		for _, project := range composeAppsWithStoreInfo {
+			for _, app := range project.Services {
 				if app.Environment["OPENAI_API_KEY"] != &config.AppInfo.OpenAIAPIKey {
 					// it mean container need to apply
 					// value.PullAndApply(ctx)
+					service, _, err := service.ApiService()
+					if err != nil {
+
+					}
+					project.ReUp(ctx, service)
+					break
 				}
 			}
 		}

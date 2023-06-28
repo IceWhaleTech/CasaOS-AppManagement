@@ -217,6 +217,10 @@ func apiService() (api.Service, client.APIClient, error) {
 	return compose.NewComposeService(dockerCli), dockerCli.Client(), nil
 }
 
+func ApiService() (api.Service, client.APIClient, error) {
+	return apiService()
+}
+
 func cleanup(workDir string) {
 	logger.Info("cleaning up working dir", zap.String("path", workDir))
 	if err := file.RMDir(workDir); err != nil {
