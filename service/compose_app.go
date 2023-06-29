@@ -560,7 +560,6 @@ func (a *ComposeApp) PullAndInstall(ctx context.Context) error {
 	defer PublishEventWrapper(ctx, common.EventTypeContainerStartEnd, nil)
 
 	if err := service.Start(ctx, a.Name, api.StartOptions{
-		Project:     (*types.Project)(a),
 		CascadeStop: true,
 		Wait:        true,
 	}); err != nil {
@@ -706,11 +705,7 @@ func (a *ComposeApp) SetStatus(ctx context.Context, status codegen.RequestCompos
 
 			defer PublishEventWrapper(ctx, common.EventTypeAppStartEnd, nil)
 
-			fmt.Println("start compose app, 它的env是", a.Environment)
-			a.Environment["OPENAI_API_KEY"] = "nice"
-			fmt.Println("start compose app, 它的env是", a.Environment)
 			if err := service.Start(ctx, a.Name, api.StartOptions{
-				Project:     (*types.Project)(a),
 				CascadeStop: true,
 				Wait:        true,
 			}); err != nil {

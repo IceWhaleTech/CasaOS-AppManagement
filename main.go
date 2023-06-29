@@ -151,25 +151,12 @@ func main() {
 
 		}
 		for _, project := range composeAppsWithStoreInfo {
-			for _, app := range project.Services {
-				if app.Environment["OPENAI_API_KEY"] != &config.AppInfo.OpenAIAPIKey {
-					// it mean container need to apply
-					// value.PullAndApply(ctx)
-					service, _, err := service.ApiService()
-					if err != nil {
-
-					}
-					fmt.Println("有变化，重构")
-					fmt.Println(app.Environment)
-					project.UpWithCheckRequire(ctx, service)
-					break
-				} else {
-					fmt.Println("没有变化")
-					fmt.Println(app.Environment["OPENAI_API_KEY"])
-				}
+			if service, _, err := service.ApiService(); err == nil {
+				project.UpWithCheckRequire(ctx, service)
+			} else {
+				logger.Error("Failed to get Api Service", zap.Any("error", err))
 			}
 		}
-
 	}
 
 	// notify systemd that we are ready

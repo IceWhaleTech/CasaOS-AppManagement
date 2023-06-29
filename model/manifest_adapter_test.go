@@ -14,22 +14,6 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-var ConfigContent = `[common]
-RuntimePath = /var/run/casaos
-
-[app]
-LogPath = /var/log/casaos/
-LogSaveName = app-management
-LogFileExt = log
-DBPath     = /var/lib/casaos/db
-AppStorePath = /var/lib/casaos/appstore
-AppsPath = /var/lib/casaos/apps
-OpenAIAPIKey = [please_input_your_openai_api_key_in_here_like_sk-xxxx]
-
-[server]
-appstore = https://github.com/IceWhaleTech/_appstore/archive/refs/heads/main.zip
-`
-
 func TestCompose(t *testing.T) {
 	var legacyApp model.CustomizationPostData
 
