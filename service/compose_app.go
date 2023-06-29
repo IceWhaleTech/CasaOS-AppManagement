@@ -392,7 +392,7 @@ func (a *ComposeApp) Up(ctx context.Context, service api.Service) error {
 	return nil
 }
 
-func (a *ComposeApp) ReUp(ctx context.Context, service api.Service) error {
+func (a *ComposeApp) UpWithCheckRequire(ctx context.Context, service api.Service) error {
 	// prepare source path for volumes if not exist
 	for i, app := range a.Services {
 		for _, volume := range app.Volumes {
@@ -423,12 +423,7 @@ func (a *ComposeApp) ReUp(ctx context.Context, service api.Service) error {
 		a.Services[i].Devices = deviceMapFiltered
 	}
 
-	if err := service.Up(ctx, (*codegen.ComposeApp)(a), api.UpOptions{
-		Start: api.StartOptions{
-			CascadeStop: true,
-			Wait:        true,
-		},
-	}); err != nil {
+	if err := a.Up(ctx, service); err != nil {
 		go PublishEventWrapper(ctx, common.EventTypeContainerStartError, map[string]string{
 			common.PropertyTypeMessage.Name: err.Error(),
 		})
@@ -488,7 +483,7 @@ func (a *ComposeApp) PullAndApply(ctx context.Context, newComposeYAML []byte) er
 
 	defer PublishEventWrapper(ctx, common.EventTypeContainerStartEnd, nil)
 
-	err = newComposeApp.ReUp(ctx, service)
+	err = newComposeApp.UpWithCheckRequire(ctx, service)
 
 	success = true
 

@@ -159,8 +159,13 @@ func main() {
 					if err != nil {
 
 					}
-					project.ReUp(ctx, service)
+					fmt.Println("有变化，重构")
+					fmt.Println(app.Environment)
+					project.UpWithCheckRequire(ctx, service)
 					break
+				} else {
+					fmt.Println("没有变化")
+					fmt.Println(app.Environment["OPENAI_API_KEY"])
 				}
 			}
 		}
