@@ -31,7 +31,7 @@ func TestCompareDigest(t *testing.T) {
 
 	ctx := context.Background()
 
-	imageName := "alpine:3.18.2"
+	imageName := "alpine:latest"
 
 	out, err := cli.ImagePull(ctx, imageName, types.ImagePullOptions{})
 	assert.NilError(t, err)

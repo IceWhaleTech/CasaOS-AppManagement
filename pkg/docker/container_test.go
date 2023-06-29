@@ -22,7 +22,7 @@ func setupTestContainer(ctx context.Context, t *testing.T) *container.CreateResp
 	assert.NilError(t, err)
 	defer cli.Close()
 
-	imageName := "alpine:3.18.2"
+	imageName := "alpine:latest"
 
 	config := &container.Config{
 		Image: imageName,
