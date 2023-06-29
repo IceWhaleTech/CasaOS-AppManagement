@@ -880,7 +880,6 @@ func NewComposeAppFromYAML(yaml []byte, skipInterpolation, skipValidation bool) 
 			o.SkipValidation = skipValidation
 
 			o.Interpolate.LookupValue = func(key string) (string, bool) {
-				fmt.Println("现在在找的是" + key)
 				switch key {
 				case "WEBUI_PORT":
 					port, err := port.GetAvailablePort("tcp")
@@ -890,9 +889,10 @@ func NewComposeAppFromYAML(yaml []byte, skipInterpolation, skipValidation bool) 
 					return strconv.Itoa(port), true
 				}
 
-				for k, v := range baseInterpolationMap() {
+				for k := range baseInterpolationMap() {
 					if k == key {
-						return v, true
+						// we didn't base interpolation. they should be interpolated in LoadComposeAppFromConfig
+						return k, true
 					}
 				}
 
