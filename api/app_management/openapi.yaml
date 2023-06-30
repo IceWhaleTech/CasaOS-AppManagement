@@ -192,6 +192,36 @@ paths:
           $ref: "#/components/responses/ResponseBadRequest"
         "500":
           $ref: "#/components/responses/ResponseInternalServerError"
+  
+  /openaiapikey:
+    get:
+      summary: Get OPENAI API KEY value
+      description: |
+        (TODO)
+      operationId: openAIAPIKey
+      tags:
+        - AppStore methods
+      responses:
+        "200":
+          $ref: "#/components/responses/OpenAIAPIKeyOK"
+        "500":
+          $ref: "#/components/responses/ResponseInternalServerError"
+   
+    post:
+      summary: Change OPENAI API KEY value
+      description: TODO
+      operationId: ChangeOpenAIAPIKey
+      tags:
+        - AppStore methods
+      parameters:
+        - $ref: "#/components/parameters/OpenAIAPIKey"
+      responses:
+        "200":
+          $ref: "#/components/responses/OpenAIAPIKeyChangeOK"
+        "400":
+          $ref: "#/components/responses/ResponseBadRequest"
+        "500":
+          $ref: "#/components/responses/ResponseInternalServerError"
 
   /appstore/{id}:
     delete:
@@ -577,6 +607,14 @@ components:
         type: string
         example: "https://github.com/IceWhaleTech/CasaOS-AppStore"
 
+    OpenAIAPIKey:
+      name: key
+      description: the key of OpenAI API
+      in: query
+      schema:
+        type: string
+        example: "sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+
     AppStoreID:
       name: id
       description: ID of the app store
@@ -785,6 +823,26 @@ components:
               - $ref: "#/components/schemas/BaseResponse"
 
     AppStoreUnregisterOK:
+      description: OK
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: "#/components/schemas/BaseResponse"
+
+    OpenAIAPIKeyOK:
+      description: OK
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: "#/components/schemas/BaseResponse"
+              - properties:
+                  data:
+                    type: string
+                    example: sk
+
+    OpenAIAPIKeyChangeOK:
       description: OK
       content:
         application/json:

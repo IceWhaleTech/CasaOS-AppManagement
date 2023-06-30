@@ -143,22 +143,6 @@ func main() {
 		},
 	}
 
-	// check compose app env var and apply compose
-	{
-		ctx := context.TODO()
-		composeAppsWithStoreInfo, err := service.MyService.Compose().List(ctx)
-		if err != nil {
-
-		}
-		for _, project := range composeAppsWithStoreInfo {
-			if service, _, err := service.ApiService(); err == nil {
-				project.UpWithCheckRequire(ctx, service)
-			} else {
-				logger.Error("Failed to get Api Service", zap.Any("error", err))
-			}
-		}
-	}
-
 	// notify systemd that we are ready
 	{
 		if supported, err := daemon.SdNotify(false, daemon.SdNotifyReady); err != nil {
