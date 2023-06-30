@@ -26,7 +26,7 @@ func TestIsUpgradable(t *testing.T) {
 
 	logger.LogInitConsoleOnly()
 
-	// mock store compose
+	// mock store compose app
 	storeComposeApp, err := service.NewComposeAppFromYAML([]byte(common.SampleComposeAppYAML), true, false)
 	assert.NilError(t, err)
 

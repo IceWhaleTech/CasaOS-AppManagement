@@ -220,18 +220,6 @@ func (a *AppManagement) InstallComposeApp(ctx echo.Context, params codegen.Insta
 		})
 	}
 
-	// if yaml contains $WEBUI_PORT, replace it with a random available port
-
-	// if strings.Contains(string(buf), "$WEBUI_PORT") {
-	// 	port, _ := port.GetAvailablePort("tcp")
-	// 	fmt.Println("port", port)
-	// 	// replace $WEBUI_PORT with port in yaml
-	// 	// fmt.Println(string(yaml))
-	// 	buf = []byte(strings.ReplaceAll(string(buf), "$WEBUI_PORT", "\""+strconv.Itoa(port)+"\""))
-	// 	// fmt.Println(string(yaml))
-	// 	// os.Setenv("WEBUI_PORT", strconv.Itoa(port))
-	// }
-
 	// validate new compose yaml
 	composeApp, err := service.NewComposeAppFromYAML(buf, false, true)
 	if err != nil {
