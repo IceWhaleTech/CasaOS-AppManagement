@@ -59,6 +59,8 @@ func main() {
 
 		config.InitSetup(*configFlag)
 
+		// TODO: implement logic to read [global] settings from conf file and cache in memory
+
 		logger.LogInit(config.AppInfo.LogPath, config.AppInfo.LogSaveName, config.AppInfo.LogFileExt)
 
 		if len(*dbFlag) == 0 {
