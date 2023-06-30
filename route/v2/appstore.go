@@ -80,14 +80,14 @@ func (a *AppManagement) ChangeOpenAIAPIKey(ctx echo.Context, params codegen.Chan
 
 	// re up all containers
 	go func() {
-		ctx := context.TODO()
-		composeAppsWithStoreInfo, err := service.MyService.Compose().List(ctx)
+		backgroundCtx := common.WithProperties(context.Background(), PropertiesFromQueryParams(ctx))
+		composeAppsWithStoreInfo, err := service.MyService.Compose().List(backgroundCtx)
 		if err != nil {
 
 		}
 		for _, project := range composeAppsWithStoreInfo {
 			if service, _, err := service.ApiService(); err == nil {
-				project.UpWithCheckRequire(ctx, service)
+				project.UpWithCheckRequire(backgroundCtx, service)
 			} else {
 				logger.Error("Failed to get Api Service", zap.Any("error", err))
 			}
