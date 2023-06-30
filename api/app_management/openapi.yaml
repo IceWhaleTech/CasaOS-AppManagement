@@ -175,9 +175,9 @@ paths:
           $ref: "#/components/responses/ResponseInternalServerError"
 
   /global/{key}:
-    post:
-      summary: Set a global setting
-      operationId: setGlobalSetting
+    put:
+      summary: Update a global setting
+      operationId: updateGlobalSetting
       tags:
         - Common methods
       parameters:
@@ -193,6 +193,21 @@ paths:
           $ref: "#/components/responses/GlobalSettingOK"
         "400":
           $ref: "#/components/responses/ResponseBadRequest"
+        "500":
+          $ref: "#/components/responses/ResponseInternalServerError"
+
+    delete:
+      summary: Delete a global setting
+      operationId: deleteGlobalSetting
+      tags:
+        - Common methods
+      parameters:
+        - $ref: "#/components/parameters/GlobalSettingKey"
+      responses:
+        "200":
+          $ref: "#/components/responses/ResponseOK"
+        "404":
+          $ref: "#/components/responses/ResponseNotFound"
         "500":
           $ref: "#/components/responses/ResponseInternalServerError"
 
@@ -778,6 +793,15 @@ components:
               - "stop"
 
   responses:
+    ResponseOK:
+      description: OK
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/BaseResponse"
+          example:
+            message: "OK"
+
     ResponseInternalServerError:
       description: Internal Server Error
       content:
