@@ -196,8 +196,7 @@ paths:
   /openaiapikey:
     get:
       summary: Get OPENAI API KEY value
-      description: |
-        (TODO)
+      description: Get current openai api key value
       operationId: openAIAPIKey
       tags:
         - AppStore methods
@@ -209,7 +208,7 @@ paths:
    
     post:
       summary: Change OPENAI API KEY value
-      description: TODO
+      description: change openai api key
       operationId: ChangeOpenAIAPIKey
       tags:
         - AppStore methods

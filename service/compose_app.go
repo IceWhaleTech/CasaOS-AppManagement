@@ -368,7 +368,7 @@ func (a *ComposeApp) Pull(ctx context.Context) error {
 	return nil
 }
 
-func injectEnvVariable(a *ComposeApp) {
+func injectEnvVariableToComposeApp(a *ComposeApp) {
 	for _, service := range a.Services {
 		for k, v := range baseEnvironmentMap() {
 			service.Environment[k] = &v
@@ -378,7 +378,7 @@ func injectEnvVariable(a *ComposeApp) {
 
 func (a *ComposeApp) Up(ctx context.Context, service api.Service) error {
 
-	injectEnvVariable(a)
+	injectEnvVariableToComposeApp(a)
 
 	if err := service.Up(ctx, (*codegen.ComposeApp)(a), api.UpOptions{
 		Start: api.StartOptions{
@@ -491,7 +491,7 @@ func (a *ComposeApp) PullAndApply(ctx context.Context, newComposeYAML []byte) er
 }
 
 func (a *ComposeApp) Create(ctx context.Context, options api.CreateOptions, service api.Service) error {
-	injectEnvVariable(a)
+	injectEnvVariableToComposeApp(a)
 	return service.Create(ctx, (*codegen.ComposeApp)(a), api.CreateOptions{})
 }
 
