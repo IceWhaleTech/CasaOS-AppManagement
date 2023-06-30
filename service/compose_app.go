@@ -862,6 +862,10 @@ func NewComposeAppFromYAML(yaml []byte, skipInterpolation, skipValidation bool) 
 	}
 	defer os.RemoveAll(tmpWorkingDir)
 
+	// the WEBUI_PORT interpolate will tiger twice. In `pulished` and `port-map`.
+	// So we need to promise multiple WEBUI_PORT interpolate is a same value.
+	port, err := port.GetAvailablePort("tcp")
+
 	project, err := loader.Load(
 		types.ConfigDetails{
 			ConfigFiles: []types.ConfigFile{
@@ -882,17 +886,16 @@ func NewComposeAppFromYAML(yaml []byte, skipInterpolation, skipValidation bool) 
 			o.Interpolate.LookupValue = func(key string) (string, bool) {
 				switch key {
 				case "WEBUI_PORT":
-					port, err := port.GetAvailablePort("tcp")
-					if err != nil {
-						return "", false
-					}
+					fmt.Printf("WEBUI_PORT is not specified, using %d\n", port)
 					return strconv.Itoa(port), true
 				}
 
 				for k := range baseInterpolationMap() {
 					if k == key {
-						// we didn't base interpolation. they should be interpolated in LoadComposeAppFromConfig
-						return k, true
+						// example:  TZ => $TZ
+						// we didn't want to interpolate base interpolation value.
+						// they should be interpolated in LoadComposeAppFromConfig
+						return fmt.Sprintf("$%s", k), true
 					}
 				}
 
