@@ -650,14 +650,6 @@ components:
         type: string
         example: "https://github.com/IceWhaleTech/CasaOS-AppStore"
 
-    OpenAIAPIKey:
-      name: key
-      description: the key of OpenAI API
-      in: query
-      schema:
-        type: string
-        example: "sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-
     AppStoreID:
       name: id
       description: ID of the app store
@@ -899,26 +891,6 @@ components:
               - $ref: "#/components/schemas/BaseResponse"
 
     AppStoreUnregisterOK:
-      description: OK
-      content:
-        application/json:
-          schema:
-            allOf:
-              - $ref: "#/components/schemas/BaseResponse"
-
-    OpenAIAPIKeyOK:
-      description: OK
-      content:
-        application/json:
-          schema:
-            allOf:
-              - $ref: "#/components/schemas/BaseResponse"
-              - properties:
-                  data:
-                    type: string
-                    example: sk
-
-    OpenAIAPIKeyChangeOK:
       description: OK
       content:
         application/json:

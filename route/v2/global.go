@@ -20,7 +20,7 @@ func getGlobalSettingsKeyAndValue() map[string]map[string]string {
 	return map[string]map[string]string{
 		"OPENAPI_AI_KEY": map[string]string{
 			"key":         "OPENAPI_AI_KEY",
-			"value":       config.AppInfo.OpenAIAPIKey,
+			"value":       config.Global.OpenAIAPIKey,
 			"description": "OPENAPI_AI_KEY",
 		},
 	}

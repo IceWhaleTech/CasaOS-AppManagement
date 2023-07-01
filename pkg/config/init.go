@@ -20,11 +20,14 @@ var (
 		LogPath:      "/var/log/casaos",
 		LogSaveName:  common.AppManagementServiceName,
 		LogFileExt:   "log",
-		OpenAIAPIKey: "sk-123456",
 	}
 
 	ServerInfo = &model.ServerModel{
 		AppStoreList: []string{},
+	}
+
+	Global = &model.GlobalModel{
+		OpenAIAPIKey: "sk-123456",
 	}
 
 	CasaOSGlobalVariables = &model.CasaOSGlobalVariables{}
@@ -49,6 +52,7 @@ func InitSetup(config string) {
 	mapTo("common", CommonInfo)
 	mapTo("app", AppInfo)
 	mapTo("server", ServerInfo)
+	mapTo("global", Global)
 }
 
 func SaveSetup() error {

@@ -59,7 +59,7 @@ func (a *AppStoreManagement) OnAppStoreUnregister(fn func(string) error) {
 }
 
 func (a *AppStoreManagement) ChangeOpenAIAPIKey(key string) error {
-	config.AppInfo.OpenAIAPIKey = key
+	config.Global.OpenAIAPIKey = key
 
 	go func() {
 		if err := config.SaveSetup(); err != nil {

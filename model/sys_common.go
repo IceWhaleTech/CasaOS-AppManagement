@@ -11,11 +11,14 @@ type APPModel struct {
 	DBPath       string
 	AppStorePath string
 	AppsPath     string
-	OpenAIAPIKey string
 }
 
 type ServerModel struct {
 	AppStoreList []string `ini:"appstore,,allowshadow"`
+}
+
+type GlobalModel struct {
+	OpenAIAPIKey string
 }
 
 type CasaOSGlobalVariables struct {
