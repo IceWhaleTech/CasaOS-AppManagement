@@ -1,10 +1,12 @@
 package service
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
 	"github.com/IceWhaleTech/CasaOS-AppManagement/codegen"
+	"github.com/IceWhaleTech/CasaOS-AppManagement/common"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/pkg/config"
 	"github.com/IceWhaleTech/CasaOS-Common/utils"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/file"
@@ -69,33 +71,46 @@ func (a *AppStoreManagement) ChangeOpenAIAPIKey(key string) error {
 	return nil
 }
 
-func (a *AppStoreManagement) RegisterAppStore(appstoreURL string) (chan *codegen.AppStoreMetadata, error) {
+func (a *AppStoreManagement) RegisterAppStore(ctx context.Context, appstoreURL string, callbacks ...func(*codegen.AppStoreMetadata)) error {
 	// check if appstore already exists
 	for _, url := range config.ServerInfo.AppStoreList {
 		if strings.ToLower(url) == strings.ToLower(appstoreURL) {
-			return nil, nil
+			return nil
 		}
 	}
 
 	appstore, err := AppStoreByURL(appstoreURL)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	c := make(chan *codegen.AppStoreMetadata)
-
 	go func() {
-		if err := appstore.UpdateCatalog(); err != nil {
+		go PublishEventWrapper(ctx, common.EventTypeAppStoreRegisterBegin, nil)
+
+		defer PublishEventWrapper(ctx, common.EventTypeAppStoreRegisterEnd, nil)
+
+		var err error
+
+		defer func() {
+			if err == nil {
+				return
+			}
+
+			PublishEventWrapper(ctx, common.EventTypeAppStoreRegisterError, map[string]string{
+				common.PropertyTypeMessage.Name: err.Error(),
+			})
+		}()
+
+		if err = appstore.UpdateCatalog(); err != nil {
 			logger.Error("failed to update appstore catalog", zap.Error(err), zap.String("appstoreURL", appstoreURL))
 
-			c <- nil
 			return
 		}
 
 		// if everything is good, add to the list
 		config.ServerInfo.AppStoreList = append(config.ServerInfo.AppStoreList, appstoreURL)
 
-		if err := config.SaveSetup(); err != nil {
+		if err = config.SaveSetup(); err != nil {
 			logger.Error("failed to save appstore list", zap.Error(err), zap.String("appstoreURL", appstoreURL))
 			return
 		}
@@ -106,13 +121,17 @@ func (a *AppStoreManagement) RegisterAppStore(appstoreURL string) (chan *codegen
 			}
 		}
 
-		c <- &codegen.AppStoreMetadata{
+		appStoreMetadata := &codegen.AppStoreMetadata{
 			ID:  utils.Ptr(len(config.ServerInfo.AppStoreList) - 1),
 			URL: &appstoreURL,
 		}
+
+		for _, callback := range callbacks {
+			callback(appStoreMetadata)
+		}
 	}()
 
-	return c, nil
+	return nil
 }
 
 func (a *AppStoreManagement) UnregisterAppStore(appStoreID uint) error {

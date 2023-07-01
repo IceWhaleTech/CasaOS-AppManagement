@@ -12,3 +12,6 @@ OpenAIAPIKey = [please_input_your_openai_api_key_in_here_like_sk-xxxx]
 
 [server]
 appstore = https://github.com/IceWhaleTech/_appstore/archive/refs/heads/main.zip
+
+[global]
+OPENAI_API_KEY = sk-xxxxxx
