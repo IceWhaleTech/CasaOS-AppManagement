@@ -20,14 +20,6 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-func (a *AppManagement) OpenAIAPIKey(ctx echo.Context) error {
-	OpenAIAPIKey := config.AppInfo.OpenAIAPIKey
-
-	return ctx.JSON(http.StatusOK, codegen.OpenAIAPIKeyOK{
-		Data: &OpenAIAPIKey,
-	})
-}
-
 func (a *AppManagement) AppStoreList(ctx echo.Context) error {
 	appStoreList := service.MyService.AppStoreManagement().AppStoreList()
 
