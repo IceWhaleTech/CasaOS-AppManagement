@@ -69,40 +69,6 @@ func (a *AppManagement) RegisterAppStore(ctx echo.Context, params codegen.Regist
 	})
 }
 
-func (a *AppManagement) ChangeOpenAIAPIKey(ctx echo.Context, params codegen.ChangeOpenAIAPIKeyParams) error {
-	if params.Key == nil || *params.Key == "" {
-		message := "openai api key is required"
-		return ctx.JSON(http.StatusBadRequest, codegen.ResponseBadRequest{Message: &message})
-	}
-
-	if err := service.MyService.AppStoreManagement().ChangeOpenAIAPIKey(*params.Key); err != nil {
-		message := err.Error()
-		return ctx.JSON(http.StatusInternalServerError, codegen.ResponseInternalServerError{Message: &message})
-	}
-
-	// re up all containers
-	go func() {
-		backgroundCtx := common.WithProperties(context.Background(), PropertiesFromQueryParams(ctx))
-		composeAppsWithStoreInfo, err := service.MyService.Compose().List(backgroundCtx)
-		if err != nil {
-
-		}
-		for _, project := range composeAppsWithStoreInfo {
-			if service, _, err := service.ApiService(); err == nil {
-				project.UpWithCheckRequire(backgroundCtx, service)
-			} else {
-				logger.Error("Failed to get Api Service", zap.Any("error", err))
-			}
-		}
-	}()
-
-	logFilepath := filepath.Join(config.AppInfo.LogPath, fmt.Sprintf("%s.%s", config.AppInfo.LogSaveName, config.AppInfo.LogFileExt))
-	message := fmt.Sprintf("trying to change openai api key asynchronously - see %s for any errors.", logFilepath)
-	return ctx.JSON(http.StatusOK, codegen.OpenAIAPIKeyChangeOK{
-		Message: &message,
-	})
-}
-
 func (a *AppManagement) UnregisterAppStore(ctx echo.Context, id codegen.AppStoreID) error {
 	appStoreList := service.MyService.AppStoreManagement().AppStoreList()
 
