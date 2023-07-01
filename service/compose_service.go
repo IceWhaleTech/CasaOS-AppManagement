@@ -194,7 +194,6 @@ func baseInterpolationMap() map[string]string {
 		"PUID":            common.DefaultPUID,
 		"PGID":            common.DefaultPGID,
 		"TZ":              timeutils.GetSystemTimeZoneName(),
-		"OPENAI_API_KEY":  config.AppInfo.OpenAIAPIKey,
 	}
 }
 
