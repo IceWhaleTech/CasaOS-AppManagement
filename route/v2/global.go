@@ -90,6 +90,7 @@ func updateOpenAIAPIKey(ctx echo.Context, key string) error {
 		return fmt.Errorf("openai api key is required")
 	}
 
+	// the key means the value of OPENAPI_AI_KEY. Please don't get confused.
 	if err := service.MyService.AppStoreManagement().ChangeOpenAIAPIKey(key); err != nil {
 		return err
 	}
@@ -114,7 +115,10 @@ func updateOpenAIAPIKey(ctx echo.Context, key string) error {
 }
 
 func (a *AppManagement) DeleteGlobalSetting(ctx echo.Context, key codegen.GlobalSettingKey) error {
-	// TODO: implement logic to delete a specific [global] setting in conf file, and remove from cache in memory
+	if err := updateOpenAIAPIKey(ctx, ""); err != nil {
+		message := err.Error()
+		return ctx.JSON(http.StatusBadRequest, codegen.ResponseBadRequest{Message: &message})
+	}
 
 	return ctx.JSON(http.StatusOK, codegen.ResponseOK{})
 }
