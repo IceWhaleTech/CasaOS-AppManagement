@@ -256,7 +256,7 @@ paths:
           $ref: "#/components/responses/ResponseBadRequest"
         "500":
           $ref: "#/components/responses/ResponseInternalServerError"
-  
+
   /appstore/{id}:
     delete:
       summary: Unregister an app store
