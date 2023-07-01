@@ -18,10 +18,10 @@ import (
 
 func getGlobalSettingsKeyAndValue() map[string]map[string]string {
 	return map[string]map[string]string{
-		"OPENAPI_AI_KEY": map[string]string{
+		"OPENAPI_AI_KEY": {
 			"key":         "OPENAPI_AI_KEY",
 			"value":       config.Global.OpenAIAPIKey,
-			"description": "OPENAPI_AI_KEY",
+			"description": "OPENAPI AI KEY",
 		},
 	}
 }
