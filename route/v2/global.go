@@ -2,6 +2,7 @@ package v2
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 
 	"github.com/IceWhaleTech/CasaOS-AppManagement/codegen"
@@ -70,7 +71,7 @@ func (a *AppManagement) UpdateGlobalSetting(ctx echo.Context, key codegen.Global
 	switch key {
 	case "OPENAPI_AI_KEY":
 		if err := updateOpenAIAPIKey(ctx, action.Value); err != nil {
-			message := "openai api key is required"
+			message := err.Error()
 			return ctx.JSON(http.StatusBadRequest, codegen.ResponseBadRequest{Message: &message})
 		}
 	}
@@ -86,16 +87,14 @@ func (a *AppManagement) UpdateGlobalSetting(ctx echo.Context, key codegen.Global
 
 func updateOpenAIAPIKey(ctx echo.Context, key string) error {
 	if key == "" {
-		message := "openai api key is required"
-		return ctx.JSON(http.StatusBadRequest, codegen.ResponseBadRequest{Message: &message})
+		return fmt.Errorf("openai api key is required")
 	}
 
 	if err := service.MyService.AppStoreManagement().ChangeOpenAIAPIKey(key); err != nil {
-		message := err.Error()
-		return ctx.JSON(http.StatusInternalServerError, codegen.ResponseInternalServerError{Message: &message})
+		return err
 	}
 
-	// re up all containers
+	// re up all containers to apply the new env var
 	go func() {
 		backgroundCtx := common.WithProperties(context.Background(), PropertiesFromQueryParams(ctx))
 		composeAppsWithStoreInfo, err := service.MyService.Compose().List(backgroundCtx)
