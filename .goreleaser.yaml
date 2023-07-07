@@ -168,7 +168,7 @@ archives:
     files:
       - build/**/*
   - name_template: >-
-      {{ .Os }}-{{- if eq .Arch "arm" }}arm-7{{- else }}{{ .Arch }}{{- end }}-{{ .ProjectName }}-v{{ .Version }}
+      {{ .Os }}-{{- if eq .Arch "arm" }}arm-7{{- else }}{{ .Arch }}{{- end }}-{{ .ProjectName }}-migration-tool-v{{ .Version }}
     id: casaos-app-management-migration-tool
     builds:
       - casaos-app-management-migration-tool-amd64
