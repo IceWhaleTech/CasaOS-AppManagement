@@ -158,24 +158,22 @@ builds:
       - "7"
 
 archives:
-  - name_template: "{{ .Os }}-{{ .Arch }}-{{ .ProjectName }}-v{{ .Version }}"
+  - name_template: >-
+      {{ .Os }}-{{- if eq .Arch "arm" }}arm-7{{- else }}{{ .Arch }}{{- end }}-{{ .ProjectName }}-v{{ .Version }}
     id: casaos-app-management
     builds:
       - casaos-app-management-amd64
       - casaos-app-management-arm64
       - casaos-app-management-arm-7
-    replacements:
-      arm: arm-7
     files:
       - build/**/*
-  - name_template: "{{ .Os }}-{{ .Arch }}-{{ .ProjectName }}-migration-tool-v{{ .Version }}"
+  - name_template: >-
+      {{ .Os }}-{{- if eq .Arch "arm" }}arm-7{{- else }}{{ .Arch }}{{- end }}-{{ .ProjectName }}-migration-tool-v{{ .Version }}
     id: casaos-app-management-migration-tool
     builds:
       - casaos-app-management-migration-tool-amd64
       - casaos-app-management-migration-tool-arm64
       - casaos-app-management-migration-tool-arm-7
-    replacements:
-      arm: arm-7
     files:
       - build/sysroot/etc/**/*
 
