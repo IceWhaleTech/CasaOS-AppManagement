@@ -100,7 +100,7 @@ func updateOpenAIAPIKey(ctx echo.Context, key string) error {
 		backgroundCtx := common.WithProperties(context.Background(), PropertiesFromQueryParams(ctx))
 		composeAppsWithStoreInfo, err := service.MyService.Compose().List(backgroundCtx)
 		if err != nil {
-
+			logger.Error("Failed to get composeAppsWithStoreInfo", zap.Any("error", err))
 		}
 		for _, project := range composeAppsWithStoreInfo {
 			if service, _, err := service.ApiService(); err == nil {
