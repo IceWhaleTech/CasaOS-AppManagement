@@ -162,6 +162,70 @@ paths:
         "400":
           $ref: "#/components/responses/ResponseBadRequest"
 
+  /global:
+    get:
+      summary: Get all global settings
+      operationId: getGlobalSettings
+      tags:
+        - Common methods
+      responses:
+        "200":
+          $ref: "#/components/responses/GlobalSettingsOK"
+        "500":
+          $ref: "#/components/responses/ResponseInternalServerError"
+
+  /global/{key}:
+    put:
+      summary: Update a global setting
+      operationId: updateGlobalSetting
+      tags:
+        - Common methods
+      parameters:
+        - $ref: "#/components/parameters/GlobalSettingKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GlobalSetting"
+      responses:
+        "200":
+          $ref: "#/components/responses/GlobalSettingOK"
+        "400":
+          $ref: "#/components/responses/ResponseBadRequest"
+        "500":
+          $ref: "#/components/responses/ResponseInternalServerError"
+
+    delete:
+      summary: Delete a global setting
+      operationId: deleteGlobalSetting
+      tags:
+        - Common methods
+      parameters:
+        - $ref: "#/components/parameters/GlobalSettingKey"
+      responses:
+        "200":
+          $ref: "#/components/responses/ResponseOK"
+        "404":
+          $ref: "#/components/responses/ResponseNotFound"
+        "500":
+          $ref: "#/components/responses/ResponseInternalServerError"
+
+    get:
+      summary: Get a global setting
+      operationId: getGlobalSetting
+      tags:
+        - Common methods
+      parameters:
+        - $ref: "#/components/parameters/GlobalSettingKey"
+      responses:
+        "200":
+          $ref: "#/components/responses/GlobalSettingOK"
+        "404":
+          $ref: "#/components/responses/ResponseNotFound"
+        "500":
+          $ref: "#/components/responses/ResponseInternalServerError"
+
   /appstore:
     get:
       summary: Get the list of registered app stores
@@ -569,6 +633,15 @@ components:
       name: Authorization
 
   parameters:
+    GlobalSettingKey:
+      name: key
+      description: Key of the global setting
+      in: path
+      required: true
+      schema:
+        type: string
+        example: "OPENAI_API_KEY"
+
     AppStoreURL:
       name: url
       description: URL of the app store
@@ -720,6 +793,15 @@ components:
               - "stop"
 
   responses:
+    ResponseOK:
+      description: OK
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/BaseResponse"
+          example:
+            message: "OK"
+
     ResponseInternalServerError:
       description: Internal Server Error
       content:
@@ -762,6 +844,30 @@ components:
         application/json:
           schema:
             $ref: "#/components/schemas/Info"
+
+    GlobalSettingOK:
+      description: OK
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: "#/components/schemas/BaseResponse"
+              - properties:
+                  data:
+                    $ref: "#/components/schemas/GlobalSetting"
+
+    GlobalSettingsOK:
+      description: OK
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: "#/components/schemas/BaseResponse"
+              - properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/GlobalSetting"
 
     AppStoreListOK:
       description: OK
@@ -983,6 +1089,25 @@ components:
           type: string
           readOnly: true
           example: "amd64"
+
+    GlobalSetting:
+      required:
+        - key
+        - value
+      properties:
+        key:
+          description: key of the setting
+          type: string
+          readOnly: true
+          example: "OPENAI_API_KEY"
+        value:
+          description: value of the setting
+          type: string
+          example: "sk-xxxxxxx"
+        description:
+          description: description of the setting
+          type: string
+          example: "OpenAI API Key"
 
     AppStoreMetadata:
       properties:

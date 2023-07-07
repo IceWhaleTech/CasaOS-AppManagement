@@ -17,6 +17,10 @@ type ServerModel struct {
 	AppStoreList []string `ini:"appstore,,allowshadow"`
 }
 
+type GlobalModel struct {
+	OpenAIAPIKey string
+}
+
 type CasaOSGlobalVariables struct {
 	AppChange bool
 }

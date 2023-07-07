@@ -26,6 +26,10 @@ var (
 		AppStoreList: []string{},
 	}
 
+	Global = &model.GlobalModel{
+		OpenAIAPIKey: "sk-123456",
+	}
+
 	CasaOSGlobalVariables = &model.CasaOSGlobalVariables{}
 
 	Cfg            *ini.File
@@ -48,6 +52,7 @@ func InitSetup(config string) {
 	mapTo("common", CommonInfo)
 	mapTo("app", AppInfo)
 	mapTo("server", ServerInfo)
+	mapTo("global", Global)
 }
 
 func SaveSetup() error {

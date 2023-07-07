@@ -197,6 +197,12 @@ func baseInterpolationMap() map[string]string {
 	}
 }
 
+func baseEnvironmentMap() map[string]string {
+	return map[string]string{
+		"OPENAI_API_KEY": config.Global.OpenAIAPIKey,
+	}
+}
+
 func apiService() (api.Service, client.APIClient, error) {
 	dockerCli, err := command.NewDockerCli()
 	if err != nil {
@@ -208,6 +214,10 @@ func apiService() (api.Service, client.APIClient, error) {
 	}
 
 	return compose.NewComposeService(dockerCli), dockerCli.Client(), nil
+}
+
+func ApiService() (api.Service, client.APIClient, error) {
+	return apiService()
 }
 
 func cleanup(workDir string) {

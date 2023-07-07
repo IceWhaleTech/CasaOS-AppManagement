@@ -58,6 +58,19 @@ func (a *AppStoreManagement) OnAppStoreUnregister(fn func(string) error) {
 	a.onAppStoreUnregister = append(a.onAppStoreUnregister, fn)
 }
 
+func (a *AppStoreManagement) ChangeOpenAIAPIKey(key string) error {
+	config.Global.OpenAIAPIKey = key
+
+	go func() {
+		if err := config.SaveSetup(); err != nil {
+			logger.Error("failed to save openai api key", zap.Error(err), zap.String("OpenAI API Key", key))
+			return
+		}
+	}()
+
+	return nil
+}
+
 func (a *AppStoreManagement) RegisterAppStore(ctx context.Context, appstoreURL string, callbacks ...func(*codegen.AppStoreMetadata)) error {
 	// check if appstore already exists
 	for _, url := range config.ServerInfo.AppStoreList {

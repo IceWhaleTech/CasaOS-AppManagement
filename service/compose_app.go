@@ -368,63 +368,33 @@ func (a *ComposeApp) Pull(ctx context.Context) error {
 	return nil
 }
 
-func (a *ComposeApp) PullAndApply(ctx context.Context, newComposeYAML []byte) error {
-	// backup current compose file
-	currentComposeFile := a.ComposeFiles[0]
-
-	backupComposeFile := currentComposeFile + "." + "bak"
-	if err := file.CopySingleFile(currentComposeFile, backupComposeFile, ""); err != nil {
-		return err
-	}
-
-	// start compose app
-	service, dockerClient, err := apiService()
-	if err != nil {
-		return err
-	}
-	defer dockerClient.Close()
-
-	success := false
-
-	defer func() {
-		if !success {
-			if err := file.CopySingleFile(backupComposeFile, currentComposeFile, ""); err != nil {
-				logger.Error("failed to restore original compose file", zap.Error(err), zap.String("src", backupComposeFile), zap.String("dst", currentComposeFile))
-				return
-			}
-
-			if err := service.Up(ctx, (*codegen.ComposeApp)(a), api.UpOptions{
-				Start: api.StartOptions{
-					CascadeStop: true,
-					Wait:        true,
-				},
-			}); err != nil {
-				logger.Error("failed to start original compose app", zap.Error(err), zap.String("name", a.Name))
-				return
-			}
+func injectEnvVariableToComposeApp(a *ComposeApp) {
+	for _, service := range a.Services {
+		for k, v := range baseEnvironmentMap() {
+			service.Environment[k] = &v
 		}
-	}()
+	}
+}
 
-	// save new compose file
-	if err := file.WriteToFullPath(newComposeYAML, currentComposeFile, 0o600); err != nil {
+func (a *ComposeApp) Up(ctx context.Context, service api.Service) error {
+
+	injectEnvVariableToComposeApp(a)
+
+	if err := service.Up(ctx, (*codegen.ComposeApp)(a), api.UpOptions{
+		Start: api.StartOptions{
+			CascadeStop: true,
+			Wait:        true,
+		},
+	}); err != nil {
+		logger.Error("failed to start original compose app", zap.Error(err), zap.String("name", a.Name))
 		return err
 	}
+	return nil
+}
 
-	newComposeApp, err := LoadComposeAppFromConfigFile(a.Name, currentComposeFile)
-	if err != nil {
-		return err
-	}
-
-	if err := newComposeApp.Pull(ctx); err != nil {
-		return err
-	}
-
-	go PublishEventWrapper(ctx, common.EventTypeContainerStartBegin, nil)
-
-	defer PublishEventWrapper(ctx, common.EventTypeContainerStartEnd, nil)
-
+func (a *ComposeApp) UpWithCheckRequire(ctx context.Context, service api.Service) error {
 	// prepare source path for volumes if not exist
-	for i, app := range newComposeApp.Services {
+	for i, app := range a.Services {
 		for _, volume := range app.Volumes {
 			if _, ok := a.Volumes[volume.Source]; ok {
 				// this is a internal volume, so skip.
@@ -450,24 +420,79 @@ func (a *ComposeApp) PullAndApply(ctx context.Context, newComposeYAML []byte) er
 			}
 			deviceMapFiltered = append(deviceMapFiltered, deviceMap)
 		}
-		newComposeApp.Services[i].Devices = deviceMapFiltered
+		a.Services[i].Devices = deviceMapFiltered
 	}
 
-	if err := service.Up(ctx, (*codegen.ComposeApp)(newComposeApp), api.UpOptions{
-		Start: api.StartOptions{
-			CascadeStop: true,
-			Wait:        true,
-		},
-	}); err != nil {
+	if err := a.Up(ctx, service); err != nil {
 		go PublishEventWrapper(ctx, common.EventTypeContainerStartError, map[string]string{
 			common.PropertyTypeMessage.Name: err.Error(),
 		})
 		return err
 	}
+	return nil
+}
+
+func (a *ComposeApp) PullAndApply(ctx context.Context, newComposeYAML []byte) error {
+	// backup current compose file
+	currentComposeFile := a.ComposeFiles[0]
+
+	backupComposeFile := currentComposeFile + "." + "bak"
+	if err := file.CopySingleFile(currentComposeFile, backupComposeFile, ""); err != nil {
+		return err
+	}
+
+	// start compose app
+	service, dockerClient, err := apiService()
+	if err != nil {
+		return err
+	}
+	defer dockerClient.Close()
+
+	success := false
+
+	defer func() {
+		if !success {
+			if err := file.CopySingleFile(backupComposeFile, currentComposeFile, ""); err != nil {
+				logger.Error("failed to restore original compose file", zap.Error(err), zap.String("src", backupComposeFile), zap.String("dst", currentComposeFile))
+				return
+			}
+
+			if err := a.Up(ctx, service); err != nil {
+				logger.Error("failed to start original compose app", zap.Error(err), zap.String("name", a.Name))
+				return
+			}
+
+		}
+	}()
+
+	// save new compose file
+	if err := file.WriteToFullPath(newComposeYAML, currentComposeFile, 0o600); err != nil {
+		return err
+	}
+
+	newComposeApp, err := LoadComposeAppFromConfigFile(a.Name, currentComposeFile)
+	if err != nil {
+		return err
+	}
+
+	if err := newComposeApp.Pull(ctx); err != nil {
+		return err
+	}
+
+	go PublishEventWrapper(ctx, common.EventTypeContainerStartBegin, nil)
+
+	defer PublishEventWrapper(ctx, common.EventTypeContainerStartEnd, nil)
+
+	err = newComposeApp.UpWithCheckRequire(ctx, service)
 
 	success = true
 
 	return err
+}
+
+func (a *ComposeApp) Create(ctx context.Context, options api.CreateOptions, service api.Service) error {
+	injectEnvVariableToComposeApp(a)
+	return service.Create(ctx, (*codegen.ComposeApp)(a), api.CreateOptions{})
 }
 
 func (a *ComposeApp) PullAndInstall(ctx context.Context) error {
@@ -518,7 +543,7 @@ func (a *ComposeApp) PullAndInstall(ctx context.Context) error {
 			a.Services[i].Devices = deviceMapFiltered
 		}
 
-		if err := service.Create(ctx, (*codegen.ComposeApp)(a), api.CreateOptions{}); err != nil {
+		if err := a.Create(ctx, api.CreateOptions{}, service); err != nil {
 			go PublishEventWrapper(ctx, common.EventTypeContainerCreateError, map[string]string{
 				common.PropertyTypeMessage.Name: err.Error(),
 			})
