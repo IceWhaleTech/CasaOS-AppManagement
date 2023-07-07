@@ -42,7 +42,7 @@ jobs:
         with:
           # either 'goreleaser' (default) or 'goreleaser-pro'
           distribution: goreleaser
-          version: latest
+          version: 1.14.1
           args: release --rm-dist --snapshot
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -76,6 +76,10 @@ jobs:
         run: |
           sshpass -p "${{ secrets.ssh_password }}" scp -r -o StrictHostKeyChecking=no -P 22 ./dist/*.gz root@10.147.18.11:/var/www/download
           echo "ping success"
-      - name: send message
+#       - name: send message
+#         run: |
+#           curl -X POST -H "Content-Type: application/json" -d '{"msg_type":"text","content":{"text":"CasaOS-AppManagement updated"}}' ${{ secrets.SSH_ROBOT_URL }}
+      - name: Error Handling
+        if: ${{ failure() }}
         run: |
-          curl -X POST -H "Content-Type: application/json" -d '{"msg_type":"text","content":{"text":"CasaOS-AppManagement updated"}}' ${{ secrets.SSH_ROBOT_URL }}
+          curl -X POST -H "Content-Type: application/json" -d '{"msg_type":"text","content":{"text":"CasaOS-AppManagement push Error"}}' ${{ secrets.SSH_ROBOT_URL }} 
