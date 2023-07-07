@@ -238,7 +238,6 @@ require (
 )
 
 replace (
-	github.com/IceWhaleTech/CasaOS-Common => ../CasaOS-Common
 	// Below copied from https://github.com/docker/compose/blob/v2/go.mod
 
 	// Override for e2e tests
