@@ -274,10 +274,9 @@ func (a *ComposeApp) Update(ctx context.Context) error {
 	// prepare for message bus events
 	eventProperties := common.PropertiesFromContext(ctx)
 	eventProperties[common.PropertyTypeAppName.Name] = a.Name
-	eventProperties[common.PropertyTypeAppIcon.Name] = storeInfo.Icon
 
-	if err := updateAppTitleEventProperty(storeInfo, eventProperties); err != nil {
-		logger.Info("failed to update app title event property", zap.Error(err), zap.String("name", a.Name))
+	if err := a.UpdateEventPropertiesFromStoreInfo(eventProperties); err != nil {
+		logger.Info("failed to update event properties from store info", zap.Error(err), zap.String("name", a.Name))
 	}
 
 	go func(ctx context.Context) {
@@ -665,19 +664,8 @@ func (a *ComposeApp) Apply(ctx context.Context, newComposeYAML []byte) error {
 	eventProperties[common.PropertyTypeAppName.Name] = a.Name
 
 	// prepare for message bus events
-	storeInfo, err := a.StoreInfo(true)
-	if err != nil {
-		logger.Info("failed to get store info", zap.Error(err), zap.String("name", a.Name))
-	}
-
-	if storeInfo != nil {
-		eventProperties[common.PropertyTypeAppIcon.Name] = storeInfo.Icon
-
-		if err := updateAppTitleEventProperty(storeInfo, eventProperties); err != nil {
-			logger.Info("failed to update app title event property", zap.Error(err), zap.String("name", a.Name))
-		}
-	} else {
-		logger.Info("compose app store info not found", zap.String("name", a.Name))
+	if err := a.UpdateEventPropertiesFromStoreInfo(eventProperties); err != nil {
+		logger.Info("failed to update event properties from store info", zap.Error(err), zap.String("name", a.Name))
 	}
 
 	go func(ctx context.Context) {
@@ -817,6 +805,29 @@ func (a *ComposeApp) GetPortsInUse() (*codegen.ComposeAppValidationErrorsPortsIn
 	}{TCP: &tcpPortInUse, UDP: &udpPortInUse}
 
 	return &codegen.ComposeAppValidationErrorsPortsInUse{PortsInUse: &portsInUse}, nil
+}
+
+// Try to update AppIcon and AppTitle in given event properties from store info
+func (a *ComposeApp) UpdateEventPropertiesFromStoreInfo(eventProperties map[string]string) error {
+	storeInfo, err := a.StoreInfo(false)
+	if err != nil {
+		return err
+	}
+
+	eventProperties[common.PropertyTypeAppIcon.Name] = storeInfo.Icon
+
+	if storeInfo.Title == nil {
+		return fmt.Errorf("compose app title not found in store info")
+	}
+
+	titles, err := json.Marshal(storeInfo.Title)
+	if err != nil {
+		return err
+	}
+
+	eventProperties[common.PropertyTypeAppTitle.Name] = string(titles)
+
+	return nil
 }
 
 func (a *ComposeApp) HealthCheck() (bool, error) {
@@ -966,20 +977,4 @@ func getNameFrom(composeYAML []byte) string {
 	}
 
 	return baseStructure.Name
-}
-
-// Update AppTitle event property where titles are in different languages serialized in JSON
-func updateAppTitleEventProperty(storeInfo *codegen.ComposeAppStoreInfo, eventProperties map[string]string) error {
-	if storeInfo == nil || storeInfo.Title == nil {
-		return fmt.Errorf("compose app title not found in store info")
-	}
-
-	titles, err := json.Marshal(storeInfo.Title)
-	if err != nil {
-		return err
-	}
-
-	eventProperties[common.PropertyTypeAppTitle.Name] = string(titles)
-
-	return nil
 }

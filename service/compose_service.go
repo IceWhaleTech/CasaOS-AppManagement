@@ -77,19 +77,8 @@ func (s *ComposeService) Install(ctx context.Context, composeApp *ComposeApp) er
 	eventProperties := common.PropertiesFromContext(ctx)
 	eventProperties[common.PropertyTypeAppName.Name] = composeApp.Name
 
-	storeInfo, err := composeApp.StoreInfo(true)
-	if err != nil {
-		logger.Info("failed to get store info", zap.Error(err), zap.String("name", composeApp.Name))
-	}
-
-	if storeInfo != nil {
-		eventProperties[common.PropertyTypeAppIcon.Name] = storeInfo.Icon
-
-		if err := updateAppTitleEventProperty(storeInfo, eventProperties); err != nil {
-			logger.Info("failed to update app title event property", zap.Error(err), zap.String("name", composeApp.Name))
-		}
-	} else {
-		logger.Info("compose app store info not found", zap.String("name", composeApp.Name))
+	if err := composeApp.UpdateEventPropertiesFromStoreInfo(eventProperties); err != nil {
+		logger.Info("failed to update event properties from store info", zap.Error(err), zap.String("name", composeApp.Name))
 	}
 
 	go func(ctx context.Context) {
@@ -114,19 +103,8 @@ func (s *ComposeService) Uninstall(ctx context.Context, composeApp *ComposeApp, 
 	eventProperties := common.PropertiesFromContext(ctx)
 	eventProperties[common.PropertyTypeAppName.Name] = composeApp.Name
 
-	storeInfo, err := composeApp.StoreInfo(true)
-	if err != nil {
-		logger.Info("failed to get store info", zap.Error(err), zap.String("name", composeApp.Name))
-	}
-
-	if storeInfo != nil {
-		eventProperties[common.PropertyTypeAppIcon.Name] = storeInfo.Icon
-
-		if err := updateAppTitleEventProperty(storeInfo, eventProperties); err != nil {
-			logger.Info("failed to update app title event property", zap.Error(err), zap.String("name", composeApp.Name))
-		}
-	} else {
-		logger.Info("compose app store info not found", zap.String("name", composeApp.Name))
+	if err := composeApp.UpdateEventPropertiesFromStoreInfo(eventProperties); err != nil {
+		logger.Info("failed to update event properties from store info", zap.Error(err), zap.String("name", composeApp.Name))
 	}
 
 	go func(ctx context.Context) {
