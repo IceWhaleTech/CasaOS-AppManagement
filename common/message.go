@@ -24,7 +24,7 @@ var (
 	PropertyTypeAppTitle = message_bus.PropertyType{
 		Name:        "app:title",
 		Description: utils.Ptr("titles of the app in different languages - serialized as JSON"),
-		// TODO: add example
+		Example:     utils.Ptr("{\"en_us\":\"OpenSpeedTest\"}"),
 	}
 
 	PropertyTypeAppIcon = message_bus.PropertyType{
