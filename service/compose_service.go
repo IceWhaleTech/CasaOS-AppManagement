@@ -78,8 +78,28 @@ func (s *ComposeService) Install(ctx context.Context, composeApp *ComposeApp) er
 	eventProperties[common.PropertyTypeAppName.Name] = composeApp.Name
 
 	storeInfo, err := composeApp.StoreInfo(true)
-	if err == nil && storeInfo != nil {
+	if err != nil {
+		logger.Info("failed to get store info", zap.Error(err), zap.String("name", composeApp.Name))
+	}
+
+	if storeInfo != nil {
 		eventProperties[common.PropertyTypeAppIcon.Name] = storeInfo.Icon
+
+		// titles in different languages serialized in JSON
+		if storeInfo.Title != nil {
+			titles, err := json.Marshal(storeInfo.Title)
+			if err != nil {
+				logger.Info("failed to get store info", zap.Error(err), zap.String("name", composeApp.Name))
+			}
+
+			if titles != nil {
+				eventProperties[common.PropertyTypeAppTitle.Name] = string(titles)
+			}
+		} else {
+			logger.Info("compose app title not found in store info", zap.String("name", composeApp.Name))
+		}
+	} else {
+		logger.Info("compose app store info not found", zap.String("name", composeApp.Name))
 	}
 
 	go func(ctx context.Context) {
@@ -101,15 +121,32 @@ func (s *ComposeService) Install(ctx context.Context, composeApp *ComposeApp) er
 
 func (s *ComposeService) Uninstall(ctx context.Context, composeApp *ComposeApp, deleteConfigFolder bool) error {
 	// prepare for message bus events
-	storeInfo, err := composeApp.StoreInfo(true)
-	if err != nil {
-		logger.Error("failed to get store info", zap.Error(err), zap.String("name", composeApp.Name))
-	}
-
 	eventProperties := common.PropertiesFromContext(ctx)
 	eventProperties[common.PropertyTypeAppName.Name] = composeApp.Name
+
+	storeInfo, err := composeApp.StoreInfo(true)
+	if err != nil {
+		logger.Info("failed to get store info", zap.Error(err), zap.String("name", composeApp.Name))
+	}
+
 	if storeInfo != nil {
 		eventProperties[common.PropertyTypeAppIcon.Name] = storeInfo.Icon
+
+		// titles in different languages serialized in JSON
+		if storeInfo.Title != nil {
+			titles, err := json.Marshal(storeInfo.Title)
+			if err != nil {
+				logger.Info("failed to marshal compose app titles", zap.Error(err), zap.String("name", composeApp.Name))
+			}
+
+			if titles != nil {
+				eventProperties[common.PropertyTypeAppTitle.Name] = string(titles)
+			}
+		} else {
+			logger.Info("compose app title not found in store info", zap.String("name", composeApp.Name))
+		}
+	} else {
+		logger.Info("compose app store info not found", zap.String("name", composeApp.Name))
 	}
 
 	go func(ctx context.Context) {
