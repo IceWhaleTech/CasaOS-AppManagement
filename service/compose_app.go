@@ -371,7 +371,11 @@ func (a *ComposeApp) Pull(ctx context.Context) error {
 func injectEnvVariableToComposeApp(a *ComposeApp) {
 	for _, service := range a.Services {
 		for k, v := range baseEnvironmentMap() {
-			service.Environment[k] = &v
+			// if there is same name var declared in environment in compose yaml
+			// we should not reassign a value to it.
+			if service.Environment[k] == nil {
+				service.Environment[k] = &v
+			}
 		}
 	}
 }
