@@ -276,18 +276,8 @@ func (a *ComposeApp) Update(ctx context.Context) error {
 	eventProperties[common.PropertyTypeAppName.Name] = a.Name
 	eventProperties[common.PropertyTypeAppIcon.Name] = storeInfo.Icon
 
-	// titles in different languages serialized in JSON
-	if storeInfo.Title != nil {
-		titles, err := json.Marshal(storeInfo.Title)
-		if err != nil {
-			logger.Info("failed to marshal compose app titles", zap.Error(err), zap.String("name", a.Name))
-		}
-
-		if titles != nil {
-			eventProperties[common.PropertyTypeAppTitle.Name] = string(titles)
-		}
-	} else {
-		logger.Info("compose app title not found in store info", zap.String("name", a.Name))
+	if err := updateAppTitleEventProperty(storeInfo, eventProperties); err != nil {
+		logger.Info("failed to update app title event property", zap.Error(err), zap.String("name", a.Name))
 	}
 
 	go func(ctx context.Context) {
@@ -683,18 +673,8 @@ func (a *ComposeApp) Apply(ctx context.Context, newComposeYAML []byte) error {
 	if storeInfo != nil {
 		eventProperties[common.PropertyTypeAppIcon.Name] = storeInfo.Icon
 
-		// titles in different languages serialized in JSON
-		if storeInfo.Title != nil {
-			titles, err := json.Marshal(storeInfo.Title)
-			if err != nil {
-				logger.Info("failed to marshal compose app titles", zap.Error(err), zap.String("name", a.Name))
-			}
-
-			if titles != nil {
-				eventProperties[common.PropertyTypeAppTitle.Name] = string(titles)
-			}
-		} else {
-			logger.Info("compose app title not found in store info", zap.String("name", a.Name))
+		if err := updateAppTitleEventProperty(storeInfo, eventProperties); err != nil {
+			logger.Info("failed to update app title event property", zap.Error(err), zap.String("name", a.Name))
 		}
 	} else {
 		logger.Info("compose app store info not found", zap.String("name", a.Name))
@@ -986,4 +966,20 @@ func getNameFrom(composeYAML []byte) string {
 	}
 
 	return baseStructure.Name
+}
+
+// Update AppTitle event property where titles are in different languages serialized in JSON
+func updateAppTitleEventProperty(storeInfo *codegen.ComposeAppStoreInfo, eventProperties map[string]string) error {
+	if storeInfo == nil || storeInfo.Title == nil {
+		return fmt.Errorf("compose app title not found in store info")
+	}
+
+	titles, err := json.Marshal(storeInfo.Title)
+	if err != nil {
+		return err
+	}
+
+	eventProperties[common.PropertyTypeAppTitle.Name] = string(titles)
+
+	return nil
 }

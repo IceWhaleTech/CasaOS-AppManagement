@@ -85,18 +85,8 @@ func (s *ComposeService) Install(ctx context.Context, composeApp *ComposeApp) er
 	if storeInfo != nil {
 		eventProperties[common.PropertyTypeAppIcon.Name] = storeInfo.Icon
 
-		// titles in different languages serialized in JSON
-		if storeInfo.Title != nil {
-			titles, err := json.Marshal(storeInfo.Title)
-			if err != nil {
-				logger.Info("failed to get store info", zap.Error(err), zap.String("name", composeApp.Name))
-			}
-
-			if titles != nil {
-				eventProperties[common.PropertyTypeAppTitle.Name] = string(titles)
-			}
-		} else {
-			logger.Info("compose app title not found in store info", zap.String("name", composeApp.Name))
+		if err := updateAppTitleEventProperty(storeInfo, eventProperties); err != nil {
+			logger.Info("failed to update app title event property", zap.Error(err), zap.String("name", composeApp.Name))
 		}
 	} else {
 		logger.Info("compose app store info not found", zap.String("name", composeApp.Name))
@@ -132,18 +122,8 @@ func (s *ComposeService) Uninstall(ctx context.Context, composeApp *ComposeApp, 
 	if storeInfo != nil {
 		eventProperties[common.PropertyTypeAppIcon.Name] = storeInfo.Icon
 
-		// titles in different languages serialized in JSON
-		if storeInfo.Title != nil {
-			titles, err := json.Marshal(storeInfo.Title)
-			if err != nil {
-				logger.Info("failed to marshal compose app titles", zap.Error(err), zap.String("name", composeApp.Name))
-			}
-
-			if titles != nil {
-				eventProperties[common.PropertyTypeAppTitle.Name] = string(titles)
-			}
-		} else {
-			logger.Info("compose app title not found in store info", zap.String("name", composeApp.Name))
+		if err := updateAppTitleEventProperty(storeInfo, eventProperties); err != nil {
+			logger.Info("failed to update app title event property", zap.Error(err), zap.String("name", composeApp.Name))
 		}
 	} else {
 		logger.Info("compose app store info not found", zap.String("name", composeApp.Name))
