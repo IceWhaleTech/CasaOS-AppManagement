@@ -809,6 +809,10 @@ func (a *ComposeApp) GetPortsInUse() (*codegen.ComposeAppValidationErrorsPortsIn
 
 // Try to update AppIcon and AppTitle in given event properties from store info
 func (a *ComposeApp) UpdateEventPropertiesFromStoreInfo(eventProperties map[string]string) error {
+	if eventProperties == nil {
+		return fmt.Errorf("event properties is nil")
+	}
+
 	storeInfo, err := a.StoreInfo(false)
 	if err != nil {
 		return err

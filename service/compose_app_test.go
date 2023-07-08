@@ -1,6 +1,7 @@
 package service_test
 
 import (
+	"encoding/json"
 	"path/filepath"
 	"runtime"
 	"testing"
@@ -14,6 +15,47 @@ import (
 	"gopkg.in/yaml.v3"
 	"gotest.tools/v3/assert"
 )
+
+func TestUpdateEventPropertiesFromStoreInfo(t *testing.T) {
+	defer goleak.VerifyNone(t, goleak.IgnoreTopFunction("go.opencensus.io/stats/view.(*worker).start")) // https://github.com/census-instrumentation/opencensus-go/issues/1191
+
+	defer func() {
+		// workaround due to https://github.com/patrickmn/go-cache/issues/166
+		docker.Cache = nil
+		runtime.GC()
+	}()
+
+	logger.LogInitConsoleOnly()
+
+	// mock store compose app
+	storeComposeApp, err := service.NewComposeAppFromYAML([]byte(common.SampleComposeAppYAML), true, false)
+	assert.NilError(t, err)
+
+	storeInfo, err := storeComposeApp.StoreInfo(false)
+	assert.NilError(t, err)
+
+	eventProperties := map[string]string{}
+	err = storeComposeApp.UpdateEventPropertiesFromStoreInfo(eventProperties)
+	assert.NilError(t, err)
+
+	// icon
+	appIcon, ok := eventProperties[common.PropertyTypeAppIcon.Name]
+	assert.Assert(t, ok)
+	assert.Equal(t, appIcon, storeInfo.Icon)
+
+	// title
+	appTitle, ok := eventProperties[common.PropertyTypeAppTitle.Name]
+	assert.Assert(t, ok)
+
+	titles := map[string]string{}
+	err = json.Unmarshal([]byte(appTitle), &titles)
+	assert.NilError(t, err)
+
+	title, ok := titles[common.DefaultLanguage]
+	assert.Assert(t, ok)
+
+	assert.Equal(t, title, storeInfo.Title[common.DefaultLanguage])
+}
 
 func TestIsUpgradable(t *testing.T) {
 	defer goleak.VerifyNone(t, goleak.IgnoreTopFunction("go.opencensus.io/stats/view.(*worker).start")) // https://github.com/census-instrumentation/opencensus-go/issues/1191
