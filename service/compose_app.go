@@ -274,7 +274,10 @@ func (a *ComposeApp) Update(ctx context.Context) error {
 	// prepare for message bus events
 	eventProperties := common.PropertiesFromContext(ctx)
 	eventProperties[common.PropertyTypeAppName.Name] = a.Name
-	eventProperties[common.PropertyTypeAppIcon.Name] = storeInfo.Icon
+
+	if err := a.UpdateEventPropertiesFromStoreInfo(eventProperties); err != nil {
+		logger.Info("failed to update event properties from store info", zap.Error(err), zap.String("name", a.Name))
+	}
 
 	go func(ctx context.Context) {
 		go PublishEventWrapper(ctx, common.EventTypeAppUpdateBegin, nil)
@@ -377,7 +380,6 @@ func injectEnvVariableToComposeApp(a *ComposeApp) {
 }
 
 func (a *ComposeApp) Up(ctx context.Context, service api.Service) error {
-
 	injectEnvVariableToComposeApp(a)
 
 	if err := service.Up(ctx, (*codegen.ComposeApp)(a), api.UpOptions{
@@ -658,18 +660,13 @@ func (a *ComposeApp) Apply(ctx context.Context, newComposeYAML []byte) error {
 	}
 
 	// prepare for message bus events
-	storeInfo, err := a.StoreInfo(true)
-	if err != nil {
-		return err
-	}
-
-	if storeInfo == nil {
-		return ErrStoreInfoNotFound
-	}
-
 	eventProperties := common.PropertiesFromContext(ctx)
 	eventProperties[common.PropertyTypeAppName.Name] = a.Name
-	eventProperties[common.PropertyTypeAppIcon.Name] = storeInfo.Icon
+
+	// prepare for message bus events
+	if err := a.UpdateEventPropertiesFromStoreInfo(eventProperties); err != nil {
+		logger.Info("failed to update event properties from store info", zap.Error(err), zap.String("name", a.Name))
+	}
 
 	go func(ctx context.Context) {
 		go PublishEventWrapper(ctx, common.EventTypeAppApplyChangesBegin, nil)
@@ -808,6 +805,33 @@ func (a *ComposeApp) GetPortsInUse() (*codegen.ComposeAppValidationErrorsPortsIn
 	}{TCP: &tcpPortInUse, UDP: &udpPortInUse}
 
 	return &codegen.ComposeAppValidationErrorsPortsInUse{PortsInUse: &portsInUse}, nil
+}
+
+// Try to update AppIcon and AppTitle in given event properties from store info
+func (a *ComposeApp) UpdateEventPropertiesFromStoreInfo(eventProperties map[string]string) error {
+	if eventProperties == nil {
+		return fmt.Errorf("event properties is nil")
+	}
+
+	storeInfo, err := a.StoreInfo(false)
+	if err != nil {
+		return err
+	}
+
+	eventProperties[common.PropertyTypeAppIcon.Name] = storeInfo.Icon
+
+	if storeInfo.Title == nil {
+		return fmt.Errorf("compose app title not found in store info")
+	}
+
+	titles, err := json.Marshal(storeInfo.Title)
+	if err != nil {
+		return err
+	}
+
+	eventProperties[common.PropertyTypeAppTitle.Name] = string(titles)
+
+	return nil
 }
 
 func (a *ComposeApp) HealthCheck() (bool, error) {

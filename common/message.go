@@ -21,6 +21,12 @@ var (
 		Example:     utils.Ptr("hello-world:latest (this is the name of a container image"),
 	}
 
+	PropertyTypeAppTitle = message_bus.PropertyType{
+		Name:        "app:title",
+		Description: utils.Ptr("titles of the app in different languages - serialized as JSON"),
+		Example:     utils.Ptr("{\"en_us\":\"OpenSpeedTest\"}"),
+	}
+
 	PropertyTypeAppIcon = message_bus.PropertyType{
 		Name:        "app:icon",
 		Description: utils.Ptr("icon of the app"),
