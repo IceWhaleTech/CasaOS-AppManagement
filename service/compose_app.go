@@ -651,6 +651,11 @@ func (a *ComposeApp) Apply(ctx context.Context, newComposeYAML []byte) error {
 		return ErrComposeAppNotMatch
 	}
 
+	newComposeApp, err := NewComposeAppFromYAML(newComposeYAML, true, true)
+	if err != nil {
+		return err
+	}
+
 	if len(a.ComposeFiles) <= 0 {
 		return ErrComposeFileNotFound
 	}
@@ -664,7 +669,7 @@ func (a *ComposeApp) Apply(ctx context.Context, newComposeYAML []byte) error {
 	eventProperties[common.PropertyTypeAppName.Name] = a.Name
 
 	// prepare for message bus events
-	if err := a.UpdateEventPropertiesFromStoreInfo(eventProperties); err != nil {
+	if err := newComposeApp.UpdateEventPropertiesFromStoreInfo(eventProperties); err != nil {
 		logger.Info("failed to update event properties from store info", zap.Error(err), zap.String("name", a.Name))
 	}
 
