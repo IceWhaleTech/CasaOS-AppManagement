@@ -651,7 +651,7 @@ func (a *ComposeApp) Apply(ctx context.Context, newComposeYAML []byte) error {
 		return ErrComposeAppNotMatch
 	}
 
-	newComposeApp, err := NewComposeAppFromYAML(newComposeYAML, false, false)
+	newComposeApp, err := NewComposeAppFromYAML(newComposeYAML, true, true)
 	if err != nil {
 		return err
 	}
