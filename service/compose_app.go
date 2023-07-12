@@ -987,15 +987,3 @@ func getNameFrom(composeYAML []byte) string {
 
 	return baseStructure.Name
 }
-
-// func getCustomTitleFrom(composeYAML []byte) string {
-// 	var baseStructure struct {
-// 		Name string `yaml:"name"`
-// 	}
-
-// 	if err := yaml.Unmarshal(composeYAML, &baseStructure); err != nil {
-// 		return ""
-// 	}
-
-// 	return baseStructure.Name
-// }
