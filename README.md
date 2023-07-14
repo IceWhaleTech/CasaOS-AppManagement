@@ -10,4 +10,4 @@
 [![Lines of Code](https://sonarcloud.io/api/project_badges/measure?project=IceWhaleTech_CasaOS-AppManagement&metric=ncloc)](https://sonarcloud.io/summary/new_code?id=IceWhaleTech_CasaOS-AppManagement)
 [![Duplicated Lines (%)](https://sonarcloud.io/api/project_badges/measure?project=IceWhaleTech_CasaOS-AppManagement&metric=duplicated_lines_density)](https://sonarcloud.io/summary/new_code?id=IceWhaleTech_CasaOS-AppManagement)
 
-App management service manages CasaOS app lifecycle, such as installation, running, etc.
+App management service manages CasaOS apps lifecycle, such as installation, running, etc.
