@@ -707,12 +707,12 @@ func (a *ComposeApp) SetStatus(ctx context.Context, status codegen.RequestCompos
 
 			defer PublishEventWrapper(ctx, common.EventTypeAppStartEnd, nil)
 
-			if err := service.Kill(ctx, a.Name, api.KillOptions{}); err != nil {
-				go PublishEventWrapper(ctx, common.EventTypeAppStartError, map[string]string{
-					common.PropertyTypeMessage.Name: err.Error(),
-				})
+			containerSummarys, err := service.Ps(ctx, a.Name, api.PsOptions{})
+			if err != nil {
 
-				logger.Error("failed to start compose app", zap.Error(err), zap.String("name", a.Name))
+			}
+			for _, containerSummary := range containerSummarys {
+				fmt.Println(containerSummary.Status)
 			}
 
 			if err := service.Start(ctx, a.Name, api.StartOptions{
