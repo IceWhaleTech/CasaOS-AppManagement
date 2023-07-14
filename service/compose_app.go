@@ -707,6 +707,14 @@ func (a *ComposeApp) SetStatus(ctx context.Context, status codegen.RequestCompos
 
 			defer PublishEventWrapper(ctx, common.EventTypeAppStartEnd, nil)
 
+			if err := service.Kill(ctx, a.Name, api.KillOptions{}); err != nil {
+				go PublishEventWrapper(ctx, common.EventTypeAppStartError, map[string]string{
+					common.PropertyTypeMessage.Name: err.Error(),
+				})
+
+				logger.Error("failed to start compose app", zap.Error(err), zap.String("name", a.Name))
+			}
+
 			if err := service.Start(ctx, a.Name, api.StartOptions{
 				CascadeStop: true,
 				Wait:        true,
