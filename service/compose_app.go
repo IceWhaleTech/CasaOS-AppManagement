@@ -707,12 +707,26 @@ func (a *ComposeApp) SetStatus(ctx context.Context, status codegen.RequestCompos
 
 			defer PublishEventWrapper(ctx, common.EventTypeAppStartEnd, nil)
 
-			containerSummarys, err := service.Ps(ctx, a.Name, api.PsOptions{})
-			if err != nil {
+			// to make sure the container is stopped
+			// timeout is 20s
+			for index := 0; index < 10; index++ {
+				containerSummarys, err := service.Ps(ctx, a.Name, api.PsOptions{
+					All: true,
+				})
+				if err != nil {
+					logger.Error("failed to get compose app info", zap.Error(err), zap.String("name", a.Name))
 
-			}
-			for _, containerSummary := range containerSummarys {
-				fmt.Println(containerSummary.Status)
+				}
+				isContainerExited := true
+				for _, containerSummary := range containerSummarys {
+					// to make sure every service of the container is stopped
+					// I think "exited" can be replace by constant value.
+					isContainerExited = isContainerExited && (containerSummary.State == "exited")
+				}
+				if isContainerExited {
+					break
+				}
+				time.Sleep(2 * time.Second)
 			}
 
 			if err := service.Start(ctx, a.Name, api.StartOptions{
