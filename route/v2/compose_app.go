@@ -221,7 +221,7 @@ func (a *AppManagement) InstallComposeApp(ctx echo.Context, params codegen.Insta
 	}
 
 	// validate new compose yaml
-	composeApp, err := service.NewComposeAppFromYAML(buf, true, true)
+	composeApp, err := service.NewComposeAppFromYAML(buf, false, true)
 	if err != nil {
 		message := err.Error()
 		return ctx.JSON(http.StatusBadRequest, codegen.ResponseBadRequest{
