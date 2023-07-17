@@ -16,6 +16,7 @@ import (
 
 	"github.com/IceWhaleTech/CasaOS-AppManagement/codegen"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/common"
+	"github.com/IceWhaleTech/CasaOS-AppManagement/pkg/config"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/pkg/docker"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/file"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/logger"
@@ -373,7 +374,7 @@ func (a *ComposeApp) Pull(ctx context.Context) error {
 
 func injectEnvVariableToComposeApp(a *ComposeApp) {
 	for _, service := range a.Services {
-		for k, v := range baseEnvironmentMap() {
+		for k, v := range config.Global {
 			service.Environment[k] = &v
 		}
 	}

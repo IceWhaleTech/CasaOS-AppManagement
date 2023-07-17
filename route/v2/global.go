@@ -16,23 +16,13 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-func getGlobalSettingsKeyAndValue() map[string]map[string]string {
-	return map[string]map[string]string{
-		"OPENAPI_AI_KEY": {
-			"key":         "OPENAPI_AI_KEY",
-			"value":       config.Global.OpenAIAPIKey,
-			"description": "OPENAPI AI KEY",
-		},
-	}
-}
-
 func (a *AppManagement) GetGlobalSettings(ctx echo.Context) error {
 	result := make([]codegen.GlobalSetting, 0)
-	for _, v := range getGlobalSettingsKeyAndValue() {
+	for key, value := range config.Global {
 		result = append(result, codegen.GlobalSetting{
-			Key:         utils.Ptr(v["key"]),
-			Value:       v["value"],
-			Description: utils.Ptr(v["description"]),
+			Key:         utils.Ptr(key),
+			Value:       value,
+			Description: utils.Ptr(key),
 		})
 	}
 
@@ -42,16 +32,17 @@ func (a *AppManagement) GetGlobalSettings(ctx echo.Context) error {
 }
 
 func (a *AppManagement) GetGlobalSetting(ctx echo.Context, key codegen.GlobalSettingKey) error {
-	if _, ok := getGlobalSettingsKeyAndValue()[string(key)]; !ok {
+	value, ok := config.Global[string(key)]
+	if !ok {
 		message := "the key is not exist"
 		return ctx.JSON(http.StatusNotFound, codegen.ResponseNotFound{Message: &message})
 	}
 
 	return ctx.JSON(http.StatusOK, codegen.GlobalSettingOK{
 		Data: &codegen.GlobalSetting{
-			Key:         utils.Ptr(getGlobalSettingsKeyAndValue()[string(key)]["key"]),
-			Value:       getGlobalSettingsKeyAndValue()[string(key)]["value"],
-			Description: utils.Ptr(getGlobalSettingsKeyAndValue()[string(key)]["description"]),
+			Key:         utils.Ptr(key),
+			Value:       value,
+			Description: utils.Ptr(key),
 		},
 	})
 }
@@ -63,35 +54,58 @@ func (a *AppManagement) UpdateGlobalSetting(ctx echo.Context, key codegen.Global
 		return ctx.JSON(http.StatusBadRequest, codegen.ResponseBadRequest{Message: &message})
 	}
 
-	if _, ok := getGlobalSettingsKeyAndValue()[string(key)]; !ok {
+	value, ok := config.Global[string(key)]
+	if !ok {
 		message := "the key is not exist"
 		return ctx.JSON(http.StatusNotFound, codegen.ResponseNotFound{Message: &message})
 	}
 
-	switch key {
-	case "OPENAPI_AI_KEY":
-		if err := updateOpenAIAPIKey(ctx, action.Value); err != nil {
-			message := err.Error()
-			return ctx.JSON(http.StatusBadRequest, codegen.ResponseBadRequest{Message: &message})
-		}
+	if err := updateGlobalEnv(ctx, *action.Key, action.Value); err != nil {
+		message := err.Error()
+		return ctx.JSON(http.StatusBadRequest, codegen.ResponseBadRequest{Message: &message})
 	}
 
 	return ctx.JSON(http.StatusOK, codegen.GlobalSettingOK{
 		Data: &codegen.GlobalSetting{
-			Key:         utils.Ptr(getGlobalSettingsKeyAndValue()[string(key)]["key"]),
-			Value:       getGlobalSettingsKeyAndValue()[string(key)]["value"],
-			Description: utils.Ptr(getGlobalSettingsKeyAndValue()[string(key)]["description"]),
+			Key:         utils.Ptr(key),
+			Value:       value,
+			Description: utils.Ptr(key),
 		},
 	})
 }
 
-func updateOpenAIAPIKey(ctx echo.Context, key string) error {
+func updateGlobalEnv(ctx echo.Context, key string, value string) error {
 	if key == "" {
 		return fmt.Errorf("openai api key is required")
 	}
 
 	// the key means the value of OPENAPI_AI_KEY. Please don't get confused.
-	if err := service.MyService.AppStoreManagement().ChangeOpenAIAPIKey(key); err != nil {
+	if err := service.MyService.AppStoreManagement().ChangeGlobal(key, value); err != nil {
+		return err
+	}
+
+	// re up all containers to apply the new env var
+	go func() {
+		backgroundCtx := common.WithProperties(context.Background(), PropertiesFromQueryParams(ctx))
+		composeAppsWithStoreInfo, err := service.MyService.Compose().List(backgroundCtx)
+		if err != nil {
+			logger.Error("Failed to get composeAppsWithStoreInfo", zap.Any("error", err))
+		}
+		for _, project := range composeAppsWithStoreInfo {
+			if service, _, err := service.ApiService(); err == nil {
+				project.UpWithCheckRequire(backgroundCtx, service)
+			} else {
+				logger.Error("Failed to get Api Service", zap.Any("error", err))
+			}
+		}
+	}()
+
+	return nil
+}
+
+func deleteGlobalEnv(ctx echo.Context, key string) error {
+
+	if err := service.MyService.AppStoreManagement().DeleteGlobal(key); err != nil {
 		return err
 	}
 
@@ -115,7 +129,13 @@ func updateOpenAIAPIKey(ctx echo.Context, key string) error {
 }
 
 func (a *AppManagement) DeleteGlobalSetting(ctx echo.Context, key codegen.GlobalSettingKey) error {
-	if err := updateOpenAIAPIKey(ctx, ""); err != nil {
+	var action codegen.GlobalSetting
+	if err := ctx.Bind(&action); err != nil {
+		message := err.Error()
+		return ctx.JSON(http.StatusBadRequest, codegen.ResponseBadRequest{Message: &message})
+	}
+
+	if err := deleteGlobalEnv(ctx, key); err != nil {
 		message := err.Error()
 		return ctx.JSON(http.StatusBadRequest, codegen.ResponseBadRequest{Message: &message})
 	}
