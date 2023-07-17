@@ -54,13 +54,7 @@ func (a *AppManagement) UpdateGlobalSetting(ctx echo.Context, key codegen.Global
 		return ctx.JSON(http.StatusBadRequest, codegen.ResponseBadRequest{Message: &message})
 	}
 
-	value, ok := config.Global[string(key)]
-	if !ok {
-		message := "the key is not exist"
-		return ctx.JSON(http.StatusNotFound, codegen.ResponseNotFound{Message: &message})
-	}
-
-	if err := updateGlobalEnv(ctx, *action.Key, action.Value); err != nil {
+	if err := updateGlobalEnv(ctx, key, action.Value); err != nil {
 		message := err.Error()
 		return ctx.JSON(http.StatusBadRequest, codegen.ResponseBadRequest{Message: &message})
 	}
@@ -68,7 +62,7 @@ func (a *AppManagement) UpdateGlobalSetting(ctx echo.Context, key codegen.Global
 	return ctx.JSON(http.StatusOK, codegen.GlobalSettingOK{
 		Data: &codegen.GlobalSetting{
 			Key:         utils.Ptr(key),
-			Value:       value,
+			Value:       action.Value,
 			Description: utils.Ptr(key),
 		},
 	})
@@ -78,8 +72,6 @@ func updateGlobalEnv(ctx echo.Context, key string, value string) error {
 	if key == "" {
 		return fmt.Errorf("openai api key is required")
 	}
-
-	// the key means the value of OPENAPI_AI_KEY. Please don't get confused.
 	if err := service.MyService.AppStoreManagement().ChangeGlobal(key, value); err != nil {
 		return err
 	}

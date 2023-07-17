@@ -31,7 +31,7 @@ var (
 	}
 
 	// Global is a map to inject environment variables to the app.
-	Global = map[string]string{}
+	Global = make(map[string]string)
 
 	CasaOSGlobalVariables = &model.CasaOSGlobalVariables{}
 
@@ -56,7 +56,6 @@ func InitSetup(config string) {
 	mapTo("common", CommonInfo)
 	mapTo("app", AppInfo)
 	mapTo("server", ServerInfo)
-	mapTo("global", Global)
 }
 
 func SaveSetup() error {
@@ -88,15 +87,13 @@ func InitGlobal(config string) {
 	scanner := bufio.NewScanner(file)
 	scanner.Split(bufio.ScanLines)
 
-	Global := make(map[string]string)
-
 	for scanner.Scan() {
 		line := scanner.Text()
 		parts := strings.Split(line, "=")
 		Global[parts[0]] = parts[1]
 	}
-
 }
+
 func SaveGlobal() error {
 	// file content like this:
 	// OPENAI_API_KEY=123456
