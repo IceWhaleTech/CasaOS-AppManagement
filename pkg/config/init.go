@@ -1,7 +1,11 @@
 package config
 
 import (
+	"bufio"
+	"fmt"
 	"log"
+	"os"
+	"strings"
 
 	"github.com/IceWhaleTech/CasaOS-AppManagement/common"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/model"
@@ -26,14 +30,14 @@ var (
 		AppStoreList: []string{},
 	}
 
-	Global = &model.GlobalModel{
-		OpenAIAPIKey: "sk-123456",
-	}
+	// Global is a map to inject environment variables to the app.
+	Global = make(map[string]string)
 
 	CasaOSGlobalVariables = &model.CasaOSGlobalVariables{}
 
-	Cfg            *ini.File
-	ConfigFilePath string
+	Cfg               *ini.File
+	ConfigFilePath    string
+	GlobalEnvFilePath string
 )
 
 func InitSetup(config string) {
@@ -52,7 +56,6 @@ func InitSetup(config string) {
 	mapTo("common", CommonInfo)
 	mapTo("app", AppInfo)
 	mapTo("server", ServerInfo)
-	mapTo("global", Global)
 }
 
 func SaveSetup() error {
@@ -61,6 +64,57 @@ func SaveSetup() error {
 	reflectFrom("server", ServerInfo)
 
 	return Cfg.SaveTo(ConfigFilePath)
+}
+
+func InitGlobal(config string) {
+	// read file
+	// file content like this:
+	// OPENAI_API_KEY=123456
+
+	// read file
+	GlobalEnvFilePath = AppManagementGlobalEnvFilePath
+	if len(config) > 0 {
+		ConfigFilePath = config
+	}
+
+	// from file read key and value
+	// set to Global
+	file, err := os.Open(GlobalEnvFilePath)
+	// there can't to panic err. because the env file is a new file
+	// very much user didn't have the file.
+	if err != nil {
+		// log.Fatal will exit the program. So we only can to log the error.
+		log.Println("open global env file error:", err)
+	} else {
+		defer file.Close()
+		scanner := bufio.NewScanner(file)
+		scanner.Split(bufio.ScanLines)
+
+		for scanner.Scan() {
+			line := scanner.Text()
+			parts := strings.Split(line, "=")
+			Global[parts[0]] = parts[1]
+		}
+	}
+}
+
+func SaveGlobal() error {
+	// file content like this:
+	// OPENAI_API_KEY=123456
+	file, err := os.Create(AppManagementGlobalEnvFilePath)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	writer := bufio.NewWriter(file)
+
+	for key, value := range Global {
+		fmt.Fprintf(writer, "%s=%s\n", key, value)
+	}
+
+	writer.Flush()
+	return err
 }
 
 func mapTo(section string, v interface{}) {

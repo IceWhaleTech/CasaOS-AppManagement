@@ -77,9 +77,8 @@ func (s *ComposeService) Install(ctx context.Context, composeApp *ComposeApp) er
 	eventProperties := common.PropertiesFromContext(ctx)
 	eventProperties[common.PropertyTypeAppName.Name] = composeApp.Name
 
-	storeInfo, err := composeApp.StoreInfo(true)
-	if err == nil && storeInfo != nil {
-		eventProperties[common.PropertyTypeAppIcon.Name] = storeInfo.Icon
+	if err := composeApp.UpdateEventPropertiesFromStoreInfo(eventProperties); err != nil {
+		logger.Info("failed to update event properties from store info", zap.Error(err), zap.String("name", composeApp.Name))
 	}
 
 	go func(ctx context.Context) {
@@ -101,15 +100,11 @@ func (s *ComposeService) Install(ctx context.Context, composeApp *ComposeApp) er
 
 func (s *ComposeService) Uninstall(ctx context.Context, composeApp *ComposeApp, deleteConfigFolder bool) error {
 	// prepare for message bus events
-	storeInfo, err := composeApp.StoreInfo(true)
-	if err != nil {
-		logger.Error("failed to get store info", zap.Error(err), zap.String("name", composeApp.Name))
-	}
-
 	eventProperties := common.PropertiesFromContext(ctx)
 	eventProperties[common.PropertyTypeAppName.Name] = composeApp.Name
-	if storeInfo != nil {
-		eventProperties[common.PropertyTypeAppIcon.Name] = storeInfo.Icon
+
+	if err := composeApp.UpdateEventPropertiesFromStoreInfo(eventProperties); err != nil {
+		logger.Info("failed to update event properties from store info", zap.Error(err), zap.String("name", composeApp.Name))
 	}
 
 	go func(ctx context.Context) {
@@ -194,12 +189,6 @@ func baseInterpolationMap() map[string]string {
 		"PUID":            common.DefaultPUID,
 		"PGID":            common.DefaultPGID,
 		"TZ":              timeutils.GetSystemTimeZoneName(),
-	}
-}
-
-func baseEnvironmentMap() map[string]string {
-	return map[string]string{
-		"OPENAI_API_KEY": config.Global.OpenAIAPIKey,
 	}
 }
 

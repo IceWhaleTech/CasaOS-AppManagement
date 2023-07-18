@@ -351,7 +351,11 @@ func BuildCatalog(storeRoot string) (map[string]*ComposeApp, error) {
 
 		composeFile := filepath.Join(path, common.ComposeYAMLFileName)
 		if !file.Exists(composeFile) {
-			return nil
+			// retry with ".yaml" extension
+			composeFile = strings.TrimSuffix(composeFile, ".yml") + ".yaml"	
+			if !file.Exists(composeFile) {
+				return nil
+			}
 		}
 
 		composeYAML := file.ReadFullFile(composeFile)

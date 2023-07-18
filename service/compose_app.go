@@ -16,7 +16,9 @@ import (
 
 	"github.com/IceWhaleTech/CasaOS-AppManagement/codegen"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/common"
+	"github.com/IceWhaleTech/CasaOS-AppManagement/pkg/config"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/pkg/docker"
+	"github.com/IceWhaleTech/CasaOS-Common/utils"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/file"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/logger"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/port"
@@ -274,7 +276,10 @@ func (a *ComposeApp) Update(ctx context.Context) error {
 	// prepare for message bus events
 	eventProperties := common.PropertiesFromContext(ctx)
 	eventProperties[common.PropertyTypeAppName.Name] = a.Name
-	eventProperties[common.PropertyTypeAppIcon.Name] = storeInfo.Icon
+
+	if err := a.UpdateEventPropertiesFromStoreInfo(eventProperties); err != nil {
+		logger.Info("failed to update event properties from store info", zap.Error(err), zap.String("name", a.Name))
+	}
 
 	go func(ctx context.Context) {
 		go PublishEventWrapper(ctx, common.EventTypeAppUpdateBegin, nil)
@@ -370,18 +375,17 @@ func (a *ComposeApp) Pull(ctx context.Context) error {
 
 func injectEnvVariableToComposeApp(a *ComposeApp) {
 	for _, service := range a.Services {
-		for k, v := range baseEnvironmentMap() {
-			// if there is same name var declared in environment in compose yaml
+		for k, v := range config.Global {
+      // if there is same name var declared in environment in compose yaml
 			// we should not reassign a value to it.
 			if service.Environment[k] == nil {
-				service.Environment[k] = &v
-			}
+			  service.Environment[k] = utils.Ptr(v)
+      }
 		}
 	}
 }
 
 func (a *ComposeApp) Up(ctx context.Context, service api.Service) error {
-
 	injectEnvVariableToComposeApp(a)
 
 	if err := service.Up(ctx, (*codegen.ComposeApp)(a), api.UpOptions{
@@ -653,6 +657,11 @@ func (a *ComposeApp) Apply(ctx context.Context, newComposeYAML []byte) error {
 		return ErrComposeAppNotMatch
 	}
 
+	newComposeApp, err := NewComposeAppFromYAML(newComposeYAML, true, true)
+	if err != nil {
+		return err
+	}
+
 	if len(a.ComposeFiles) <= 0 {
 		return ErrComposeFileNotFound
 	}
@@ -662,18 +671,13 @@ func (a *ComposeApp) Apply(ctx context.Context, newComposeYAML []byte) error {
 	}
 
 	// prepare for message bus events
-	storeInfo, err := a.StoreInfo(true)
-	if err != nil {
-		return err
-	}
-
-	if storeInfo == nil {
-		return ErrStoreInfoNotFound
-	}
-
 	eventProperties := common.PropertiesFromContext(ctx)
 	eventProperties[common.PropertyTypeAppName.Name] = a.Name
-	eventProperties[common.PropertyTypeAppIcon.Name] = storeInfo.Icon
+
+	// prepare for message bus events
+	if err := newComposeApp.UpdateEventPropertiesFromStoreInfo(eventProperties); err != nil {
+		logger.Info("failed to update event properties from store info", zap.Error(err), zap.String("name", a.Name))
+	}
 
 	go func(ctx context.Context) {
 		go PublishEventWrapper(ctx, common.EventTypeAppApplyChangesBegin, nil)
@@ -708,6 +712,28 @@ func (a *ComposeApp) SetStatus(ctx context.Context, status codegen.RequestCompos
 			go PublishEventWrapper(ctx, common.EventTypeAppStartBegin, nil)
 
 			defer PublishEventWrapper(ctx, common.EventTypeAppStartEnd, nil)
+
+			// to make sure the container is stopped
+			// timeout is 20s
+			for index := 0; index < 10; index++ {
+				containerSummarys, err := service.Ps(ctx, a.Name, api.PsOptions{
+					All: true,
+				})
+				if err != nil {
+					logger.Error("failed to get compose app info", zap.Error(err), zap.String("name", a.Name))
+
+				}
+				isContainerExited := true
+				for _, containerSummary := range containerSummarys {
+					// to make sure every service of the container is stopped
+					// I think "exited" can be replace by constant value.
+					isContainerExited = isContainerExited && (containerSummary.State == "exited")
+				}
+				if isContainerExited {
+					break
+				}
+				time.Sleep(2 * time.Second)
+			}
 
 			if err := service.Start(ctx, a.Name, api.StartOptions{
 				CascadeStop: true,
@@ -814,6 +840,33 @@ func (a *ComposeApp) GetPortsInUse() (*codegen.ComposeAppValidationErrorsPortsIn
 	return &codegen.ComposeAppValidationErrorsPortsInUse{PortsInUse: &portsInUse}, nil
 }
 
+// Try to update AppIcon and AppTitle in given event properties from store info
+func (a *ComposeApp) UpdateEventPropertiesFromStoreInfo(eventProperties map[string]string) error {
+	if eventProperties == nil {
+		return fmt.Errorf("event properties is nil")
+	}
+
+	storeInfo, err := a.StoreInfo(false)
+	if err != nil {
+		return err
+	}
+
+	eventProperties[common.PropertyTypeAppIcon.Name] = storeInfo.Icon
+
+	if storeInfo.Title == nil {
+		return fmt.Errorf("compose app title not found in store info")
+	}
+
+	titles, err := json.Marshal(storeInfo.Title)
+	if err != nil {
+		return err
+	}
+
+	eventProperties[common.PropertyTypeAppTitle.Name] = string(titles)
+
+	return nil
+}
+
 func (a *ComposeApp) HealthCheck() (bool, error) {
 	storeInfo, err := a.StoreInfo(false)
 	if err != nil {
@@ -891,6 +944,10 @@ func NewComposeAppFromYAML(yaml []byte, skipInterpolation, skipValidation bool) 
 	}
 	defer os.RemoveAll(tmpWorkingDir)
 
+	// the WEBUI_PORT interpolate will tiger twice. In `pulished` and `port-map`.
+	// So we need to promise multiple WEBUI_PORT interpolate is a same value.
+	port, err := port.GetAvailablePort("tcp")
+
 	project, err := loader.Load(
 		types.ConfigDetails{
 			ConfigFiles: []types.ConfigFile{
@@ -907,6 +964,25 @@ func NewComposeAppFromYAML(yaml []byte, skipInterpolation, skipValidation bool) 
 		func(o *loader.Options) {
 			o.SkipInterpolation = skipInterpolation
 			o.SkipValidation = skipValidation
+
+			o.Interpolate.LookupValue = func(key string) (string, bool) {
+				switch key {
+				case "WEBUI_PORT":
+					fmt.Printf("WEBUI_PORT is not specified, using %d\n", port)
+					return strconv.Itoa(port), true
+				}
+
+				for k := range baseInterpolationMap() {
+					if k == key {
+						// example:  TZ => $TZ
+						// we didn't want to interpolate base interpolation value.
+						// they should be interpolated in LoadComposeAppFromConfig
+						return fmt.Sprintf("$%s", k), true
+					}
+				}
+
+				return os.LookupEnv(key)
+			}
 
 			if getNameFrom(yaml) != "" {
 				return

@@ -58,12 +58,29 @@ func (a *AppStoreManagement) OnAppStoreUnregister(fn func(string) error) {
 	a.onAppStoreUnregister = append(a.onAppStoreUnregister, fn)
 }
 
-func (a *AppStoreManagement) ChangeOpenAIAPIKey(key string) error {
-	config.Global.OpenAIAPIKey = key
+func (a *AppStoreManagement) ChangeGlobal(key string, value string) error {
+	config.Global[key] = value
 
 	go func() {
-		if err := config.SaveSetup(); err != nil {
-			logger.Error("failed to save openai api key", zap.Error(err), zap.String("OpenAI API Key", key))
+		if err := config.SaveGlobal(); err != nil {
+			logger.Error("failed to save global env", zap.Error(err), zap.String("key", key), zap.String("value", value))
+			return
+		}
+	}()
+
+	return nil
+}
+
+func (a *AppStoreManagement) DeleteGlobal(key string) error {
+	for k := range config.Global {
+		if k == key {
+			delete(config.Global, k)
+		}
+	}
+
+	go func() {
+		if err := config.SaveGlobal(); err != nil {
+			logger.Error("failed to delete global env", zap.Error(err), zap.String("key", key))
 			return
 		}
 	}()

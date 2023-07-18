@@ -58,6 +58,7 @@ func main() {
 		println("build date:", date)
 
 		config.InitSetup(*configFlag)
+		config.InitGlobal(*configFlag)
 
 		logger.LogInit(config.AppInfo.LogPath, config.AppInfo.LogSaveName, config.AppInfo.LogFileExt)
 

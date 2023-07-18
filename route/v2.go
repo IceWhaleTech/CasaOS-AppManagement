@@ -2,7 +2,6 @@ package route
 
 import (
 	"crypto/ecdsa"
-	"fmt"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -65,10 +64,6 @@ func InitV2Router() http.Handler {
 
 	e.Use(echo_middleware.JWTWithConfig(echo_middleware.JWTConfig{
 		Skipper: func(c echo.Context) bool {
-			fmt.Println(c.Request().Header)
-			fmt.Println("get ip by localhost")
-			fmt.Println(c.RealIP())
-			fmt.Println(c.RealIP() == "::1" || c.RealIP() == "127.0.0.1")
 			return c.RealIP() == "::1" || c.RealIP() == "127.0.0.1"
 		},
 		ParseTokenFunc: func(token string, c echo.Context) (interface{}, error) {
