@@ -11,6 +11,3 @@ AppsPath = /var/lib/casaos/apps
 
 [server]
 appstore = https://github.com/IceWhaleTech/_appstore/archive/refs/heads/main.zip
-
-[global]
-OPENAI_API_KEY = sk-xxxxxx

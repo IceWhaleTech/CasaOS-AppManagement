@@ -2,7 +2,6 @@ package route
 
 import (
 	"crypto/ecdsa"
-	"fmt"
 	"net/http"
 	"net/url"
 	"strconv"
