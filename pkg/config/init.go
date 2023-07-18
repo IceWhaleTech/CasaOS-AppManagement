@@ -80,17 +80,21 @@ func InitGlobal(config string) {
 	// from file read key and value
 	// set to Global
 	file, err := os.Open(GlobalEnvFilePath)
+	// there can't to panic err. because the env file is a new file
+	// very much user didn't have the file.
 	if err != nil {
-		fmt.Println(err)
-	}
-	defer file.Close()
-	scanner := bufio.NewScanner(file)
-	scanner.Split(bufio.ScanLines)
+		// log.Fatal will exit the program. So we only can to log the error.
+		log.Println("open global env file error:", err)
+	} else {
+		defer file.Close()
+		scanner := bufio.NewScanner(file)
+		scanner.Split(bufio.ScanLines)
 
-	for scanner.Scan() {
-		line := scanner.Text()
-		parts := strings.Split(line, "=")
-		Global[parts[0]] = parts[1]
+		for scanner.Scan() {
+			line := scanner.Text()
+			parts := strings.Split(line, "=")
+			Global[parts[0]] = parts[1]
+		}
 	}
 }
 
@@ -99,7 +103,7 @@ func SaveGlobal() error {
 	// OPENAI_API_KEY=123456
 	file, err := os.Create(AppManagementGlobalEnvFilePath)
 	if err != nil {
-		fmt.Println(err)
+		return err
 	}
 	defer file.Close()
 
