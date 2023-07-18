@@ -53,7 +53,6 @@ func (a *AppManagement) UpdateGlobalSetting(ctx echo.Context, key codegen.Global
 		message := err.Error()
 		return ctx.JSON(http.StatusBadRequest, codegen.ResponseBadRequest{Message: &message})
 	}
-
 	if err := updateGlobalEnv(ctx, key, action.Value); err != nil {
 		message := err.Error()
 		return ctx.JSON(http.StatusBadRequest, codegen.ResponseBadRequest{Message: &message})
