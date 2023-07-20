@@ -524,6 +524,31 @@ func MyAppList(c *gin.Context) {
 	c.JSON(common_err.SUCCESS, &modelCommon.Result{Success: common_err.SUCCESS, Message: common_err.GetMsg(common_err.SUCCESS), Data: data})
 }
 
+// NOTE: the API is a temporary and internal API. It will be deleted in the future.
+// the API is for archive v1 app for rebuilt v2 app.
+func ArchiveContainer(c *gin.Context) {
+	appID := c.Param("id")
+
+	if err := service.MyService.Docker().StopContainer(appID); err != nil {
+		c.JSON(http.StatusInternalServerError, modelCommon.Result{Success: common_err.SERVICE_ERROR, Message: err.Error()})
+		return
+	}
+
+	// get container name
+	container, err := service.MyService.Docker().GetContainer(appID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, modelCommon.Result{Success: common_err.SERVICE_ERROR, Message: err.Error()})
+		return
+	}
+
+	if err := service.MyService.Docker().RenameContainer(container.Names[0]+"_old", appID); err != nil {
+		c.JSON(http.StatusInternalServerError, modelCommon.Result{Success: common_err.SERVICE_ERROR, Message: err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, modelCommon.Result{Success: common_err.SUCCESS, Message: common_err.GetMsg(common_err.SUCCESS)})
+}
+
 // @Summary my app hardware usage list
 // @Produce  application/json
 // @Accept application/json
