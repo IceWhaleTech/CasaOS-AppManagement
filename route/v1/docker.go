@@ -524,6 +524,8 @@ func MyAppList(c *gin.Context) {
 	c.JSON(common_err.SUCCESS, &modelCommon.Result{Success: common_err.SUCCESS, Message: common_err.GetMsg(common_err.SUCCESS), Data: data})
 }
 
+// NOTE: the API is a temporary and internal API. It will be deleted in the future.
+// the API is for archive v1 app for rebuilt v2 app.
 func ArchiveContainer(c *gin.Context) {
 	appID := c.Param("id")
 
