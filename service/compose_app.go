@@ -980,8 +980,13 @@ func NewComposeAppFromYAML(yaml []byte, skipInterpolation, skipValidation bool) 
 						return fmt.Sprintf("$%s", k), true
 					}
 				}
-
-				return os.LookupEnv(key)
+				// the function may can to replace the above code.
+				value, ok := os.LookupEnv(key)
+				if ok {
+					return value, true
+				} else {
+					return fmt.Sprintf("$%s", key), true
+				}
 			}
 
 			if getNameFrom(yaml) != "" {
