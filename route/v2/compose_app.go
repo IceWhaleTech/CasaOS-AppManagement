@@ -56,7 +56,8 @@ func (a *AppManagement) MyComposeApp(ctx echo.Context, id codegen.ComposeAppID) 
 
 	accept := ctx.Request().Header.Get(echo.HeaderAccept)
 	if accept == common.MIMEApplicationYAML {
-		yaml, err := yaml.Marshal(composeApp)
+		// generate yaml should to replace all yaml.Marshal. But for now, we just use it Setting Page API
+		yaml, err := service.GenerateYAMLFromComposeApp(*composeApp)
 		if err != nil {
 			message := err.Error()
 			return ctx.JSON(http.StatusInternalServerError, codegen.ResponseInternalServerError{
