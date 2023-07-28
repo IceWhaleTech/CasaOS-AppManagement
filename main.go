@@ -35,6 +35,9 @@ var (
 
 	//go:embed api/app_management/openapi.yaml
 	_docYAML string
+
+	//go:embed build/sysroot/etc/casaos/app-management.conf.sample
+	_confSample string
 )
 
 func main() {
@@ -57,7 +60,7 @@ func main() {
 		println("git commit:", commit)
 		println("build date:", date)
 
-		config.InitSetup(*configFlag)
+		config.InitSetup(*configFlag, _confSample)
 		config.InitGlobal(*configFlag)
 
 		logger.LogInit(config.AppInfo.LogPath, config.AppInfo.LogSaveName, config.AppInfo.LogFileExt)
