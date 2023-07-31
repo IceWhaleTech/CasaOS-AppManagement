@@ -46,6 +46,7 @@ func InitSetup(config string, sample string) {
 		ConfigFilePath = config
 	}
 
+	// create default config file if not exist
 	if _, err := os.Stat(ConfigFilePath); os.IsNotExist(err) {
 		fmt.Println("config file not exist, create it")
 		// create config file
