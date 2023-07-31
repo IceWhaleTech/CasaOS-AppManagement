@@ -5,23 +5,25 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/IceWhaleTech/CasaOS-AppManagement/common"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/model"
+	"github.com/IceWhaleTech/CasaOS-Common/utils/constants"
 	"gopkg.in/ini.v1"
 )
 
 var (
 	CommonInfo = &model.CommonModel{
-		RuntimePath: "/var/run/casaos",
+		RuntimePath: constants.DefaultRuntimePath,
 	}
 
 	AppInfo = &model.APPModel{
-		DBPath:       "/var/lib/casaos",
-		AppStorePath: "/var/lib/casaos/appstore",
-		AppsPath:     "/var/lib/casaos/apps",
-		LogPath:      "/var/log/casaos",
+		DBPath:       constants.DefaultDataPath,
+		AppStorePath: filepath.Join(constants.DefaultDataPath, "appstore"),
+		AppsPath:     filepath.Join(constants.DefaultDataPath, "apps"),
+		LogPath:      constants.DefaultLogPath,
 		LogSaveName:  common.AppManagementServiceName,
 		LogFileExt:   "log",
 	}
@@ -46,6 +48,7 @@ func InitSetup(config string, sample string) {
 		ConfigFilePath = config
 	}
 
+	// create default config file if not exist
 	if _, err := os.Stat(ConfigFilePath); os.IsNotExist(err) {
 		fmt.Println("config file not exist, create it")
 		// create config file
