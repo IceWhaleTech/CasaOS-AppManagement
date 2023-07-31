@@ -1,7 +1,6 @@
 [Unit]
 After=casaos-message-bus.service
 After=docker.service
-ConditionFileNotEmpty=/etc/casaos/app-management.conf
 Description=CasaOS App Management Service
 
 [Service]
