@@ -200,13 +200,19 @@ func (a *ComposeApp) IsUpdateAvailableWith(storeComposeApp *ComposeApp) bool {
 		return false
 	}
 
+	mainAppImage, mainAppTag := docker.ExtractImageAndTag(mainApp.Image)
+
+	if mainAppTag == "latest" {
+		logger.Info("main app image tag is latest, thus no update available", zap.String("image", mainApp.Image))
+		return false
+	}
+
 	storeMainApp := storeComposeApp.App(mainAppName)
 	if storeMainApp == nil {
 		logger.Error("main app not found in store compose app, thus no update available", zap.String("name", mainAppName))
 		return false
 	}
 
-	mainAppImage, mainAppTag := docker.ExtractImageAndTag(mainApp.Image)
 	storeMainAppImage, storeMainAppTag := docker.ExtractImageAndTag(storeMainApp.Image)
 
 	if mainAppImage != storeMainAppImage {
@@ -721,7 +727,6 @@ func (a *ComposeApp) SetStatus(ctx context.Context, status codegen.RequestCompos
 				})
 				if err != nil {
 					logger.Error("failed to get compose app info", zap.Error(err), zap.String("name", a.Name))
-
 				}
 				isContainerExited := true
 				for _, containerSummary := range containerSummarys {
