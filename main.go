@@ -84,7 +84,7 @@ func main() {
 			}
 		}()
 
-		if _, err := crontab.AddFunc("@every 8h", func() {
+		if _, err := crontab.AddFunc("@every 10m", func() {
 			if err := service.MyService.V2AppStore().UpdateCatalog(); err != nil {
 				logger.Error("error when updating AppStore catalog", zap.Error(err))
 			}
