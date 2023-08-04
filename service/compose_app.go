@@ -935,7 +935,7 @@ func LoadComposeAppFromConfigFile(appID string, configFile string) (*ComposeApp,
 		cli.WithEnv(env),
 		cli.WithConfigFileEnv,
 		cli.WithDefaultConfigPath,
-		cli.WithEnvFile(options.EnvFile),
+		cli.WithEnvFiles(options.EnvFiles...),
 		cli.WithName(options.ProjectName),
 	)
 
