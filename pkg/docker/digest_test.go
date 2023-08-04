@@ -3,6 +3,7 @@ package docker_test
 import (
 	"context"
 	"io"
+	"runtime"
 	"testing"
 
 	"github.com/IceWhaleTech/CasaOS-AppManagement/pkg/docker"
@@ -20,6 +21,12 @@ import (
 
 func TestCompareDigest(t *testing.T) {
 	defer goleak.VerifyNone(t)
+
+	defer func() {
+		// workaround due to https://github.com/patrickmn/go-cache/issues/166
+		docker.Cache = nil
+		runtime.GC()
+	}()
 
 	if !docker.IsDaemonRunning() {
 		t.Skip("Docker daemon is not running")
@@ -54,6 +61,12 @@ func TestCompareDigest(t *testing.T) {
 func TestGetManifest1(t *testing.T) {
 	defer goleak.VerifyNone(t)
 
+	defer func() {
+		// workaround due to https://github.com/patrickmn/go-cache/issues/166
+		docker.Cache = nil
+		runtime.GC()
+	}()
+
 	manifest, contentType, err := docker.GetManifest(context.Background(), "hello-world:latest")
 	assert.NilError(t, err)
 	assert.Equal(t, contentType, manifestlist.MediaTypeManifestList)
@@ -78,6 +91,13 @@ func TestGetManifest1(t *testing.T) {
 
 func TestGetManifest2(t *testing.T) {
 	defer goleak.VerifyNone(t)
+
+	defer func() {
+		// workaround due to https://github.com/patrickmn/go-cache/issues/166
+		docker.Cache = nil
+		runtime.GC()
+	}()
+
 	manifest, contentType, err := docker.GetManifest(context.Background(), "wangxiaohu/brother-cups:latest")
 	assert.NilError(t, err)
 	assert.Equal(t, contentType, schema1.MediaTypeSignedManifest)
@@ -94,6 +114,13 @@ func TestGetManifest2(t *testing.T) {
 
 func TestGetManifest3(t *testing.T) {
 	defer goleak.VerifyNone(t)
+
+	defer func() {
+		// workaround due to https://github.com/patrickmn/go-cache/issues/166
+		docker.Cache = nil
+		runtime.GC()
+	}()
+
 	manifest, contentType, err := docker.GetManifest(context.Background(), "2fauth/2fauth:latest")
 	assert.NilError(t, err)
 	assert.Equal(t, contentType, v1.MediaTypeImageIndex)
