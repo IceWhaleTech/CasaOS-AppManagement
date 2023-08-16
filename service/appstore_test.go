@@ -59,6 +59,8 @@ func TestGetApp(t *testing.T) {
 		runtime.GC()
 	}()
 
+	logger.LogInitConsoleOnly()
+
 	appStorePath, err := os.MkdirTemp("", "appstore")
 	assert.NilError(t, err)
 

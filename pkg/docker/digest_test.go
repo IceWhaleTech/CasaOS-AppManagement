@@ -32,6 +32,12 @@ func TestCompareDigest(t *testing.T) {
 		t.Skip("Docker daemon is not running")
 	}
 
+	defer func() {
+		// workaround due to https://github.com/patrickmn/go-cache/issues/166
+		docker.Cache = nil
+		runtime.GC()
+	}()
+
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	assert.NilError(t, err)
 	defer cli.Close()
