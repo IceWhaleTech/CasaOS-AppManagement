@@ -3,6 +3,7 @@ package service
 import (
 	"crypto/md5" // nolint: gosec
 	"fmt"
+	"io/fs"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -352,7 +353,7 @@ func BuildCatalog(storeRoot string) (map[string]*ComposeApp, error) {
 		composeFile := filepath.Join(path, common.ComposeYAMLFileName)
 		if !file.Exists(composeFile) {
 			// retry with ".yaml" extension
-			composeFile = strings.TrimSuffix(composeFile, ".yml") + ".yaml"	
+			composeFile = strings.TrimSuffix(composeFile, ".yml") + ".yaml"
 			if !file.Exists(composeFile) {
 				return nil
 			}
@@ -365,7 +366,8 @@ func BuildCatalog(storeRoot string) (map[string]*ComposeApp, error) {
 
 		composeApp, err := NewComposeAppFromYAML(composeYAML, true, false)
 		if err != nil {
-			return err
+			logger.Info("failed to parse compose app - contact the contributor of this app to fix it", zap.Error(err), zap.String("composeFile", composeFile))
+			return fs.SkipDir // skip invalid compose app
 		}
 
 		catalog[composeApp.Name] = composeApp
