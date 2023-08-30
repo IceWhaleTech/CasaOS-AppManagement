@@ -20,7 +20,6 @@ var (
 	}
 
 	AppInfo = &model.APPModel{
-		DBPath:       constants.DefaultDataPath,
 		AppStorePath: filepath.Join(constants.DefaultDataPath, "appstore"),
 		AppsPath:     filepath.Join(constants.DefaultDataPath, "apps"),
 		LogPath:      constants.DefaultLogPath,

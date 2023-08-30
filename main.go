@@ -47,7 +47,6 @@ func main() {
 	// parse arguments and intialize
 	{
 		configFlag := flag.String("c", "", "config file path")
-		dbFlag := flag.String("db", "", "db path")
 		versionFlag := flag.Bool("v", false, "version")
 
 		flag.Parse()
@@ -64,10 +63,6 @@ func main() {
 		config.InitGlobal(*configFlag)
 
 		logger.LogInit(config.AppInfo.LogPath, config.AppInfo.LogSaveName, config.AppInfo.LogFileExt)
-
-		if len(*dbFlag) == 0 {
-			*dbFlag = config.AppInfo.DBPath
-		}
 
 		service.MyService = service.NewService(config.CommonInfo.RuntimePath)
 	}
