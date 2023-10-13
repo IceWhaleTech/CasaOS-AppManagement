@@ -1523,11 +1523,11 @@ components:
         - by_casaos
         - community
         - unknown
-      x-enum-varnames:
+      x-enum-var-names:
         - AuthorTypeOfficial
         - AuthorTypeByCasaOS
         - AuthorTypeCommunity
-        - AuthroTypeUnknown
+        - AuthorTypeUnknown
 
     WebAppGridItem:
       description: (internal use ONLY)
