@@ -52,13 +52,13 @@ func TestFilterCatalogByAuthorType(t *testing.T) {
 	filteredCatalog := v2.FilterCatalogByAuthorType(catalog, "test")
 	assert.Equal(t, len(filteredCatalog), 0)
 
-	filteredCatalog = v2.FilterCatalogByAuthorType(catalog, codegen.ByCasaos)
+	filteredCatalog = v2.FilterCatalogByAuthorType(catalog, codegen.AuthorTypeByCasaOS)
 	assert.Equal(t, len(filteredCatalog), 0)
 
-	filteredCatalog = v2.FilterCatalogByAuthorType(catalog, codegen.Official)
+	filteredCatalog = v2.FilterCatalogByAuthorType(catalog, codegen.AuthorTypeOfficial)
 	assert.Equal(t, len(filteredCatalog), 0)
 
-	filteredCatalog = v2.FilterCatalogByAuthorType(catalog, codegen.Community)
+	filteredCatalog = v2.FilterCatalogByAuthorType(catalog, codegen.AuthorTypeCommunity)
 	assert.Equal(t, len(filteredCatalog), 0)
 
 	catalog["test"] = &service.ComposeApp{
@@ -72,13 +72,13 @@ func TestFilterCatalogByAuthorType(t *testing.T) {
 	filteredCatalog = v2.FilterCatalogByAuthorType(catalog, "test")
 	assert.Equal(t, len(filteredCatalog), 0)
 
-	filteredCatalog = v2.FilterCatalogByAuthorType(catalog, codegen.ByCasaos)
+	filteredCatalog = v2.FilterCatalogByAuthorType(catalog, codegen.AuthorTypeByCasaOS)
 	assert.Equal(t, len(filteredCatalog), 1)
 
-	filteredCatalog = v2.FilterCatalogByAuthorType(catalog, codegen.Official)
+	filteredCatalog = v2.FilterCatalogByAuthorType(catalog, codegen.AuthorTypeOfficial)
 	assert.Equal(t, len(filteredCatalog), 0)
 
-	filteredCatalog = v2.FilterCatalogByAuthorType(catalog, codegen.Community)
+	filteredCatalog = v2.FilterCatalogByAuthorType(catalog, codegen.AuthorTypeCommunity)
 	assert.Equal(t, len(filteredCatalog), 0)
 
 	catalog["test2"] = &service.ComposeApp{
@@ -93,13 +93,13 @@ func TestFilterCatalogByAuthorType(t *testing.T) {
 	filteredCatalog = v2.FilterCatalogByAuthorType(catalog, "test")
 	assert.Equal(t, len(filteredCatalog), 0)
 
-	filteredCatalog = v2.FilterCatalogByAuthorType(catalog, codegen.ByCasaos)
+	filteredCatalog = v2.FilterCatalogByAuthorType(catalog, codegen.AuthorTypeByCasaOS)
 	assert.Equal(t, len(filteredCatalog), 1)
 
-	filteredCatalog = v2.FilterCatalogByAuthorType(catalog, codegen.Official)
+	filteredCatalog = v2.FilterCatalogByAuthorType(catalog, codegen.AuthorTypeOfficial)
 	assert.Equal(t, len(filteredCatalog), 1)
 
-	filteredCatalog = v2.FilterCatalogByAuthorType(catalog, codegen.Community)
+	filteredCatalog = v2.FilterCatalogByAuthorType(catalog, codegen.AuthorTypeCommunity)
 	assert.Equal(t, len(filteredCatalog), 0)
 
 	catalog["test3"] = &service.ComposeApp{
@@ -114,13 +114,13 @@ func TestFilterCatalogByAuthorType(t *testing.T) {
 	filteredCatalog = v2.FilterCatalogByAuthorType(catalog, "test")
 	assert.Equal(t, len(filteredCatalog), 0)
 
-	filteredCatalog = v2.FilterCatalogByAuthorType(catalog, codegen.ByCasaos)
+	filteredCatalog = v2.FilterCatalogByAuthorType(catalog, codegen.AuthorTypeByCasaOS)
 	assert.Equal(t, len(filteredCatalog), 1)
 
-	filteredCatalog = v2.FilterCatalogByAuthorType(catalog, codegen.Official)
+	filteredCatalog = v2.FilterCatalogByAuthorType(catalog, codegen.AuthorTypeOfficial)
 	assert.Equal(t, len(filteredCatalog), 1)
 
-	filteredCatalog = v2.FilterCatalogByAuthorType(catalog, codegen.Community)
+	filteredCatalog = v2.FilterCatalogByAuthorType(catalog, codegen.AuthorTypeCommunity)
 	assert.Equal(t, len(filteredCatalog), 1)
 }
 
