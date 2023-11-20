@@ -40,8 +40,8 @@ builds:
       post:
         - cmd: go build -v -tags 'musl netgo osusergo' -o build/sysroot/usr/bin/appfile2compose github.com/IceWhaleTech/CasaOS-AppManagement/cmd/appfile2compose
           output: true
-        - cmd: upx --best --lzma -v --no-progress build/sysroot/usr/bin/appfile2compose
-          output: true
+        # - cmd: upx --best --lzma -v --no-progress build/sysroot/usr/bin/appfile2compose
+        #   output: true
         - cmd: upx --best --lzma -v --no-progress "{{ .Path }}"
           output: true
     env:
@@ -112,9 +112,9 @@ builds:
       - amd64
   - id: casaos-app-management-migration-tool-arm64
     binary: build/sysroot/usr/bin/casaos-app-management-migration-tool
-    hooks:
-      post:
-        - upx --best --lzma -v --no-progress "{{ .Path }}"
+    # hooks:
+    #   post:
+    #     - upx --best --lzma -v --no-progress "{{ .Path }}"
     main: ./cmd/migration-tool
     env:
       - CC=aarch64-linux-gnu-gcc
