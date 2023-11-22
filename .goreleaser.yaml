@@ -42,8 +42,8 @@ builds:
           output: true
         # - cmd: upx --best --lzma -v --no-progress build/sysroot/usr/bin/appfile2compose
         #   output: true
-        - cmd: upx --best --lzma -v --no-progress "{{ .Path }}"
-          output: true
+        # - cmd: upx --best --lzma -v --no-progress "{{ .Path }}"
+        #   output: true
     env:
       - CC=aarch64-linux-gnu-gcc
     ldflags:
