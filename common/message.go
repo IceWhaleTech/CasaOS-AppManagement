@@ -36,7 +36,7 @@ var (
 	PropertyTypeAppProgress = message_bus.PropertyType{
 		Name:        "app:progress",
 		Description: utils.Ptr("progress of the app"),
-		Example:     utils.Ptr("0.5"),
+		Example:     utils.Ptr("64"),
 	}
 )
 
