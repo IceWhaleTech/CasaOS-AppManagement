@@ -46,7 +46,7 @@ func (ds *dockerService) PullImage(ctx context.Context, imageName string) error 
 	})
 
 	if err := docker.PullImage(ctx, imageName, func(out io.ReadCloser) {
-		pullImageProgress(ctx, out, "INSTALL")
+		pullImageProgress(ctx, out, "INSTALL", 1, 1)
 	}); err != nil {
 		go PublishEventWrapper(ctx, common.EventTypeImagePullError, map[string]string{
 			common.PropertyTypeImageName.Name: imageName,
@@ -108,7 +108,7 @@ func (ds *dockerService) PullLatestImage(ctx context.Context, imageName string) 
 	}
 
 	if err = docker.PullImage(ctx, imageName, func(out io.ReadCloser) {
-		pullImageProgress(ctx, out, "UPDATE")
+		pullImageProgress(ctx, out, "UPDATE", 1, 1)
 	}); err != nil {
 		go PublishEventWrapper(ctx, common.EventTypeImagePullError, map[string]string{
 			common.PropertyTypeImageName.Name: imageName,
@@ -157,7 +157,27 @@ Loop:
 	return err
 }
 
-func pullImageProgress(ctx context.Context, out io.ReadCloser, notificationType string) {
+type StatusTye string
+
+const (
+	Pull         StatusTye = "Pulling fs layer"
+	PullComplete StatusTye = "Pull complete"
+)
+
+type ProgressDetail struct {
+	Current int64 `json:"current"`
+	Total   int64 `json:"total"`
+}
+
+type PullOut struct {
+	Status         StatusTye      `json:"status"`
+	ProgressDetail ProgressDetail `json:"progressDetail"`
+	Id             string         `json:"id"`
+}
+
+func pullImageProgress(ctx context.Context, out io.ReadCloser, notificationType string, totalImageNum int, currentImage int) {
+	layerNum := 0
+	completedLayerNum := 0
 	decoder := json.NewDecoder(out)
 	if decoder == nil {
 		logger.Error("failed to create json decoder")
@@ -171,15 +191,19 @@ func pullImageProgress(ctx context.Context, out io.ReadCloser, notificationType 
 			continue
 		}
 
-		buf, err := json.Marshal(message)
-		if err != nil {
-			logger.Error("failed to marshal json message", zap.Error(err))
-			continue
+		switch message.Status {
+		case string(Pull):
+			layerNum += 1
+		case string(PullComplete):
+			completedLayerNum += 1
 		}
 
-		go PublishEventWrapper(ctx, common.EventTypeImagePullProgress, map[string]string{
-			common.PropertyTypeMessage.Name: string(buf),
-		})
-
+		go func(completedLayerNum float32, layerNum float32) {
+			fmt.Println(completedLayerNum, layerNum, float32(currentImage), float32(totalImageNum))
+			fmt.Println((completedLayerNum / layerNum) * (float32(currentImage) / float32(totalImageNum)) * 100)
+			PublishEventWrapper(ctx, common.EventTypeAppInstallProgress, map[string]string{
+				common.PropertyTypeAppProgress.Name: fmt.Sprintf("%.0f", (completedLayerNum/layerNum)*(float32(currentImage)/float32(totalImageNum))*100),
+			})
+		}(float32(completedLayerNum), float32(layerNum))
 	}
 }

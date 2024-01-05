@@ -32,6 +32,12 @@ var (
 		Description: utils.Ptr("icon of the app"),
 		Example:     utils.Ptr("https://example.com/icon.png"),
 	}
+
+	PropertyTypeAppProgress = message_bus.PropertyType{
+		Name:        "app:progress",
+		Description: utils.Ptr("progress of the app"),
+		Example:     utils.Ptr("0.5"),
+	}
 )
 
 // container properties
@@ -68,7 +74,7 @@ var EventTypes = []message_bus.EventType{
 	EventTypeAppStoreRegisterBegin, EventTypeAppStoreRegisterEnd, EventTypeAppStoreRegisterError,
 
 	// app
-	EventTypeAppInstallBegin, EventTypeAppInstallEnd, EventTypeAppInstallError,
+	EventTypeAppInstallBegin, EventTypeAppInstallProgress, EventTypeAppInstallEnd, EventTypeAppInstallError,
 	EventTypeAppUninstallBegin, EventTypeAppUninstallEnd, EventTypeAppUninstallError,
 	EventTypeAppUpdateBegin, EventTypeAppUpdateEnd, EventTypeAppUpdateError,
 	EventTypeAppApplyChangesBegin, EventTypeAppApplyChangesEnd, EventTypeAppApplyChangesError,
@@ -118,6 +124,15 @@ var (
 		PropertyTypeList: []message_bus.PropertyType{
 			PropertyTypeAppName,
 			PropertyTypeAppIcon,
+		},
+	}
+
+	EventTypeAppInstallProgress = message_bus.EventType{
+		SourceID: AppManagementServiceName,
+		Name:     "app:install-progress",
+		PropertyTypeList: []message_bus.PropertyType{
+			PropertyTypeAppName,
+			PropertyTypeAppProgress,
 		},
 	}
 
