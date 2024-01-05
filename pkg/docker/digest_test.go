@@ -73,7 +73,7 @@ func TestGetManifest1(t *testing.T) {
 		runtime.GC()
 	}()
 
-	manifest, contentType, err := docker.GetManifest(context.Background(), "hello-world:latest")
+	manifest, contentType, err := docker.GetManifest(context.Background(), "hello-world:nanoserver-1803")
 	assert.NilError(t, err)
 	assert.Equal(t, contentType, manifestlist.MediaTypeManifestList)
 
