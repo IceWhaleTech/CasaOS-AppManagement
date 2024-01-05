@@ -157,11 +157,11 @@ Loop:
 	return err
 }
 
-type StatusTye string
+type StatusType string
 
 const (
-	Pull         StatusTye = "Pulling fs layer"
-	PullComplete StatusTye = "Pull complete"
+	Pull         StatusType = "Pulling fs layer"
+	PullComplete StatusType = "Pull complete"
 )
 
 type ProgressDetail struct {
@@ -170,7 +170,7 @@ type ProgressDetail struct {
 }
 
 type PullOut struct {
-	Status         StatusTye      `json:"status"`
+	Status         StatusType     `json:"status"`
 	ProgressDetail ProgressDetail `json:"progressDetail"`
 	Id             string         `json:"id"`
 }
@@ -193,16 +193,22 @@ func pullImageProgress(ctx context.Context, out io.ReadCloser, notificationType 
 		}
 
 		switch message.Status {
+		// pull a new layer
 		case string(Pull):
 			layerNum += 1
+		// pull a layer complete
 		case string(PullComplete):
 			completedLayerNum += 1
 		}
 
+		// layer progress
 		completedFraction := float32(completedLayerNum) / float32(layerNum)
+
+		// image progress
 		currentImageFraction := float32(currentImage) / float32(totalImageNum)
 		progress := completedFraction * currentImageFraction * 100
 
+		// reduce the event send frequency
 		if int(progress) > lastProgress {
 			lastProgress = int(progress)
 			go func(progress int) {
