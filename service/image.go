@@ -199,8 +199,6 @@ func pullImageProgress(ctx context.Context, out io.ReadCloser, notificationType 
 		}
 
 		go func(completedLayerNum float32, layerNum float32) {
-			fmt.Println(completedLayerNum, layerNum, float32(currentImage), float32(totalImageNum))
-			fmt.Println((completedLayerNum / layerNum) * (float32(currentImage) / float32(totalImageNum)) * 100)
 			PublishEventWrapper(ctx, common.EventTypeAppInstallProgress, map[string]string{
 				common.PropertyTypeAppProgress.Name: fmt.Sprintf("%.0f", (completedLayerNum/layerNum)*(float32(currentImage)/float32(totalImageNum))*100),
 			})
