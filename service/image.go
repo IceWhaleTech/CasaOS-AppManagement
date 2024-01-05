@@ -178,6 +178,7 @@ type PullOut struct {
 func pullImageProgress(ctx context.Context, out io.ReadCloser, notificationType string, totalImageNum int, currentImage int) {
 	layerNum := 0
 	completedLayerNum := 0
+	lastProgress := 0
 	decoder := json.NewDecoder(out)
 	if decoder == nil {
 		logger.Error("failed to create json decoder")
@@ -198,10 +199,17 @@ func pullImageProgress(ctx context.Context, out io.ReadCloser, notificationType 
 			completedLayerNum += 1
 		}
 
-		go func(completedLayerNum float32, layerNum float32) {
-			PublishEventWrapper(ctx, common.EventTypeAppInstallProgress, map[string]string{
-				common.PropertyTypeAppProgress.Name: fmt.Sprintf("%.0f", (completedLayerNum/layerNum)*(float32(currentImage)/float32(totalImageNum))*100),
-			})
-		}(float32(completedLayerNum), float32(layerNum))
+		completedFraction := float32(completedLayerNum) / float32(layerNum)
+		currentImageFraction := float32(currentImage) / float32(totalImageNum)
+		progress := completedFraction * currentImageFraction * 100
+
+		if int(progress) > lastProgress {
+			lastProgress = int(progress)
+			go func(progress int) {
+				PublishEventWrapper(ctx, common.EventTypeAppInstallProgress, map[string]string{
+					common.PropertyTypeAppProgress.Name: fmt.Sprintf("%d", progress),
+				})
+			}(int(progress))
+		}
 	}
 }
