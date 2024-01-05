@@ -351,7 +351,9 @@ func (a *ComposeApp) Containers(ctx context.Context) (map[string][]api.Container
 
 func (a *ComposeApp) Pull(ctx context.Context) error {
 	// pull
-	for _, app := range a.Services {
+	serviceNum := len(a.Services)
+
+	for i, app := range a.Services {
 		if err := func() error {
 			go PublishEventWrapper(ctx, common.EventTypeImagePullBegin, map[string]string{
 				common.PropertyTypeImageName.Name: app.Image,
@@ -362,7 +364,7 @@ func (a *ComposeApp) Pull(ctx context.Context) error {
 			})
 
 			if err := docker.PullImage(ctx, app.Image, func(out io.ReadCloser) {
-				pullImageProgress(ctx, out, "INSTALL")
+				pullImageProgress(ctx, out, "INSTALL", serviceNum, i+1)
 			}); err != nil {
 				go PublishEventWrapper(ctx, common.EventTypeImagePullError, map[string]string{
 					common.PropertyTypeImageName.Name: app.Image,
