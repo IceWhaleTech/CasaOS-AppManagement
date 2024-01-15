@@ -284,9 +284,9 @@ func FilterCatalogByCategory(catalog map[string]*service.ComposeApp, category st
 
 func FilterCatalogByAuthorType(catalog map[string]*service.ComposeApp, authorType codegen.StoreAppAuthorType) map[string]*service.ComposeApp {
 	if !lo.Contains([]codegen.StoreAppAuthorType{
-		codegen.Official,
-		codegen.ByCasaos,
-		codegen.Community,
+		codegen.AuthorTypeOfficial,
+		codegen.AuthorTypeByCasaOS,
+		codegen.AuthorTypeCommunity,
 	}, authorType) {
 		logger.Info("warning: unknown author type - returning empty catalog", zap.String("authorType", string(authorType)))
 		return map[string]*service.ComposeApp{}

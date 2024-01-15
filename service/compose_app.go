@@ -86,18 +86,18 @@ func (a *ComposeApp) StoreInfo(includeApps bool) (*codegen.ComposeAppStoreInfo, 
 func (a *ComposeApp) AuthorType() codegen.StoreAppAuthorType {
 	storeInfo, err := a.StoreInfo(false)
 	if err != nil {
-		return codegen.Unknown
+		return codegen.AuthorTypeUnknown
 	}
 
 	if strings.ToLower(storeInfo.Author) == strings.ToLower(storeInfo.Developer) {
-		return codegen.Official
+		return codegen.AuthorTypeOfficial
 	}
 
 	if strings.ToLower(storeInfo.Author) == strings.ToLower(common.ComposeAppAuthorCasaOSTeam) {
-		return codegen.ByCasaos
+		return codegen.AuthorTypeByCasaOS
 	}
 
-	return codegen.Community
+	return codegen.AuthorTypeCommunity
 }
 
 func (a *ComposeApp) SetStoreAppID(storeAppID string) (string, bool) {
