@@ -930,6 +930,7 @@ func LoadComposeAppFromConfigFile(appID string, configFile string) (*ComposeApp,
 	// load project
 	project, err := options.ToProject(
 		nil,
+		nil,
 		cli.WithWorkingDirectory(options.ProjectDir), // this has to be the first option, otherwise it will assume the dir where this program is running is the working directory.
 
 		cli.WithOsEnv,
