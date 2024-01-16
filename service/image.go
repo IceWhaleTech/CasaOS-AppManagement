@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"strings"
+	"time"
 
 	"github.com/IceWhaleTech/CasaOS-AppManagement/common"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/pkg/docker"
@@ -175,15 +176,34 @@ type PullOut struct {
 	Id             string         `json:"id"`
 }
 
+type Throttler struct {
+	InvokeInterval time.Duration
+	LastInvokeTime time.Time
+}
+
+func NewThrottler(interval time.Duration) *Throttler {
+	return &Throttler{
+		InvokeInterval: interval,
+	}
+}
+
+func (t *Throttler) ThrottleFunc(f func()) {
+	if time.Since(t.LastInvokeTime) >= t.InvokeInterval {
+		f()
+		t.LastInvokeTime = time.Now()
+	}
+}
+
 func pullImageProgress(ctx context.Context, out io.ReadCloser, notificationType string, totalImageNum int, currentImage int) {
 	layerNum := 0
 	completedLayerNum := 0
-	lastProgress := 0
 	decoder := json.NewDecoder(out)
 	if decoder == nil {
 		logger.Error("failed to create json decoder")
 		return
 	}
+
+	throttler := NewThrottler(500 * time.Millisecond)
 
 	for decoder.More() {
 		var message jsonmessage.JSONMessage
@@ -209,13 +229,12 @@ func pullImageProgress(ctx context.Context, out io.ReadCloser, notificationType 
 		progress := completedFraction * currentImageFraction * 100
 
 		// reduce the event send frequency
-		if int(progress) > lastProgress {
-			lastProgress = int(progress)
+		throttler.ThrottleFunc(func() {
 			go func(progress int) {
 				PublishEventWrapper(ctx, common.EventTypeAppInstallProgress, map[string]string{
 					common.PropertyTypeAppProgress.Name: fmt.Sprintf("%d", progress),
 				})
 			}(int(progress))
-		}
+		})
 	}
 }
