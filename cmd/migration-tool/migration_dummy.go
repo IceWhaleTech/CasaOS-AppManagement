@@ -9,10 +9,21 @@ import (
 	interfaces "github.com/IceWhaleTech/CasaOS-Common"
 )
 
-const (
-	oldAppStoreURL = "https://github.com/IceWhaleTech/_appstore/archive/refs/heads/main.zip"
-	newAppStoreURL = "https://casaos-appstore.github.io/heads/main.zip"
-)
+type UrlReplacement struct {
+	OldUrl string
+	NewUrl string
+}
+
+var replaceUrl = []UrlReplacement{
+	{
+		OldUrl: "https://github.com/IceWhaleTech/_appstore/archive/refs/heads/main.zip",
+		NewUrl: "https://casaos.app/store/main.zip",
+	},
+	{
+		OldUrl: " https://casaos.oss-cn-shanghai.aliyuncs.com/IceWhaleTech/_appstore/archive/refs/heads/main.zip",
+		NewUrl: "https://casaos.oss-cn-shanghai.aliyuncs.com/store/main.zip",
+	},
+}
 
 type migrationTool struct{}
 
@@ -27,8 +38,10 @@ func (u *migrationTool) IsMigrationNeeded() (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	if strings.Contains(string(content), oldAppStoreURL) {
-		return true, nil
+	for _, v := range replaceUrl {
+		if strings.Contains(string(content), v.OldUrl) {
+			return true, nil
+		}
 	}
 
 	return false, nil
@@ -50,7 +63,12 @@ func (u *migrationTool) Migrate() error {
 	if err != nil {
 		return err
 	}
-	newContent := strings.Replace(string(content), oldAppStoreURL, newAppStoreURL, -1)
+
+	newContent := string(content)
+	for _, v := range replaceUrl {
+		newContent = strings.Replace(string(newContent), v.OldUrl, v.NewUrl, -1)
+	}
+
 	_, err = file.WriteAt([]byte(newContent), 0)
 	if err != nil {
 		return err
