@@ -11,7 +11,7 @@ import (
 
 const (
 	oldAppStoreURL = "https://github.com/IceWhaleTech/_appstore/archive/refs/heads/main.zip"
-	newAppStoreURL = "https://casaos-appstore.github.io/casaos-appstore/linux-all-appstore.zip"
+	newAppStoreURL = "https://casaos-appstore.github.io/heads/main.zip"
 )
 
 type migrationTool struct{}
