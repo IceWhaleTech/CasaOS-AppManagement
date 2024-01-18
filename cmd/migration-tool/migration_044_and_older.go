@@ -21,7 +21,7 @@ var replaceUrl = []UrlReplacement{
 		NewUrl: "https://casaos.app/store/main.zip",
 	},
 	{
-		OldUrl: " https://casaos.oss-cn-shanghai.aliyuncs.com/IceWhaleTech/_appstore/archive/refs/heads/main.zip",
+		OldUrl: "https://casaos.oss-cn-shanghai.aliyuncs.com/IceWhaleTech/_appstore/archive/refs/heads/main.zip",
 		NewUrl: "https://casaos.oss-cn-shanghai.aliyuncs.com/store/main.zip",
 	},
 }
@@ -74,7 +74,14 @@ func (u *migrationTool044AndOlder) Migrate() error {
 
 	newContent := string(content)
 	for _, v := range replaceUrl {
-		newContent = strings.Replace(string(newContent), v.OldUrl, v.NewUrl, -1)
+		newContent = strings.Replace(newContent, v.OldUrl, v.NewUrl, -1)
+	}
+
+	// clear the ole content
+	err = file.Truncate(0)
+	if err != nil {
+		_logger.Error("failed to truncate app management config file: %s", err)
+		return err
 	}
 
 	_, err = file.WriteAt([]byte(newContent), 0)
