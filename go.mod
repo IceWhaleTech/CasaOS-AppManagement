@@ -124,6 +124,7 @@ require (
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-runewidth v0.0.14 // indirect
 	github.com/mattn/go-shellwords v1.0.12 // indirect
+	github.com/mattn/go-sqlite3 v1.14.16 // indirect
 	github.com/matttproud/golang_protobuf_extensions v1.0.4 // indirect
 	github.com/mgutz/ansi v0.0.0-20170206155736-9520e82c474b // indirect
 	github.com/mholt/archiver/v3 v3.5.1 // indirect
@@ -219,7 +220,7 @@ require (
 )
 
 require (
-	github.com/IceWhaleTech/CasaOS-Common v0.4.8-alpha2
+	github.com/IceWhaleTech/CasaOS-Common v0.4.8-alpha4
 	github.com/compose-spec/compose-go v1.20.2
 	github.com/coreos/go-systemd v0.0.0-20191104093116-d3cd4ed1dbcf
 	github.com/docker/cli v24.0.7+incompatible
