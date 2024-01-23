@@ -3,6 +3,7 @@ module github.com/IceWhaleTech/CasaOS-AppManagement
 go 1.21
 
 require (
+	github.com/bluele/gcache v0.0.2
 	github.com/deepmap/oapi-codegen v1.12.4
 	github.com/docker/compose/v2 v2.23.3
 	github.com/docker/distribution v2.8.2+incompatible
@@ -219,7 +220,7 @@ require (
 )
 
 require (
-	github.com/IceWhaleTech/CasaOS-Common v0.4.8-alpha2
+	github.com/IceWhaleTech/CasaOS-Common v0.4.8-alpha4
 	github.com/compose-spec/compose-go v1.20.2
 	github.com/coreos/go-systemd v0.0.0-20191104093116-d3cd4ed1dbcf
 	github.com/docker/cli v24.0.7+incompatible
