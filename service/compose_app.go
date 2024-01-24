@@ -1036,15 +1036,19 @@ func NewComposeAppFromYAML(yaml []byte, skipInterpolation, skipValidation bool) 
 		composeApp.SetTitle(composeApp.Name, common.DefaultLanguage)
 	}
 
-	value, err := cache.Get("gpus")
-	if err != nil {
-		value, err = external.GPUInfoList()
-		cache.Set("gpus", value)
-	}
+	if config.RemoveRuntimeWithoutNvidiaGPUFlag {
+		value, err := cache.Get("gpus")
+		if err != nil {
+			value, err = external.GPUInfoList()
+			cache.Set("gpus", value)
+		} else {
+			cache.Set("gpus", []external.GPUInfo{})
+		}
 
-	// without nvidia-smi 	// no gpu
-	if err != nil || len(value.([]external.GPUInfo)) == 0 {
-		removeRuntime(composeApp)
+		// without nvidia-smi 	// no gpu
+		if err != nil || len(value.([]external.GPUInfo)) == 0 {
+			removeRuntime(composeApp)
+		}
 	}
 
 	// pass icon information to v1 label for backward compatibility, because we are
