@@ -1035,7 +1035,7 @@ func NewComposeAppFromYAML(yaml []byte, skipInterpolation, skipValidation bool) 
 		composeApp.SetTitle(composeApp.Name, common.DefaultLanguage)
 	}
 
-	if config.RemoveRuntimeWithoutNvidiaGPUFlag {
+	if config.RemoveRuntimeIfNoNvidiaGPUFlag {
 		// if gpuCache is nil, it means it is first time fetching gpu info
 		if gpuCache == nil {
 			value, err := external.GPUInfoList()
