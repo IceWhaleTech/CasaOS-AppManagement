@@ -1,0 +1,14 @@
+[Unit]
+After=casaos-message-bus.service
+After=docker.service
+Description=CasaOS App Management Service
+
+[Service]
+ExecStartPre=/usr/bin/casaos-app-management -v
+ExecStart=/usr/bin/casaos-app-management -c /etc/casaos/app-management.conf --removeRuntimeIfNoNvidiaGPU true
+PIDFile=/var/run/casaos/app-management.pid
+Restart=always
+Type=notify
+
+[Install]
+WantedBy=multi-user.target

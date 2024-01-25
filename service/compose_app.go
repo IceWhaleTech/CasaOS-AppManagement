@@ -18,6 +18,7 @@ import (
 	"github.com/IceWhaleTech/CasaOS-AppManagement/common"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/pkg/config"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/pkg/docker"
+	"github.com/IceWhaleTech/CasaOS-Common/external"
 	"github.com/IceWhaleTech/CasaOS-Common/utils"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/file"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/logger"
@@ -27,6 +28,7 @@ import (
 	"github.com/compose-spec/compose-go/loader"
 	"github.com/compose-spec/compose-go/types"
 	composeCmd "github.com/docker/compose/v2/cmd/compose"
+
 	"github.com/docker/compose/v2/cmd/formatter"
 	"github.com/docker/compose/v2/pkg/api"
 	"github.com/go-resty/resty/v2"
@@ -945,6 +947,14 @@ func LoadComposeAppFromConfigFile(appID string, configFile string) (*ComposeApp,
 	return (*ComposeApp)(project), err
 }
 
+func removeRuntime(a *ComposeApp) {
+	for i := range a.Services {
+		a.Services[i].Runtime = ""
+	}
+}
+
+var gpuCache *([]external.GPUInfo) = nil
+
 func NewComposeAppFromYAML(yaml []byte, skipInterpolation, skipValidation bool) (*ComposeApp, error) {
 	tmpWorkingDir, err := os.MkdirTemp("", "casaos-compose-app-*")
 	if err != nil {
@@ -1023,6 +1033,23 @@ func NewComposeAppFromYAML(yaml []byte, skipInterpolation, skipValidation bool) 
 	if err != nil || storeInfo == nil || storeInfo.Title == nil {
 		logger.Info("compose app does not have store info with title set, re-using app name as title", zap.String("app", composeApp.Name))
 		composeApp.SetTitle(composeApp.Name, common.DefaultLanguage)
+	}
+
+	if config.RemoveRuntimeIfNoNvidiaGPUFlag {
+		// if gpuCache is nil, it means it is first time fetching gpu info
+		if gpuCache == nil {
+			value, err := external.GPUInfoList()
+			if err != nil {
+				gpuCache = &([]external.GPUInfo{})
+			} else {
+				gpuCache = &value
+			}
+		}
+
+		// without nvidia-smi 	// no gpu or first time fetching gpu info failed
+		if err != nil || len(*gpuCache) == 0 {
+			removeRuntime(composeApp)
+		}
 	}
 
 	// pass icon information to v1 label for backward compatibility, because we are

@@ -48,6 +48,7 @@ func main() {
 	{
 		configFlag := flag.String("c", "", "config file path")
 		versionFlag := flag.Bool("v", false, "version")
+		removeRuntimeIfNoNvidiaGPUFlag := flag.Bool("removeRuntimeIfNoNvidiaGPU", false, "remove runtime with nvidia gpu")
 
 		flag.Parse()
 
@@ -65,6 +66,8 @@ func main() {
 		logger.LogInit(config.AppInfo.LogPath, config.AppInfo.LogSaveName, config.AppInfo.LogFileExt)
 
 		service.MyService = service.NewService(config.CommonInfo.RuntimePath)
+
+		config.RemoveRuntimeIfNoNvidiaGPUFlag = *removeRuntimeIfNoNvidiaGPUFlag
 	}
 
 	// setup cron
