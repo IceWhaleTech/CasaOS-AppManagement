@@ -24,7 +24,6 @@ import (
 	"github.com/IceWhaleTech/CasaOS-Common/utils/logger"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/port"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/random"
-	"github.com/bluele/gcache"
 	"github.com/compose-spec/compose-go/cli"
 	"github.com/compose-spec/compose-go/loader"
 	"github.com/compose-spec/compose-go/types"
@@ -954,7 +953,7 @@ func removeRuntime(a *ComposeApp) {
 	}
 }
 
-var cache = gcache.New(1).Build()
+var gpuCache *([]external.GPUInfo) = nil
 
 func NewComposeAppFromYAML(yaml []byte, skipInterpolation, skipValidation bool) (*ComposeApp, error) {
 	tmpWorkingDir, err := os.MkdirTemp("", "casaos-compose-app-*")
@@ -1037,16 +1036,18 @@ func NewComposeAppFromYAML(yaml []byte, skipInterpolation, skipValidation bool) 
 	}
 
 	if config.RemoveRuntimeWithoutNvidiaGPUFlag {
-		value, err := cache.Get("gpus")
-		if err != nil {
-			value, err = external.GPUInfoList()
-			cache.Set("gpus", value)
-		} else {
-			cache.Set("gpus", []external.GPUInfo{})
+		// if gpuCache is nil, it means it is first time fetching gpu info
+		if gpuCache == nil {
+			value, err := external.GPUInfoList()
+			if err != nil {
+				gpuCache = &([]external.GPUInfo{})
+			} else {
+				gpuCache = &value
+			}
 		}
 
-		// without nvidia-smi 	// no gpu
-		if err != nil || len(value.([]external.GPUInfo)) == 0 {
+		// without nvidia-smi 	// no gpu or first time fetching gpu info failed
+		if err != nil || len(*gpuCache) == 0 {
 			removeRuntime(composeApp)
 		}
 	}
