@@ -85,6 +85,44 @@ func TestGetApp(t *testing.T) {
 	}
 }
 
+func TestSkipUpdateCatalog(t *testing.T) {
+	// defer goleak.VerifyNone(t, goleak.IgnoreTopFunction(topFunc1)) //
+	logger.LogInitConsoleOnly()
+
+	appStoreUrl := []string{
+		"https://casaos.app/store/main.zip",
+		"https://casaos.oss-cn-shanghai.aliyuncs.com/store/main.zip",
+	}
+
+	for _, url := range appStoreUrl {
+		appStore, err := service.AppStoreByURL(url)
+		assert.NilError(t, err)
+		workdir, err := appStore.WorkDir()
+		assert.NilError(t, err)
+
+		appStoreStat, err := os.Stat(workdir)
+		assert.NilError(t, err)
+
+		err = appStore.UpdateCatalog()
+		assert.NilError(t, err)
+
+		// get create and change time of appstore
+		appStoreStat_first, err := os.Stat(workdir)
+		assert.NilError(t, err)
+
+		assert.Equal(t, false, appStoreStat_first.ModTime().Equal(appStoreStat.ModTime()))
+
+		err = appStore.UpdateCatalog()
+		assert.NilError(t, err)
+
+		// get create and change time of appstore
+		appStoreStat_second, err := os.Stat(workdir)
+		assert.NilError(t, err)
+
+		assert.Equal(t, appStoreStat_first.ModTime(), appStoreStat_second.ModTime())
+	}
+}
+
 func TestWorkDir(t *testing.T) {
 	defer goleak.VerifyNone(t, goleak.IgnoreTopFunction(topFunc1)) // https://github.com/census-instrumentation/opencensus-go/issues/1191
 
