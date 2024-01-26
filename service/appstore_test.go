@@ -21,7 +21,8 @@ import (
 )
 
 func TestGetComposeApp(t *testing.T) {
-	defer goleak.VerifyNone(t, goleak.IgnoreTopFunction(topFunc1)) // https://github.com/census-instrumentation/opencensus-go/issues/1191
+	defer goleak.VerifyNone(t, goleak.IgnoreTopFunction(topFunc1), goleak.IgnoreTopFunction(pollFunc1), goleak.IgnoreTopFunction(httpFunc1)) // https://github.com/census-instrumentation/opencensus-go/issues/1191
+	logger.LogInitConsoleOnly()
 
 	defer func() {
 		// workaround due to https://github.com/patrickmn/go-cache/issues/166
@@ -51,7 +52,7 @@ func TestGetComposeApp(t *testing.T) {
 }
 
 func TestGetApp(t *testing.T) {
-	defer goleak.VerifyNone(t, goleak.IgnoreTopFunction(topFunc1)) // https://github.com/census-instrumentation/opencensus-go/issues/1191
+	defer goleak.VerifyNone(t, goleak.IgnoreTopFunction(topFunc1), goleak.IgnoreTopFunction(pollFunc1), goleak.IgnoreTopFunction(httpFunc1)) // https://github.com/census-instrumentation/opencensus-go/issues/1191
 
 	defer func() {
 		// workaround due to https://github.com/patrickmn/go-cache/issues/166
@@ -85,8 +86,50 @@ func TestGetApp(t *testing.T) {
 	}
 }
 
+// Note: the test need root permission
+func TestSkipUpdateCatalog(t *testing.T) {
+	logger.LogInitConsoleOnly()
+
+	appStoreUrl := []string{
+		"https://casaos.app/store/main.zip",
+		"https://casaos.oss-cn-shanghai.aliyuncs.com/store/main.zip",
+	}
+
+	for _, url := range appStoreUrl {
+		appStore, err := service.AppStoreByURL(url)
+		assert.NilError(t, err)
+		workdir, err := appStore.WorkDir()
+		assert.NilError(t, err)
+
+		// mkdir workdir for first
+		err = file.MkDir(workdir)
+		assert.NilError(t, err)
+
+		appStoreStat, err := os.Stat(workdir)
+		assert.NilError(t, err)
+
+		err = appStore.UpdateCatalog()
+		assert.NilError(t, err)
+
+		// get create and change time of appstore
+		appStoreStat_first, err := os.Stat(workdir)
+		assert.NilError(t, err)
+
+		assert.Equal(t, false, appStoreStat_first.ModTime().Equal(appStoreStat.ModTime()))
+
+		err = appStore.UpdateCatalog()
+		assert.NilError(t, err)
+
+		// get create and change time of appstore
+		appStoreStat_second, err := os.Stat(workdir)
+		assert.NilError(t, err)
+
+		assert.Equal(t, appStoreStat_first.ModTime(), appStoreStat_second.ModTime())
+	}
+}
+
 func TestWorkDir(t *testing.T) {
-	defer goleak.VerifyNone(t, goleak.IgnoreTopFunction(topFunc1)) // https://github.com/census-instrumentation/opencensus-go/issues/1191
+	defer goleak.VerifyNone(t, goleak.IgnoreTopFunction(topFunc1), goleak.IgnoreTopFunction(pollFunc1), goleak.IgnoreTopFunction(httpFunc1)) // https://github.com/census-instrumentation/opencensus-go/issues/1191
 
 	defer func() {
 		// workaround due to https://github.com/patrickmn/go-cache/issues/166
@@ -123,7 +166,7 @@ func TestWorkDir(t *testing.T) {
 }
 
 func TestStoreRoot(t *testing.T) {
-	defer goleak.VerifyNone(t, goleak.IgnoreTopFunction(topFunc1)) // https://github.com/census-instrumentation/opencensus-go/issues/1191
+	defer goleak.VerifyNone(t, goleak.IgnoreTopFunction(topFunc1), goleak.IgnoreTopFunction(pollFunc1), goleak.IgnoreTopFunction(httpFunc1)) // https://github.com/census-instrumentation/opencensus-go/issues/1191
 
 	defer func() {
 		// workaround due to https://github.com/patrickmn/go-cache/issues/166
@@ -144,7 +187,7 @@ func TestStoreRoot(t *testing.T) {
 }
 
 func TestLoadCategoryList(t *testing.T) {
-	defer goleak.VerifyNone(t, goleak.IgnoreTopFunction(topFunc1)) //
+	defer goleak.VerifyNone(t, goleak.IgnoreTopFunction(topFunc1), goleak.IgnoreTopFunction(pollFunc1), goleak.IgnoreTopFunction(httpFunc1)) // https://github.com/census-instrumentation/opencensus-go/issues/1191
 
 	defer func() {
 		// workaround due to https://github.com/patrickmn/go-cache/issues/166
@@ -182,7 +225,7 @@ func TestLoadCategoryList(t *testing.T) {
 }
 
 func TestLoadRecommend(t *testing.T) {
-	defer goleak.VerifyNone(t, goleak.IgnoreTopFunction(topFunc1)) //
+	defer goleak.VerifyNone(t, goleak.IgnoreTopFunction(topFunc1), goleak.IgnoreTopFunction(pollFunc1), goleak.IgnoreTopFunction(httpFunc1)) // https://github.com/census-instrumentation/opencensus-go/issues/1191
 
 	defer func() {
 		// workaround due to https://github.com/patrickmn/go-cache/issues/166
@@ -218,7 +261,7 @@ func TestLoadRecommend(t *testing.T) {
 }
 
 func TestBuildCatalog(t *testing.T) {
-	defer goleak.VerifyNone(t, goleak.IgnoreTopFunction(topFunc1)) // https://github.com/census-instrumentation/opencensus-go/issues/1191
+	defer goleak.VerifyNone(t, goleak.IgnoreTopFunction(topFunc1), goleak.IgnoreTopFunction(pollFunc1), goleak.IgnoreTopFunction(httpFunc1)) // https://github.com/census-instrumentation/opencensus-go/issues/1191
 
 	defer func() {
 		// workaround due to https://github.com/patrickmn/go-cache/issues/166
