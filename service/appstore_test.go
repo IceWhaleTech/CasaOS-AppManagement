@@ -86,7 +86,7 @@ func TestGetApp(t *testing.T) {
 }
 
 func TestSkipUpdateCatalog(t *testing.T) {
-	// defer goleak.VerifyNone(t, goleak.IgnoreTopFunction(topFunc1)) //
+	defer goleak.VerifyNone(t, goleak.IgnoreTopFunction(topFunc1), goleak.IgnoreTopFunction(pollFunc1)) // https://github.com/census-instrumentation/opencensus-go/issues/1191
 	logger.LogInitConsoleOnly()
 
 	appStoreUrl := []string{
