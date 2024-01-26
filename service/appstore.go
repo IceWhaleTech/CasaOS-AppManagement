@@ -88,7 +88,6 @@ func (s *appStore) UpdateCatalog() error {
 			logger.Info("appstore size not changed", zap.String("url", s.url))
 			return nil
 		} else {
-			fmt.Println(res.ContentLength, s.lastAPPStoreSize)
 			logger.Info("appstore size changed, update app store", zap.String("url", s.url))
 		}
 
@@ -168,7 +167,6 @@ func (s *appStore) UpdateCatalog() error {
 
 	s.recommend = LoadRecommend(storeRoot)
 
-	fmt.Println("true")
 	isSuccessful = true
 
 	return nil
