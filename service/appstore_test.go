@@ -86,7 +86,6 @@ func TestGetApp(t *testing.T) {
 	}
 }
 
-// Note: the test need root permission
 func TestSkipUpdateCatalog(t *testing.T) {
 	defer goleak.VerifyNone(t, goleak.IgnoreTopFunction(topFunc1), goleak.IgnoreTopFunction(pollFunc1)) // https://github.com/census-instrumentation/opencensus-go/issues/1191
 	logger.LogInitConsoleOnly()
