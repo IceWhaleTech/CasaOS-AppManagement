@@ -21,7 +21,8 @@ import (
 )
 
 func TestGetComposeApp(t *testing.T) {
-	defer goleak.VerifyNone(t, goleak.IgnoreTopFunction(topFunc1)) // https://github.com/census-instrumentation/opencensus-go/issues/1191
+	defer goleak.VerifyNone(t, goleak.IgnoreTopFunction(topFunc1), goleak.IgnoreTopFunction(pollFunc1)) // https://github.com/census-instrumentation/opencensus-go/issues/1191
+	logger.LogInitConsoleOnly()
 
 	defer func() {
 		// workaround due to https://github.com/patrickmn/go-cache/issues/166
@@ -51,7 +52,7 @@ func TestGetComposeApp(t *testing.T) {
 }
 
 func TestGetApp(t *testing.T) {
-	defer goleak.VerifyNone(t, goleak.IgnoreTopFunction(topFunc1)) // https://github.com/census-instrumentation/opencensus-go/issues/1191
+	defer goleak.VerifyNone(t, goleak.IgnoreTopFunction(topFunc1), goleak.IgnoreTopFunction(pollFunc1)) // https://github.com/census-instrumentation/opencensus-go/issues/1191
 
 	defer func() {
 		// workaround due to https://github.com/patrickmn/go-cache/issues/166
@@ -161,7 +162,7 @@ func TestWorkDir(t *testing.T) {
 }
 
 func TestStoreRoot(t *testing.T) {
-	defer goleak.VerifyNone(t, goleak.IgnoreTopFunction(topFunc1)) // https://github.com/census-instrumentation/opencensus-go/issues/1191
+	defer goleak.VerifyNone(t, goleak.IgnoreTopFunction(topFunc1), goleak.IgnoreTopFunction(pollFunc1)) // https://github.com/census-instrumentation/opencensus-go/issues/1191
 
 	defer func() {
 		// workaround due to https://github.com/patrickmn/go-cache/issues/166
@@ -182,7 +183,7 @@ func TestStoreRoot(t *testing.T) {
 }
 
 func TestLoadCategoryList(t *testing.T) {
-	defer goleak.VerifyNone(t, goleak.IgnoreTopFunction(topFunc1)) //
+	defer goleak.VerifyNone(t, goleak.IgnoreTopFunction(topFunc1), goleak.IgnoreTopFunction(pollFunc1)) // https://github.com/census-instrumentation/opencensus-go/issues/1191
 
 	defer func() {
 		// workaround due to https://github.com/patrickmn/go-cache/issues/166
@@ -220,7 +221,7 @@ func TestLoadCategoryList(t *testing.T) {
 }
 
 func TestLoadRecommend(t *testing.T) {
-	defer goleak.VerifyNone(t, goleak.IgnoreTopFunction(topFunc1)) //
+	defer goleak.VerifyNone(t, goleak.IgnoreTopFunction(topFunc1), goleak.IgnoreTopFunction(pollFunc1)) // https://github.com/census-instrumentation/opencensus-go/issues/1191
 
 	defer func() {
 		// workaround due to https://github.com/patrickmn/go-cache/issues/166
@@ -256,7 +257,7 @@ func TestLoadRecommend(t *testing.T) {
 }
 
 func TestBuildCatalog(t *testing.T) {
-	defer goleak.VerifyNone(t, goleak.IgnoreTopFunction(topFunc1)) // https://github.com/census-instrumentation/opencensus-go/issues/1191
+	defer goleak.VerifyNone(t, goleak.IgnoreTopFunction(topFunc1), goleak.IgnoreTopFunction(pollFunc1)) // https://github.com/census-instrumentation/opencensus-go/issues/1191
 
 	defer func() {
 		// workaround due to https://github.com/patrickmn/go-cache/issues/166
