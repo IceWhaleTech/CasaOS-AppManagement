@@ -3,6 +3,7 @@ package service
 import (
 	"bytes"
 	"context"
+	"crypto/tls"
 	"fmt"
 	"io"
 	"net/http"
@@ -905,6 +906,8 @@ func (a *ComposeApp) HealthCheck() (bool, error) {
 	client := resty.New()
 	client.SetTimeout(30 * time.Second)
 	client.SetHeader("Accept", "text/html")
+	// ignore ssl error
+	client.SetTLSClientConfig(&tls.Config{InsecureSkipVerify: true})
 	response, err := client.R().Get(url)
 	if err != nil {
 		logger.Error("failed to check container health", zap.Error(err), zap.String("name", a.Name))
