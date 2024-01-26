@@ -102,6 +102,10 @@ func TestSkipUpdateCatalog(t *testing.T) {
 		workdir, err := appStore.WorkDir()
 		assert.NilError(t, err)
 
+		// mkdir workdir for first
+		err = file.MkDir(workdir)
+		assert.NilError(t, err)
+
 		appStoreStat, err := os.Stat(workdir)
 		assert.NilError(t, err)
 
