@@ -4,6 +4,7 @@ import (
 	"crypto/md5" // nolint: gosec
 	"fmt"
 	"io/fs"
+	"net/http"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -33,6 +34,8 @@ type appStore struct {
 	catalog     map[string]*ComposeApp
 	recommend   []string
 	url         string
+
+	lastAPPStoreSize int64
 }
 
 var (
@@ -68,8 +71,29 @@ func (s *appStore) CategoryMap() (map[string]codegen.CategoryInfo, error) {
 }
 
 func (s *appStore) UpdateCatalog() error {
+	isSuccessful := false
+
 	if _, err := url.Parse(s.url); err != nil {
 		return err
+	}
+
+	// check wether the zip package size change
+	// if not, skip the update
+	{
+		res, err := http.Head(s.url)
+		if err != nil {
+			return err
+		}
+		if res.ContentLength == s.lastAPPStoreSize {
+			logger.Info("appstore size not changed", zap.String("url", s.url))
+			return nil
+		}
+		defer func(isSuccessful bool) {
+			if isSuccessful {
+				s.lastAPPStoreSize = res.ContentLength
+			}
+		}(isSuccessful)
+
 	}
 
 	workdir, err := s.WorkDir()
@@ -87,8 +111,6 @@ func (s *appStore) UpdateCatalog() error {
 	if err := downloadHelper.Download(s.url, tmpDir); err != nil {
 		return err
 	}
-
-	isSuccessful := false
 
 	// make a backup of existing workdir
 	if file.Exists(workdir) {
