@@ -198,6 +198,13 @@ archives:
       - casaos-app-management-migration-tool-arm-7
     files:
       - build/sysroot/etc/**/*
+  - name_template: >-
+      {{ .Os }}-{{- if eq .Arch "arm" }}arm-7{{- else }}{{ .Arch }}{{- end }}-{{ .ProjectName }}-validator-v{{ .Version }}
+    id: casaos-app-management-validator
+    builds:
+      - casaos-app-management-validator-amd64
+    files:
+      - build/sysroot/etc/**/*
 
 checksum:
   name_template: "checksums.txt"
