@@ -156,6 +156,28 @@ builds:
       - arm
     goarm:
       - "7"
+  - id: casaos-app-management-validator-amd64
+    binary: build/sysroot/usr/bin/casaos-app-management-validator
+    hooks:
+      post:
+        - upx --best --lzma -v --no-progress "{{ .Path }}"
+    main: ./cmd/validator
+    env:
+      - CC=x86_64-linux-gnu-gcc
+    ldflags:
+      - -X main.commit={{.Commit}}
+      - -X main.date={{.Date}}
+      - -s
+      - -w
+      - -extldflags "-static"
+    tags:
+      - musl
+      - netgo
+      - osusergo
+    goos:
+      - linux
+    goarch:
+      - amd64
 
 archives:
   - name_template: >-
