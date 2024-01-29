@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/IceWhaleTech/CasaOS-AppManagement/pkg/config"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/service"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/file"
 	utils_logger "github.com/IceWhaleTech/CasaOS-Common/utils/logger"
@@ -14,7 +13,7 @@ var logger = NewLogger()
 
 func main() {
 
-	utils_logger.LogInit(config.AppInfo.LogPath, config.AppInfo.LogSaveName, config.AppInfo.LogFileExt)
+	utils_logger.LogInitConsoleOnly()
 
 	if len(os.Args) < 1 {
 		os.Args = append(os.Args, "-h")
