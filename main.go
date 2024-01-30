@@ -11,6 +11,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/IceWhaleTech/CasaOS-AppManagement/common"
@@ -18,6 +19,7 @@ import (
 	"github.com/IceWhaleTech/CasaOS-AppManagement/route"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/service"
 	"github.com/IceWhaleTech/CasaOS-Common/model"
+	"github.com/IceWhaleTech/CasaOS-Common/utils/file"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/logger"
 	"github.com/coreos/go-systemd/daemon"
 	"github.com/robfig/cron/v3"
@@ -111,6 +113,14 @@ func main() {
 	listener, err := net.Listen("tcp", net.JoinHostPort(common.Localhost, "0"))
 	if err != nil {
 		panic(err)
+	}
+
+	urlFilePath := filepath.Join(config.CommonInfo.RuntimePath, "app-management.url")
+	if err := file.CreateFileAndWriteContent(urlFilePath, "http://"+listener.Addr().String()); err != nil {
+		logger.Error("error when creating address file", zap.Error(err),
+			zap.Any("address", listener.Addr().String()),
+			zap.Any("filepath", urlFilePath),
+		)
 	}
 
 	// initialize routers and register at gateway
