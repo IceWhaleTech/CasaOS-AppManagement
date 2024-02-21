@@ -263,7 +263,7 @@ func (a *AppManagement) InstallComposeApp(ctx echo.Context, params codegen.Insta
 		})
 	}
 
-	if service.NewComposeService().IsInstalling(composeApp.Name) {
+	if service.MyService.Compose().IsInstalling(composeApp.Name) {
 		message := fmt.Sprintf("compose app `%s` has another installing", composeApp.Name)
 		return ctx.JSON(http.StatusConflict, codegen.ComposeAppBadRequest{Message: &message})
 	}

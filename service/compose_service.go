@@ -48,9 +48,6 @@ func (s *ComposeService) Install(ctx context.Context, composeApp *ComposeApp) er
 		logger.Info("the compose app getting installed is not a store app, skipping store app id setting.")
 	}
 
-	s.installingApps[composeApp.Name] = true
-	defer delete(s.installingApps, composeApp.Name)
-
 	logger.Info("installing compose app", zap.String("name", composeApp.Name))
 
 	composeYAMLInterpolated, err := yaml.Marshal(composeApp)
@@ -92,6 +89,11 @@ func (s *ComposeService) Install(ctx context.Context, composeApp *ComposeApp) er
 	}
 
 	go func(ctx context.Context) {
+		s.installingApps[composeApp.Name] = true
+		defer func() {
+			delete(s.installingApps, composeApp.Name)
+		}()
+
 		go PublishEventWrapper(ctx, common.EventTypeAppInstallBegin, nil)
 
 		defer PublishEventWrapper(ctx, common.EventTypeAppInstallEnd, nil)
