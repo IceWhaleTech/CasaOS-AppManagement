@@ -21,7 +21,9 @@ import (
 	"go.uber.org/zap"
 )
 
-type ComposeService struct{}
+type ComposeService struct {
+	installingApps map[string]bool
+}
 
 func (s *ComposeService) PrepareWorkingDirectory(name string) (string, error) {
 	workingDirectory := filepath.Join(config.AppInfo.AppsPath, name)
@@ -34,12 +36,20 @@ func (s *ComposeService) PrepareWorkingDirectory(name string) (string, error) {
 	return workingDirectory, nil
 }
 
+func (s *ComposeService) IsInstalling(appID string) bool {
+	_, ok := s.installingApps[appID]
+	return ok
+}
+
 func (s *ComposeService) Install(ctx context.Context, composeApp *ComposeApp) error {
 	// set store_app_id (by convention is the same as app name at install time if it does not exist)
 	_, isStoreApp := composeApp.SetStoreAppID(composeApp.Name)
 	if !isStoreApp {
 		logger.Info("the compose app getting installed is not a store app, skipping store app id setting.")
 	}
+
+	s.installingApps[composeApp.Name] = true
+	defer delete(s.installingApps, composeApp.Name)
 
 	logger.Info("installing compose app", zap.String("name", composeApp.Name))
 
@@ -179,7 +189,9 @@ func (s *ComposeService) List(ctx context.Context) (map[string]*ComposeApp, erro
 }
 
 func NewComposeService() *ComposeService {
-	return &ComposeService{}
+	return &ComposeService{
+		installingApps: map[string]bool{},
+	}
 }
 
 func baseInterpolationMap() map[string]string {
