@@ -4,6 +4,7 @@ import (
 	"context"
 	"os"
 	"path/filepath"
+	"sync"
 
 	"github.com/IceWhaleTech/CasaOS-AppManagement/common"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/pkg/config"
@@ -22,7 +23,7 @@ import (
 )
 
 type ComposeService struct {
-	installingApps map[string]bool
+	installationInProgress sync.Map
 }
 
 func (s *ComposeService) PrepareWorkingDirectory(name string) (string, error) {
@@ -36,8 +37,8 @@ func (s *ComposeService) PrepareWorkingDirectory(name string) (string, error) {
 	return workingDirectory, nil
 }
 
-func (s *ComposeService) IsInstalling(appID string) bool {
-	_, ok := s.installingApps[appID]
+func (s *ComposeService) IsInstalling(appName string) bool {
+	_, ok := s.installationInProgress.Load(appName)
 	return ok
 }
 
@@ -89,9 +90,9 @@ func (s *ComposeService) Install(ctx context.Context, composeApp *ComposeApp) er
 	}
 
 	go func(ctx context.Context) {
-		s.installingApps[composeApp.Name] = true
+		s.installationInProgress.Store(composeApp.Name, true)
 		defer func() {
-			delete(s.installingApps, composeApp.Name)
+			s.installationInProgress.Delete(composeApp.Name)
 		}()
 
 		go PublishEventWrapper(ctx, common.EventTypeAppInstallBegin, nil)
@@ -192,7 +193,7 @@ func (s *ComposeService) List(ctx context.Context) (map[string]*ComposeApp, erro
 
 func NewComposeService() *ComposeService {
 	return &ComposeService{
-		installingApps: map[string]bool{},
+		installationInProgress: sync.Map{},
 	}
 }
 
