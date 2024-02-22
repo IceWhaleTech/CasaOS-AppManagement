@@ -4,6 +4,7 @@ import (
 	"context"
 	"os"
 	"path/filepath"
+	"sync"
 
 	"github.com/IceWhaleTech/CasaOS-AppManagement/common"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/pkg/config"
@@ -21,7 +22,9 @@ import (
 	"go.uber.org/zap"
 )
 
-type ComposeService struct{}
+type ComposeService struct {
+	installationInProgress sync.Map
+}
 
 func (s *ComposeService) PrepareWorkingDirectory(name string) (string, error) {
 	workingDirectory := filepath.Join(config.AppInfo.AppsPath, name)
@@ -32,6 +35,11 @@ func (s *ComposeService) PrepareWorkingDirectory(name string) (string, error) {
 	}
 
 	return workingDirectory, nil
+}
+
+func (s *ComposeService) IsInstalling(appName string) bool {
+	_, ok := s.installationInProgress.Load(appName)
+	return ok
 }
 
 func (s *ComposeService) Install(ctx context.Context, composeApp *ComposeApp) error {
@@ -82,6 +90,11 @@ func (s *ComposeService) Install(ctx context.Context, composeApp *ComposeApp) er
 	}
 
 	go func(ctx context.Context) {
+		s.installationInProgress.Store(composeApp.Name, true)
+		defer func() {
+			s.installationInProgress.Delete(composeApp.Name)
+		}()
+
 		go PublishEventWrapper(ctx, common.EventTypeAppInstallBegin, nil)
 
 		defer PublishEventWrapper(ctx, common.EventTypeAppInstallEnd, nil)
@@ -179,7 +192,9 @@ func (s *ComposeService) List(ctx context.Context) (map[string]*ComposeApp, erro
 }
 
 func NewComposeService() *ComposeService {
-	return &ComposeService{}
+	return &ComposeService{
+		installationInProgress: sync.Map{},
+	}
 }
 
 func baseInterpolationMap() map[string]string {
