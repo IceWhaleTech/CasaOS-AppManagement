@@ -10,8 +10,10 @@
 package service
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"net"
 	"net/http"
 
 	"github.com/IceWhaleTech/CasaOS-AppManagement/codegen/message_bus"
@@ -122,6 +124,38 @@ func (c *store) MessageBus() *message_bus.ClientWithResponses {
 	return client
 }
 
+func PublishEventInSocket(ctx context.Context, eventType message_bus.EventType, properties map[string]string) (*http.Response, error) {
+	socketPath := "/tmp/message-bus.sock"
+	httpClient := &http.Client{
+		Transport: &http.Transport{
+			DialContext: func(ctx context.Context, _, _ string) (net.Conn, error) {
+				return net.Dial("unix", socketPath)
+			},
+		},
+	}
+
+	body, err := json.Marshal(properties)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST",
+		fmt.Sprintf("http://unix/v2/message_bus/event/%s/%s", eventType.SourceID, eventType.Name),
+		bytes.NewBuffer(body),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+	resp, err := httpClient.Do(req)
+	if err != nil {
+		return resp, err
+	}
+	defer resp.Body.Close()
+	return resp, nil
+}
+
 func PublishEventWrapper(ctx context.Context, eventType message_bus.EventType, properties map[string]string) {
 	if MyService == nil {
 		fmt.Println("failed to publish event - messsage bus service not initialized")
@@ -137,14 +171,22 @@ func PublishEventWrapper(ctx context.Context, eventType message_bus.EventType, p
 		properties[k] = v
 	}
 
-	response, err := MyService.MessageBus().PublishEventWithResponse(ctx, common.AppManagementServiceName, eventType.Name, properties)
+	resp, err := PublishEventInSocket(ctx, eventType, properties)
 	if err != nil {
 		logger.Error("failed to publish event", zap.Error(err))
-		return
-	}
-	defer response.HTTPResponse.Body.Close()
 
-	if response.StatusCode() != http.StatusOK {
-		logger.Error("failed to publish event", zap.String("status code", response.Status()))
+		response, err := MyService.MessageBus().PublishEventWithResponse(ctx, common.AppManagementServiceName, eventType.Name, properties)
+		if err != nil {
+			logger.Error("failed to publish event", zap.Error(err))
+			return
+		}
+		defer response.HTTPResponse.Body.Close()
+
+		if response.StatusCode() != http.StatusOK {
+			logger.Error("failed to publish event", zap.String("status code", response.Status()))
+		}
+	}
+	if resp.StatusCode != http.StatusOK {
+		logger.Error("failed to publish event", zap.String("status code", resp.Status))
 	}
 }
