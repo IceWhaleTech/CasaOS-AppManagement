@@ -137,14 +137,22 @@ func PublishEventWrapper(ctx context.Context, eventType message_bus.EventType, p
 		properties[k] = v
 	}
 
-	response, err := MyService.MessageBus().PublishEventWithResponse(ctx, common.AppManagementServiceName, eventType.Name, properties)
+	resp, err := external.PublishEventInSocket(ctx, eventType.SourceID, eventType.Name, properties)
 	if err != nil {
 		logger.Error("failed to publish event", zap.Error(err))
-		return
-	}
-	defer response.HTTPResponse.Body.Close()
 
-	if response.StatusCode() != http.StatusOK {
-		logger.Error("failed to publish event", zap.String("status code", response.Status()))
+		response, err := MyService.MessageBus().PublishEventWithResponse(ctx, common.AppManagementServiceName, eventType.Name, properties)
+		if err != nil {
+			logger.Error("failed to publish event", zap.Error(err))
+			return
+		}
+		defer response.HTTPResponse.Body.Close()
+
+		if response.StatusCode() != http.StatusOK {
+			logger.Error("failed to publish event", zap.String("status code", response.Status()))
+		}
+	}
+	if resp.StatusCode != http.StatusOK {
+		logger.Error("failed to publish event", zap.String("status code", resp.Status))
 	}
 }
