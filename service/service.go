@@ -10,11 +10,10 @@
 package service
 
 import (
-	"bytes"
 	"context"
 	"fmt"
-	"net"
 	"net/http"
+	"reflect"
 
 	"github.com/IceWhaleTech/CasaOS-AppManagement/codegen/message_bus"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/common"
@@ -124,36 +123,16 @@ func (c *store) MessageBus() *message_bus.ClientWithResponses {
 	return client
 }
 
-func PublishEventInSocket(ctx context.Context, eventType message_bus.EventType, properties map[string]string) (*http.Response, error) {
-	socketPath := "/tmp/message-bus.sock"
-	httpClient := &http.Client{
-		Transport: &http.Transport{
-			DialContext: func(ctx context.Context, _, _ string) (net.Conn, error) {
-				return net.Dial("unix", socketPath)
-			},
-		},
+func Convert(src, dst interface{}) {
+	srcVal := reflect.ValueOf(src)
+	dstVal := reflect.ValueOf(dst).Elem()
+	for i := 0; i < srcVal.Type().NumField(); i++ {
+		name := srcVal.Type().Field(i).Name
+		dstField := dstVal.FieldByName(name)
+		if dstField.IsValid() && dstField.CanSet() {
+			dstField.Set(srcVal.Field(i))
+		}
 	}
-
-	body, err := json.Marshal(properties)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("POST",
-		fmt.Sprintf("http://unix/v2/message_bus/event/%s/%s", eventType.SourceID, eventType.Name),
-		bytes.NewBuffer(body),
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	req.Header.Set("Content-Type", "application/json")
-	resp, err := httpClient.Do(req)
-	if err != nil {
-		return resp, err
-	}
-	defer resp.Body.Close()
-	return resp, nil
 }
 
 func PublishEventWrapper(ctx context.Context, eventType message_bus.EventType, properties map[string]string) {
@@ -171,7 +150,9 @@ func PublishEventWrapper(ctx context.Context, eventType message_bus.EventType, p
 		properties[k] = v
 	}
 
-	resp, err := PublishEventInSocket(ctx, eventType, properties)
+	convertdEvent := external.EventType{}
+	Convert(eventType, &convertdEvent)
+	resp, err := external.PublishEventInSocket(ctx, convertdEvent, properties)
 	if err != nil {
 		logger.Error("failed to publish event", zap.Error(err))
 
