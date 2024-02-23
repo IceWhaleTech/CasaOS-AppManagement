@@ -13,7 +13,6 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"reflect"
 
 	"github.com/IceWhaleTech/CasaOS-AppManagement/codegen/message_bus"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/common"
@@ -123,18 +122,6 @@ func (c *store) MessageBus() *message_bus.ClientWithResponses {
 	return client
 }
 
-func Convert(src, dst interface{}) {
-	srcVal := reflect.ValueOf(src)
-	dstVal := reflect.ValueOf(dst).Elem()
-	for i := 0; i < srcVal.Type().NumField(); i++ {
-		name := srcVal.Type().Field(i).Name
-		dstField := dstVal.FieldByName(name)
-		if dstField.IsValid() && dstField.CanSet() {
-			dstField.Set(srcVal.Field(i))
-		}
-	}
-}
-
 func PublishEventWrapper(ctx context.Context, eventType message_bus.EventType, properties map[string]string) {
 	if MyService == nil {
 		fmt.Println("failed to publish event - messsage bus service not initialized")
@@ -150,9 +137,7 @@ func PublishEventWrapper(ctx context.Context, eventType message_bus.EventType, p
 		properties[k] = v
 	}
 
-	convertdEvent := external.EventType{}
-	Convert(eventType, &convertdEvent)
-	resp, err := external.PublishEventInSocket(ctx, convertdEvent, properties)
+	resp, err := external.PublishEventInSocket(ctx, eventType.SourceID, eventType.Name, properties)
 	if err != nil {
 		logger.Error("failed to publish event", zap.Error(err))
 
