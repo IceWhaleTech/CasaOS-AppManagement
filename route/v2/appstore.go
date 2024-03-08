@@ -183,6 +183,48 @@ func (a *AppManagement) ComposeAppStoreInfo(ctx echo.Context, id codegen.StoreAp
 	})
 }
 
+func (a *AppManagement) ComposeAppStableTag(ctx echo.Context, id codegen.StoreAppIDString) error {
+	composeApp, err := service.MyService.V2AppStore().ComposeApp(id)
+	if err != nil {
+		message := err.Error()
+		return ctx.JSON(http.StatusInternalServerError, codegen.ResponseInternalServerError{Message: &message})
+	}
+
+	if composeApp == nil {
+		return ctx.JSON(http.StatusNotFound, codegen.ResponseNotFound{
+			Message: utils.Ptr("app not found"),
+		})
+	}
+
+	storeInfo, err := composeApp.StoreInfo(true)
+	if err != nil {
+		return ctx.JSON(http.StatusInternalServerError, codegen.ResponseInternalServerError{
+			Message: utils.Ptr(err.Error()),
+		})
+	}
+
+	fmt.Println(*storeInfo.Apps)
+
+	for key, app := range *storeInfo.Apps {
+		if key == *storeInfo.Main {
+			// spilt by : ; example: linuxserver/jellyfin:10.8.13
+			// get the last one
+			tag := strings.Split(app.Image, ":")
+
+			return ctx.JSON(http.StatusOK, codegen.ComposeAppStoreTagOK{
+				Data: &codegen.ComposeAppStoreTag{
+					Tag: tag[len(tag)-1],
+				},
+			})
+
+		}
+	}
+
+	return ctx.JSON(http.StatusInternalServerError, codegen.ResponseInternalServerError{
+		Message: utils.Ptr("app not main"),
+	})
+}
+
 func (a *AppManagement) ComposeApp(ctx echo.Context, id codegen.StoreAppIDString) error {
 	composeApp, err := service.MyService.V2AppStore().ComposeApp(id)
 	if err != nil {
