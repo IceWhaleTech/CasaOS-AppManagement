@@ -203,8 +203,6 @@ func (a *AppManagement) ComposeAppStableTag(ctx echo.Context, id codegen.StoreAp
 		})
 	}
 
-	fmt.Println(*storeInfo.Apps)
-
 	for key, app := range *storeInfo.Apps {
 		if key == *storeInfo.Main {
 			// spilt by : ; example: linuxserver/jellyfin:10.8.13
