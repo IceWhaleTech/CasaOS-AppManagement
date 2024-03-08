@@ -329,7 +329,7 @@ paths:
     get:
       summary: Get app stable version from registered app stores
       description: |
-        Get stable version(Official Store Tag) of specific compose app.
+        Get stable version(Official Store Tag) of main service of specific compose app.
       operationId: composeAppStableTag
       tags:
         - AppStore methods
@@ -962,7 +962,6 @@ components:
               - properties:
                   data:
                     $ref: "#/components/schemas/ComposeAppStoreInfo"
-
 
     ComposeAppListOK:
       description: OK
