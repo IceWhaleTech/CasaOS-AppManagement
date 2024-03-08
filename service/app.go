@@ -17,6 +17,9 @@ func (a *App) StoreInfo() (codegen.AppStoreInfo, error) {
 		return storeInfo, ErrComposeExtensionNameXCasaOSNotFound
 	}
 
+	// add image to store info for check stable version function.
+	storeInfo.Image = a.Image
+
 	if err := loader.Transform(ex, &storeInfo); err != nil {
 		return storeInfo, err
 	}

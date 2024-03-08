@@ -325,6 +325,25 @@ paths:
         "500":
           $ref: "#/components/responses/ResponseInternalServerError"
 
+  /apps/{id}/stable:
+    get:
+      summary: Get app stable version from registered app stores
+      description: |
+        Get stable version(Official Store Tag) of main service of specific compose app.
+      operationId: composeAppStableTag
+      tags:
+        - AppStore methods
+      parameters:
+        - $ref: "#/components/parameters/StoreAppIDString"
+      responses:
+        "200":
+          $ref: "#/components/responses/ComposeAppStoreTagOK"
+        "404":
+          $ref: "#/components/responses/ResponseNotFound"
+        "500":
+          $ref: "#/components/responses/ResponseInternalServerError"
+
+
   /apps/{id}/compose:
     get:
       summary: Get compose details of an app from registered app stores
@@ -667,7 +686,7 @@ components:
       schema:
         type: string
         example: "syncthing"
-
+    
     StoreAppCategoryFilter:
       name: category
       description: Category of the store app
@@ -922,6 +941,17 @@ components:
                   data:
                     $ref: "#/components/schemas/ComposeAppStoreInfoLists"
 
+    ComposeAppStoreTagOK:
+      description: OK
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: "#/components/schemas/BaseResponse"
+              - properties:
+                  data:
+                    $ref: "#/components/schemas/ComposeAppStoreTag"
+    
     ComposeAppStoreInfoOK:
       description: OK
       content:
@@ -1163,6 +1193,15 @@ components:
           additionalProperties:
             $ref: "#/components/schemas/ComposeAppStoreInfo"
 
+    ComposeAppStoreTag:
+      required:
+        - tag
+      properties:
+        tag:
+          type: string
+          example:
+            en_us: "v10.2"
+
     ComposeAppStoreInfo:
       required:
         - author
@@ -1186,6 +1225,12 @@ components:
             type: string
           example:
             en_us: Syncthing
+        image:
+          type: object
+          additionalProperties:
+            type: string
+          example:
+            en_us: syncthing:latest
         description:
           type: object
           additionalProperties:
@@ -1348,11 +1393,15 @@ components:
       description: |-
         > Do not mistake it as *information of AppStore* which does not exist.
       required:
+        - image
         - envs
         - ports
         - volumes
         - devices
       properties:
+        image:
+          type: string
+          example: "syncthing:latest"
         envs:
           type: array
           items:
