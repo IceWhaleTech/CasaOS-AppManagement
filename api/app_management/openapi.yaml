@@ -1199,8 +1199,7 @@ components:
       properties:
         tag:
           type: string
-          example:
-            en_us: "v10.2"
+          example: "v10.2"
 
     ComposeAppStoreInfo:
       required:
