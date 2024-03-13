@@ -206,6 +206,7 @@ func (a *ComposeApp) IsUpdateAvailableWith(storeComposeApp *ComposeApp) bool {
 
 	mainAppImage, mainAppTag := docker.ExtractImageAndTag(mainApp.Image)
 
+	// TODO to async the check for consist with the version tag app
 	if mainAppTag == "latest" {
 		// logger.Info("main app image tag is latest, thus no update available", zap.String("image", mainApp.Image))
 		// return false
