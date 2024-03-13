@@ -11,6 +11,7 @@ import (
 	"github.com/IceWhaleTech/CasaOS-AppManagement/codegen"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/common"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/pkg/config"
+	"github.com/IceWhaleTech/CasaOS-AppManagement/pkg/docker"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/service"
 	"github.com/IceWhaleTech/CasaOS-Common/utils"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/logger"
@@ -206,12 +207,11 @@ func (a *AppManagement) ComposeAppStableTag(ctx echo.Context, id codegen.StoreAp
 	for key, app := range *storeInfo.Apps {
 		if key == *storeInfo.Main {
 			// spilt by : ; example: linuxserver/jellyfin:10.8.13
-			// get the last one
-			tag := strings.Split(app.Image, ":")
+			_, tag := docker.ExtractImageAndTag(app.Image)
 
 			return ctx.JSON(http.StatusOK, codegen.ComposeAppStoreTagOK{
 				Data: &codegen.ComposeAppStoreTag{
-					Tag: tag[len(tag)-1],
+					Tag: tag,
 				},
 			})
 
