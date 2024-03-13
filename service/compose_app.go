@@ -206,8 +206,10 @@ func (a *ComposeApp) IsUpdateAvailableWith(storeComposeApp *ComposeApp) bool {
 	mainAppImage, mainAppTag := docker.ExtractImageAndTag(mainApp.Image)
 
 	if mainAppTag == "latest" {
-		logger.Info("main app image tag is latest, thus no update available", zap.String("image", mainApp.Image))
-		return false
+		// logger.Info("main app image tag is latest, thus no update available", zap.String("image", mainApp.Image))
+		// return false
+		logger.Info("main app is latest, update to latest")
+		return true
 	}
 
 	storeMainApp := storeComposeApp.App(mainAppName)
