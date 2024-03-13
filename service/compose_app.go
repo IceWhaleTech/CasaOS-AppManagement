@@ -29,6 +29,7 @@ import (
 	"github.com/compose-spec/compose-go/loader"
 	"github.com/compose-spec/compose-go/types"
 	composeCmd "github.com/docker/compose/v2/cmd/compose"
+	"github.com/docker/docker/client"
 
 	"github.com/docker/compose/v2/cmd/formatter"
 	"github.com/docker/compose/v2/pkg/api"
@@ -208,8 +209,29 @@ func (a *ComposeApp) IsUpdateAvailableWith(storeComposeApp *ComposeApp) bool {
 	if mainAppTag == "latest" {
 		// logger.Info("main app image tag is latest, thus no update available", zap.String("image", mainApp.Image))
 		// return false
-		logger.Info("main app is latest, update to latest")
-		return true
+
+		ctx := context.Background()
+		cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+		defer cli.Close()
+
+		imageInfo, _, err := cli.ImageInspectWithRaw(ctx, mainAppImage)
+
+		if err != nil {
+			logger.Error("failed to inspect image", zap.Error(err), zap.String("name", mainAppImage))
+			return false
+		}
+		match, err := docker.CompareDigest(storeComposeApp.Services[0].Image, imageInfo.RepoDigests)
+		if err != nil {
+			logger.Error("failed to compare digest", zap.Error(err), zap.String("name", mainAppImage))
+			return false
+		}
+		if match {
+			logger.Info("main app image tag is latest, thus no update available", zap.String("image", mainApp.Image))
+			return false
+		} else {
+			logger.Info("main app image tag is latest, but digest is different, thus update is available", zap.String("image", mainApp.Image))
+			return true
+		}
 	}
 
 	storeMainApp := storeComposeApp.App(mainAppName)
