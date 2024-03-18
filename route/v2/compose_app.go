@@ -263,10 +263,18 @@ func (a *AppManagement) InstallComposeApp(ctx echo.Context, params codegen.Insta
 		})
 	}
 
-	if params.CustomTag != nil && *params.CustomTag {
-		if *params.CustomTag {
-			composeApp.Extensions[common.ComposeExtensionNameXCasaOS]["custom_tag"] = params.Tag
+	if params.Uncontrolled != nil && *params.Uncontrolled {
+		xcasaos := composeApp.Extensions[common.ComposeExtensionNameXCasaOS]
+		xcasaosMap, ok := xcasaos.(map[string]interface{})
+		if !ok {
+			logger.Error("failed to get map compose app extensions", zap.String("composeAppID", composeApp.Name))
+		} else {
+			xcasaosMap[common.ComposeExtensionPropertyNameIsUncontrolled] = true
+			composeApp.Extensions[common.ComposeExtensionNameXCasaOS] = xcasaosMap
+		}
 	}
+
+	fmt.Println(composeApp.Extensions[common.ComposeExtensionNameXCasaOS])
 
 	if service.MyService.Compose().IsInstalling(composeApp.Name) {
 		message := fmt.Sprintf("compose app `%s` is already being installed", composeApp.Name)

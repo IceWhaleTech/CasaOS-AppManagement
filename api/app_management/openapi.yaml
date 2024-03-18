@@ -392,7 +392,7 @@ paths:
       parameters:
         - $ref: "#/components/parameters/DryRun"
         - $ref: "#/components/parameters/CheckPortConflict"
-        - $ref: "#/components/parameters/CustomTag"
+        - $ref: "#/components/parameters/Uncontrolled"
       requestBody:
         $ref: "#/components/requestBodies/RequestComposeApp"
       responses:
@@ -784,9 +784,13 @@ components:
         type: boolean
         default: true
 
-    CustomTag:
-      name: custom_tag
-      description: Custom tag of the compose app
+    Uncontrolled:
+      name: uncontrolled
+      description: |
+        Install the app without any control. the control mean version control, if the app is stable and latest. it is controlled, It will auto update. otherwise it is uncontrolled.
+
+        - `true` - uncontrolled install
+        - `false` - normal install
       in: query
       schema:
         type: boolean
@@ -1328,10 +1332,10 @@ components:
             - "arm64"
           x-oapi-codegen-extra-tags:
             yaml: ",omitempty"
-        custom_tag:
-          title: custom tag of the compose app
+        is_uncontrolled:
+          title: is the app uncontrolled. 
           description: |
-            The custom tag of the compose app is a status of installed app not from the official app store. It is used to distinguish the official app store app and the custom tag app.
+            the mean the image tag is custom. not stable or latest
           type: boolean
           example: false
           x-oapi-codegen-extra-tags:
