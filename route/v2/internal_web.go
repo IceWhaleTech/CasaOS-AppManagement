@@ -130,6 +130,7 @@ func WebAppGridItemAdapterV2(composeAppWithStoreInfo *codegen.ComposeAppWithStor
 		Title: lo.ToPtr(map[string]string{
 			common.DefaultLanguage: composeApp.Name,
 		}),
+		IsUncontrolled: composeAppWithStoreInfo.StoreInfo.IsUncontrolled,
 	}
 
 	composeAppStoreInfo := composeAppWithStoreInfo.StoreInfo
@@ -144,6 +145,7 @@ func WebAppGridItemAdapterV2(composeAppWithStoreInfo *codegen.ComposeAppWithStor
 		item.Status = composeAppWithStoreInfo.Status
 		item.StoreAppID = composeAppStoreInfo.StoreAppID
 		item.Title = &composeAppStoreInfo.Title
+		item.IsUncontrolled = composeAppStoreInfo.IsUncontrolled
 
 		var mainApp *types.ServiceConfig
 		for i, service := range composeApp.Services {
@@ -158,6 +160,7 @@ func WebAppGridItemAdapterV2(composeAppWithStoreInfo *codegen.ComposeAppWithStor
 	// item type
 	itemAuthorType := composeApp.AuthorType()
 	item.AuthorType = &itemAuthorType
+	item.IsUncontrolled = composeAppWithStoreInfo.IsUncontrolled
 
 	return item, nil
 }
@@ -180,6 +183,7 @@ func WebAppGridItemAdapterV1(app *model.MyAppList) (*codegen.WebAppGridItem, err
 		Title: &map[string]string{
 			common.DefaultLanguage: app.Name,
 		},
+		IsUncontrolled: &app.IsUncontrolled,
 	}
 
 	return item, nil
@@ -198,6 +202,7 @@ func WebAppGridItemAdapterContainer(container *model.MyAppList) (*codegen.WebApp
 		Title: &map[string]string{
 			common.DefaultLanguage: container.Name,
 		},
+		IsUncontrolled: &container.IsUncontrolled,
 	}
 
 	return item, nil

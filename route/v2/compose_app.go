@@ -263,6 +263,17 @@ func (a *AppManagement) InstallComposeApp(ctx echo.Context, params codegen.Insta
 		})
 	}
 
+	if params.Uncontrolled != nil && *params.Uncontrolled {
+		xcasaos := composeApp.Extensions[common.ComposeExtensionNameXCasaOS]
+		xcasaosMap, ok := xcasaos.(map[string]interface{})
+		if !ok {
+			logger.Error("failed to get map compose app extensions", zap.String("composeAppID", composeApp.Name))
+		} else {
+			xcasaosMap[common.ComposeExtensionPropertyNameIsUncontrolled] = true
+			composeApp.Extensions[common.ComposeExtensionNameXCasaOS] = xcasaosMap
+		}
+	}
+
 	if service.MyService.Compose().IsInstalling(composeApp.Name) {
 		message := fmt.Sprintf("compose app `%s` is already being installed", composeApp.Name)
 		return ctx.JSON(http.StatusConflict, codegen.ComposeAppBadRequest{Message: &message})
@@ -578,6 +589,7 @@ func composeAppsWithStoreInfo(ctx context.Context) (map[string]codegen.ComposeAp
 			StoreInfo:       nil,
 			Status:          utils.Ptr("unknown"),
 			UpdateAvailable: utils.Ptr(false),
+			IsUncontrolled:  utils.Ptr(false),
 		}
 
 		storeInfo, err := composeApp.StoreInfo(true)
@@ -609,6 +621,11 @@ func composeAppsWithStoreInfo(ctx context.Context) (map[string]codegen.ComposeAp
 		if !ok {
 			logger.Error("failed to get main app container", zap.String("composeAppID", id))
 			return composeAppWithStoreInfo
+		}
+
+		isUncontrolled, ok := composeApp.Extensions[common.ComposeExtensionNameXCasaOS].(map[string]interface{})[common.ComposeExtensionPropertyNameIsUncontrolled].(bool)
+		if ok {
+			composeAppWithStoreInfo.IsUncontrolled = &isUncontrolled
 		}
 
 		// Because of a stupid design by @tigerinus, the `composeApp.Containers(...)` func above was returning a map

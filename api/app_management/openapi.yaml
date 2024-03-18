@@ -392,6 +392,7 @@ paths:
       parameters:
         - $ref: "#/components/parameters/DryRun"
         - $ref: "#/components/parameters/CheckPortConflict"
+        - $ref: "#/components/parameters/Uncontrolled"
       requestBody:
         $ref: "#/components/requestBodies/RequestComposeApp"
       responses:
@@ -782,6 +783,18 @@ components:
       schema:
         type: boolean
         default: true
+
+    Uncontrolled:
+      name: uncontrolled
+      description: |
+        Install the app without any control. the control mean version control, if the app is stable and latest. it is controlled, It will auto update. otherwise it is uncontrolled.
+
+        - `true` - uncontrolled install
+        - `false` - normal install
+      in: query
+      schema:
+        type: boolean
+        example: false
 
   requestBodies:
     RequestComposeApp:
@@ -1319,7 +1332,15 @@ components:
             - "arm64"
           x-oapi-codegen-extra-tags:
             yaml: ",omitempty"
-
+        is_uncontrolled: # uncontrolled == not stable and latest
+          title: is the app uncontrolled. 
+          description: |
+            the mean the image tag is custom. not stable or latest
+          type: boolean
+          example: false
+          x-oapi-codegen-extra-tags:
+            yaml: ",omitempty"
+          
     ComposeApp:
       type: object
       description: |-
@@ -1348,6 +1369,15 @@ components:
           readOnly: true
           type: boolean
           example: true
+          x-oapi-codegen-extra-tags:
+            yaml: ",omitempty"
+        is_uncontrolled:
+          readOnly: true
+          title: is the app uncontrolled. 
+          description: |
+            the mean the image tag is custom. not stable or latest
+          type: boolean
+          example: false
           x-oapi-codegen-extra-tags:
             yaml: ",omitempty"
 
@@ -1621,3 +1651,6 @@ components:
         image:
           type: string
           example: gitea/gitea:1
+        is_uncontrolled:
+          type: boolean
+          example: false

@@ -8,9 +8,10 @@ const (
 
 	ComposeAppAuthorCasaOSTeam = "CasaOS Team"
 
-	ComposeExtensionNameXCasaOS            = "x-casaos"
-	ComposeExtensionPropertyNameStoreAppID = "store_app_id"
-	ComposeExtensionPropertyNameTitle      = "title"
+	ComposeExtensionNameXCasaOS                = "x-casaos"
+	ComposeExtensionPropertyNameStoreAppID     = "store_app_id"
+	ComposeExtensionPropertyNameTitle          = "title"
+	ComposeExtensionPropertyNameIsUncontrolled = "is_uncontrolled"
 
 	ComposeYAMLFileName = "docker-compose.yml"
 
