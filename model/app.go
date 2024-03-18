@@ -70,22 +70,23 @@ type ServerAppList struct {
 }
 
 type MyAppList struct {
-	ID         string `json:"id"`
-	Name       string `json:"name"`
-	Icon       string `json:"icon"`
-	State      string `json:"state"`
-	CustomID   string `gorm:"column:custom_id;primary_key" json:"custom_id"`
-	Index      string `json:"index"`
-	Port       string `json:"port"`
-	Slogan     string `json:"slogan"`
-	Type       string `json:"type"`
-	Image      string `json:"image"`
-	Volumes    string `json:"volumes"`
-	Latest     bool   `json:"latest"`
-	Host       string `json:"host"`
-	Protocol   string `json:"protocol"`
-	Created    int64  `json:"created"`
-	AppStoreID uint   `json:"appstore_id"`
+	ID             string `json:"id"`
+	Name           string `json:"name"`
+	Icon           string `json:"icon"`
+	State          string `json:"state"`
+	CustomID       string `gorm:"column:custom_id;primary_key" json:"custom_id"`
+	Index          string `json:"index"`
+	Port           string `json:"port"`
+	Slogan         string `json:"slogan"`
+	Type           string `json:"type"`
+	Image          string `json:"image"`
+	Volumes        string `json:"volumes"`
+	Latest         bool   `json:"latest"`
+	Host           string `json:"host"`
+	Protocol       string `json:"protocol"`
+	Created        int64  `json:"created"`
+	AppStoreID     uint   `json:"appstore_id"`
+	IsUncontrolled bool   `json:"is_uncontrolled"`
 }
 
 type Ports struct {

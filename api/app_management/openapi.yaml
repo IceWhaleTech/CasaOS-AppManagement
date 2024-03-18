@@ -1332,7 +1332,7 @@ components:
             - "arm64"
           x-oapi-codegen-extra-tags:
             yaml: ",omitempty"
-        is_uncontrolled:
+        is_uncontrolled: # uncontrolled == not stable and latest
           title: is the app uncontrolled. 
           description: |
             the mean the image tag is custom. not stable or latest
@@ -1369,6 +1369,15 @@ components:
           readOnly: true
           type: boolean
           example: true
+          x-oapi-codegen-extra-tags:
+            yaml: ",omitempty"
+        is_uncontrolled:
+          readOnly: true
+          title: is the app uncontrolled. 
+          description: |
+            the mean the image tag is custom. not stable or latest
+          type: boolean
+          example: false
           x-oapi-codegen-extra-tags:
             yaml: ",omitempty"
 
@@ -1642,3 +1651,6 @@ components:
         image:
           type: string
           example: gitea/gitea:1
+        is_uncontrolled:
+          type: boolean
+          example: false
