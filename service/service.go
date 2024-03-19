@@ -151,8 +151,9 @@ func PublishEventWrapper(ctx context.Context, eventType message_bus.EventType, p
 		if response.StatusCode() != http.StatusOK {
 			logger.Error("failed to publish event", zap.String("status code", response.Status()))
 		}
-	}
-	if resp.StatusCode != http.StatusOK {
-		logger.Error("failed to publish event", zap.String("status code", resp.Status))
+	} else {
+		if resp.StatusCode != http.StatusOK {
+			logger.Error("failed to publish event", zap.String("status code", resp.Status))
+		}
 	}
 }

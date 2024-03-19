@@ -440,6 +440,7 @@ paths:
         - $ref: "#/components/parameters/ComposeAppID"
         - $ref: "#/components/parameters/DryRun"
         - $ref: "#/components/parameters/CheckPortConflict"
+        - $ref: "#/components/parameters/Uncontrolled"
       requestBody:
         $ref: "#/components/requestBodies/RequestComposeApp"
       responses:
