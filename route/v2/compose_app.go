@@ -134,6 +134,29 @@ func (a *AppManagement) ApplyComposeAppSettings(ctx echo.Context, id codegen.Com
 			Message: &message,
 		})
 	}
+
+	if params.Uncontrolled != nil && *params.Uncontrolled {
+		// set to uncontrolled app
+		xcasaos := composeApp.Extensions[common.ComposeExtensionNameXCasaOS]
+		xcasaosMap, ok := xcasaos.(map[string]interface{})
+		if !ok {
+			logger.Error("failed to get map compose app extensions", zap.String("composeAppID", composeApp.Name))
+		} else {
+			xcasaosMap[common.ComposeExtensionPropertyNameIsUncontrolled] = true
+			composeApp.Extensions[common.ComposeExtensionNameXCasaOS] = xcasaosMap
+		}
+	} else {
+		// set to controlled app
+		xcasaos := composeApp.Extensions[common.ComposeExtensionNameXCasaOS]
+		xcasaosMap, ok := xcasaos.(map[string]interface{})
+		if !ok {
+			logger.Error("failed to get map compose app extensions", zap.String("composeAppID", composeApp.Name))
+		} else {
+			xcasaosMap[common.ComposeExtensionPropertyNameIsUncontrolled] = false
+			composeApp.Extensions[common.ComposeExtensionNameXCasaOS] = xcasaosMap
+		}
+	}
+
 	if params.CheckPortConflict == nil || *params.CheckPortConflict {
 
 		// validation 1 - check if there are ports in use
@@ -230,6 +253,28 @@ func (a *AppManagement) InstallComposeApp(ctx echo.Context, params codegen.Insta
 		})
 	}
 
+	if params.Uncontrolled != nil && *params.Uncontrolled {
+		// set to uncontrolled app
+		xcasaos := composeApp.Extensions[common.ComposeExtensionNameXCasaOS]
+		xcasaosMap, ok := xcasaos.(map[string]interface{})
+		if !ok {
+			logger.Error("failed to get map compose app extensions", zap.String("composeAppID", composeApp.Name))
+		} else {
+			xcasaosMap[common.ComposeExtensionPropertyNameIsUncontrolled] = true
+			composeApp.Extensions[common.ComposeExtensionNameXCasaOS] = xcasaosMap
+		}
+	} else {
+		// set to controlled app
+		xcasaos := composeApp.Extensions[common.ComposeExtensionNameXCasaOS]
+		xcasaosMap, ok := xcasaos.(map[string]interface{})
+		if !ok {
+			logger.Error("failed to get map compose app extensions", zap.String("composeAppID", composeApp.Name))
+		} else {
+			xcasaosMap[common.ComposeExtensionPropertyNameIsUncontrolled] = false
+			composeApp.Extensions[common.ComposeExtensionNameXCasaOS] = xcasaosMap
+		}
+	}
+
 	if params.CheckPortConflict == nil || *params.CheckPortConflict {
 		// validation 1 - check if there are ports in use
 		validation, err := composeApp.GetPortsInUse()
@@ -261,17 +306,6 @@ func (a *AppManagement) InstallComposeApp(ctx echo.Context, params codegen.Insta
 		return ctx.JSON(http.StatusOK, codegen.ComposeAppInstallOK{
 			Message: lo.ToPtr("only validation has been done because `dry_run` is specified - skipping compose app installation"),
 		})
-	}
-
-	if params.Uncontrolled != nil && *params.Uncontrolled {
-		xcasaos := composeApp.Extensions[common.ComposeExtensionNameXCasaOS]
-		xcasaosMap, ok := xcasaos.(map[string]interface{})
-		if !ok {
-			logger.Error("failed to get map compose app extensions", zap.String("composeAppID", composeApp.Name))
-		} else {
-			xcasaosMap[common.ComposeExtensionPropertyNameIsUncontrolled] = true
-			composeApp.Extensions[common.ComposeExtensionNameXCasaOS] = xcasaosMap
-		}
 	}
 
 	if service.MyService.Compose().IsInstalling(composeApp.Name) {
