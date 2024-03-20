@@ -130,7 +130,7 @@ func WebAppGridItemAdapterV2(composeAppWithStoreInfo *codegen.ComposeAppWithStor
 		Title: lo.ToPtr(map[string]string{
 			common.DefaultLanguage: composeApp.Name,
 		}),
-		IsUncontrolled: composeAppWithStoreInfo.StoreInfo.IsUncontrolled,
+		IsUncontrolled: utils.Ptr(false),
 	}
 
 	composeAppStoreInfo := composeAppWithStoreInfo.StoreInfo
