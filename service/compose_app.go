@@ -50,6 +50,7 @@ func (a *ComposeApp) StoreInfo(includeApps bool) (*codegen.ComposeAppStoreInfo, 
 
 	var storeInfo codegen.ComposeAppStoreInfo
 	if err := loader.Transform(ex, &storeInfo); err != nil {
+		logger.Error("Transform store info fail", zap.Error(err))
 		return nil, err
 	}
 
