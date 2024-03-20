@@ -91,7 +91,7 @@ func (a *AppStoreManagement) DeleteGlobal(key string) error {
 func (a *AppStoreManagement) RegisterAppStore(ctx context.Context, appstoreURL string, callbacks ...func(*codegen.AppStoreMetadata)) error {
 	// check if appstore already exists
 	for _, url := range config.ServerInfo.AppStoreList {
-		if strings.ToLower(url) == strings.ToLower(appstoreURL) {
+		if strings.EqualFold(url, appstoreURL) {
 			return nil
 		}
 	}

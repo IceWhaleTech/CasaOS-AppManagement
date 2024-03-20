@@ -94,11 +94,7 @@ func (a *ComposeApp) AuthorType() codegen.StoreAppAuthorType {
 		return codegen.Unknown
 	}
 
-	if strings.ToLower(storeInfo.Author) == strings.ToLower(storeInfo.Developer) {
-		return codegen.Official
-	}
-
-	if strings.ToLower(storeInfo.Author) == strings.ToLower(common.ComposeAppAuthorCasaOSTeam) {
+	if strings.EqualFold(storeInfo.Author, common.ComposeAppAuthorCasaOSTeam) {
 		return codegen.ByCasaos
 	}
 

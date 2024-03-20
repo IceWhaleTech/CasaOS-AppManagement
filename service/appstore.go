@@ -61,9 +61,6 @@ func (s *appStore) CategoryMap() (map[string]codegen.CategoryInfo, error) {
 	}
 
 	categoryMap := LoadCategoryMap(storeRoot)
-	if err != nil {
-		return nil, err
-	}
 
 	s.categoryMap = categoryMap
 
