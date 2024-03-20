@@ -14,6 +14,7 @@ import (
 	"time"
 
 	v1 "github.com/IceWhaleTech/CasaOS-AppManagement/service/v1"
+	"github.com/bluele/gcache"
 
 	"github.com/IceWhaleTech/CasaOS-AppManagement/codegen"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/common"
@@ -189,6 +190,11 @@ func (a *ComposeApp) IsUpdateAvailable() bool {
 	return a.IsUpdateAvailableWith(storeComposeApp)
 }
 
+var latestIsUpdateAvailableCache = gcache.New(100).
+	LRU().
+	Expiration(1 * time.Hour).
+	Build()
+
 func (a *ComposeApp) IsUpdateAvailableWith(storeComposeApp *ComposeApp) bool {
 	storeComposeAppStoreInfo, err := storeComposeApp.StoreInfo(false)
 	if err != nil || storeComposeAppStoreInfo == nil {
@@ -208,29 +214,43 @@ func (a *ComposeApp) IsUpdateAvailableWith(storeComposeApp *ComposeApp) bool {
 
 	// TODO to async the check for consist with the version tag app
 	if mainAppTag == "latest" {
-		// check image digest when tag is latest.
-		ctx := context.Background()
-		cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
-		defer cli.Close()
-
-		imageInfo, _, err := cli.ImageInspectWithRaw(ctx, mainAppImage)
-
+		isUpdateAvailable, err := latestIsUpdateAvailableCache.Get(mainAppImage)
 		if err != nil {
-			logger.Error("failed to inspect image", zap.Error(err), zap.String("name", mainAppImage))
+			go func() {
+				// check image digest when tag is latest.
+				ctx := context.Background()
+				cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+				if err != nil {
+					logger.Error("failed to create docker client", zap.Error(err))
+				}
+				defer cli.Close()
+
+				imageInfo, _, err := cli.ImageInspectWithRaw(ctx, mainAppImage)
+
+				if err != nil {
+					logger.Error("failed to inspect image", zap.Error(err), zap.String("name", mainAppImage))
+					latestIsUpdateAvailableCache.Set(mainAppImage, false)
+				}
+				match, err := docker.CompareDigest(storeComposeApp.Services[0].Image, imageInfo.RepoDigests)
+				if err != nil {
+					logger.Error("failed to compare digest", zap.Error(err), zap.String("name", mainAppImage))
+					latestIsUpdateAvailableCache.Set(mainAppImage, false)
+				}
+				if match {
+					logger.Info("main app image tag is latest, thus no update available", zap.String("image", mainApp.Image))
+					latestIsUpdateAvailableCache.Set(mainAppImage, false)
+				} else {
+					logger.Info("main app image tag is latest, but digest is different, thus update is available", zap.String("image", mainApp.Image))
+					latestIsUpdateAvailableCache.Set(mainAppImage, true)
+				}
+			}()
+
 			return false
 		}
-		match, err := docker.CompareDigest(storeComposeApp.Services[0].Image, imageInfo.RepoDigests)
-		if err != nil {
-			logger.Error("failed to compare digest", zap.Error(err), zap.String("name", mainAppImage))
-			return false
-		}
-		if match {
-			logger.Info("main app image tag is latest, thus no update available", zap.String("image", mainApp.Image))
-			return false
-		} else {
-			logger.Info("main app image tag is latest, but digest is different, thus update is available", zap.String("image", mainApp.Image))
+		if isUpdateAvailable.(bool) {
 			return true
 		}
+		return false
 	}
 
 	storeMainApp := storeComposeApp.App(mainAppName)
