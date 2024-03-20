@@ -190,8 +190,9 @@ func (a *ComposeApp) IsUpdateAvailable() bool {
 	return a.IsUpdateAvailableWith(storeComposeApp)
 }
 
-var gc = gcache.New(100).
+var latestIsUpdateAvailableCache = gcache.New(100).
 	LRU().
+	Expiration(1 * time.Hour).
 	Build()
 
 func (a *ComposeApp) IsUpdateAvailableWith(storeComposeApp *ComposeApp) bool {
@@ -213,33 +214,35 @@ func (a *ComposeApp) IsUpdateAvailableWith(storeComposeApp *ComposeApp) bool {
 
 	// TODO to async the check for consist with the version tag app
 	if mainAppTag == "latest" {
-		isUpdateAvailable, err := gc.Get(mainAppImage)
+		isUpdateAvailable, err := latestIsUpdateAvailableCache.Get(mainAppImage)
 		if err != nil {
 			go func() {
 				// check image digest when tag is latest.
 				ctx := context.Background()
 				cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+				if err != nil {
+					logger.Error("failed to create docker client", zap.Error(err))
+				}
 				defer cli.Close()
 
 				imageInfo, _, err := cli.ImageInspectWithRaw(ctx, mainAppImage)
 
 				if err != nil {
 					logger.Error("failed to inspect image", zap.Error(err), zap.String("name", mainAppImage))
-					gc.Set(mainAppImage, false)
+					latestIsUpdateAvailableCache.Set(mainAppImage, false)
 				}
 				match, err := docker.CompareDigest(storeComposeApp.Services[0].Image, imageInfo.RepoDigests)
 				if err != nil {
 					logger.Error("failed to compare digest", zap.Error(err), zap.String("name", mainAppImage))
-					gc.Set(mainAppImage, false)
+					latestIsUpdateAvailableCache.Set(mainAppImage, false)
 				}
 				if match {
 					logger.Info("main app image tag is latest, thus no update available", zap.String("image", mainApp.Image))
-					gc.Set(mainAppImage, false)
+					latestIsUpdateAvailableCache.Set(mainAppImage, false)
 				} else {
 					logger.Info("main app image tag is latest, but digest is different, thus update is available", zap.String("image", mainApp.Image))
-					gc.Set(mainAppImage, true)
+					latestIsUpdateAvailableCache.Set(mainAppImage, true)
 				}
-
 			}()
 
 			return false
