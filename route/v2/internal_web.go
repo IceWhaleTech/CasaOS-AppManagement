@@ -160,7 +160,11 @@ func WebAppGridItemAdapterV2(composeAppWithStoreInfo *codegen.ComposeAppWithStor
 	// item type
 	itemAuthorType := composeApp.AuthorType()
 	item.AuthorType = &itemAuthorType
-	item.IsUncontrolled = composeAppWithStoreInfo.IsUncontrolled
+	if composeAppWithStoreInfo.IsUncontrolled == nil {
+		item.IsUncontrolled = utils.Ptr(false)
+	} else {
+		item.IsUncontrolled = composeAppWithStoreInfo.IsUncontrolled
+	}
 
 	return item, nil
 }
