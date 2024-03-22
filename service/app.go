@@ -3,6 +3,7 @@ package service
 import (
 	"github.com/IceWhaleTech/CasaOS-AppManagement/codegen"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/common"
+	"github.com/IceWhaleTech/CasaOS-Common/utils/logger"
 	"github.com/compose-spec/compose-go/loader"
 	"github.com/compose-spec/compose-go/types"
 )
@@ -14,7 +15,8 @@ func (a *App) StoreInfo() (codegen.AppStoreInfo, error) {
 
 	ex, ok := a.Extensions[common.ComposeExtensionNameXCasaOS]
 	if !ok {
-		return storeInfo, ErrComposeExtensionNameXCasaOSNotFound
+		logger.Error("extension `x-casaos` not found")
+		// return storeInfo, ErrComposeExtensionNameXCasaOSNotFound
 	}
 
 	// add image to store info for check stable version function.
