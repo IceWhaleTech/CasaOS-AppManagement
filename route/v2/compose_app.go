@@ -108,7 +108,7 @@ func (a *AppManagement) IsNewComposeUncontrolled(newComposeApp *service.ComposeA
 
 	// TODO refactor this. because if user not update. the status will be uncontrolled.
 	if newTag == "latest" {
-		return true, nil
+		return false, nil
 	} else {
 		// compare store info
 		StoreApp, err := service.MyService.V2AppStore().ComposeApp(newComposeApp.Name)
