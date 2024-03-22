@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 
 	"github.com/IceWhaleTech/CasaOS-AppManagement/codegen"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/common"
@@ -144,6 +145,13 @@ func (a *AppManagement) ApplyComposeAppSettings(ctx echo.Context, id codegen.Com
 		} else {
 			xcasaosMap[common.ComposeExtensionPropertyNameIsUncontrolled] = true
 			composeApp.Extensions[common.ComposeExtensionNameXCasaOS] = xcasaosMap
+
+			// replace the buf is_uncontrolled is_uncontrolled: false => true
+			// otherwise, the new buf will be the same as the old one
+			// the replace is only in apply not install Compose. Because only the old compose has is_uncontrolled
+			// TODO: refactor the implement in a better way. not replace the string directly
+			buf = []byte(strings.ReplaceAll(string(buf), "is_uncontrolled: false", "is_uncontrolled: true"))
+
 		}
 	} else {
 		// set to controlled app
@@ -154,6 +162,9 @@ func (a *AppManagement) ApplyComposeAppSettings(ctx echo.Context, id codegen.Com
 		} else {
 			xcasaosMap[common.ComposeExtensionPropertyNameIsUncontrolled] = false
 			composeApp.Extensions[common.ComposeExtensionNameXCasaOS] = xcasaosMap
+
+			// replace the buf is_uncontrolled is_uncontrolled: true => false
+			buf = []byte(strings.ReplaceAll(string(buf), "is_uncontrolled: true", "is_uncontrolled: false"))
 		}
 	}
 
