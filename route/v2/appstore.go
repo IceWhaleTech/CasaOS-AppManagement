@@ -197,6 +197,7 @@ func (a *AppManagement) ComposeAppStableTag(ctx echo.Context, id codegen.StoreAp
 		})
 	}
 
+	// TODO refactor this with MainService
 	storeInfo, err := composeApp.StoreInfo(true)
 	if err != nil {
 		return ctx.JSON(http.StatusInternalServerError, codegen.ResponseInternalServerError{

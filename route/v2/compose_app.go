@@ -98,6 +98,38 @@ func (a *AppManagement) MyComposeApp(ctx echo.Context, id codegen.ComposeAppID) 
 	})
 }
 
+func (a *AppManagement) IsNewComposeUncontrolled(newComposeApp *service.ComposeApp) (bool, error) {
+	// to check if the new compose app is uncontrolled
+	newTag, err := newComposeApp.MainTag()
+	if err != nil {
+		return false, err
+	}
+
+	// TODO refactor this. because if user not update. the status will be uncontrolled.
+	if newTag == "latest" {
+		return true, nil
+	} else {
+		// compare store info
+		StoreApp, err := service.MyService.V2AppStore().ComposeApp(newComposeApp.Name)
+		if err != nil {
+			return false, err
+		}
+
+		if StoreApp == nil {
+			return false, errors.New("store app not found")
+		}
+		StableTag, err := StoreApp.MainTag()
+		if err != nil {
+			return false, err
+		}
+		if StableTag != newTag {
+			return true, nil
+		} else {
+			return false, nil
+		}
+	}
+}
+
 func (a *AppManagement) ApplyComposeAppSettings(ctx echo.Context, id codegen.ComposeAppID, params codegen.ApplyComposeAppSettingsParams) error {
 	if id == "" {
 		message := ErrComposeAppIDNotProvided.Error()
@@ -135,7 +167,14 @@ func (a *AppManagement) ApplyComposeAppSettings(ctx echo.Context, id codegen.Com
 		})
 	}
 
-	if params.Uncontrolled != nil && *params.Uncontrolled {
+	uncontrolled, err := a.IsNewComposeUncontrolled(newComposeApp)
+	if err != nil {
+		message := err.Error()
+		return ctx.JSON(http.StatusInternalServerError, codegen.ResponseInternalServerError{
+			Message: &message,
+		})
+	}
+	if uncontrolled {
 		// set to uncontrolled app
 		xcasaos := composeApp.Extensions[common.ComposeExtensionNameXCasaOS]
 		xcasaosMap, ok := xcasaos.(map[string]interface{})
@@ -253,7 +292,14 @@ func (a *AppManagement) InstallComposeApp(ctx echo.Context, params codegen.Insta
 		})
 	}
 
-	if params.Uncontrolled != nil && *params.Uncontrolled {
+	uncontrolled, err := a.IsNewComposeUncontrolled(composeApp)
+	if err != nil {
+		message := err.Error()
+		return ctx.JSON(http.StatusInternalServerError, codegen.ResponseInternalServerError{
+			Message: &message,
+		})
+	}
+	if uncontrolled {
 		// set to uncontrolled app
 		xcasaos := composeApp.Extensions[common.ComposeExtensionNameXCasaOS]
 		xcasaosMap, ok := xcasaos.(map[string]interface{})

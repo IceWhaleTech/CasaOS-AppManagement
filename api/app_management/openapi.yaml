@@ -392,6 +392,8 @@ paths:
       parameters:
         - $ref: "#/components/parameters/DryRun"
         - $ref: "#/components/parameters/CheckPortConflict"
+        # TODO remove the unused parameters later. 
+        # the params is deprecated. because frontend is hard to know is the app is stable or not.
         - $ref: "#/components/parameters/Uncontrolled"
       requestBody:
         $ref: "#/components/requestBodies/RequestComposeApp"
