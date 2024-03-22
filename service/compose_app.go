@@ -374,6 +374,29 @@ func (a *ComposeApp) Apps() map[string]*App {
 	return apps
 }
 
+func (a *ComposeApp) MainService() (*App, error) {
+	storeInfo, err := a.StoreInfo(false)
+	if err != nil {
+		return nil, err
+	}
+
+	if storeInfo.Main == nil || *storeInfo.Main == "" {
+		return nil, ErrMainServiceNotFound
+	}
+
+	return a.App(*storeInfo.Main), nil
+}
+
+func (a *ComposeApp) MainTag() (string, error) {
+	mainService, err := a.MainService()
+	if err != nil {
+		return "", err
+	}
+	_, newTag := docker.ExtractImageAndTag(mainService.Image)
+
+	return newTag, nil
+}
+
 func (a *ComposeApp) Containers(ctx context.Context) (map[string][]api.ContainerSummary, error) {
 	service, dockerClient, err := apiService()
 	if err != nil {
