@@ -152,8 +152,8 @@ func WebAppGridItemAdapterV2(composeAppWithStoreInfo *codegen.ComposeAppWithStor
 			if service.Name == *composeAppStoreInfo.Main {
 				mainApp = &composeApp.Services[i]
 				item.Image = &mainApp.Image // Hengxin needs this image property for some reason...
+				break
 			}
-			break
 		}
 	}
 

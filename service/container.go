@@ -11,6 +11,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/IceWhaleTech/CasaOS-Common/utils/random"
 	"github.com/go-resty/resty/v2"
 	"github.com/pkg/errors"
 	"github.com/samber/lo"
@@ -24,7 +25,6 @@ import (
 	v1 "github.com/IceWhaleTech/CasaOS-AppManagement/service/v1"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/file"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/logger"
-	"github.com/IceWhaleTech/CasaOS-Common/utils/random"
 	timeutils "github.com/IceWhaleTech/CasaOS-Common/utils/time"
 
 	//"github.com/containerd/containerd/oci"
@@ -439,7 +439,7 @@ func (ds *dockerService) CreateContainer(m model.CustomizationPostData, id strin
 			res.Devices = append(res.Devices, container.DeviceMapping{PathOnHost: p.Path, PathInContainer: p.ContainerPath, CgroupPermissions: "rwm"})
 		}
 	}
-	hostConfingBind := []string{}
+
 	// volumes bind
 	volumes := []mount.Mount{}
 	for _, v := range m.Volumes {
@@ -459,22 +459,12 @@ func (ds *dockerService) CreateContainer(m model.CustomizationPostData, id strin
 			logger.Error("Failed to create a folder", zap.Any("err", err))
 			continue
 		}
-		//}
-		//  else {
-		// 	err = file.IsNotExistCreateFile(path)
-		// 	if err != nil {
-		// 		ds.log.Error("mkdir error", err)
-		// 		continue
-		// 	}
-		// }
 
 		volumes = append(volumes, mount.Mount{
 			Type:   mount.TypeBind,
 			Source: path,
 			Target: v.ContainerPath,
 		})
-
-		hostConfingBind = append(hostConfingBind, v.Path+":"+v.ContainerPath)
 	}
 
 	rp := container.RestartPolicy{}
@@ -482,17 +472,6 @@ func (ds *dockerService) CreateContainer(m model.CustomizationPostData, id strin
 	if len(m.Restart) > 0 {
 		rp.Name = m.Restart
 	}
-	// healthTest := []string{}
-	// if len(port) > 0 {
-	// 	healthTest = []string{"CMD-SHELL", "curl -f http://localhost:" + port + m.Index + " || exit 1"}
-	// }
-
-	// health := &container.HealthConfig{
-	// 	Test:        healthTest,
-	// 	StartPeriod: 0,
-	// 	Retries:     1000,
-	// }
-	// fmt.Print(health)
 	if len(m.HostName) == 0 {
 		m.HostName = m.Label
 	}
@@ -502,9 +481,6 @@ func (ds *dockerService) CreateContainer(m model.CustomizationPostData, id strin
 	config := &container.Config{}
 	config.Labels = map[string]string{}
 	if err == nil {
-		// info.HostConfig = &container.HostConfig{}
-		// info.Config = &container.Config{}
-		// info.NetworkSettings = &types.NetworkSettings{}
 		hostConfig = info.HostConfig
 		config = info.Config
 		if config.Labels["casaos"] == "casaos" {
@@ -534,7 +510,6 @@ func (ds *dockerService) CreateContainer(m model.CustomizationPostData, id strin
 	config.Labels["host"] = m.Host
 	config.Labels["name"] = m.Label
 	config.Labels[common.ContainerLabelV1AppStoreID] = strconv.Itoa((int)(m.AppStoreID))
-	// container, err := cli.ContainerCreate(context.Background(), info.Config, info.HostConfig, &network.NetworkingConfig{info.NetworkSettings.Networks}, nil, info.Name)
 
 	hostConfig.Mounts = volumes
 	hostConfig.Binds = []string{}
@@ -543,11 +518,9 @@ func (ds *dockerService) CreateContainer(m model.CustomizationPostData, id strin
 	hostConfig.NetworkMode = container.NetworkMode(m.NetworkModel)
 	hostConfig.RestartPolicy = rp
 	hostConfig.Resources = res
-	// hostConfig := &container.HostConfig{Resources: res, Mounts: volumes, RestartPolicy: rp, NetworkMode: , Privileged: m.Privileged, CapAdd: m.CapAdd}
-	// if net != "host" {
 
 	hostConfig.PortBindings = portMaps
-	//}
+
 	containerDb, err := cli.ContainerCreate(context.Background(),
 		config,
 		hostConfig,
@@ -585,7 +558,7 @@ func (ds *dockerService) RecreateContainer(ctx context.Context, id string, pull 
 	// Clone the old container
 	var newID string
 	if err := func() error {
-		tempName := fmt.Sprintf("%s-%s", containerInfo.Name, random.RandomString(4, false))
+		tempName := fmt.Sprintf("%s-%s", containerInfo.Name, random.String(4, false))
 
 		go PublishEventWrapper(ctx, common.EventTypeContainerCreateBegin, map[string]string{
 			common.PropertyTypeContainerName.Name: tempName,

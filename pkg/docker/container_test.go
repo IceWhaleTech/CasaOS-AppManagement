@@ -39,7 +39,7 @@ func setupTestContainer(ctx context.Context, t *testing.T) *container.CreateResp
 	_, err = io.ReadAll(out)
 	assert.NilError(t, err)
 
-	response, err := cli.ContainerCreate(ctx, config, hostConfig, networkingConfig, nil, "test-"+random.RandomString(4, false))
+	response, err := cli.ContainerCreate(ctx, config, hostConfig, networkingConfig, nil, "test-"+random.String(4, false))
 	assert.NilError(t, err)
 
 	return &response
@@ -80,7 +80,7 @@ func TestCloneContainer(t *testing.T) {
 		assert.NilError(t, err)
 	}()
 
-	newID, err := docker.CloneContainer(ctx, response.ID, "test-"+random.RandomString(4, false))
+	newID, err := docker.CloneContainer(ctx, response.ID, "test-"+random.String(4, false))
 	assert.NilError(t, err)
 
 	defer func() {

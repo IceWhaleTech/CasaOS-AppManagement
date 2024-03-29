@@ -10,7 +10,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net"
 	"net/http"
 	"strings"
@@ -117,7 +117,7 @@ func GetManifest(ctx context.Context, imageName string) (interface{}, string, er
 
 	contentType := res.Header.Get("Content-Type")
 
-	buf, err := ioutil.ReadAll(res.Body)
+	buf, err := io.ReadAll(res.Body)
 	if err != nil {
 		return nil, "", err
 	}

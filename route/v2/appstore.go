@@ -36,7 +36,7 @@ func (a *AppManagement) RegisterAppStore(ctx echo.Context, params codegen.Regist
 	}
 
 	isExist := lo.ContainsBy(service.MyService.AppStoreManagement().AppStoreList(), func(appstore codegen.AppStoreMetadata) bool {
-		return appstore.URL != nil && strings.ToLower(*appstore.URL) == strings.ToLower(*params.Url)
+		return appstore.URL != nil && strings.EqualFold(strings.ToLower(*appstore.URL), strings.ToLower(*params.Url))
 	})
 
 	if isExist {
@@ -319,7 +319,7 @@ func FilterCatalogByCategory(catalog map[string]*service.ComposeApp, category st
 			return false
 		}
 
-		return strings.ToLower(storeInfo.Category) == strings.ToLower(category)
+		return strings.EqualFold(strings.ToLower(storeInfo.Category), strings.ToLower(category))
 	})
 }
 

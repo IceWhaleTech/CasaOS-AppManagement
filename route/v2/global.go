@@ -84,7 +84,10 @@ func updateGlobalEnv(ctx echo.Context, key string, value string) error {
 		}
 		for _, project := range composeAppsWithStoreInfo {
 			if service, _, err := service.ApiService(); err == nil {
-				project.UpWithCheckRequire(backgroundCtx, service)
+				err := project.UpWithCheckRequire(backgroundCtx, service)
+				if err != nil {
+					logger.Error("Failed to up project", zap.Any("error", err))
+				}
 			} else {
 				logger.Error("Failed to get Api Service", zap.Any("error", err))
 			}
@@ -109,7 +112,10 @@ func deleteGlobalEnv(ctx echo.Context, key string) error {
 		}
 		for _, project := range composeAppsWithStoreInfo {
 			if service, _, err := service.ApiService(); err == nil {
-				project.UpWithCheckRequire(backgroundCtx, service)
+				err := project.UpWithCheckRequire(backgroundCtx, service)
+				if err != nil {
+					logger.Error("Failed to up project", zap.Any("error", err))
+				}
 			} else {
 				logger.Error("Failed to get Api Service", zap.Any("error", err))
 			}

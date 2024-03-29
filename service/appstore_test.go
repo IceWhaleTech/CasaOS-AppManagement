@@ -273,7 +273,7 @@ func TestBuildCatalog(t *testing.T) {
 
 	// test for invalid storeRoot
 	_, err := service.BuildCatalog(storeRoot)
-	assert.ErrorType(t, err, new(fs.PathError))
+	assert.ErrorIs(t, err, new(fs.PathError))
 
 	appsPath := filepath.Join(storeRoot, common.AppsDirectoryName)
 	err = file.MkDir(appsPath)
