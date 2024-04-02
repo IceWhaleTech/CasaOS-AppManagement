@@ -184,7 +184,7 @@ func (a *AppManagement) ComposeAppStoreInfo(ctx echo.Context, id codegen.StoreAp
 	})
 }
 
-func (a *AppManagement) ComposeAppStableTag(ctx echo.Context, id codegen.StoreAppIDString) error {
+func (a *AppManagement) ComposeAppMainStableTag(ctx echo.Context, id codegen.StoreAppIDString) error {
 	composeApp, err := service.MyService.V2AppStore().ComposeApp(id)
 	if err != nil {
 		message := err.Error()
@@ -197,30 +197,50 @@ func (a *AppManagement) ComposeAppStableTag(ctx echo.Context, id codegen.StoreAp
 		})
 	}
 
-	// TODO refactor this with MainService
-	storeInfo, err := composeApp.StoreInfo(true)
+	mainService, err := composeApp.MainService()
 	if err != nil {
 		return ctx.JSON(http.StatusInternalServerError, codegen.ResponseInternalServerError{
 			Message: utils.Ptr(err.Error()),
 		})
+
 	}
 
-	for key, app := range *storeInfo.Apps {
-		if key == *storeInfo.Main {
-			// spilt by : ; example: linuxserver/jellyfin:10.8.13
-			_, tag := docker.ExtractImageAndTag(app.Image)
+	_, tag := docker.ExtractImageAndTag(mainService.Image)
 
-			return ctx.JSON(http.StatusOK, codegen.ComposeAppStoreTagOK{
-				Data: &codegen.ComposeAppStoreTag{
-					Tag: tag,
-				},
-			})
+	return ctx.JSON(http.StatusOK, codegen.ComposeAppStoreTagOK{
+		Data: &codegen.ComposeAppStoreTag{
+			Tag: tag,
+		},
+	})
+}
 
-		}
+func (a *AppManagement) ComposeAppServiceStableTag(ctx echo.Context, id codegen.StoreAppIDString, serviceName string) error {
+	composeApp, err := service.MyService.V2AppStore().ComposeApp(id)
+	if err != nil {
+		message := err.Error()
+		return ctx.JSON(http.StatusInternalServerError, codegen.ResponseInternalServerError{Message: &message})
 	}
 
-	return ctx.JSON(http.StatusInternalServerError, codegen.ResponseInternalServerError{
-		Message: utils.Ptr("app not main"),
+	if composeApp == nil {
+		return ctx.JSON(http.StatusNotFound, codegen.ResponseNotFound{
+			Message: utils.Ptr("app not found"),
+		})
+	}
+
+	service := composeApp.App(serviceName)
+	if service == nil {
+		return ctx.JSON(http.StatusInternalServerError, codegen.ResponseInternalServerError{
+			Message: utils.Ptr("service not found"),
+		})
+
+	}
+
+	_, tag := docker.ExtractImageAndTag(service.Image)
+
+	return ctx.JSON(http.StatusOK, codegen.ComposeAppStoreTagOK{
+		Data: &codegen.ComposeAppStoreTag{
+			Tag: tag,
+		},
 	})
 }
 
