@@ -330,11 +330,35 @@ paths:
       summary: Get app stable version from registered app stores
       description: |
         Get stable version(Official Store Tag) of main service of specific compose app.
-      operationId: composeAppStableTag
+      operationId: composeAppMainStableTag
       tags:
         - AppStore methods
       parameters:
         - $ref: "#/components/parameters/StoreAppIDString"
+      responses:
+        "200":
+          $ref: "#/components/responses/ComposeAppStoreTagOK"
+        "404":
+          $ref: "#/components/responses/ResponseNotFound"
+        "500":
+          $ref: "#/components/responses/ResponseInternalServerError"
+
+  /apps/{id}/stable/{serviceName}:
+    get:
+      summary: Get server of app stable version from registered app stores
+      description: |
+        Get stable version(Official Store Tag) of main service of specific compose app.
+      operationId: composeAppServiceStableTag
+      tags:
+        - AppStore methods
+      parameters:
+        - $ref: "#/components/parameters/StoreAppIDString"
+        - name: serviceName
+          in: path
+          description: Service name of the compose app
+          required: true
+          schema:
+            type: string
       responses:
         "200":
           $ref: "#/components/responses/ComposeAppStoreTagOK"

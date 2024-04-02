@@ -16,5 +16,5 @@ var (
 	ErrNotFoundInAppStore                  = fmt.Errorf("not found in app store")
 	ErrSetStoreAppID                       = fmt.Errorf("failed to set store app ID")
 	ErrStoreInfoNotFound                   = fmt.Errorf("store info not found")
-	ErrMainServiceNotFound                 = fmt.Errorf("main service not found")
+	ErrMainServiceNotSpecified             = fmt.Errorf("main service not been specified")
 )

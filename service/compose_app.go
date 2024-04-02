@@ -350,6 +350,7 @@ func (a *ComposeApp) Update(ctx context.Context) error {
 	return nil
 }
 
+// TODO rename the function to service and add error return value
 func (a *ComposeApp) App(name string) *App {
 	if name == "" {
 		return nil
@@ -381,7 +382,7 @@ func (a *ComposeApp) MainService() (*App, error) {
 	}
 
 	if storeInfo.Main == nil || *storeInfo.Main == "" {
-		return nil, ErrMainServiceNotFound
+		return nil, ErrMainServiceNotSpecified
 	}
 
 	return a.App(*storeInfo.Main), nil
