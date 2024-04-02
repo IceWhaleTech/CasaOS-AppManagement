@@ -117,12 +117,15 @@ func (a *AppManagement) IsNewComposeUncontrolled(newComposeApp *service.ComposeA
 		}
 
 		if StoreApp == nil {
-			return false, errors.New("store app not found")
+			logger.Error("store app not found", zap.String("composeAppID", newComposeApp.Name))
+			return false, nil
 		}
+
 		StableTag, err := StoreApp.MainTag()
 		if err != nil {
 			return false, err
 		}
+
 		if StableTag != newTag {
 			return true, nil
 		} else {
