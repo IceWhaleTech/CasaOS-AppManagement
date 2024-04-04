@@ -229,19 +229,19 @@ func (a *ComposeApp) IsUpdateAvailableWith(storeComposeApp *ComposeApp) bool {
 
 				if err != nil {
 					logger.Error("failed to inspect image", zap.Error(err), zap.String("name", mainAppImage))
-					latestIsUpdateAvailableCache.Set(mainAppImage, false)
+					_ = latestIsUpdateAvailableCache.Set(mainAppImage, false)
 				}
 				match, err := docker.CompareDigest(storeComposeApp.Services[0].Image, imageInfo.RepoDigests)
 				if err != nil {
 					logger.Error("failed to compare digest", zap.Error(err), zap.String("name", mainAppImage))
-					latestIsUpdateAvailableCache.Set(mainAppImage, false)
+					_ = latestIsUpdateAvailableCache.Set(mainAppImage, false)
 				}
 				if match {
 					logger.Info("main app image tag is latest, thus no update available", zap.String("image", mainApp.Image))
-					latestIsUpdateAvailableCache.Set(mainAppImage, false)
+					_ = latestIsUpdateAvailableCache.Set(mainAppImage, false)
 				} else {
 					logger.Info("main app image tag is latest, but digest is different, thus update is available", zap.String("image", mainApp.Image))
-					latestIsUpdateAvailableCache.Set(mainAppImage, true)
+					_ = latestIsUpdateAvailableCache.Set(mainAppImage, true)
 				}
 			}()
 
@@ -1034,7 +1034,7 @@ func NewComposeAppFromYAML(yaml []byte, skipInterpolation, skipValidation bool) 
 
 	// the WEBUI_PORT interpolate will tiger twice. In `pulished` and `port-map`.
 	// So we need to promise multiple WEBUI_PORT interpolate is a same value.
-	port, err := port.GetAvailablePort("tcp")
+	port, _ := port.GetAvailablePort("tcp")
 
 	project, err := loader.Load(
 		types.ConfigDetails{
