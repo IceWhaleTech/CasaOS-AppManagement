@@ -304,6 +304,21 @@ paths:
           $ref: "#/components/responses/ComposeAppStoreInfoListsOK"
         "500":
           $ref: "#/components/responses/ResponseInternalServerError"
+  
+  /apps/upgradable:
+    get:
+      summary: Get the list of upgradable apps from installed app.
+      description: |
+        (TODO)
+      operationId: upgradableAppList
+      tags:
+        - AppStore methods
+      responses:
+        "200":
+          $ref: "#/components/responses/UpgradableAppListOK"
+        "500":
+          $ref: "#/components/responses/ResponseInternalServerError"
+
 
   /apps/{id}:
     get:
@@ -482,7 +497,7 @@ paths:
     patch:
       summary: Update container images of compose app to match the compose app in AppStore.
       description: |
-        TODO - add description
+        Update a ComposeApp to the latest version of the app in the AppStore.
       operationId: updateComposeApp
       tags:
         - Compose methods
@@ -928,6 +943,18 @@ components:
                     items:
                       $ref: "#/components/schemas/GlobalSetting"
 
+    UpgradableAppListOK:
+      description: OK
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: "#/components/schemas/BaseResponse"
+              - properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/UpgradableAppInfo"
     AppStoreListOK:
       description: OK
       content:
@@ -1443,6 +1470,31 @@ components:
           items:
             type: string
             example: "8384"
+
+    UpgradableAppInfo:
+      title: Upgradable app info
+      description: |-
+        Schema for `UpgradableAppListOK` response.
+      required:
+        - title
+        - version
+        - store_app_id
+        - status
+      properties:
+        title:
+          type: string
+          example: "{en_US:\"Syncthing\"}"
+        version:
+          description: current version of the installed app
+          type: string
+          example: "v10.2"
+        store_app_id:
+          $ref: "#/components/schemas/StoreAppID"
+        status:
+          type: string
+          enum:
+            - "idle"
+            - "updating"
 
     AppStoreInfo:
       title: StoreInfo of an app
