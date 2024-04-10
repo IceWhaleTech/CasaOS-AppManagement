@@ -363,3 +363,30 @@ func FilterCatalogByAppStoreID(catalog map[string]*service.ComposeApp, appStoreI
 		return lo.Contains(appStoreIDs, storeAppID)
 	})
 }
+
+func (a *AppManagement) UpgradableAppList(ctx echo.Context) error {
+	composeApps, err := service.MyService.Compose().List(ctx.Request().Context())
+
+	var upgradableAppList []codegen.UpgradableAppInfo = []codegen.UpgradableAppInfo{}
+	if err != nil {
+		message := err.Error()
+		return ctx.JSON(http.StatusInternalServerError, codegen.ResponseInternalServerError{Message: &message})
+	}
+	for id, composeApp := range composeApps {
+		if composeApp == nil {
+			continue
+		}
+
+		if composeApp.IsUpdateAvailable() {
+			upgradableAppList = append(upgradableAppList, codegen.UpgradableAppInfo{
+				Title:      composeApp.Name,
+				Version:    "",
+				StoreAppID: lo.ToPtr(id),
+				Status:     "upgradable",
+			})
+		}
+	}
+	return ctx.JSON(http.StatusNotImplemented, codegen.ResponseOK{
+		Message: lo.ToPtr("not implemented"),
+	})
+}
