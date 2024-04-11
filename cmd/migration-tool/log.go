@@ -6,11 +6,10 @@ import (
 )
 
 type Logger struct {
+	_debug    *log.Logger
+	_info     *log.Logger
+	_error    *log.Logger
 	DebugMode bool
-
-	_debug *log.Logger
-	_info  *log.Logger
-	_error *log.Logger
 }
 
 func NewLogger() *Logger {
