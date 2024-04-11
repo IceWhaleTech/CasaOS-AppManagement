@@ -8,12 +8,12 @@ import (
 )
 
 func main() {
-	eventTypes := lo.Map(common.EventTypes, func(item message_bus.EventType, index int) external.EventType {
+	eventTypes := lo.Map(common.EventTypes, func(item message_bus.EventType, _ int) external.EventType {
 		return external.EventType{
 			Name:     item.Name,
 			SourceID: item.SourceID,
 			PropertyTypeList: lo.Map(
-				item.PropertyTypeList, func(item message_bus.PropertyType, index int) external.PropertyType {
+				item.PropertyTypeList, func(item message_bus.PropertyType, _ int) external.PropertyType {
 					return external.PropertyType{
 						Name:        item.Name,
 						Description: item.Description,

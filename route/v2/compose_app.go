@@ -84,7 +84,7 @@ func (a *AppManagement) MyComposeApp(ctx echo.Context, id codegen.ComposeAppID) 
 	}
 
 	// check if updateAvailable
-	updateAvailable := composeApp.IsUpdateAvailable()
+	updateAvailable := service.MyService.AppStoreManagement().IsUpdateAvailable(composeApp)
 
 	message := fmt.Sprintf("!! JSON format is for debugging purpose only - use `Accept: %s` HTTP header to get YAML instead !!", common.MIMEApplicationYAML)
 	return ctx.JSON(http.StatusOK, codegen.ComposeAppOK{
@@ -453,13 +453,16 @@ func (a *AppManagement) UpdateComposeApp(ctx echo.Context, id codegen.ComposeApp
 
 	if params.Force != nil && !*params.Force {
 		// check if updateAvailable
-		if !composeApp.IsUpdateAvailable() {
+		if !service.MyService.AppStoreManagement().IsUpdateAvailable(composeApp) {
 			message := fmt.Sprintf("compose app `%s` is up to date", id)
 			return ctx.JSON(http.StatusOK, codegen.ComposeAppUpdateOK{Message: &message})
 		}
 	}
 
 	backgroundCtx := common.WithProperties(context.Background(), PropertiesFromQueryParams(ctx))
+
+	service.MyService.AppStoreManagement().StartUpgrade(id)
+	defer service.MyService.AppStoreManagement().FinishUpgrade(id)
 
 	if err := composeApp.Update(backgroundCtx); err != nil {
 		logger.Error("failed to update compose app", zap.Error(err), zap.String("appID", id))
@@ -695,7 +698,7 @@ func composeAppsWithStoreInfo(ctx context.Context) (map[string]codegen.ComposeAp
 		composeAppWithStoreInfo.StoreInfo = storeInfo
 
 		// check if updateAvailable
-		updateAvailable := composeApp.IsUpdateAvailable()
+		updateAvailable := service.MyService.AppStoreManagement().IsUpdateAvailable(composeApp)
 
 		composeAppWithStoreInfo.UpdateAvailable = &updateAvailable
 

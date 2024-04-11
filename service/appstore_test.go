@@ -90,12 +90,12 @@ func TestGetApp(t *testing.T) {
 func TestSkipUpdateCatalog(t *testing.T) {
 	logger.LogInitConsoleOnly()
 
-	appStoreUrl := []string{
+	appStoreURL := []string{
 		"https://casaos.app/store/main.zip",
 		"https://casaos.oss-cn-shanghai.aliyuncs.com/store/main.zip",
 	}
 
-	for _, url := range appStoreUrl {
+	for _, url := range appStoreURL {
 		appStore, err := service.AppStoreByURL(url)
 		assert.NilError(t, err)
 		workdir, err := appStore.WorkDir()
@@ -112,19 +112,19 @@ func TestSkipUpdateCatalog(t *testing.T) {
 		assert.NilError(t, err)
 
 		// get create and change time of appstore
-		appStoreStat_first, err := os.Stat(workdir)
+		appStoreStatFirst, err := os.Stat(workdir)
 		assert.NilError(t, err)
 
-		assert.Equal(t, false, appStoreStat_first.ModTime().Equal(appStoreStat.ModTime()))
+		assert.Equal(t, false, appStoreStatFirst.ModTime().Equal(appStoreStat.ModTime()))
 
 		err = appStore.UpdateCatalog()
 		assert.NilError(t, err)
 
 		// get create and change time of appstore
-		appStoreStat_second, err := os.Stat(workdir)
+		appStoreStatSecond, err := os.Stat(workdir)
 		assert.NilError(t, err)
 
-		assert.Equal(t, appStoreStat_first.ModTime(), appStoreStat_second.ModTime())
+		assert.Equal(t, appStoreStatFirst.ModTime(), appStoreStatSecond.ModTime())
 	}
 }
 

@@ -1480,6 +1480,7 @@ components:
         - version
         - store_app_id
         - status
+        - icon
       properties:
         title:
           type: string
@@ -1490,6 +1491,9 @@ components:
           example: "v10.2"
         store_app_id:
           $ref: "#/components/schemas/StoreAppID"
+        icon:
+          type: string
+          example: "https://cdn.jsdelivr.net/gh/IceWhaleTech/CasaOS-AppStore@main/Apps/Syncthing/icon.png"
         status:
           type: string
           enum:

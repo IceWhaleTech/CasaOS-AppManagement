@@ -14,7 +14,6 @@ import (
 	"time"
 
 	v1 "github.com/IceWhaleTech/CasaOS-AppManagement/service/v1"
-	"github.com/bluele/gcache"
 
 	"github.com/IceWhaleTech/CasaOS-AppManagement/codegen"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/common"
@@ -30,7 +29,6 @@ import (
 	"github.com/compose-spec/compose-go/loader"
 	"github.com/compose-spec/compose-go/types"
 	composeCmd "github.com/docker/compose/v2/cmd/compose"
-	"github.com/docker/docker/client"
 
 	"github.com/docker/compose/v2/cmd/formatter"
 	"github.com/docker/compose/v2/pkg/api"
@@ -162,116 +160,6 @@ func (a *ComposeApp) SetTitle(title, lang string) {
 	if _, ok := titleMap[lang]; !ok {
 		titleMap[lang] = title
 	}
-}
-
-func (a *ComposeApp) IsUpdateAvailable() bool {
-	storeInfo, err := a.StoreInfo(false)
-	if err != nil {
-		logger.Error("failed to get store info of compose app, thus no update available", zap.Error(err))
-		return false
-	}
-
-	if storeInfo == nil || storeInfo.StoreAppID == nil || *storeInfo.StoreAppID == "" {
-		logger.Error("store info of compose app is not valid, thus no update available")
-		return false
-	}
-
-	storeComposeApp, err := MyService.V2AppStore().ComposeApp(*storeInfo.StoreAppID)
-	if err != nil {
-		logger.Error("failed to get store compose app, thus no update available", zap.Error(err))
-		return false
-	}
-
-	if storeComposeApp == nil {
-		logger.Error("store compose app not found, thus no update available", zap.String("storeAppID", *storeInfo.StoreAppID))
-		return false
-	}
-
-	return a.IsUpdateAvailableWith(storeComposeApp)
-}
-
-var latestIsUpdateAvailableCache = gcache.New(100).
-	LRU().
-	Expiration(1 * time.Hour).
-	Build()
-
-func (a *ComposeApp) IsUpdateAvailableWith(storeComposeApp *ComposeApp) bool {
-	storeComposeAppStoreInfo, err := storeComposeApp.StoreInfo(false)
-	if err != nil || storeComposeAppStoreInfo == nil {
-		logger.Error("failed to get store info of store compose app, thus no update available", zap.Error(err))
-		return false
-	}
-
-	mainAppName := *storeComposeAppStoreInfo.Main
-
-	mainApp := a.App(mainAppName)
-	if mainApp == nil {
-		logger.Error("main app not found in local compose app, thus no update available", zap.String("name", mainAppName))
-		return false
-	}
-
-	mainAppImage, mainAppTag := docker.ExtractImageAndTag(mainApp.Image)
-
-	// TODO to async the check for consist with the version tag app
-	if mainAppTag == "latest" {
-		isUpdateAvailable, err := latestIsUpdateAvailableCache.Get(mainAppImage)
-		if err != nil {
-			go func() {
-				// check image digest when tag is latest.
-				ctx := context.Background()
-				cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
-				if err != nil {
-					logger.Error("failed to create docker client", zap.Error(err))
-				}
-				defer cli.Close()
-
-				imageInfo, _, err := cli.ImageInspectWithRaw(ctx, mainAppImage)
-
-				if err != nil {
-					logger.Error("failed to inspect image", zap.Error(err), zap.String("name", mainAppImage))
-					latestIsUpdateAvailableCache.Set(mainAppImage, false)
-				}
-				match, err := docker.CompareDigest(storeComposeApp.Services[0].Image, imageInfo.RepoDigests)
-				if err != nil {
-					logger.Error("failed to compare digest", zap.Error(err), zap.String("name", mainAppImage))
-					latestIsUpdateAvailableCache.Set(mainAppImage, false)
-				}
-				if match {
-					logger.Info("main app image tag is latest, thus no update available", zap.String("image", mainApp.Image))
-					latestIsUpdateAvailableCache.Set(mainAppImage, false)
-				} else {
-					logger.Info("main app image tag is latest, but digest is different, thus update is available", zap.String("image", mainApp.Image))
-					latestIsUpdateAvailableCache.Set(mainAppImage, true)
-				}
-			}()
-
-			return false
-		}
-		if isUpdateAvailable.(bool) {
-			return true
-		}
-		return false
-	}
-
-	storeMainApp := storeComposeApp.App(mainAppName)
-	if storeMainApp == nil {
-		logger.Error("main app not found in store compose app, thus no update available", zap.String("name", mainAppName))
-		return false
-	}
-
-	storeMainAppImage, storeMainAppTag := docker.ExtractImageAndTag(storeMainApp.Image)
-
-	if mainAppImage != storeMainAppImage {
-		logger.Error("main app image not match for local app and store app, thus no update available", zap.String("local", mainApp.Image), zap.String("store", storeMainApp.Image))
-		return false
-	}
-
-	if mainAppTag == storeMainAppTag {
-		return false
-	}
-
-	logger.Info("main apps of local app and store app have different image tag, thus update is available", zap.String("local", mainApp.Image), zap.String("store", storeMainApp.Image))
-	return true
 }
 
 func (a *ComposeApp) Update(ctx context.Context) error {
