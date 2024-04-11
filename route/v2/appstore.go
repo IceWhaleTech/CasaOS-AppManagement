@@ -2,6 +2,7 @@ package v2
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"path/filepath"
@@ -202,7 +203,6 @@ func (a *AppManagement) ComposeAppMainStableTag(ctx echo.Context, id codegen.Sto
 		return ctx.JSON(http.StatusInternalServerError, codegen.ResponseInternalServerError{
 			Message: utils.Ptr(err.Error()),
 		})
-
 	}
 
 	_, tag := docker.ExtractImageAndTag(mainService.Image)
@@ -232,7 +232,6 @@ func (a *AppManagement) ComposeAppServiceStableTag(ctx echo.Context, id codegen.
 		return ctx.JSON(http.StatusInternalServerError, codegen.ResponseInternalServerError{
 			Message: utils.Ptr("service not found"),
 		})
-
 	}
 
 	_, tag := docker.ExtractImageAndTag(service.Image)
@@ -377,16 +376,45 @@ func (a *AppManagement) UpgradableAppList(ctx echo.Context) error {
 			continue
 		}
 
-		if composeApp.IsUpdateAvailable() {
+		storeInfo, err := composeApp.StoreInfo(true)
+		if err != nil {
+			logger.Error("failed to get store info", zap.Error(err), zap.String("appStoreID", id))
+			continue
+		}
+
+		title, err := json.Marshal(storeInfo.Title)
+		if err != nil {
+			title = []byte("unknown")
+		}
+
+		storeComposeApp, err := service.MyService.V2AppStore().ComposeApp(id)
+		if err != nil || storeComposeApp == nil {
+			logger.Error("failed to get compose app", zap.Error(err), zap.String("appStoreID", id))
+			continue
+		}
+		tag, err := storeComposeApp.MainTag()
+		if err != nil {
+			// TODO
+			logger.Error("failed to get compose app main tag", zap.Error(err), zap.String("appStoreID", id))
+			continue
+		}
+
+		status := codegen.Idle
+		if service.MyService.AppStoreManagement().IsUpdating(composeApp.Name) {
+			status = codegen.Updating
+		}
+
+		if service.MyService.AppStoreManagement().IsUpdateAvailable(composeApp) {
 			upgradableAppList = append(upgradableAppList, codegen.UpgradableAppInfo{
-				Title:      composeApp.Name,
-				Version:    "",
+				Title:      string(title),
+				Version:    tag,
 				StoreAppID: lo.ToPtr(id),
-				Status:     "upgradable",
+				Status:     status,
+				Icon:       storeInfo.Icon,
 			})
 		}
 	}
-	return ctx.JSON(http.StatusNotImplemented, codegen.ResponseOK{
-		Message: lo.ToPtr("not implemented"),
+	return ctx.JSON(http.StatusOK, codegen.UpgradableAppListOK{
+		Data: &upgradableAppList,
 	})
 }

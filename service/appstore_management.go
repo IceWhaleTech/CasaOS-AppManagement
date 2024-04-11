@@ -4,13 +4,18 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"sync"
+	"time"
 
 	"github.com/IceWhaleTech/CasaOS-AppManagement/codegen"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/common"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/pkg/config"
+	"github.com/IceWhaleTech/CasaOS-AppManagement/pkg/docker"
 	"github.com/IceWhaleTech/CasaOS-Common/utils"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/file"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/logger"
+	"github.com/bluele/gcache"
+	"github.com/docker/docker/client"
 	"github.com/samber/lo"
 	"go.uber.org/zap"
 )
@@ -19,6 +24,8 @@ type AppStoreManagement struct {
 	onAppStoreRegister   []func(string) error
 	onAppStoreUnregister []func(string) error
 
+	isAppUpgrade    gcache.Cache
+	isAppUpgrading  sync.Map
 	defaultAppStore AppStore
 }
 
@@ -408,6 +415,106 @@ func (a *AppStoreManagement) WorkDir() (string, error) {
 	panic("not implemented and will never be implemented - this is a virtual appstore")
 }
 
+func (a *AppStoreManagement) IsUpdateAvailable(composeApp *ComposeApp) bool {
+	storeID := composeApp.Name
+	if value, err := a.isAppUpgrade.Get(storeID); err == nil {
+		switch value.(type) {
+		case bool:
+			return value.(bool)
+		default:
+			logger.Error("invalid type in cache", zap.String("storeID", storeID), zap.Any("value", value))
+			return false
+		}
+	}
+
+	isUpdate, err := a.isUpdateAvailable(composeApp)
+	if err != nil {
+		logger.Error("failed to check if update is available", zap.Error(err))
+		return false
+	}
+	a.isAppUpgrade.Set(storeID, isUpdate)
+	return isUpdate
+}
+
+func (a *AppStoreManagement) isUpdateAvailable(composeApp *ComposeApp) (bool, error) {
+	storeInfo, err := composeApp.StoreInfo(false)
+	if err != nil {
+		logger.Error("failed to get store info of compose app, thus no update available", zap.Error(err))
+		return false, nil
+	}
+
+	// if app is uncontrolled, no update available
+	if storeInfo.IsUncontrolled != nil && *storeInfo.IsUncontrolled {
+		return false, nil
+	}
+
+	if storeInfo == nil || storeInfo.StoreAppID == nil || *storeInfo.StoreAppID == "" {
+		return false, err
+	}
+
+	storeComposeApp, err := a.ComposeApp(*storeInfo.StoreAppID)
+	if err != nil {
+		logger.Error("failed to get store compose app, thus no update available", zap.Error(err))
+		return false, err
+	}
+
+	if storeComposeApp == nil {
+		logger.Error("store compose app not found, thus no update available", zap.String("storeAppID", *storeInfo.StoreAppID))
+		return false, nil
+	}
+
+	currentTag, err := composeApp.MainTag()
+	if err != nil {
+		logger.Error("failed to get current tag", zap.Error(err))
+		return false, err
+	}
+	mainService, err := composeApp.MainService()
+	if err != nil {
+		logger.Error("failed to get main service", zap.Error(err))
+		return false, err
+	}
+	if currentTag == "latest" {
+		ctx := context.Background()
+		cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+		if err != nil {
+			logger.Error("failed to create docker client", zap.Error(err))
+			return false, err
+		}
+		defer cli.Close()
+
+		image, _ := docker.ExtractImageAndTag(mainService.Image)
+
+		imageInfo, _, err := cli.ImageInspectWithRaw(ctx, image)
+		if err != nil {
+			logger.Error("failed to inspect image", zap.Error(err))
+			return false, err
+		}
+		match, err := docker.CompareDigest(mainService.Image, imageInfo.RepoDigests)
+		if err != nil {
+			logger.Error("failed to compare digest", zap.Error(err))
+			return false, err
+		}
+		// match means no update available
+		return !match, nil
+	} else {
+		storeTag, err := storeComposeApp.MainTag()
+		return currentTag != storeTag, err
+	}
+}
+
+func (a *AppStoreManagement) IsUpdating(appID string) bool {
+	_, ok := a.isAppUpgrading.Load(appID)
+	return ok
+}
+
+func (a *AppStoreManagement) StartUpgrade(appID string) {
+	a.isAppUpgrading.Store(appID, struct{}{})
+}
+
+func (a *AppStoreManagement) FinishUpgrade(appID string) {
+	a.isAppUpgrading.Delete(appID)
+}
+
 func NewAppStoreManagement() *AppStoreManagement {
 	defaultAppStore, err := NewDefaultAppStore()
 	if err != nil {
@@ -416,6 +523,8 @@ func NewAppStoreManagement() *AppStoreManagement {
 
 	appStoreManagement := &AppStoreManagement{
 		defaultAppStore: defaultAppStore,
+		isAppUpgrade:    gcache.New(100).LRU().Expiration(1 * time.Hour).Build(),
+		isAppUpgrading:  sync.Map{},
 	}
 
 	return appStoreManagement
