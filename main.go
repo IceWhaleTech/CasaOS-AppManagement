@@ -79,13 +79,13 @@ func main() {
 		// schedule async v2job to get v2 appstore list
 		go func() {
 			// run once at startup
-			if err := service.MyService.V2AppStore().UpdateCatalog(); err != nil {
+			if err := service.MyService.AppStoreManagement().UpdateCatalog(); err != nil {
 				logger.Error("error when updating AppStore catalog at startup", zap.Error(err))
 			}
 		}()
 
 		if _, err := crontab.AddFunc("@every 10m", func() {
-			if err := service.MyService.V2AppStore().UpdateCatalog(); err != nil {
+			if err := service.MyService.AppStoreManagement().UpdateCatalog(); err != nil {
 				logger.Error("error when updating AppStore catalog", zap.Error(err))
 			}
 		}); err != nil {
