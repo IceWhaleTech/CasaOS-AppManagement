@@ -466,6 +466,10 @@ func (a *AppStoreManagement) isUpdateAvailable(composeApp *ComposeApp) (bool, er
 		return false, nil
 	}
 
+	return a.IsUpdateAvailableWith(composeApp, storeComposeApp)
+}
+
+func (a *AppStoreManagement) IsUpdateAvailableWith(composeApp *ComposeApp, storeComposeApp *ComposeApp) (bool, error) {
 	currentTag, err := composeApp.MainTag()
 	if err != nil {
 		logger.Error("failed to get current tag", zap.Error(err))
