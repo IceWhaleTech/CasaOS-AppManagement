@@ -24,7 +24,7 @@ type AppStoreManagement struct {
 	onAppStoreRegister   []func(string) error
 	onAppStoreUnregister []func(string) error
 
-	isAppUpgrade    gcache.Cache
+	isAppUpgradable gcache.Cache
 	isAppUpgrading  sync.Map
 	defaultAppStore AppStore
 }
@@ -373,6 +373,9 @@ func (a *AppStoreManagement) UpdateCatalog() error {
 		}
 	}
 
+	// clean cache
+	a.isAppUpgradable.Purge()
+
 	return nil
 }
 
@@ -417,7 +420,7 @@ func (a *AppStoreManagement) WorkDir() (string, error) {
 
 func (a *AppStoreManagement) IsUpdateAvailable(composeApp *ComposeApp) bool {
 	storeID := composeApp.Name
-	if value, err := a.isAppUpgrade.Get(storeID); err == nil {
+	if value, err := a.isAppUpgradable.Get(storeID); err == nil {
 		switch value.(type) {
 		case bool:
 			return value.(bool)
@@ -432,7 +435,7 @@ func (a *AppStoreManagement) IsUpdateAvailable(composeApp *ComposeApp) bool {
 		logger.Error("failed to check if update is available", zap.Error(err))
 		return false
 	}
-	a.isAppUpgrade.Set(storeID, isUpdate)
+	a.isAppUpgradable.Set(storeID, isUpdate)
 	return isUpdate
 }
 
@@ -523,7 +526,7 @@ func NewAppStoreManagement() *AppStoreManagement {
 
 	appStoreManagement := &AppStoreManagement{
 		defaultAppStore: defaultAppStore,
-		isAppUpgrade:    gcache.New(100).LRU().Expiration(1 * time.Hour).Build(),
+		isAppUpgradable: gcache.New(100).LRU().Expiration(1 * time.Hour).Build(),
 		isAppUpgrading:  sync.Map{},
 	}
 
