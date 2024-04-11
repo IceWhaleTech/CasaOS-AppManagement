@@ -111,7 +111,7 @@ func (a *AppManagement) IsNewComposeUncontrolled(newComposeApp *service.ComposeA
 		return false, nil
 	} else {
 		// compare store info
-		StoreApp, err := service.MyService.V2AppStore().ComposeApp(newComposeApp.Name)
+		StoreApp, err := service.MyService.AppStoreManagement().ComposeApp(newComposeApp.Name)
 		if err != nil {
 			return false, err
 		}

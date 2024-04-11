@@ -87,7 +87,7 @@ func (a *AppManagement) UnregisterAppStore(ctx echo.Context, id codegen.AppStore
 }
 
 func (a *AppManagement) ComposeAppStoreInfoList(ctx echo.Context, params codegen.ComposeAppStoreInfoListParams) error {
-	catalog, err := service.MyService.V2AppStore().Catalog()
+	catalog, err := service.MyService.AppStoreManagement().Catalog()
 	if err != nil {
 		message := err.Error()
 		logger.Error("failed to get catalog", zap.Error(err))
@@ -105,7 +105,7 @@ func (a *AppManagement) ComposeAppStoreInfoList(ctx echo.Context, params codegen
 
 	if params.Recommend != nil && *params.Recommend {
 		// recommend
-		recommendedList, err := service.MyService.V2AppStore().Recommend()
+		recommendedList, err := service.MyService.AppStoreManagement().Recommend()
 		if err != nil {
 			message := err.Error()
 			logger.Error("failed to get recommend list", zap.Error(err))
@@ -161,7 +161,7 @@ func (a *AppManagement) ComposeAppStoreInfoList(ctx echo.Context, params codegen
 }
 
 func (a *AppManagement) ComposeAppStoreInfo(ctx echo.Context, id codegen.StoreAppIDString) error {
-	composeApp, err := service.MyService.V2AppStore().ComposeApp(id)
+	composeApp, err := service.MyService.AppStoreManagement().ComposeApp(id)
 	if err != nil {
 		message := err.Error()
 		return ctx.JSON(http.StatusInternalServerError, codegen.ResponseInternalServerError{Message: &message})
@@ -186,7 +186,7 @@ func (a *AppManagement) ComposeAppStoreInfo(ctx echo.Context, id codegen.StoreAp
 }
 
 func (a *AppManagement) ComposeAppMainStableTag(ctx echo.Context, id codegen.StoreAppIDString) error {
-	composeApp, err := service.MyService.V2AppStore().ComposeApp(id)
+	composeApp, err := service.MyService.AppStoreManagement().ComposeApp(id)
 	if err != nil {
 		message := err.Error()
 		return ctx.JSON(http.StatusInternalServerError, codegen.ResponseInternalServerError{Message: &message})
@@ -215,7 +215,7 @@ func (a *AppManagement) ComposeAppMainStableTag(ctx echo.Context, id codegen.Sto
 }
 
 func (a *AppManagement) ComposeAppServiceStableTag(ctx echo.Context, id codegen.StoreAppIDString, serviceName string) error {
-	composeApp, err := service.MyService.V2AppStore().ComposeApp(id)
+	composeApp, err := service.MyService.AppStoreManagement().ComposeApp(id)
 	if err != nil {
 		message := err.Error()
 		return ctx.JSON(http.StatusInternalServerError, codegen.ResponseInternalServerError{Message: &message})
@@ -244,7 +244,7 @@ func (a *AppManagement) ComposeAppServiceStableTag(ctx echo.Context, id codegen.
 }
 
 func (a *AppManagement) ComposeApp(ctx echo.Context, id codegen.StoreAppIDString) error {
-	composeApp, err := service.MyService.V2AppStore().ComposeApp(id)
+	composeApp, err := service.MyService.AppStoreManagement().ComposeApp(id)
 	if err != nil {
 		message := err.Error()
 		return ctx.JSON(http.StatusInternalServerError, codegen.ResponseInternalServerError{Message: &message})
@@ -387,7 +387,7 @@ func (a *AppManagement) UpgradableAppList(ctx echo.Context) error {
 			title = []byte("unknown")
 		}
 
-		storeComposeApp, err := service.MyService.V2AppStore().ComposeApp(id)
+		storeComposeApp, err := service.MyService.AppStoreManagement().ComposeApp(id)
 		if err != nil || storeComposeApp == nil {
 			logger.Error("failed to get compose app", zap.Error(err), zap.String("appStoreID", id))
 			continue

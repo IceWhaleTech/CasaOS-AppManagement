@@ -180,7 +180,7 @@ func (a *ComposeApp) Update(ctx context.Context) error {
 		return ErrStoreInfoNotFound
 	}
 
-	storeComposeApp, err := MyService.V2AppStore().ComposeApp(*storeInfo.StoreAppID)
+	storeComposeApp, err := MyService.AppStoreManagement().ComposeApp(*storeInfo.StoreAppID)
 	if err != nil {
 		return err
 	}
@@ -339,7 +339,7 @@ func (a *ComposeApp) Pull(ctx context.Context) error {
 	return nil
 }
 
-func injectEnvVariableToComposeApp(a *ComposeApp) {
+func (a *ComposeApp) injectEnvVariableToComposeApp() {
 	for _, service := range a.Services {
 		for k, v := range config.Global {
 			// if there is same name var declared in environment in compose yaml
@@ -352,7 +352,7 @@ func injectEnvVariableToComposeApp(a *ComposeApp) {
 }
 
 func (a *ComposeApp) Up(ctx context.Context, service api.Service) error {
-	injectEnvVariableToComposeApp(a)
+	a.injectEnvVariableToComposeApp()
 
 	if err := service.Up(ctx, (*codegen.ComposeApp)(a), api.UpOptions{
 		Start: api.StartOptions{
@@ -465,7 +465,7 @@ func (a *ComposeApp) PullAndApply(ctx context.Context, newComposeYAML []byte) er
 }
 
 func (a *ComposeApp) Create(ctx context.Context, options api.CreateOptions, service api.Service) error {
-	injectEnvVariableToComposeApp(a)
+	a.injectEnvVariableToComposeApp()
 	return service.Create(ctx, (*codegen.ComposeApp)(a), api.CreateOptions{})
 }
 
@@ -922,7 +922,7 @@ func NewComposeAppFromYAML(yaml []byte, skipInterpolation, skipValidation bool) 
 
 	// the WEBUI_PORT interpolate will tiger twice. In `pulished` and `port-map`.
 	// So we need to promise multiple WEBUI_PORT interpolate is a same value.
-	port, err := port.GetAvailablePort("tcp")
+	port, _ := port.GetAvailablePort("tcp")
 
 	project, err := loader.Load(
 		types.ConfigDetails{
