@@ -254,6 +254,8 @@ paths:
           $ref: "#/components/responses/AppStoreRegisterOK"
         "400":
           $ref: "#/components/responses/ResponseBadRequest"
+        "409":
+          $ref: "#/components/responses/ResponseConflict"
         "500":
           $ref: "#/components/responses/ResponseInternalServerError"
 
@@ -902,6 +904,15 @@ components:
             $ref: "#/components/schemas/BaseResponse"
           example:
             message: "Bad Request"
+    
+    ResponseConflict:
+      description: Conflict
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/BaseResponse"
+          example:
+            message: "Conflict"
 
     ResponseServiceUnavailable:
       description: Service Unavailable
