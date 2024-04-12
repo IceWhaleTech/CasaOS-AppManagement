@@ -42,7 +42,7 @@ func (a *AppManagement) RegisterAppStore(ctx echo.Context, params codegen.Regist
 
 	if isExist {
 		message := "appstore is already registered"
-		return ctx.JSON(http.StatusOK, codegen.AppStoreRegisterOK{Message: &message})
+		return ctx.JSON(http.StatusConflict, codegen.ResponseConflict{Message: &message})
 	}
 
 	backgroundCtx := common.WithProperties(context.Background(), PropertiesFromQueryParams(ctx))
