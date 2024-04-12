@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"strings"
 
 	"github.com/IceWhaleTech/CasaOS-AppManagement/codegen"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/common"
@@ -109,29 +108,25 @@ func (a *AppManagement) IsNewComposeUncontrolled(newComposeApp *service.ComposeA
 	// TODO refactor this. because if user not update. the status will be uncontrolled.
 	if newTag == "latest" {
 		return false, nil
-	} else {
-		// compare store info
-		StoreApp, err := service.MyService.AppStoreManagement().ComposeApp(newComposeApp.Name)
-		if err != nil {
-			return false, err
-		}
-
-		if StoreApp == nil {
-			logger.Error("store app not found", zap.String("composeAppID", newComposeApp.Name))
-			return false, nil
-		}
-
-		StableTag, err := StoreApp.MainTag()
-		if err != nil {
-			return false, err
-		}
-
-		if StableTag != newTag {
-			return true, nil
-		} else {
-			return false, nil
-		}
 	}
+
+	// compare store info
+	StoreApp, err := service.MyService.AppStoreManagement().ComposeApp(newComposeApp.Name)
+	if err != nil {
+		return false, err
+	}
+
+	if StoreApp == nil {
+		logger.Error("store app not found", zap.String("composeAppID", newComposeApp.Name))
+		return false, nil
+	}
+
+	StableTag, err := StoreApp.MainTag()
+	if err != nil {
+		return false, err
+	}
+
+	return StableTag != newTag, nil
 }
 
 func (a *AppManagement) ApplyComposeAppSettings(ctx echo.Context, id codegen.ComposeAppID, params codegen.ApplyComposeAppSettingsParams) error {
@@ -178,36 +173,14 @@ func (a *AppManagement) ApplyComposeAppSettings(ctx echo.Context, id codegen.Com
 			Message: &message,
 		})
 	}
-	if uncontrolled {
-		// set to uncontrolled app
-		xcasaos := composeApp.Extensions[common.ComposeExtensionNameXCasaOS]
-		xcasaosMap, ok := xcasaos.(map[string]interface{})
-		if !ok {
-			logger.Error("failed to get map compose app extensions", zap.String("composeAppID", composeApp.Name))
-		} else {
-			xcasaosMap[common.ComposeExtensionPropertyNameIsUncontrolled] = true
-			composeApp.Extensions[common.ComposeExtensionNameXCasaOS] = xcasaosMap
 
-			// replace the buf is_uncontrolled is_uncontrolled: false => true
-			// otherwise, the new buf will be the same as the old one
-			// the replace is only in apply not install Compose. Because only the old compose has is_uncontrolled
-			// TODO: refactor the implement in a better way. not replace the string directly
-			buf = []byte(strings.ReplaceAll(string(buf), "is_uncontrolled: false", "is_uncontrolled: true"))
-
-		}
-	} else {
-		// set to controlled app
-		xcasaos := composeApp.Extensions[common.ComposeExtensionNameXCasaOS]
-		xcasaosMap, ok := xcasaos.(map[string]interface{})
-		if !ok {
-			logger.Error("failed to get map compose app extensions", zap.String("composeAppID", composeApp.Name))
-		} else {
-			xcasaosMap[common.ComposeExtensionPropertyNameIsUncontrolled] = false
-			composeApp.Extensions[common.ComposeExtensionNameXCasaOS] = xcasaosMap
-
-			// replace the buf is_uncontrolled is_uncontrolled: true => false
-			buf = []byte(strings.ReplaceAll(string(buf), "is_uncontrolled: true", "is_uncontrolled: false"))
-		}
+	_ = newComposeApp.SetUncontrolled(uncontrolled)
+	buf, err = service.GenerateYAMLFromComposeApp(*newComposeApp)
+	if err != nil {
+		message := err.Error()
+		return ctx.JSON(http.StatusInternalServerError, codegen.ResponseInternalServerError{
+			Message: &message,
+		})
 	}
 
 	if params.CheckPortConflict == nil || *params.CheckPortConflict {
@@ -313,27 +286,8 @@ func (a *AppManagement) InstallComposeApp(ctx echo.Context, params codegen.Insta
 			Message: &message,
 		})
 	}
-	if uncontrolled {
-		// set to uncontrolled app
-		xcasaos := composeApp.Extensions[common.ComposeExtensionNameXCasaOS]
-		xcasaosMap, ok := xcasaos.(map[string]interface{})
-		if !ok {
-			logger.Error("failed to get map compose app extensions", zap.String("composeAppID", composeApp.Name))
-		} else {
-			xcasaosMap[common.ComposeExtensionPropertyNameIsUncontrolled] = true
-			composeApp.Extensions[common.ComposeExtensionNameXCasaOS] = xcasaosMap
-		}
-	} else {
-		// set to controlled app
-		xcasaos := composeApp.Extensions[common.ComposeExtensionNameXCasaOS]
-		xcasaosMap, ok := xcasaos.(map[string]interface{})
-		if !ok {
-			logger.Error("failed to get map compose app extensions", zap.String("composeAppID", composeApp.Name))
-		} else {
-			xcasaosMap[common.ComposeExtensionPropertyNameIsUncontrolled] = false
-			composeApp.Extensions[common.ComposeExtensionNameXCasaOS] = xcasaosMap
-		}
-	}
+
+	_ = composeApp.SetUncontrolled(uncontrolled)
 
 	if params.CheckPortConflict == nil || *params.CheckPortConflict {
 		// validation 1 - check if there are ports in use
