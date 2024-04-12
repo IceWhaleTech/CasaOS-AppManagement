@@ -461,9 +461,6 @@ func (a *AppManagement) UpdateComposeApp(ctx echo.Context, id codegen.ComposeApp
 
 	backgroundCtx := common.WithProperties(context.Background(), PropertiesFromQueryParams(ctx))
 
-	service.MyService.AppStoreManagement().StartUpgrade(id)
-	defer service.MyService.AppStoreManagement().FinishUpgrade(id)
-
 	if err := composeApp.Update(backgroundCtx); err != nil {
 		logger.Error("failed to update compose app", zap.Error(err), zap.String("appID", id))
 		message := err.Error()

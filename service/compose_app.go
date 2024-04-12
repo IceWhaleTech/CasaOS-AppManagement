@@ -226,6 +226,9 @@ func (a *ComposeApp) Update(ctx context.Context) error {
 
 		defer PublishEventWrapper(ctx, common.EventTypeAppUpdateEnd, nil)
 
+		MyService.AppStoreManagement().StartUpgrade(a.Name)
+		defer MyService.AppStoreManagement().FinishUpgrade(a.Name)
+
 		if err := a.PullAndApply(ctx, newComposeYAML); err != nil {
 			go PublishEventWrapper(ctx, common.EventTypeAppUpdateError, map[string]string{
 				common.PropertyTypeMessage.Name: err.Error(),
