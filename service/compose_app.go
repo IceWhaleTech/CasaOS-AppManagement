@@ -52,6 +52,12 @@ func (a *ComposeApp) StoreInfo(includeApps bool) (*codegen.ComposeAppStoreInfo, 
 		return nil, err
 	}
 
+	// TODO refactor this with ComposeAppWithStoreInfo
+	isUncontrolled, ok := a.Extensions[common.ComposeExtensionNameXCasaOS].(map[string]interface{})[common.ComposeExtensionPropertyNameIsUncontrolled].(bool)
+	if ok {
+		storeInfo.IsUncontrolled = &isUncontrolled
+	}
+
 	// locate main app
 	if storeInfo.Main == nil || *storeInfo.Main == "" {
 		// if main app is not specified, use the first app
@@ -1038,4 +1044,20 @@ func getNameFrom(composeYAML []byte) string {
 	}
 
 	return baseStructure.Name
+}
+
+func (a *ComposeApp) SetUncontrolled(uncontrolled bool) error {
+	xCasaos := a.Extensions[common.ComposeExtensionNameXCasaOS]
+	xCasaosMap, ok := xCasaos.(map[string]interface{})
+
+	// set to controlled app
+	if !ok {
+		logger.Error("failed to get map compose app extensions", zap.String("composeAppID", a.Name))
+		return ErrComposeExtensionNameXCasaOSNotFound
+	} else {
+		xCasaosMap[common.ComposeExtensionPropertyNameIsUncontrolled] = uncontrolled
+		a.Extensions[common.ComposeExtensionNameXCasaOS] = xCasaosMap
+	}
+
+	return nil
 }

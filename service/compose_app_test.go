@@ -77,3 +77,29 @@ func TestNameAndTitle(t *testing.T) {
 	assert.Assert(t, len(storeInfo.Title) > 0)
 	assert.Equal(t, storeComposeApp.Name, storeInfo.Title[common.DefaultLanguage])
 }
+
+func TestUncontrolledApp(t *testing.T) {
+	logger.LogInitConsoleOnly()
+
+	app, err := service.NewComposeAppFromYAML([]byte(common.SampleComposeAppYAML), true, false)
+	assert.NilError(t, err)
+
+	storeInfo, err := app.StoreInfo(false)
+	assert.NilError(t, err)
+	// assert nil
+	assert.Assert(t, storeInfo.IsUncontrolled == nil)
+
+	err = app.SetUncontrolled(true)
+	assert.NilError(t, err)
+
+	storeInfo, err = app.StoreInfo(false)
+	assert.NilError(t, err)
+	assert.Assert(t, *storeInfo.IsUncontrolled)
+
+	err = app.SetUncontrolled(false)
+	assert.NilError(t, err)
+
+	storeInfo, err = app.StoreInfo(false)
+	assert.NilError(t, err)
+	assert.Assert(t, !*storeInfo.IsUncontrolled)
+}
