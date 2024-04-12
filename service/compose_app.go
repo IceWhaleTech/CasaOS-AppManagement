@@ -47,12 +47,12 @@ func (a *ComposeApp) StoreInfo(includeApps bool) (*codegen.ComposeAppStoreInfo, 
 	}
 
 	var storeInfo codegen.ComposeAppStoreInfo
-	// TODO lose is_uncontrolled
 	if err := loader.Transform(ex, &storeInfo); err != nil {
 		logger.Error("Transform store info fail", zap.Error(err))
 		return nil, err
 	}
 
+	// TODO refactor this with ComposeAppWithStoreInfo
 	isUncontrolled, ok := a.Extensions[common.ComposeExtensionNameXCasaOS].(map[string]interface{})[common.ComposeExtensionPropertyNameIsUncontrolled].(bool)
 	if ok {
 		storeInfo.IsUncontrolled = &isUncontrolled
