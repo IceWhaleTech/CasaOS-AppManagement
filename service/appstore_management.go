@@ -520,6 +520,7 @@ func (a *AppStoreManagement) StartUpgrade(appID string) {
 
 func (a *AppStoreManagement) FinishUpgrade(appID string) {
 	a.isAppUpgrading.Delete(appID)
+	a.isAppUpgradable.Remove(appID)
 }
 
 func NewAppStoreManagement() *AppStoreManagement {
