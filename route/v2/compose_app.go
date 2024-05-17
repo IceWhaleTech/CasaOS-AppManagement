@@ -625,9 +625,9 @@ func YAMLfromRequest(ctx echo.Context) ([]byte, error) {
 
 type composeAppsWithStoreInfoOpts struct {
 	checkIsUpdateAvailable bool
-	// /web/appgrid api is not need isUpdateAvailable value
-	// the api call in open casaos early. so the performance requirement is high.
-	// we need ensure the speed is very high.
+	// The /web/appgrid endpoint does not require information about whether the application can be updated, so we added an option.
+	// This endpoint is called as soon as CasaOS is opened, and we don't have time to cache it in advance.
+	// We must ensure that this endpoint responds as quickly as possible.
 }
 
 func composeAppsWithStoreInfo(ctx context.Context, opts composeAppsWithStoreInfoOpts) (map[string]codegen.ComposeAppWithStoreInfo, error) {
