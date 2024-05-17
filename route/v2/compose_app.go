@@ -22,7 +22,9 @@ import (
 var ErrComposeAppIDNotProvided = errors.New("compose AppID (compose project name) is not provided")
 
 func (a *AppManagement) MyComposeAppList(ctx echo.Context) error {
-	composeAppsWithStoreInfo, err := composeAppsWithStoreInfo(ctx.Request().Context())
+	composeAppsWithStoreInfo, err := composeAppsWithStoreInfo(ctx.Request().Context(), composeAppsWithStoreInfoOpts{
+		checkIsUpdateAvailable: true,
+	})
 	if err != nil {
 		message := err.Error()
 		logger.Error("failed to list compose apps with store info", zap.Error(err))
@@ -621,7 +623,14 @@ func YAMLfromRequest(ctx echo.Context) ([]byte, error) {
 	return buf, nil
 }
 
-func composeAppsWithStoreInfo(ctx context.Context) (map[string]codegen.ComposeAppWithStoreInfo, error) {
+type composeAppsWithStoreInfoOpts struct {
+	checkIsUpdateAvailable bool
+	// The /web/appgrid endpoint does not require information about whether the application can be updated, so we added an option.
+	// This endpoint is called as soon as CasaOS is opened, and we don't have time to cache it in advance.
+	// We must ensure that this endpoint responds as quickly as possible.
+}
+
+func composeAppsWithStoreInfo(ctx context.Context, opts composeAppsWithStoreInfoOpts) (map[string]codegen.ComposeAppWithStoreInfo, error) {
 	composeApps, err := service.MyService.Compose().List(ctx)
 	if err != nil {
 		return nil, err
@@ -648,10 +657,11 @@ func composeAppsWithStoreInfo(ctx context.Context) (map[string]codegen.ComposeAp
 
 		composeAppWithStoreInfo.StoreInfo = storeInfo
 
-		// check if updateAvailable
-		updateAvailable := service.MyService.AppStoreManagement().IsUpdateAvailable(composeApp)
-
-		composeAppWithStoreInfo.UpdateAvailable = &updateAvailable
+		if opts.checkIsUpdateAvailable {
+			// check if updateAvailable
+			updateAvailable := service.MyService.AppStoreManagement().IsUpdateAvailable(composeApp)
+			composeAppWithStoreInfo.UpdateAvailable = &updateAvailable
+		}
 
 		// status
 		if storeInfo.Main == nil {
