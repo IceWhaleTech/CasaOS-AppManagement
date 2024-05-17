@@ -19,7 +19,9 @@ import (
 
 func (a *AppManagement) GetAppGrid(ctx echo.Context) error {
 	// v2 Apps
-	composeAppsWithStoreInfo, err := composeAppsWithStoreInfo(ctx.Request().Context())
+	composeAppsWithStoreInfo, err := composeAppsWithStoreInfo(ctx.Request().Context(), composeAppsWithStoreInfoOpts{
+		checkIsUpdateAvailable: false,
+	})
 	if err != nil {
 		message := err.Error()
 		logger.Error("failed to list compose apps with store info", zap.Error(err))
