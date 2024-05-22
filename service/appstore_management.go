@@ -15,18 +15,16 @@ import (
 	"github.com/IceWhaleTech/CasaOS-Common/utils/file"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/logger"
 	"github.com/bluele/gcache"
-	"github.com/docker/docker/client"
 	"github.com/samber/lo"
 	"go.uber.org/zap"
 )
 
 type AppStoreManagement struct {
+	isAppUpgradable      gcache.Cache
+	defaultAppStore      AppStore
+	isAppUpgrading       sync.Map
 	onAppStoreRegister   []func(string) error
 	onAppStoreUnregister []func(string) error
-
-	isAppUpgradable gcache.Cache
-	isAppUpgrading  sync.Map
-	defaultAppStore AppStore
 }
 
 func (a *AppStoreManagement) AppStoreList() []codegen.AppStoreMetadata {
@@ -482,28 +480,10 @@ func (a *AppStoreManagement) IsUpdateAvailableWith(composeApp *ComposeApp, store
 		return false, err
 	}
 	if currentTag == "latest" {
-		ctx := context.Background()
-		cli, clientErr := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
-		if clientErr != nil {
-			logger.Error("failed to create docker client", zap.Error(clientErr))
-			return false, clientErr
-		}
-		defer cli.Close()
 
 		image, _ := docker.ExtractImageAndTag(mainService.Image)
 
-		imageInfo, _, clientErr := cli.ImageInspectWithRaw(ctx, image)
-		if clientErr != nil {
-			logger.Error("failed to inspect image", zap.Error(clientErr))
-			return false, clientErr
-		}
-		match, clientErr := docker.CompareDigest(mainService.Image, imageInfo.RepoDigests)
-		if clientErr != nil {
-			logger.Error("failed to compare digest", zap.Error(clientErr))
-			return false, clientErr
-		}
-		// match means no update available
-		return !match, nil
+		return docker.IsLatestImageUpdateAvailiable(image)
 	}
 	storeTag, err := storeComposeApp.MainTag()
 	return currentTag != storeTag, err
