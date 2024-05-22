@@ -37,7 +37,7 @@ func (a *AppManagement) RegisterAppStore(ctx echo.Context, params codegen.Regist
 	}
 
 	isExist := lo.ContainsBy(service.MyService.AppStoreManagement().AppStoreList(), func(appstore codegen.AppStoreMetadata) bool {
-		return appstore.URL != nil && strings.ToLower(*appstore.URL) == strings.ToLower(*params.Url)
+		return appstore.URL != nil && strings.EqualFold(*appstore.URL, *params.Url)
 	})
 
 	if isExist {
