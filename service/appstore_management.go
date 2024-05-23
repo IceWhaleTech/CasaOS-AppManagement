@@ -483,7 +483,7 @@ func (a *AppStoreManagement) IsUpdateAvailableWith(composeApp *ComposeApp, store
 
 		image, _ := docker.ExtractImageAndTag(mainService.Image)
 
-		return docker.IsLatestImageUpdateAvailiable(image)
+		return docker.IsImageDigestChanged(image)
 	}
 	storeTag, err := storeComposeApp.MainTag()
 	return currentTag != storeTag, err
