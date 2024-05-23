@@ -198,7 +198,7 @@ func addDefaultHeaders(header *http.Header, token string) {
 	header.Add("Accept", v1.MediaTypeImageIndex)
 }
 
-func IsLatestImageUpdateAvailiable(imageName string) (bool, error) {
+func IsImageDigestChanged(imageName string) (bool, error) {
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
 		return false, err
