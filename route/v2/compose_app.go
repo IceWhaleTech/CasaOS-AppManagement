@@ -108,7 +108,7 @@ func (a *AppManagement) IsNewComposeUncontrolled(newComposeApp *service.ComposeA
 	}
 
 	// TODO refactor this. because if user not update. the status will be uncontrolled.
-	if newTag == "latest" {
+	if lo.Contains(common.NeedCheckDigestTags, newTag) {
 		return false, nil
 	}
 

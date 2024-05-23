@@ -479,7 +479,7 @@ func (a *AppStoreManagement) IsUpdateAvailableWith(composeApp *ComposeApp, store
 		logger.Error("failed to get main service", zap.Error(err))
 		return false, err
 	}
-	if currentTag == "latest" {
+	if lo.Contains(common.NeedCheckDigestTags, currentTag) {
 
 		image, _ := docker.ExtractImageAndTag(mainService.Image)
 

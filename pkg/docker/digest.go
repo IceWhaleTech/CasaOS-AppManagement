@@ -16,6 +16,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/IceWhaleTech/CasaOS-AppManagement/common"
 	"github.com/docker/distribution/manifest"
 	"github.com/docker/distribution/manifest/manifestlist"
 	"github.com/docker/distribution/manifest/schema1"
@@ -225,8 +226,11 @@ func getLocalImageDigest(cli *client.Client, imageName string) (string, error) {
 
 	for _, image := range images {
 		for _, tag := range image.RepoTags {
-			if tag == imageName {
-				return image.ID, nil
+			// tag like "image:latest"
+			for _, needCheckTag := range common.NeedCheckDigestTags {
+				if tag == fmt.Sprintf("%s:%s", imageName, needCheckTag) {
+					return image.ID, nil
+				}
 			}
 		}
 	}
@@ -236,11 +240,11 @@ func getLocalImageDigest(cli *client.Client, imageName string) (string, error) {
 
 // 获取远程镜像的Digest
 func getRemoteImageDigest(cli *client.Client, imageName string) (string, error) {
-	refStr := "docker.io/library/" + imageName
-	inspect, _, err := cli.ImageInspectWithRaw(context.Background(), refStr)
+	// 获取远程镜像的Digest
+	imageInspect, _, err := cli.ImageInspectWithRaw(context.Background(), imageName)
 	if err != nil {
 		return "", err
 	}
 
-	return inspect.ID, nil
+	return imageInspect.ID, nil
 }

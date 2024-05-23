@@ -30,3 +30,5 @@ const (
 	CategoryListFileName  = "category-list.json"
 	RecommendListFileName = "recommend-list.json"
 )
+
+var NeedCheckDigestTags = []string{"latest"}
