@@ -418,15 +418,15 @@ func (a *AppStoreManagement) WorkDir() (string, error) {
 
 func (a *AppStoreManagement) IsUpdateAvailable(composeApp *ComposeApp) bool {
 	storeID := composeApp.Name
-	// if value, err := a.isAppUpgradable.Get(storeID); err == nil {
-	// 	switch value := value.(type) {
-	// 	case bool:
-	// 		return value
-	// 	default:
-	// 		logger.Error("invalid type in cache", zap.String("storeID", storeID), zap.Any("value", value))
-	// 		return false
-	// 	}
-	// }
+	if value, err := a.isAppUpgradable.Get(storeID); err == nil {
+		switch value := value.(type) {
+		case bool:
+			return value
+		default:
+			logger.Error("invalid type in cache", zap.String("storeID", storeID), zap.Any("value", value))
+			return false
+		}
+	}
 
 	isUpdate, err := a.isUpdateAvailable(composeApp)
 	if err != nil {
