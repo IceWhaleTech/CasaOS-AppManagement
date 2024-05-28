@@ -159,6 +159,7 @@ func (a *AppStoreManagement) RegisterAppStore(ctx context.Context, appstoreURL s
 	return nil
 }
 
+// TODO: refactor the function and above function
 func (a *AppStoreManagement) RegisterAppStoreSync(ctx context.Context, appstoreURL string, callbacks ...func(*codegen.AppStoreMetadata)) error {
 	// check if appstore already exists
 	for _, url := range config.ServerInfo.AppStoreList {

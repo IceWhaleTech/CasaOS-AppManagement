@@ -30,6 +30,8 @@ func (a *AppManagement) AppStoreList(ctx echo.Context) error {
 	})
 }
 
+// the method should be deprecated
+// but it be used by CasaOS
 func (a *AppManagement) RegisterAppStore(ctx echo.Context, params codegen.RegisterAppStoreParams) error {
 	if params.Url == nil || *params.Url == "" {
 		message := "appstore url is required"
