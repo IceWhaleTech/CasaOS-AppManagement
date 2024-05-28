@@ -22,3 +22,11 @@ func PropertiesFromQueryParams(httpCtx echo.Context) map[string]string {
 
 	return properties
 }
+
+func DefaultQuery(ctx echo.Context, key string, defaultValue string) string {
+	if value := ctx.QueryParam(key); value != "" {
+		return value
+	}
+
+	return defaultValue
+}
