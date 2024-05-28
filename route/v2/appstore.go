@@ -406,7 +406,8 @@ func (a *AppManagement) UpgradableAppList(ctx echo.Context) error {
 
 		if service.MyService.AppStoreManagement().IsUpdateAvailable(composeApp) {
 			upgradableAppList = append(upgradableAppList, codegen.UpgradableAppInfo{
-				Title:      string(title),
+				Title: string(title),
+				// TODO: the tag can be latest
 				Version:    tag,
 				StoreAppID: lo.ToPtr(id),
 				Status:     status,
