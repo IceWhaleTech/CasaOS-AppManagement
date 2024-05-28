@@ -20,13 +20,14 @@ import (
 	"go.uber.org/zap"
 )
 
+var ErrAppStoreSourceExists = fmt.Errorf("appstore source already exists")
+
 type AppStoreManagement struct {
+	isAppUpgradable      gcache.Cache
+	defaultAppStore      AppStore
+	isAppUpgrading       sync.Map
 	onAppStoreRegister   []func(string) error
 	onAppStoreUnregister []func(string) error
-
-	isAppUpgradable gcache.Cache
-	isAppUpgrading  sync.Map
-	defaultAppStore AppStore
 }
 
 func (a *AppStoreManagement) AppStoreList() []codegen.AppStoreMetadata {
@@ -99,7 +100,7 @@ func (a *AppStoreManagement) RegisterAppStore(ctx context.Context, appstoreURL s
 	// check if appstore already exists
 	for _, url := range config.ServerInfo.AppStoreList {
 		if strings.EqualFold(url, appstoreURL) {
-			return nil
+			return ErrAppStoreSourceExists
 		}
 	}
 
@@ -162,7 +163,7 @@ func (a *AppStoreManagement) RegisterAppStoreSync(ctx context.Context, appstoreU
 	// check if appstore already exists
 	for _, url := range config.ServerInfo.AppStoreList {
 		if strings.EqualFold(url, appstoreURL) {
-			return nil
+			return ErrAppStoreSourceExists
 		}
 	}
 

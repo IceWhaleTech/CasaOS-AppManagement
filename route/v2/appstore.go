@@ -36,24 +36,21 @@ func (a *AppManagement) RegisterAppStore(ctx echo.Context, params codegen.Regist
 		return ctx.JSON(http.StatusBadRequest, codegen.ResponseBadRequest{Message: &message})
 	}
 
-	isExist := lo.ContainsBy(service.MyService.AppStoreManagement().AppStoreList(), func(appstore codegen.AppStoreMetadata) bool {
-		return appstore.URL != nil && strings.EqualFold(*appstore.URL, *params.Url)
-	})
-
-	if isExist {
-		message := "appstore is already registered"
-		return ctx.JSON(http.StatusConflict, codegen.ResponseConflict{Message: &message})
-	}
-
 	backgroundCtx := common.WithProperties(context.Background(), PropertiesFromQueryParams(ctx))
 
 	if err := service.MyService.AppStoreManagement().RegisterAppStore(backgroundCtx, *params.Url); err != nil {
 		message := err.Error()
-		if err == service.ErrNotAppStore {
-			return ctx.JSON(http.StatusBadRequest, codegen.ResponseBadRequest{Message: &message})
-		}
 
-		return ctx.JSON(http.StatusInternalServerError, codegen.ResponseInternalServerError{Message: &message})
+		if err != nil {
+			switch err {
+			case service.ErrAppStoreSourceExists:
+				return ctx.JSON(http.StatusConflict, codegen.ResponseConflict{Message: &message})
+			case service.ErrNotAppStore:
+				return ctx.JSON(http.StatusBadRequest, codegen.ResponseBadRequest{Message: &message})
+			default:
+				return ctx.JSON(http.StatusInternalServerError, codegen.ResponseInternalServerError{Message: &message})
+			}
+		}
 	}
 
 	logFilepath := filepath.Join(config.AppInfo.LogPath, fmt.Sprintf("%s.%s", config.AppInfo.LogSaveName, config.AppInfo.LogFileExt))
@@ -69,26 +66,22 @@ func (a *AppManagement) RegisterAppStoreSync(ctx echo.Context, params codegen.Re
 		return ctx.JSON(http.StatusBadRequest, codegen.ResponseBadRequest{Message: &message})
 	}
 
-	isExist := lo.ContainsBy(service.MyService.AppStoreManagement().AppStoreList(), func(appstore codegen.AppStoreMetadata) bool {
-		return appstore.URL != nil && strings.EqualFold(*appstore.URL, *params.Url)
-	})
-
-	if isExist {
-		message := "appstore is already registered"
-		return ctx.JSON(http.StatusConflict, codegen.ResponseConflict{Message: &message})
-	}
-
 	backgroundCtx := common.WithProperties(context.Background(), PropertiesFromQueryParams(ctx))
 
 	err := service.MyService.AppStoreManagement().RegisterAppStoreSync(backgroundCtx, *params.Url)
 	if err != nil {
 		message := err.Error()
-		if err == service.ErrNotAppStore {
-			return ctx.JSON(http.StatusBadRequest, codegen.ResponseBadRequest{Message: &message})
-		}
 
-		return ctx.JSON(http.StatusInternalServerError, codegen.ResponseInternalServerError{Message: &message})
+		switch err {
+		case service.ErrAppStoreSourceExists:
+			return ctx.JSON(http.StatusConflict, codegen.ResponseConflict{Message: &message})
+		case service.ErrNotAppStore:
+			return ctx.JSON(http.StatusBadRequest, codegen.ResponseBadRequest{Message: &message})
+		default:
+			return ctx.JSON(http.StatusInternalServerError, codegen.ResponseInternalServerError{Message: &message})
+		}
 	}
+
 	return ctx.JSON(http.StatusOK, codegen.AppStoreRegisterOK{
 		Message: utils.Ptr("app store is registered."),
 	})
