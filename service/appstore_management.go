@@ -158,6 +158,65 @@ func (a *AppStoreManagement) RegisterAppStore(ctx context.Context, appstoreURL s
 	return nil
 }
 
+func (a *AppStoreManagement) RegisterAppStoreSync(ctx context.Context, appstoreURL string, callbacks ...func(*codegen.AppStoreMetadata)) error {
+	// check if appstore already exists
+	for _, url := range config.ServerInfo.AppStoreList {
+		if strings.EqualFold(url, appstoreURL) {
+			return nil
+		}
+	}
+
+	appstore, err := AppStoreByURL(appstoreURL)
+	if err != nil {
+		return err
+	}
+
+	go PublishEventWrapper(ctx, common.EventTypeAppStoreRegisterBegin, nil)
+
+	defer PublishEventWrapper(ctx, common.EventTypeAppStoreRegisterEnd, nil)
+
+	defer func() {
+		if err == nil {
+			return
+		}
+
+		PublishEventWrapper(ctx, common.EventTypeAppStoreRegisterError, map[string]string{
+			common.PropertyTypeMessage.Name: err.Error(),
+		})
+	}()
+
+	if err = appstore.UpdateCatalog(); err != nil {
+		logger.Error("failed to update appstore catalog", zap.Error(err), zap.String("appstoreURL", appstoreURL))
+
+		return err
+	}
+
+	// if everything is good, add to the list
+	config.ServerInfo.AppStoreList = append(config.ServerInfo.AppStoreList, appstoreURL)
+
+	if err = config.SaveSetup(); err != nil {
+		logger.Error("failed to save appstore list", zap.Error(err), zap.String("appstoreURL", appstoreURL))
+		return err
+	}
+
+	for _, fn := range a.onAppStoreRegister {
+		if err := fn(appstoreURL); err != nil {
+			logger.Error("failed to run onAppStoreRegister", zap.Error(err), zap.String("appstoreURL", appstoreURL))
+		}
+	}
+
+	appStoreMetadata := &codegen.AppStoreMetadata{
+		ID:  utils.Ptr(len(config.ServerInfo.AppStoreList) - 1),
+		URL: &appstoreURL,
+	}
+
+	for _, callback := range callbacks {
+		callback(appStoreMetadata)
+	}
+
+	return nil
+}
+
 func (a *AppStoreManagement) UnregisterAppStore(appStoreID uint) error {
 	if appStoreID >= uint(len(config.ServerInfo.AppStoreList)) {
 		return fmt.Errorf("appstore id %d out of range", appStoreID)
