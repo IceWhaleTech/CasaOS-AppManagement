@@ -481,9 +481,11 @@ func (a *AppStoreManagement) IsUpdateAvailableWith(composeApp *ComposeApp, store
 	}
 	if lo.Contains(common.NeedCheckDigestTags, currentTag) {
 
-		image, _ := docker.ExtractImageAndTag(mainService.Image)
-
-		return docker.IsImageDigestChanged(image)
+		_, _ = docker.ExtractImageAndTag(mainService.Image)
+		// TODO: refactor this.
+		// need to check the digest of the image
+		// to see if the image is updated
+		return false, nil
 	}
 	storeTag, err := storeComposeApp.MainTag()
 	return currentTag != storeTag, err

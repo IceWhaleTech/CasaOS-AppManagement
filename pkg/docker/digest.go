@@ -16,13 +16,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/IceWhaleTech/CasaOS-AppManagement/common"
 	"github.com/docker/distribution/manifest"
 	"github.com/docker/distribution/manifest/manifestlist"
 	"github.com/docker/distribution/manifest/schema1"
 	"github.com/docker/distribution/manifest/schema2"
-	"github.com/docker/docker/api/types"
-	"github.com/docker/docker/client"
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 )
 
@@ -196,55 +193,4 @@ func addDefaultHeaders(header *http.Header, token string) {
 	header.Add("Accept", manifestlist.MediaTypeManifestList)
 	// header.Add("Accept", schema1.MediaTypeManifest)
 	header.Add("Accept", v1.MediaTypeImageIndex)
-}
-
-func IsImageDigestChanged(imageName string) (bool, error) {
-	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
-	if err != nil {
-		return false, err
-	}
-
-	localDigest, err := getLocalImageDigest(cli, imageName)
-	if err != nil {
-		return false, err
-	}
-
-	remoteDigest, err := getRemoteImageDigest(cli, imageName)
-	if err != nil {
-		return false, err
-	}
-
-	return localDigest != remoteDigest, nil
-}
-
-// 获取本地镜像的Digest
-func getLocalImageDigest(cli *client.Client, imageName string) (string, error) {
-	images, err := cli.ImageList(context.Background(), types.ImageListOptions{})
-	if err != nil {
-		return "", err
-	}
-
-	for _, image := range images {
-		for _, tag := range image.RepoTags {
-			// tag like "image:latest"
-			for _, needCheckTag := range common.NeedCheckDigestTags {
-				if tag == fmt.Sprintf("%s:%s", imageName, needCheckTag) {
-					return image.ID, nil
-				}
-			}
-		}
-	}
-
-	return "", fmt.Errorf("未找到本地镜像：%s", imageName)
-}
-
-// 获取远程镜像的Digest
-func getRemoteImageDigest(cli *client.Client, imageName string) (string, error) {
-	// 获取远程镜像的Digest
-	imageInspect, _, err := cli.ImageInspectWithRaw(context.Background(), imageName)
-	if err != nil {
-		return "", err
-	}
-
-	return imageInspect.ID, nil
 }
