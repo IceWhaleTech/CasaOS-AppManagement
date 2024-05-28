@@ -84,18 +84,27 @@ func (a *AppManagement) MyComposeApp(ctx echo.Context, id codegen.ComposeAppID) 
 		logger.Error("failed to get compose app status", zap.Error(err), zap.String("composeAppID", id))
 	}
 
+	// disable the because performance issue
+	// check update is hard and cost a lot of time. specially when the tag is latest
+	// such as Stable Diffusion. the check by ZimaOS GPU Application by @LinkLeong
+	// Alought @LinkLeong Didn't need the field.
+	// We should add a new API to get app info without update info
+	// and restore the following code
+
 	// check if updateAvailable
-	updateAvailable := service.MyService.AppStoreManagement().IsUpdateAvailable(composeApp)
+	// updateAvailable := service.MyService.AppStoreManagement().IsUpdateAvailable(composeApp)
 
 	message := fmt.Sprintf("!! JSON format is for debugging purpose only - use `Accept: %s` HTTP header to get YAML instead !!", common.MIMEApplicationYAML)
 	return ctx.JSON(http.StatusOK, codegen.ComposeAppOK{
 		// extension properties aren't marshalled - https://github.com/golang/go/issues/6213
 		Message: &message,
 		Data: &codegen.ComposeAppWithStoreInfo{
-			StoreInfo:       storeInfo,
-			Compose:         (*types.Project)(composeApp),
-			Status:          &status,
-			UpdateAvailable: &updateAvailable,
+			StoreInfo: storeInfo,
+			Compose:   (*types.Project)(composeApp),
+			Status:    &status,
+
+			// see above comment
+			UpdateAvailable: nil,
 		},
 	})
 }
@@ -108,7 +117,7 @@ func (a *AppManagement) IsNewComposeUncontrolled(newComposeApp *service.ComposeA
 	}
 
 	// TODO refactor this. because if user not update. the status will be uncontrolled.
-	if newTag == "latest" {
+	if lo.Contains(common.NeedCheckDigestTags, newTag) {
 		return false, nil
 	}
 

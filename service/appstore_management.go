@@ -15,7 +15,6 @@ import (
 	"github.com/IceWhaleTech/CasaOS-Common/utils/file"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/logger"
 	"github.com/bluele/gcache"
-	"github.com/docker/docker/client"
 	"github.com/samber/lo"
 	"go.uber.org/zap"
 )
@@ -542,29 +541,13 @@ func (a *AppStoreManagement) IsUpdateAvailableWith(composeApp *ComposeApp, store
 		logger.Error("failed to get main service", zap.Error(err))
 		return false, err
 	}
-	if currentTag == "latest" {
-		ctx := context.Background()
-		cli, clientErr := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
-		if clientErr != nil {
-			logger.Error("failed to create docker client", zap.Error(clientErr))
-			return false, clientErr
-		}
-		defer cli.Close()
+	if lo.Contains(common.NeedCheckDigestTags, currentTag) {
 
-		image, _ := docker.ExtractImageAndTag(mainService.Image)
-
-		imageInfo, _, clientErr := cli.ImageInspectWithRaw(ctx, image)
-		if clientErr != nil {
-			logger.Error("failed to inspect image", zap.Error(clientErr))
-			return false, clientErr
-		}
-		match, clientErr := docker.CompareDigest(mainService.Image, imageInfo.RepoDigests)
-		if clientErr != nil {
-			logger.Error("failed to compare digest", zap.Error(clientErr))
-			return false, clientErr
-		}
-		// match means no update available
-		return !match, nil
+		_, _ = docker.ExtractImageAndTag(mainService.Image)
+		// TODO: refactor this.
+		// need to check the digest of the image
+		// to see if the image is updated
+		return false, nil
 	}
 	storeTag, err := storeComposeApp.MainTag()
 	return currentTag != storeTag, err
