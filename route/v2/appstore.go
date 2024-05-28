@@ -62,7 +62,7 @@ func (a *AppManagement) RegisterAppStore(ctx echo.Context, params codegen.Regist
 	})
 }
 
-func (a *AppManagement) RegisterAppStoreSync(ctx echo.Context, params codegen.RegisterAppStoreParams) error {
+func (a *AppManagement) RegisterAppStoreSync(ctx echo.Context, params codegen.RegisterAppStoreSyncParams) error {
 	if params.Url == nil || *params.Url == "" {
 		message := "appstore url is required"
 		return ctx.JSON(http.StatusBadRequest, codegen.ResponseBadRequest{Message: &message})
