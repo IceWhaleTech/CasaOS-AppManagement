@@ -338,7 +338,7 @@ func FilterCatalogByCategory(catalog map[string]*service.ComposeApp, category st
 			return false
 		}
 
-		return strings.ToLower(storeInfo.Category) == strings.ToLower(category)
+		return strings.EqualFold(storeInfo.Category, category)
 	})
 }
 
@@ -352,13 +352,13 @@ func FilterCatalogByAuthorType(catalog map[string]*service.ComposeApp, authorTyp
 		return map[string]*service.ComposeApp{}
 	}
 
-	return lo.PickBy(catalog, func(storeAppID string, composeApp *service.ComposeApp) bool {
+	return lo.PickBy(catalog, func(_ string, composeApp *service.ComposeApp) bool {
 		return composeApp.AuthorType() == authorType
 	})
 }
 
 func FilterCatalogByAppStoreID(catalog map[string]*service.ComposeApp, appStoreIDs []string) map[string]*service.ComposeApp {
-	return lo.PickBy(catalog, func(storeAppID string, composeApp *service.ComposeApp) bool {
+	return lo.PickBy(catalog, func(storeAppID string, _ *service.ComposeApp) bool {
 		return lo.Contains(appStoreIDs, storeAppID)
 	})
 }
@@ -404,11 +404,22 @@ func (a *AppManagement) UpgradableAppList(ctx echo.Context) error {
 			status = codegen.Updating
 		}
 
+		// not change the main tag
+		mainTag, err := composeApp.MainTag()
+		if err != nil {
+			logger.Error("failed to get main tag", zap.Error(err), zap.String("name", composeApp.Name))
+			continue
+		}
+
+		targetTag := tag
+		if lo.Contains(common.NeedCheckDigestTags, mainTag) {
+			targetTag = mainTag
+		}
+
 		if service.MyService.AppStoreManagement().IsUpdateAvailable(composeApp) {
 			upgradableAppList = append(upgradableAppList, codegen.UpgradableAppInfo{
-				Title: string(title),
-				// TODO: the tag can be latest
-				Version:    tag,
+				Title:      string(title),
+				Version:    targetTag,
 				StoreAppID: lo.ToPtr(id),
 				Status:     status,
 				Icon:       storeInfo.Icon,
