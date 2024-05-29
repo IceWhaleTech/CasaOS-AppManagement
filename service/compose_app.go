@@ -211,8 +211,18 @@ func (a *ComposeApp) Update(ctx context.Context) error {
 
 	for _, service := range storeComposeApp.Services {
 		localComposeAppService := a.App(service.Name)
-		localComposeAppService.Image = service.Image
+
+		for _, tag := range common.NeedCheckDigestTags {
+			if strings.HasSuffix(service.Image, tag) {
+				// keep latest
+			} else {
+				localComposeAppService.Image = service.Image
+			}
+		}
 	}
+
+	// the code is need by stable diffusion.
+	removeRuntime(a)
 
 	newComposeYAML, err := yaml.Marshal(a)
 	if err != nil {
@@ -914,13 +924,29 @@ func LoadComposeAppFromConfigFile(appID string, configFile string) (*ComposeApp,
 	return (*ComposeApp)(project), err
 }
 
+var gpuCache *([]external.GPUInfo) = nil
+
 func removeRuntime(a *ComposeApp) {
-	for i := range a.Services {
-		a.Services[i].Runtime = ""
+	if config.RemoveRuntimeIfNoNvidiaGPUFlag {
+
+		// if gpuCache is nil, it means it is first time fetching gpu info
+		if gpuCache == nil {
+			value, err := external.GPUInfoList()
+			if err != nil {
+				gpuCache = &([]external.GPUInfo{})
+			} else {
+				gpuCache = &value
+			}
+
+			// without nvidia-smi 	// no gpu or first time fetching gpu info failed
+		}
+		if len(*gpuCache) == 0 {
+			for i := range a.Services {
+				a.Services[i].Runtime = ""
+			}
+		}
 	}
 }
-
-var gpuCache *([]external.GPUInfo) = nil
 
 func NewComposeAppFromYAML(yaml []byte, skipInterpolation, skipValidation bool) (*ComposeApp, error) {
 	tmpWorkingDir, err := os.MkdirTemp("", "casaos-compose-app-*")
@@ -1002,22 +1028,7 @@ func NewComposeAppFromYAML(yaml []byte, skipInterpolation, skipValidation bool) 
 		composeApp.SetTitle(composeApp.Name, common.DefaultLanguage)
 	}
 
-	if config.RemoveRuntimeIfNoNvidiaGPUFlag {
-		// if gpuCache is nil, it means it is first time fetching gpu info
-		if gpuCache == nil {
-			value, err := external.GPUInfoList()
-			if err != nil {
-				gpuCache = &([]external.GPUInfo{})
-			} else {
-				gpuCache = &value
-			}
-		}
-
-		// without nvidia-smi 	// no gpu or first time fetching gpu info failed
-		if err != nil || len(*gpuCache) == 0 {
-			removeRuntime(composeApp)
-		}
-	}
+	removeRuntime(composeApp)
 
 	// pass icon information to v1 label for backward compatibility, because we are
 	// still using `func getContainerStats()` from `container.go` to get container stats

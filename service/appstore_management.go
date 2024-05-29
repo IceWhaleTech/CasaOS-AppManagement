@@ -15,6 +15,7 @@ import (
 	"github.com/IceWhaleTech/CasaOS-Common/utils/file"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/logger"
 	"github.com/bluele/gcache"
+	"github.com/docker/docker/client"
 	"github.com/samber/lo"
 	"go.uber.org/zap"
 )
@@ -530,6 +531,14 @@ func (a *AppStoreManagement) isUpdateAvailable(composeApp *ComposeApp) (bool, er
 	return a.IsUpdateAvailableWith(composeApp, storeComposeApp)
 }
 
+// the patch is have no choice
+// the digest compare is not work for these images
+// I don't know why, but I have to do this
+// I will remove the patch after I rewrite the digest compare
+var NoUpdateBlacklist = []string{
+	"johnguan/stable-diffusion-webui:latest",
+}
+
 func (a *AppStoreManagement) IsUpdateAvailableWith(composeApp *ComposeApp, storeComposeApp *ComposeApp) (bool, error) {
 	currentTag, err := composeApp.MainTag()
 	if err != nil {
@@ -542,12 +551,33 @@ func (a *AppStoreManagement) IsUpdateAvailableWith(composeApp *ComposeApp, store
 		return false, err
 	}
 	if lo.Contains(common.NeedCheckDigestTags, currentTag) {
+		ctx := context.Background()
+		cli, clientErr := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+		if clientErr != nil {
+			logger.Error("failed to create docker client", zap.Error(clientErr))
+			return false, clientErr
+		}
+		defer cli.Close()
 
-		_, _ = docker.ExtractImageAndTag(mainService.Image)
-		// TODO: refactor this.
-		// need to check the digest of the image
-		// to see if the image is updated
-		return false, nil
+		if lo.Contains(NoUpdateBlacklist, mainService.Image) {
+			return false, nil
+		}
+
+		image, _ := docker.ExtractImageAndTag(mainService.Image)
+
+		imageInfo, _, clientErr := cli.ImageInspectWithRaw(ctx, image)
+		if clientErr != nil {
+			logger.Error("failed to inspect image", zap.Error(clientErr))
+			return false, clientErr
+		}
+
+		match, clientErr := docker.CompareDigest(mainService.Image, imageInfo.RepoDigests)
+		if clientErr != nil {
+			logger.Error("failed to compare digest", zap.Error(clientErr))
+			return false, clientErr
+		}
+		// match means no update available
+		return !match, nil
 	}
 	storeTag, err := storeComposeApp.MainTag()
 	return currentTag != storeTag, err
