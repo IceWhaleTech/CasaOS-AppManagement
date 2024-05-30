@@ -1072,3 +1072,30 @@ func (a *ComposeApp) SetUncontrolled(uncontrolled bool) error {
 
 	return nil
 }
+
+func (a *ComposeApp) ExternalVolumnList() ([]string, error) {
+	externalPath := []string{}
+	for _, app := range a.Apps() {
+		// path.Volumes
+		for _, path := range app.Volumes {
+			externalPath = append(externalPath, path.Source)
+		}
+	}
+	return externalPath, nil
+}
+
+func (a *ComposeApp) UpdateVolumnList() ([]string, error) {
+	externalPath := []string{}
+	for _, app := range a.Apps() {
+		// path.Volumes
+		for _, path := range app.Volumes {
+			externalPath = append(externalPath, path.Source)
+		}
+	}
+	return externalPath, nil
+}
+
+func (a *ComposeApp) TransferVolumn() error {
+	// a.Volumes
+	return nil
+}
