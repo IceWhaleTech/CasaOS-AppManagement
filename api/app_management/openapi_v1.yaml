@@ -1,0 +1,306 @@
+openapi: 3.0.3
+
+info:
+  title: CasaOS App Management API
+  version: v1
+  description: |
+    <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/IceWhaleTech/logo/main/casaos/casaos_banner_dark_night_800px.png">
+        <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/IceWhaleTech/logo/main/casaos/casaos_banner_twilight_blue_800px.png">
+        <img alt="CasaOS" src="https://raw.githubusercontent.com/IceWhaleTech/logo/main/casaos/casaos_banner_twilight_blue_800px.png">
+    </picture>
+
+    CasaOS App Management manages app lifecycle, including installing, uninstalling, starting, stopping, setting, etc.
+
+    For issues and discussions, please visit the [GitHub repository](https://github.com/IceWhaleTech/CasaOS) or join [our Discord](https://discord.gg/knqAbbBbeX).
+
+servers:
+  - url: /v1/container
+
+tags:
+  - name: Container methods
+    description: |-
+      methods for managing container app lifecycle
+
+security:
+  - access_token: []
+
+paths:
+  /usage:
+    get:
+      summary: Get the usage list of all container apps
+      description: |
+        TODO - add description
+      operationId: getAppUsageList
+      tags:
+        - Container methods
+      responses:
+        "200":
+          $ref: "#/components/responses/ResponseAppUsageList"
+
+  /{id}:
+    patch:
+      summary: Recreate the container app
+      description: |
+        TODO - add description
+      operationId: recreateContainerByID
+      tags:
+        - Container methods
+      parameters:
+        - $ref: "#/components/parameters/ContainerID"
+        - $ref: "#/components/parameters/PullLatestImage"
+        - $ref: "#/components/parameters/Force"
+      responses:
+        "200":
+          $ref: "#/components/responses/ContainerRecreateOK"
+        "404":
+          $ref: "#/components/responses/ResponseNotFound"
+        "500":
+          $ref: "#/components/responses/ResponseInternalServerError"
+    put:
+      summary: Update the container app
+      description: |
+        TODO - add description
+      operationId: updateContainerByID
+      tags:
+        - Container methods
+      parameters:
+        - $ref: "#/components/parameters/ContainerID"
+      responses:
+        "200":
+          $ref: "#/components/responses/ResponseOK"
+        "404":
+          $ref: "#/components/responses/ResponseNotFound"
+        "500":
+          $ref: "#/components/responses/ResponseInternalServerError"
+    delete:
+      summary: Uninstall the container app
+      description: |
+        TODO - add description
+      operationId: uninstallContainerByID
+      tags:
+        - Container methods
+      parameters:
+        - $ref: "#/components/parameters/ContainerID"
+      responses:
+        "200":
+          $ref: "#/components/responses/ResponseOK"
+        "404":
+          $ref: "#/components/responses/ResponseNotFound"
+        "500":
+          $ref: "#/components/responses/ResponseInternalServerError"
+
+  /{id}/compose:
+    get:
+      summary: Convert legacy container app to compose app
+      description: |
+        TODO - add description
+      operationId: convertContainerToCompose
+      tags:
+        - Container methods
+      parameters:
+        - $ref: "#/components/parameters/ContainerID"
+      responses:
+        "200":
+          $ref: "#/components/responses/ResponseComposeApp"
+        "500":
+          $ref: "#/components/responses/ResponseInternalServerError"
+
+  /networks:
+    get:
+      summary: Get docker networks
+      description: |
+        TODO - add description
+      operationId: getNetworkList
+      tags:
+        - Container methods
+      responses:
+        "200":
+          $ref: "#/components/responses/ResponseDockerNetworks"
+
+  /archive/{id}:
+    get:
+      summary: Archive the container app
+      description: |
+        TODO - add description
+      operationId: archiveContainerByID
+      tags:
+        - Container methods
+      parameters:
+        - $ref: "#/components/parameters/ContainerID"
+      responses:
+        "200":
+          $ref: "#/components/responses/ResponseOK"
+        "500":
+          $ref: "#/components/responses/ResponseInternalServerError"
+
+  /{id}/terminal:
+    get:
+      summary: Get the terminal of the container app
+      description: |
+        TODO - add description
+      operationId: getContainerTerminal
+      tags:
+        - Container methods
+      parameters:
+        - $ref: "#/components/parameters/ContainerID"
+        - $ref: "#/components/parameters/TerminalCols"
+        - $ref: "#/components/parameters/TerminalRows"
+      responses:
+        "200":
+          $ref: "#/components/responses/ResponseOK"
+        "404":
+          $ref: "#/components/responses/ResponseNotFound"
+        "500":
+          $ref: "#/components/responses/ResponseInternalServerError"
+
+components:
+  securitySchemes:
+    access_token:
+      type: apiKey
+      in: header
+      name: Authorization
+
+  parameters:
+    TerminalCols:
+      name: cols
+      description: Terminal columns
+      in: query
+      schema:
+        type: string
+        default: 100
+
+    TerminalRows:
+      name: rows
+      description: Terminal rows
+      in: query
+      schema:
+        type: string
+        default: 30
+
+    ContainerID:
+      name: id
+      description: Container ID in the Docker runtime
+      in: path
+      required: true
+      schema:
+        type: string
+      example: 09e70f4a7dd3fc43de6a1bc40d45c79f857544e13679e5b1a47409034a7ce621
+
+    PullLatestImage:
+      name: pull
+      description: Try to pull the latest image from the registry
+      in: query
+      schema:
+        type: boolean
+        default: false
+
+    Force:
+      name: force
+      in: query
+      schema:
+        type: boolean
+        default: false
+
+  responses:
+    ResponseOK:
+      description: OK
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/BaseResponse"
+          example:
+            message: "OK"
+
+    ResponseInternalServerError:
+      description: Internal Server Error
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/BaseResponse"
+          example:
+            message: "Internal Server Error"
+
+    ResponseNotFound:
+      description: Not Found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/BaseResponse"
+          example:
+            message: "Not Found"
+
+    ContainerRecreateOK:
+      description: OK
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/BaseResponse"
+
+    ResponseAppUsageList:
+      description: App usage list
+      content:
+        application/json:
+          schema:
+            properties: 
+              data:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DockerStats"
+
+    ResponseDockerNetworks:
+      description: Docker networks
+      content:
+        application/json:
+          schema:
+            properties: 
+              data:
+                type: array
+                items:
+                  type: object
+                  properties: 
+                    name:
+                      type: string
+                      example: "bridge"
+                    driver:
+                      type: string
+                      example: "bridge"
+                    id:
+                      type: string
+                      example: "f7b9"
+    ResponseComposeApp:
+      description: Compose app
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ComposeApp"
+
+
+  schemas:
+    BaseResponse:
+      properties:
+        message:
+          description: message returned by server side if there is any
+          type: string
+          example: ""
+    DockerStats:
+      properties:
+        icon:
+          type: string
+          example: "https://raw.githubusercontent.com/IceWhaleTech/logo/main/casaos/casaos_logo_64px.png"
+        title:
+          type: string
+          example: "CasaOS"
+        data:
+          type: object
+        previous:
+          type: object
+    ComposeApp:
+      type: object
+      description: |-
+        See [Compose Specification](https://compose-spec.io) for the schema structure of `ComposeApp`.
+
+      x-go-type: types.Project
+      x-go-type-import:
+        name: types
+        path: github.com/compose-spec/compose-go/types
