@@ -1,13 +1,13 @@
 package v1
 
-import "github.com/gin-gonic/gin"
+import (
+	"github.com/labstack/echo/v4"
+	"gopkg.in/yaml.v3"
+)
 
-func PropertiesFromQueryParams(httpCtx *gin.Context) map[string]string {
-	properties := make(map[string]string)
+func YAML(ctx echo.Context, code int, i interface{}) error {
+	ctx.Response().WriteHeader(code)
+	ctx.Response().Header().Set(echo.HeaderContentType, "text/yaml")
 
-	for _, param := range httpCtx.Params {
-		properties[param.Key] = param.Value
-	}
-
-	return properties
+	return yaml.NewEncoder(ctx.Response()).Encode(i)
 }
