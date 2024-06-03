@@ -36,11 +36,7 @@ paths:
         - Container methods
       responses:
         "200":
-          $ref: "#/components/responses/ResponseOK"
-        "404":
-          $ref: "#/components/responses/ResponseNotFound"
-        "500":
-          $ref: "#/components/responses/ResponseInternalServerError"
+          $ref: "#/components/responses/ResponseAppUsageList"
 
   /{id}:
     patch:
@@ -106,9 +102,7 @@ paths:
         - $ref: "#/components/parameters/ContainerID"
       responses:
         "200":
-          $ref: "#/components/responses/ResponseOK"
-        "404":
-          $ref: "#/components/responses/ResponseNotFound"
+          $ref: "#/components/responses/ResponseComposeApp"
         "500":
           $ref: "#/components/responses/ResponseInternalServerError"
 
@@ -122,11 +116,7 @@ paths:
         - Container methods
       responses:
         "200":
-          $ref: "#/components/responses/ResponseOK"
-        "404":
-          $ref: "#/components/responses/ResponseNotFound"
-        "500":
-          $ref: "#/components/responses/ResponseInternalServerError"
+          $ref: "#/components/responses/ResponseDockerNetworks"
 
   /archive/{id}:
     get:
@@ -141,8 +131,6 @@ paths:
       responses:
         "200":
           $ref: "#/components/responses/ResponseOK"
-        "404":
-          $ref: "#/components/responses/ResponseNotFound"
         "500":
           $ref: "#/components/responses/ResponseInternalServerError"
 
@@ -249,6 +237,45 @@ components:
           schema:
             $ref: "#/components/schemas/BaseResponse"
 
+    ResponseAppUsageList:
+      description: App usage list
+      content:
+        application/json:
+          schema:
+            properties: 
+              data:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DockerStats"
+
+    ResponseDockerNetworks:
+      description: Docker networks
+      content:
+        application/json:
+          schema:
+            properties: 
+              data:
+                type: array
+                items:
+                  type: object
+                  properties: 
+                    name:
+                      type: string
+                      example: "bridge"
+                    driver:
+                      type: string
+                      example: "bridge"
+                    id:
+                      type: string
+                      example: "f7b9"
+    ResponseComposeApp:
+      description: Compose app
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ComposeApp"
+
+
   schemas:
     BaseResponse:
       properties:
@@ -256,3 +283,24 @@ components:
           description: message returned by server side if there is any
           type: string
           example: ""
+    DockerStats:
+      properties:
+        icon:
+          type: string
+          example: "https://raw.githubusercontent.com/IceWhaleTech/logo/main/casaos/casaos_logo_64px.png"
+        title:
+          type: string
+          example: "CasaOS"
+        data:
+          type: object
+        previous:
+          type: object
+    ComposeApp:
+      type: object
+      description: |-
+        See [Compose Specification](https://compose-spec.io) for the schema structure of `ComposeApp`.
+
+      x-go-type: types.Project
+      x-go-type-import:
+        name: types
+        path: github.com/compose-spec/compose-go/types
