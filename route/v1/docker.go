@@ -218,7 +218,7 @@ func UninstallApp(ctx echo.Context) error {
 	}
 
 	j := make(map[string]bool)
-	if err := ctx.Bind(&j); err != nil {
+	if err := (&echo.DefaultBinder{}).BindBody(ctx, &j); err != nil {
 		return ctx.JSON(http.StatusBadRequest, modelCommon.Result{Success: common_err.INVALID_PARAMS, Message: err.Error()})
 	}
 
