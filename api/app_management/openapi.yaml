@@ -225,31 +225,6 @@ paths:
           $ref: "#/components/responses/ResponseNotFound"
         "500":
           $ref: "#/components/responses/ResponseInternalServerError"
-
-  # the endpoint is newer version of POST /appstore for the demand of @ETWang1991 
-  # the old api is dependent by CasaOS. So we can't remove it.
-  # a good idea is /v3/app-management/appstore. But it is hard to implement in ZimaOS
-  # So I had to add the endpoint here.
-  /appstore/sync:
-    post:
-      summary: Register an app store in Sync.
-      description: |
-        (TODO)
-      operationId: registerAppStoreSync
-      tags:
-        - AppStore methods
-      parameters:
-        - $ref: "#/components/parameters/AppStoreURL"
-      responses:
-        "200":
-          $ref: "#/components/responses/AppStoreRegisterOK"
-        "400":
-          $ref: "#/components/responses/ResponseBadRequest"
-        "409":
-          $ref: "#/components/responses/ResponseConflict"
-        "500":
-          $ref: "#/components/responses/ResponseInternalServerError"
-
      
   /appstore:
     get:
@@ -713,6 +688,30 @@ paths:
       responses:
         "200":
           $ref: "#/components/responses/GetWebAppGridOK"
+
+  # the endpoint is newer version of POST /appstore for the demand of @ETWang1991 
+  # the old api is dependent by CasaOS. So we can't remove it.
+  # a good idea is /v3/app-management/appstore. But it is hard to implement in ZimaOS
+  # So I had to add the endpoint here.
+  /web/sync/appstore:
+    post:
+      summary: Register an app store in Sync.
+      description: |
+        (TODO)
+      operationId: registerAppStoreSync
+      tags:
+        - AppStore methods
+      parameters:
+        - $ref: "#/components/parameters/AppStoreURL"
+      responses:
+        "200":
+          $ref: "#/components/responses/AppStoreRegisterOK"
+        "400":
+          $ref: "#/components/responses/ResponseBadRequest"
+        "409":
+          $ref: "#/components/responses/ResponseConflict"
+        "500":
+          $ref: "#/components/responses/ResponseInternalServerError"
 
 components:
   securitySchemes:
