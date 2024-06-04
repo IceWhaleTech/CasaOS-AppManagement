@@ -13,7 +13,12 @@ import (
 	echo_middleware "github.com/labstack/echo/v4/middleware"
 )
 
-func InitV1Router() http.Handler{
+const (
+	V1APIPath = "/v1/app_management"
+	V1DocPath = "/v1doc" + V1APIPath
+)
+
+func InitV1Router() http.Handler {
 	e := echo.New()
 	e.Use((echo_middleware.CORSWithConfig(echo_middleware.CORSConfig{
 		AllowOrigins:     []string{"*"},
@@ -82,4 +87,21 @@ func InitV1Router() http.Handler{
 	}
 
 	return e
+}
+
+func InitV1DocRouter(docHTML string, docYAML string) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == V1DocPath {
+			if _, err := w.Write([]byte(docHTML)); err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+			}
+			return
+		}
+
+		if r.URL.Path == V1DocPath+"/openapi_v1.yaml" {
+			if _, err := w.Write([]byte(docYAML)); err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+			}
+		}
+	})
 }
