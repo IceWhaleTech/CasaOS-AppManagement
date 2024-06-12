@@ -215,10 +215,10 @@ func pullImageProgress(ctx context.Context, out io.ReadCloser, notificationType 
 		switch message.Status {
 		// pull a new layer
 		case string(Pull):
-			layerNum += 1
+			layerNum++
 		// pull a layer complete
 		case string(PullComplete):
-			completedLayerNum += 1
+			completedLayerNum++
 		}
 
 		// layer progress

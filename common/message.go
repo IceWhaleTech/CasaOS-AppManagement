@@ -38,6 +38,18 @@ var (
 		Description: utils.Ptr("progress of the app"),
 		Example:     utils.Ptr("64"),
 	}
+
+	PropertyTypeCheckPortConflict = message_bus.PropertyType{
+		Name:        "check_port_conflict",
+		Description: utils.Ptr("todo: the field should be remove in future. it is not need for most message"),
+		Example:     utils.Ptr("true"),
+	}
+
+	PropertyTypeDryRun = message_bus.PropertyType{
+		Name:        "dry_run",
+		Description: utils.Ptr("todo: the field should be remove in future. it is not need for most message"),
+		Example:     utils.Ptr("false"),
+	}
 )
 
 // container properties
@@ -132,7 +144,11 @@ var (
 		Name:     "app:install-progress",
 		PropertyTypeList: []message_bus.PropertyType{
 			PropertyTypeAppName,
+			PropertyTypeAppIcon,
 			PropertyTypeAppProgress,
+			PropertyTypeAppTitle,
+			PropertyTypeCheckPortConflict,
+			PropertyTypeDryRun,
 		},
 	}
 
