@@ -35,15 +35,11 @@ builds:
     goarch:
       - amd64
   - id: casaos-app-management-arm64
-    binary: build/sysroot/usr/bin/casaos-app-management
+    binary: build/sysroot/usr/bin/zimaos-app-management
     hooks:
       post:
         - cmd: go build -v -tags 'musl netgo osusergo' -o build/sysroot/usr/bin/appfile2compose github.com/IceWhaleTech/CasaOS-AppManagement/cmd/appfile2compose
           output: true
-        # - cmd: upx --best --lzma -v --no-progress build/sysroot/usr/bin/appfile2compose
-        #   output: true
-        # - cmd: upx --best --lzma -v --no-progress "{{ .Path }}"
-        #   output: true
     env:
       - CC=aarch64-linux-gnu-gcc
     ldflags:
@@ -185,8 +181,6 @@ archives:
     id: casaos-app-management
     builds:
       - casaos-app-management-amd64
-      - casaos-app-management-arm64
-      - casaos-app-management-arm-7
     files:
       - build/**/*
   - name_template: >-
@@ -194,15 +188,6 @@ archives:
     id: casaos-app-management-migration-tool
     builds:
       - casaos-app-management-migration-tool-amd64
-      - casaos-app-management-migration-tool-arm64
-      - casaos-app-management-migration-tool-arm-7
-    files:
-      - build/sysroot/etc/**/*
-  - name_template: >-
-      {{ .Os }}-{{- if eq .Arch "arm" }}arm-7{{- else }}{{ .Arch }}{{- end }}-{{ .ProjectName }}-validator-v{{ .Version }}
-    id: casaos-app-management-validator
-    builds:
-      - casaos-app-management-validator-amd64
     files:
       - build/sysroot/etc/**/*
 

@@ -11,7 +11,7 @@ jobs:
     uses: IceWhaleTech/github/.github/workflows/go_release.yml@main
     with:
       project-name: ZimaOS-AppManagement
-      file-name: casaos-app-management
+      file-name: zimaos-app-management
     secrets:
       OSS_KEY_ID: ${{ secrets.OSS_KEY_ID }}
       OSS_KEY_SECRET: ${{ secrets.OSS_KEY_SECRET }}
