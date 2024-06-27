@@ -12,7 +12,7 @@ builds:
     binary: build/sysroot/usr/bin/zimaos-app-management
     hooks:
       post:
-        - cmd: go build -v -tags 'musl netgo osusergo' -o build/sysroot/usr/bin/appfile2compose github.com/IceWhaleTech/ZimaOS-AppManagement/cmd/appfile2compose
+        - cmd: go build -v -tags 'musl netgo osusergo' -o build/sysroot/usr/bin/appfile2compose github.com/IceWhaleTech/CasaOS-AppManagement/cmd/appfile2compose
           output: true
         - cmd: upx --best --lzma -v --no-progress build/sysroot/usr/bin/appfile2compose
           output: true
@@ -38,7 +38,7 @@ builds:
     binary: build/sysroot/usr/bin/zimaos-app-management
     hooks:
       post:
-        - cmd: go build -v -tags 'musl netgo osusergo' -o build/sysroot/usr/bin/appfile2compose github.com/IceWhaleTech/ZimaOS-AppManagement/cmd/appfile2compose
+        - cmd: go build -v -tags 'musl netgo osusergo' -o build/sysroot/usr/bin/appfile2compose github.com/IceWhaleTech/CasaOS-AppManagement/cmd/appfile2compose
           output: true
     env:
       - CC=aarch64-linux-gnu-gcc
@@ -60,7 +60,7 @@ builds:
     binary: build/sysroot/usr/bin/zimaos-app-management
     hooks:
       post:
-        - cmd: go build -v -tags 'musl netgo osusergo' -o build/sysroot/usr/bin/appfile2compose github.com/IceWhaleTech/ZimaOS-AppManagement/cmd/appfile2compose
+        - cmd: go build -v -tags 'musl netgo osusergo' -o build/sysroot/usr/bin/appfile2compose github.com/IceWhaleTech/CasaOS-AppManagement/cmd/appfile2compose
           output: true
         - cmd: upx --best --lzma -v --no-progress build/sysroot/usr/bin/appfile2compose
           output: true
