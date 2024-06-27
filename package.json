@@ -1,6 +1,7 @@
 {
   "name": "@icewhale/zimaos-appmanagement-openapi",
   "version": "0.0.1",
+  "private": false,
   "scripts": {
     "clean": "rm -rf generate",
     "build": "rm -rf dist && tsc && yarn clean",
