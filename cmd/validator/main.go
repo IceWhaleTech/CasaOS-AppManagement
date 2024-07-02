@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/IceWhaleTech/CasaOS-AppManagement/service"
+	"github.com/IceWhaleTech/CasaOS-AppManagement/cmd/validator/pkg"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/file"
 	utils_logger "github.com/IceWhaleTech/CasaOS-Common/utils/logger"
 )
@@ -12,7 +12,6 @@ import (
 var logger = NewLogger()
 
 func main() {
-
 	utils_logger.LogInitConsoleOnly()
 
 	if len(os.Args) < 1 {
@@ -29,7 +28,7 @@ func main() {
 
 	composeFileContent := file.ReadFullFile(dockerComposeFilePath)
 
-	_, err := service.NewComposeAppFromYAML(composeFileContent, false, false)
+	err := pkg.VaildDockerCompose(composeFileContent)
 	if err != nil {
 		logger.Error("failed to parse docker-compose file %s", err.Error())
 		os.Exit(1)
