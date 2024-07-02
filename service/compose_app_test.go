@@ -2,6 +2,7 @@ package service_test
 
 import (
 	"encoding/json"
+	"fmt"
 	"runtime"
 	"testing"
 
@@ -102,4 +103,16 @@ func TestUncontrolledApp(t *testing.T) {
 	storeInfo, err = app.StoreInfo(false)
 	assert.NilError(t, err)
 	assert.Assert(t, !*storeInfo.IsUncontrolled)
+}
+
+func TestTransferAppData(t *testing.T) {
+	logger.LogInitConsoleOnly()
+
+	app, err := service.NewComposeAppFromYAML([]byte(common.SampleComposeAppYAML), true, false)
+	assert.NilError(t, err)
+
+	externalPath, err := app.ExternalVolumnList()
+	fmt.Println(externalPath)
+	assert.NilError(t, err)
+	assert.Assert(t, len(externalPath) < 0)
 }
