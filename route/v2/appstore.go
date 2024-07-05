@@ -152,6 +152,12 @@ func (a *AppManagement) ComposeAppStoreInfoList(ctx echo.Context, params codegen
 		return *storeInfo
 	})
 
+	// filter cpu not support
+	currentCPUArch := "amd64"
+	list = lo.PickBy(list, func(_ string, storeInfo codegen.ComposeAppStoreInfo) bool {
+		return lo.Contains(*storeInfo.Architectures, currentCPUArch)
+	})
+
 	data := &codegen.ComposeAppStoreInfoLists{
 		List: &list,
 	}
