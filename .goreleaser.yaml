@@ -1,6 +1,6 @@
 # This is an example .goreleaser.yml file with some sensible defaults.
 # Make sure to check the documentation at https://goreleaser.com
-project_name: casaos-app-management
+project_name: zimaos-app-management
 before:
   hooks:
     - go generate
@@ -8,8 +8,8 @@ before:
     - go mod tidy
     - go test -race -v ./... -timeout 30m
 builds:
-  - id: casaos-app-management-amd64
-    binary: build/sysroot/usr/bin/casaos-app-management
+  - id: zimaos-app-management-amd64
+    binary: build/sysroot/usr/bin/zimaos-app-management
     hooks:
       post:
         - cmd: go build -v -tags 'musl netgo osusergo' -o build/sysroot/usr/bin/appfile2compose github.com/IceWhaleTech/CasaOS-AppManagement/cmd/appfile2compose
@@ -34,16 +34,12 @@ builds:
       - linux
     goarch:
       - amd64
-  - id: casaos-app-management-arm64
-    binary: build/sysroot/usr/bin/casaos-app-management
+  - id: zimaos-app-management-arm64
+    binary: build/sysroot/usr/bin/zimaos-app-management
     hooks:
       post:
         - cmd: go build -v -tags 'musl netgo osusergo' -o build/sysroot/usr/bin/appfile2compose github.com/IceWhaleTech/CasaOS-AppManagement/cmd/appfile2compose
           output: true
-        # - cmd: upx --best --lzma -v --no-progress build/sysroot/usr/bin/appfile2compose
-        #   output: true
-        # - cmd: upx --best --lzma -v --no-progress "{{ .Path }}"
-        #   output: true
     env:
       - CC=aarch64-linux-gnu-gcc
     ldflags:
@@ -60,8 +56,8 @@ builds:
       - linux
     goarch:
       - arm64
-  - id: casaos-app-management-arm-7
-    binary: build/sysroot/usr/bin/casaos-app-management
+  - id: zimaos-app-management-arm-7
+    binary: build/sysroot/usr/bin/zimaos-app-management
     hooks:
       post:
         - cmd: go build -v -tags 'musl netgo osusergo' -o build/sysroot/usr/bin/appfile2compose github.com/IceWhaleTech/CasaOS-AppManagement/cmd/appfile2compose
@@ -88,8 +84,8 @@ builds:
       - arm
     goarm:
       - "7"
-  - id: casaos-app-management-migration-tool-amd64
-    binary: build/sysroot/usr/bin/casaos-app-management-migration-tool
+  - id: zimaos-app-management-migration-tool-amd64
+    binary: build/sysroot/usr/bin/zimaos-app-management-migration-tool
     hooks:
       post:
         - upx --best --lzma -v --no-progress "{{ .Path }}"
@@ -110,8 +106,8 @@ builds:
       - linux
     goarch:
       - amd64
-  - id: casaos-app-management-migration-tool-arm64
-    binary: build/sysroot/usr/bin/casaos-app-management-migration-tool
+  - id: zimaos-app-management-migration-tool-arm64
+    binary: build/sysroot/usr/bin/zimaos-app-management-migration-tool
     # hooks:
     #   post:
     #     - upx --best --lzma -v --no-progress "{{ .Path }}"
@@ -132,8 +128,8 @@ builds:
       - linux
     goarch:
       - arm64
-  - id: casaos-app-management-migration-tool-arm-7
-    binary: build/sysroot/usr/bin/casaos-app-management-migration-tool
+  - id: zimaos-app-management-migration-tool-arm-7
+    binary: build/sysroot/usr/bin/zimaos-app-management-migration-tool
     hooks:
       post:
         - upx --best --lzma -v --no-progress "{{ .Path }}"
@@ -156,8 +152,8 @@ builds:
       - arm
     goarm:
       - "7"
-  - id: casaos-app-management-validator-amd64
-    binary: build/sysroot/usr/bin/casaos-app-management-validator
+  - id: zimaos-app-management-validator-amd64
+    binary: build/sysroot/usr/bin/zimaos-app-management-validator
     hooks:
       post:
         - upx --best --lzma -v --no-progress "{{ .Path }}"
@@ -182,27 +178,16 @@ builds:
 archives:
   - name_template: >-
       {{ .Os }}-{{- if eq .Arch "arm" }}arm-7{{- else }}{{ .Arch }}{{- end }}-{{ .ProjectName }}-v{{ .Version }}
-    id: casaos-app-management
+    id: zimaos-app-management
     builds:
-      - casaos-app-management-amd64
-      - casaos-app-management-arm64
-      - casaos-app-management-arm-7
+      - zimaos-app-management-amd64
     files:
       - build/**/*
   - name_template: >-
       {{ .Os }}-{{- if eq .Arch "arm" }}arm-7{{- else }}{{ .Arch }}{{- end }}-{{ .ProjectName }}-migration-tool-v{{ .Version }}
-    id: casaos-app-management-migration-tool
+    id: zimaos-app-management-migration-tool
     builds:
-      - casaos-app-management-migration-tool-amd64
-      - casaos-app-management-migration-tool-arm64
-      - casaos-app-management-migration-tool-arm-7
-    files:
-      - build/sysroot/etc/**/*
-  - name_template: >-
-      {{ .Os }}-{{- if eq .Arch "arm" }}arm-7{{- else }}{{ .Arch }}{{- end }}-{{ .ProjectName }}-validator-v{{ .Version }}
-    id: casaos-app-management-validator
-    builds:
-      - casaos-app-management-validator-amd64
+      - zimaos-app-management-migration-tool-amd64
     files:
       - build/sysroot/etc/**/*
 
@@ -219,7 +204,7 @@ changelog:
 release:
   github:
     owner: IceWhaleTech
-    name: CasaOS-AppManagement
+    name: ZimaOS-AppManagement
   draft: true
   prerelease: auto
   mode: replace
