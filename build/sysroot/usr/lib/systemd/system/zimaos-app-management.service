@@ -5,7 +5,7 @@ Description=ZimaOS App Management Service
 
 [Service]
 ExecStartPre=/usr/bin/zimaos-app-management -v
-ExecStart=/usr/bin/zimaos-app-management -c /etc/zimaos/app-management.conf --removeRuntimeIfNoNvidiaGPU true
+ExecStart=/usr/bin/zimaos-app-management -c /etc/casaos/app-management.conf --removeRuntimeIfNoNvidiaGPU true
 PIDFile=/var/run/casaos/app-management.pid
 Restart=always
 Type=notify
