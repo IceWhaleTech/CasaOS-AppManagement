@@ -1,1 +1,0 @@
-../setup-app-management.sh

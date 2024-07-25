@@ -1,1 +1,0 @@
-../cleanup-app-management.sh
