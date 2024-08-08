@@ -107,6 +107,13 @@ func (c *store) MessageBus() *message_bus.ClientWithResponses {
 	return client
 }
 
+func YSKPublishEventWrapper(ctx context.Context, SourceID, EventName string, properties map[string]string) {
+	PublishEventWrapper(ctx, message_bus.EventType{
+		SourceID: SourceID,
+		Name:     EventName,
+	}, properties)
+}
+
 func PublishEventWrapper(ctx context.Context, eventType message_bus.EventType, properties map[string]string) {
 	if MyService == nil {
 		fmt.Println("failed to publish event - messsage bus service not initialized")

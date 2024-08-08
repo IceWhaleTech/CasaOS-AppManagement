@@ -7,15 +7,31 @@ import (
 	"strings"
 	"time"
 
+	"github.com/IceWhaleTech/CasaOS-AppManagement/codegen"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/common"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/pkg/docker"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/logger"
+	"github.com/IceWhaleTech/CasaOS-MessageBus/pkg/ysk"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/filters"
 	client2 "github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/jsonmessage"
 	"go.uber.org/zap"
 )
+
+var ApplicationInstallProgress = ysk.YSKCard{
+	Id:         "task:application:install",
+	CardType:   ysk.CardTypeTask,
+	RenderType: ysk.RenderTypeCardTask,
+	Content: ysk.YSKCardContent{
+		TitleIcon:        "",
+		TitleText:        "",
+		BodyProgress:     &ysk.YSKCardProgress{},
+		BodyIconWithText: nil,
+		BodyList:         nil,
+		FooterActions:    nil,
+	},
+}
 
 // 检查镜像是否存在
 func (ds *dockerService) IsExistImage(imageName string) bool {
@@ -205,6 +221,21 @@ func pullImageProgress(ctx context.Context, out io.ReadCloser, notificationType 
 
 	throttler := NewThrottler(500 * time.Millisecond)
 
+	appStoreInfo := ctx.Value(storeInfoKey).(*codegen.ComposeAppStoreInfo)
+	appIcon := ""
+	appName := "No name"
+	if appStoreInfo != nil {
+		appIcon = appStoreInfo.Icon
+		if enUS, exists := appStoreInfo.Title["en_us"]; exists {
+			appName = enUS
+		} else {
+			for _, v := range appStoreInfo.Title {
+				appName = v
+				break
+			}
+		}
+	}
+
 	for decoder.More() {
 		var message jsonmessage.JSONMessage
 		if err := decoder.Decode(&message); err != nil {
@@ -235,13 +266,23 @@ func pullImageProgress(ctx context.Context, out io.ReadCloser, notificationType 
 				if progress < 0 {
 					progress = 0
 				}
-				if progress > 100 {
-					progress = 100
-				}
 
-				PublishEventWrapper(ctx, common.EventTypeAppInstallProgress, map[string]string{
-					common.PropertyTypeAppProgress.Name: fmt.Sprintf("%d", progress),
-				})
+				if progress >= 100 {
+					progress = 100
+					err := ysk.DeleteCard(ctx, ApplicationInstallProgress.Id, YSKPublishEventWrapper)
+					if err != nil {
+						logger.Error("failed to delete application install progress", zap.Error(err))
+					}
+				} else {
+					// TODO update the id
+					err := ysk.NewYSKCard(ctx, ApplicationInstallProgress.WithTaskContent(
+						ysk.YSKCardIcon(appIcon),
+						"App Installing",
+					).WithProgress("Installing "+appName, progress), YSKPublishEventWrapper)
+					if err != nil {
+						logger.Error("failed to publish application install progress", zap.Error(err))
+					}
+				}
 			}(int(progress))
 		})
 	}

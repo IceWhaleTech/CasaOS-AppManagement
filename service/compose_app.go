@@ -40,6 +40,10 @@ import (
 
 type ComposeApp codegen.ComposeApp
 
+type contextKey string
+
+const storeInfoKey contextKey = "StoreInfo"
+
 func (a *ComposeApp) StoreInfo(includeApps bool) (*codegen.ComposeAppStoreInfo, error) {
 	ex, ok := a.Extensions[common.ComposeExtensionNameXCasaOS]
 	if !ok {
@@ -327,9 +331,15 @@ func (a *ComposeApp) Containers(ctx context.Context) (map[string][]api.Container
 }
 
 func (a *ComposeApp) Pull(ctx context.Context) error {
+	// 将 StoreInfo 设置到 ctx 中
+	storeInfo, err := a.StoreInfo(false)
+	if err != nil {
+		logger.Error("failed to get store info", zap.Error(err), zap.String("name", a.Name))
+	}
+	ctx = context.WithValue(ctx, storeInfoKey, storeInfo)
+
 	// pull
 	serviceNum := len(a.Services)
-
 	for i, app := range a.Services {
 		if err := func() error {
 			go PublishEventWrapper(ctx, common.EventTypeImagePullBegin, map[string]string{
