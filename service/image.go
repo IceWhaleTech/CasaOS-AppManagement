@@ -20,7 +20,7 @@ import (
 )
 
 var ApplicationInstallProgress = ysk.YSKCard{
-	Id:         "task:application:install",
+	Id:         "task:application:install:any",
 	CardType:   ysk.CardTypeTask,
 	RenderType: ysk.RenderTypeCardTask,
 	Content: ysk.YSKCardContent{
@@ -222,10 +222,13 @@ func pullImageProgress(ctx context.Context, out io.ReadCloser, notificationType 
 	throttler := NewThrottler(500 * time.Millisecond)
 
 	appStoreInfo := ctx.Value(storeInfoKey).(*codegen.ComposeAppStoreInfo)
-	appIcon := ""
+	appIcon := appStoreInfo.Icon
+	yskId := "task:application:install:unknown"
 	appName := "No name"
 	if appStoreInfo != nil {
-		appIcon = appStoreInfo.Icon
+		if appStoreInfo.StoreAppID != nil {
+			yskId = "task:application:install:" + *appStoreInfo.StoreAppID
+		}
 		if enUS, exists := appStoreInfo.Title["en_us"]; exists {
 			appName = enUS
 		} else {
@@ -269,13 +272,13 @@ func pullImageProgress(ctx context.Context, out io.ReadCloser, notificationType 
 
 				if progress >= 100 {
 					progress = 100
-					err := ysk.DeleteCard(ctx, ApplicationInstallProgress.Id, YSKPublishEventWrapper)
+					err := ysk.DeleteCard(ctx, yskId, YSKPublishEventWrapper)
 					if err != nil {
 						logger.Error("failed to delete application install progress", zap.Error(err))
 					}
 				} else {
 					// TODO update the id
-					err := ysk.NewYSKCard(ctx, ApplicationInstallProgress.WithTaskContent(
+					err := ysk.NewYSKCard(ctx, ApplicationInstallProgress.WithId(yskId).WithTaskContent(
 						ysk.YSKCardIcon(appIcon),
 						"App Installing",
 					).WithProgress("Installing "+appName, progress), YSKPublishEventWrapper)
