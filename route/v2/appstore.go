@@ -20,6 +20,8 @@ import (
 	"github.com/samber/lo"
 	"go.uber.org/zap"
 	"gopkg.in/yaml.v3"
+
+	pkg_utils "github.com/IceWhaleTech/CasaOS-AppManagement/pkg/utils"
 )
 
 func (a *AppManagement) AppStoreList(ctx echo.Context) error {
@@ -113,6 +115,7 @@ func (a *AppManagement) UnregisterAppStore(ctx echo.Context, id codegen.AppStore
 }
 
 func (a *AppManagement) ComposeAppStoreInfoList(ctx echo.Context, params codegen.ComposeAppStoreInfoListParams) error {
+
 	catalog, err := service.MyService.AppStoreManagement().Catalog()
 	if err != nil {
 		message := err.Error()
@@ -140,6 +143,24 @@ func (a *AppManagement) ComposeAppStoreInfoList(ctx echo.Context, params codegen
 
 		catalog = FilterCatalogByAppStoreID(catalog, recommendedList)
 	}
+
+	cpuArch := pkg_utils.GetCPUArch()
+
+	// Filter applications based on CPU architecture
+	catalog = lo.PickBy(catalog, func(appStoreID string, composeApp *service.ComposeApp) bool {
+		storeInfo, err := composeApp.StoreInfo(true)
+		if err != nil {
+			logger.Error("Failed to get app store information", zap.Error(err), zap.String("appStoreID", appStoreID))
+			return false
+		}
+
+		// If architecture information is empty, assume it supports all architectures
+		if storeInfo.Architectures == nil {
+			return true
+		}
+		// Check if the application supports the current CPU architecture
+		return lo.Contains(*storeInfo.Architectures, cpuArch)
+	})
 
 	// list
 	list := lo.MapValues(catalog, func(composeApp *service.ComposeApp, appStoreID string) codegen.ComposeAppStoreInfo {
