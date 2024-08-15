@@ -276,6 +276,12 @@ func pullImageProgress(ctx context.Context, out io.ReadCloser, notificationType 
 					if err != nil {
 						logger.Error("failed to delete application install progress", zap.Error(err))
 					}
+
+					// the code is compatible with the old version of the message bus of app UI
+					// when the app UI be refactored, the code should be removed
+					PublishEventWrapper(ctx, common.EventTypeAppInstallProgress, map[string]string{
+						common.PropertyTypeAppProgress.Name: fmt.Sprintf("%d", progress),
+					})
 				} else {
 					// TODO update the id
 					err := ysk.NewYSKCard(ctx, ApplicationInstallProgress.WithId(yskId).WithTaskContent(
@@ -285,6 +291,12 @@ func pullImageProgress(ctx context.Context, out io.ReadCloser, notificationType 
 					if err != nil {
 						logger.Error("failed to publish application install progress", zap.Error(err))
 					}
+
+					// the code is compatible with the old version of the message bus of app UI
+					// when the app UI be refactored, the code should be removed
+					PublishEventWrapper(ctx, common.EventTypeAppInstallProgress, map[string]string{
+						common.PropertyTypeAppProgress.Name: fmt.Sprintf("%d", progress),
+					})
 				}
 			}(int(progress))
 		})
