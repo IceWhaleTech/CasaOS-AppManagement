@@ -190,14 +190,7 @@ func InstallApp(ctx echo.Context) error {
 
 	go func() {
 		go service.PublishEventWrapper(httpCtx, common.EventTypeAppInstallBegin, nil)
-
 		defer service.PublishEventWrapper(httpCtx, common.EventTypeAppInstallEnd, nil)
-
-		if err := pullAndInstall(httpCtx, imageName, &m); err != nil {
-			go service.PublishEventWrapper(httpCtx, common.EventTypeAppInstallError, map[string]string{
-				common.PropertyTypeMessage.Name: err.Error(),
-			})
-		}
 	}()
 
 	return ctx.JSON(http.StatusOK, modelCommon.Result{Success: common_err.SUCCESS, Message: common_err.GetMsg(common_err.SUCCESS), Data: m.Label})

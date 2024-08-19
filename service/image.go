@@ -125,7 +125,8 @@ func (ds *dockerService) PullLatestImage(ctx context.Context, imageName string) 
 	}
 
 	if err = docker.PullImage(ctx, imageName, func(out io.ReadCloser) {
-		pullImageProgress(ctx, out, "UPDATE", 1, 1)
+		// not push progress ysk card right now
+		// pullImageProgress(ctx, out, "UPDATE", 1, 1)
 	}); err != nil {
 		go PublishEventWrapper(ctx, common.EventTypeImagePullError, map[string]string{
 			common.PropertyTypeImageName.Name: imageName,
@@ -221,7 +222,7 @@ func pullImageProgress(ctx context.Context, out io.ReadCloser, notificationType 
 
 	throttler := NewThrottler(500 * time.Millisecond)
 
-	appStoreInfo := ctx.Value(storeInfoKey).(*codegen.ComposeAppStoreInfo)
+	appStoreInfo := ctx.Value(StoreInfoKey).(*codegen.ComposeAppStoreInfo)
 	appIcon := appStoreInfo.Icon
 	yskId := "task:application:install:unknown"
 	appName := "No name"

@@ -14,6 +14,7 @@ import (
 	"time"
 
 	v1 "github.com/IceWhaleTech/CasaOS-AppManagement/service/v1"
+	"github.com/IceWhaleTech/CasaOS-MessageBus/pkg/ysk"
 
 	"github.com/IceWhaleTech/CasaOS-AppManagement/codegen"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/common"
@@ -42,7 +43,7 @@ type ComposeApp codegen.ComposeApp
 
 type contextKey string
 
-const storeInfoKey contextKey = "StoreInfo"
+const StoreInfoKey contextKey = "StoreInfo"
 
 func (a *ComposeApp) StoreInfo(includeApps bool) (*codegen.ComposeAppStoreInfo, error) {
 	ex, ok := a.Extensions[common.ComposeExtensionNameXCasaOS]
@@ -336,7 +337,14 @@ func (a *ComposeApp) Pull(ctx context.Context) error {
 	if err != nil {
 		logger.Error("failed to get store info", zap.Error(err), zap.String("name", a.Name))
 	}
-	ctx = context.WithValue(ctx, storeInfoKey, storeInfo)
+	ctx = context.WithValue(ctx, StoreInfoKey, storeInfo)
+	yskId := "task:application:install:unknown"
+	if storeInfo != nil {
+		if storeInfo.StoreAppID != nil {
+			yskId = "task:application:install:" + *storeInfo.StoreAppID
+		}
+	}
+	defer ysk.DeleteCard(ctx, yskId, YSKPublishEventWrapper)
 
 	// pull
 	serviceNum := len(a.Services)
