@@ -256,12 +256,12 @@ func pullImageProgress(ctx context.Context, out io.ReadCloser, notificationType 
 			completedLayerNum++
 		}
 
-		// layer progress
-		completedFraction := float32(completedLayerNum) / float32(layerNum)
-
-		// image progress
-		currentImageFraction := float32(currentImage) / float32(totalImageNum)
-		progress := completedFraction * currentImageFraction * 100
+		layerProgress := float32(completedLayerNum) / float32(layerNum)
+		if layerNum == 0 {
+			layerProgress = 0
+		}
+		overallProgress := (float32(currentImage-1) + layerProgress) / float32(totalImageNum)
+		progress := overallProgress * 100
 
 		// reduce the event send frequency
 		throttler.ThrottleFunc(func() {
