@@ -148,6 +148,7 @@ func (a *AppManagement) ApplyComposeAppSettings(ctx echo.Context, id codegen.Com
 		})
 	}
 
+	// TODO move these business logic to service layer
 	composeApps, err := service.MyService.Compose().List(ctx.Request().Context())
 	if err != nil {
 		message := err.Error()
@@ -177,6 +178,8 @@ func (a *AppManagement) ApplyComposeAppSettings(ctx echo.Context, id codegen.Com
 		})
 	}
 
+	// uncontroll means user manually change image tag
+	// we should not check update for uncontrolled compose app
 	uncontrolled, err := a.IsNewComposeUncontrolled(newComposeApp)
 	if err != nil {
 		message := err.Error()
@@ -185,6 +188,7 @@ func (a *AppManagement) ApplyComposeAppSettings(ctx echo.Context, id codegen.Com
 		})
 	}
 
+	// TODO move these business logic to service layer
 	_ = newComposeApp.SetUncontrolled(uncontrolled)
 	buf, err = service.GenerateYAMLFromComposeApp(*newComposeApp)
 	if err != nil {

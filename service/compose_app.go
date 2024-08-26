@@ -45,6 +45,15 @@ type contextKey string
 
 const StoreInfoKey contextKey = "StoreInfo"
 
+// value: "apply", "update", "install" (the two last one are not used now)
+const TriggerSourceKey contextKey = "TriggerSource"
+
+var (
+	ApplyTriggerSource   = "apply"
+	UpdateTriggerSource  = "update"
+	InstallTriggerSource = "install"
+)
+
 func (a *ComposeApp) StoreInfo(includeApps bool) (*codegen.ComposeAppStoreInfo, error) {
 	ex, ok := a.Extensions[common.ComposeExtensionNameXCasaOS]
 	if !ok {
@@ -359,7 +368,7 @@ func (a *ComposeApp) Pull(ctx context.Context) error {
 			})
 
 			if err := docker.PullImage(ctx, app.Image, func(out io.ReadCloser) {
-				pullImageProgress(ctx, out, "INSTALL", serviceNum, i+1)
+				pullImageProgress(ctx, out, serviceNum, i+1)
 			}); err != nil {
 				go PublishEventWrapper(ctx, common.EventTypeImagePullError, map[string]string{
 					common.PropertyTypeImageName.Name: app.Image,
@@ -681,6 +690,10 @@ func (a *ComposeApp) Apply(ctx context.Context, newComposeYAML []byte) error {
 	if err := newComposeApp.UpdateEventPropertiesFromStoreInfo(eventProperties); err != nil {
 		logger.Info("failed to update event properties from store info", zap.Error(err), zap.String("name", a.Name))
 	}
+
+	// set apply to ctx, it will be used in pullImageProgress
+	// if pullImageProgress known the compose app is already applied, it will not trigger apply event
+	ctx = context.WithValue(ctx, TriggerSourceKey, ApplyTriggerSource)
 
 	go func(ctx context.Context) {
 		go PublishEventWrapper(ctx, common.EventTypeAppApplyChangesBegin, nil)

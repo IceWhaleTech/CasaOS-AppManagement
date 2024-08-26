@@ -63,7 +63,7 @@ func (ds *dockerService) PullImage(ctx context.Context, imageName string) error 
 	})
 
 	if err := docker.PullImage(ctx, imageName, func(out io.ReadCloser) {
-		pullImageProgress(ctx, out, "INSTALL", 1, 1)
+		pullImageProgress(ctx, out, 1, 1)
 	}); err != nil {
 		go PublishEventWrapper(ctx, common.EventTypeImagePullError, map[string]string{
 			common.PropertyTypeImageName.Name: imageName,
@@ -211,7 +211,12 @@ func (t *Throttler) ThrottleFunc(f func()) {
 	}
 }
 
-func pullImageProgress(ctx context.Context, out io.ReadCloser, notificationType string, totalImageNum int, currentImage int) {
+func pullImageProgress(ctx context.Context, out io.ReadCloser, totalImageNum int, currentImage int) {
+	triggerSource, ok := ctx.Value(TriggerSourceKey).(string)
+	if ok && triggerSource == ApplyTriggerSource {
+		return
+	}
+
 	layerNum := 0
 	completedLayerNum := 0
 	decoder := json.NewDecoder(out)
@@ -222,11 +227,16 @@ func pullImageProgress(ctx context.Context, out io.ReadCloser, notificationType 
 
 	throttler := NewThrottler(500 * time.Millisecond)
 
-	appStoreInfo := ctx.Value(StoreInfoKey).(*codegen.ComposeAppStoreInfo)
-	appIcon := appStoreInfo.Icon
+	appStoreInfo, ok := ctx.Value(StoreInfoKey).(*codegen.ComposeAppStoreInfo)
+	if !ok {
+		logger.Error("failed to get app store info")
+		return
+	}
+	appIcon := ""
 	yskId := "task:application:install:unknown"
 	appName := "No name"
 	if appStoreInfo != nil {
+		appIcon = appStoreInfo.Icon
 		if appStoreInfo.StoreAppID != nil {
 			yskId = "task:application:install:" + *appStoreInfo.StoreAppID
 		}
