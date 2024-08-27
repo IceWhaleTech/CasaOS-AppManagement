@@ -21,6 +21,7 @@ import (
 	"github.com/IceWhaleTech/CasaOS-Common/model"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/file"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/logger"
+	"github.com/IceWhaleTech/CasaOS-MessageBus/pkg/ysk"
 	"github.com/coreos/go-systemd/daemon"
 	"github.com/robfig/cron/v3"
 	"go.uber.org/zap"
@@ -175,6 +176,17 @@ func main() {
 		}
 
 		logger.Info("App management service is listening...", zap.Any("address", listener.Addr().String()))
+	}
+
+	//  init somethings that depends on message bus
+	{
+		// clean last install progress
+		// because we can't continue last install progress
+		err = ysk.DeleteCard(context.Background(), service.ApplicationInstallProgress.Id, service.YSKPublishEventWrapper)
+		if err != nil {
+			logger.Error("failed to delete card", zap.Error(err))
+		}
+
 	}
 
 	s := &http.Server{

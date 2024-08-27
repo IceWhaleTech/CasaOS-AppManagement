@@ -20,7 +20,7 @@ import (
 )
 
 var ApplicationInstallProgress = ysk.YSKCard{
-	Id:         "task:application:install:any",
+	Id:         "task:application:install:",
 	CardType:   ysk.CardTypeTask,
 	RenderType: ysk.RenderTypeCardTask,
 	Content: ysk.YSKCardContent{
