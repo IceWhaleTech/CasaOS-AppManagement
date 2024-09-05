@@ -39,24 +39,6 @@ paths:
           $ref: "#/components/responses/ResponseAppUsageList"
 
   /{id}:
-    patch:
-      summary: Recreate the container app
-      description: |
-        TODO - add description
-      operationId: recreateContainerByID
-      tags:
-        - Container methods
-      parameters:
-        - $ref: "#/components/parameters/ContainerID"
-        - $ref: "#/components/parameters/PullLatestImage"
-        - $ref: "#/components/parameters/Force"
-      responses:
-        "200":
-          $ref: "#/components/responses/ContainerRecreateOK"
-        "404":
-          $ref: "#/components/responses/ResponseNotFound"
-        "500":
-          $ref: "#/components/responses/ResponseInternalServerError"
     put:
       summary: Update the container app
       description: |
@@ -242,7 +224,7 @@ components:
       content:
         application/json:
           schema:
-            properties: 
+            properties:
               data:
                 type: array
                 items:
@@ -253,12 +235,12 @@ components:
       content:
         application/json:
           schema:
-            properties: 
+            properties:
               data:
                 type: array
                 items:
                   type: object
-                  properties: 
+                  properties:
                     name:
                       type: string
                       example: "bridge"
@@ -271,10 +253,9 @@ components:
     ResponseComposeApp:
       description: Compose app
       content:
-        application/json:
+        application/yaml:
           schema:
             $ref: "#/components/schemas/ComposeApp"
-
 
   schemas:
     BaseResponse:
