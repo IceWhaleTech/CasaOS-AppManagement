@@ -1,16 +1,16 @@
 openapi: 3.0.3
 
 info:
-  title: CasaOS App Management API
+  title: ZimaOS App Management API
   version: v2
   description: |
     <picture>
         <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/IceWhaleTech/logo/main/casaos/casaos_banner_dark_night_800px.png">
         <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/IceWhaleTech/logo/main/casaos/casaos_banner_twilight_blue_800px.png">
-        <img alt="CasaOS" src="https://raw.githubusercontent.com/IceWhaleTech/logo/main/casaos/casaos_banner_twilight_blue_800px.png">
+        <img alt="ZimaOS" src="https://raw.githubusercontent.com/IceWhaleTech/ZimaOS/main/assets/zima.png">
     </picture>
 
-    CasaOS App Management manages app lifecycle, including installing, uninstalling, starting, stopping, setting, etc.
+    ZimaOS App Management manages app lifecycle, including installing, uninstalling, starting, stopping, setting, etc.
 
     For issues and discussions, please visit the [GitHub repository](https://github.com/IceWhaleTech/CasaOS) or join [our Discord](https://discord.gg/knqAbbBbeX).
 
