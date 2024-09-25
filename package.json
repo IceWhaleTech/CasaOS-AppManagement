@@ -5,10 +5,11 @@
   "scripts": {
     "clean": "rm -rf generate",
     "build": "rm -rf dist && tsc && yarn clean",
-    "generate:local": "openapi-generator-cli generate -g typescript-axios -i ./api/app_management/openapi.yaml -i ./api/app_management/openapi_v1.yaml -o ./generate",
-    "generate:npx": "npx @openapitools/openapi-generator-cli generate -g typescript-axios -i ./api/app_management/openapi.yaml -i ./api/app_management/openapi_v1.yaml -o ./generate",
-    "generate:ts": "npx openapi-typescript-codegen --input ./api/app_management/openapi.yaml --input ./api/app_management/openapi_v1.yaml --output ./generate",
-    "start": "yarn generate:local && yarn build"
+    "generate:local": "openapi-generator-cli generate -g typescript-axios -i ./api/app_management/openapi.yaml -o ./generate",
+    "generate:local_v1": "openapi-generator-cli generate -g typescript-axios -i ./api/app_management/openapi_v1.yaml -o ./generate/v1",
+    "generate:npx": "npx @openapitools/openapi-generator-cli generate -g typescript-axios -i ./api/app_management/openapi.yaml -o ./generate",
+    "generate:ts": "npx openapi-typescript-codegen --input ./api/app_management/openapi.yaml --output ./generate",
+    "start": "yarn generate:local && yarn generate:local_v1 && yarn build"
   },
   "homepage": "https://github.com/IceWhaleTech/ZimaOS-AppManagement#readme",
   "description": "ZimaOS-AppManagement Typescript+Axios SDK",
