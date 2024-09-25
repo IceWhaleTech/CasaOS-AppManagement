@@ -41,6 +41,18 @@ var (
 	GlobalEnvFilePath string
 )
 
+func ReloadConfig() {
+	var err error
+	Cfg, err = ini.LoadSources(ini.LoadOptions{Insensitive: true, AllowShadows: true}, ConfigFilePath)
+	if err != nil {
+		fmt.Println("failed to reload config", err)
+	} else {
+		mapTo("common", CommonInfo)
+		mapTo("app", AppInfo)
+		mapTo("server", ServerInfo)
+	}
+}
+
 func InitSetup(config string, sample string) {
 	ConfigFilePath = AppManagementConfigFilePath
 	if len(config) > 0 {

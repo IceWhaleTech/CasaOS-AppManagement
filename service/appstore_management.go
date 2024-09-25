@@ -423,6 +423,10 @@ func (a *AppStoreManagement) Catalog() (map[string]*ComposeApp, error) {
 }
 
 func (a *AppStoreManagement) UpdateCatalog() error {
+	// reload config.
+	// the appstore may be change in runtime.
+	config.ReloadConfig()
+
 	appStoreMap, err := a.AppStoreMap()
 	if err != nil {
 		return err
