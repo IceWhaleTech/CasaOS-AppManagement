@@ -10,3 +10,4 @@ AppsPath = /var/lib/casaos/apps
 
 [server]
 appstore = https://casaos.app/store/main.zip
+appstore = https://github.com/bigbeartechworld/big-bear-casaos/archive/refs/heads/master.zip
