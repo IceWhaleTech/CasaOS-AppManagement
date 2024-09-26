@@ -370,6 +370,13 @@ func (a *ComposeApp) Pull(ctx context.Context) error {
 			if err := docker.PullImage(ctx, app.Image, func(out io.ReadCloser) {
 				pullImageProgress(ctx, out, serviceNum, i+1)
 			}); err != nil {
+				// delete installation progress card when pull image error
+				ysk.DeleteCard(ctx, yskId, YSKPublishEventWrapper)
+
+				// TODO. after @ET define the error type. we should push the error type to ysk.
+
+				// 这次重构把这个安装错误的ysk给做没了，因为前端没有定义这个类型
+				// ET 说改成 toast，但是后端没有这个功能给前端发
 				go PublishEventWrapper(ctx, common.EventTypeImagePullError, map[string]string{
 					common.PropertyTypeImageName.Name: app.Image,
 					common.PropertyTypeMessage.Name:   err.Error(),
