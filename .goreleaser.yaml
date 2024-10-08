@@ -205,7 +205,7 @@ release:
   github:
     owner: IceWhaleTech
     name: ZimaOS-AppManagement
-  draft: true
+  draft: false
   prerelease: auto
   mode: replace
   name_template: "v{{ .Version }}"
