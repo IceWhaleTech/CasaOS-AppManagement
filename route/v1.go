@@ -64,6 +64,7 @@ func InitV1Router() http.Handler {
 		{
 
 			v1ContainerGroup.GET("/usage", v1.AppUsageList)
+			v1ContainerGroup.GET("/:id", v1.ContainerUpdateInfo)
 			v1ContainerGroup.GET("/:id/compose", v1.ToComposeYAML)    // /app/setting/:id
 			v1ContainerGroup.GET("/networks", v1.GetDockerNetworks)   // /app/install/config
 			v1ContainerGroup.PUT("/archive/:id", v1.ArchiveContainer) // /container/archive/:id
