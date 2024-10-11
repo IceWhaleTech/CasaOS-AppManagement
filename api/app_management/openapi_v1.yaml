@@ -39,20 +39,18 @@ paths:
           $ref: "#/components/responses/ResponseAppUsageList"
 
   /{id}:
-    patch:
-      summary: Recreate the container app
+    get:
+      summary: Get the container app
       description: |
         TODO - add description
-      operationId: recreateContainerByID
+      operationId: containerUpdateInfo
       tags:
         - Container methods
       parameters:
         - $ref: "#/components/parameters/ContainerID"
-        - $ref: "#/components/parameters/PullLatestImage"
-        - $ref: "#/components/parameters/Force"
       responses:
         "200":
-          $ref: "#/components/responses/ContainerRecreateOK"
+          $ref: "#/components/responses/ResponseCustomizationPostData"
         "404":
           $ref: "#/components/responses/ResponseNotFound"
         "500":
@@ -242,7 +240,7 @@ components:
       content:
         application/json:
           schema:
-            properties: 
+            properties:
               data:
                 type: array
                 items:
@@ -253,12 +251,12 @@ components:
       content:
         application/json:
           schema:
-            properties: 
+            properties:
               data:
                 type: array
                 items:
                   type: object
-                  properties: 
+                  properties:
                     name:
                       type: string
                       example: "bridge"
@@ -271,9 +269,20 @@ components:
     ResponseComposeApp:
       description: Compose app
       content:
-        application/json:
+        application/yaml:
           schema:
             $ref: "#/components/schemas/ComposeApp"
+
+    ResponseCustomizationPostData:
+      description: Customization post data
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: "#/components/schemas/BaseResponse"
+              - properties:
+                  data:
+                    $ref: "#/components/schemas/CustomizationPostData"
 
 
   schemas:
@@ -304,3 +313,140 @@ components:
       x-go-type-import:
         name: types
         path: github.com/compose-spec/compose-go/types
+    EnvArray:
+      type: object
+      properties:
+        name:
+          type: string
+          example: "container"
+        value:
+          type: string
+          example: "host"
+        desc:
+          type: string
+          example: "desc"
+        type:
+          type: integer
+          example: 1
+    PortArray:
+      type: object
+      properties:
+        container_port:
+          type: integer
+          example: 80
+        commend_port:
+          type: integer
+          example: 80
+        protocol:
+          type: string
+          example: "tcp"
+        desc:
+          type: string
+          example: "desc"
+        type:
+          type: integer
+          example: 1
+    PathArray:
+      type: object
+      properties:
+        container_path:
+          type: string
+          example: "container"
+        path:
+          type: string
+          example: "host"
+        type:
+          type: integer
+          example: 1
+        desc:
+          type: string
+          example: "desc"
+    CustomizationPostData:
+      type: object
+      properties:
+        container_name:
+          type: string
+          example: "casaos"
+        custom_id:
+          type: string
+          example: "casaos"
+        origin:
+          type: string
+          example: "casaos"
+        network_model:
+          type: string
+          example: "bridge"
+        index:
+          type: string
+          example: "casaos"
+        icon:
+          type: string
+          example: "https://raw.githubusercontent.com/IceWhaleTech/logo/main/casaos/casaos_logo_64px.png"
+        image:
+          type: string
+          example: "casaos"
+        envs:
+          type: array
+          items:
+            $ref: "#/components/schemas/EnvArray"
+        ports:
+          type: array
+          items:
+            $ref: "#/components/schemas/PortArray"
+        volumes:
+          type: array
+          items:
+            $ref: "#/components/schemas/PathArray"
+        devices:
+          type: array
+          items:
+            $ref: "#/components/schemas/PathArray"
+        port_map:
+          type: string
+          example: "80:80"
+        cpu_shares:
+          type: integer
+          example: 1024
+        memory:
+          type: integer
+          example: 1024
+        restart:
+          type: string
+          example: "always"
+        enable_upnp:
+          type: boolean
+          example: true
+        label:
+          type: string
+          example: "casaos"
+        description:
+          type: string
+          example: "CasaOS"
+        position:
+          type: boolean
+          example: true
+        host_name:
+          type: string
+          example: "casaos"
+        privileged:
+          type: boolean
+          example: true
+        cap_add:
+          type: array
+          items:
+            type: string
+          example: ["NET_ADMIN"]
+        cmd:
+          type: array
+          items:
+            type: string
+          example: ["casaos"]
+        protocol:
+          type: string
+          example: "tcp"
+        host:
+          type: string
+          example: "casaos"
+        appstore_id:
+          type: integer
+          example: 1
