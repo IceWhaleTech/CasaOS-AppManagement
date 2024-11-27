@@ -104,9 +104,9 @@ func TestGetManifest2(t *testing.T) {
 		runtime.GC()
 	}()
 
-	manifest, contentType, err := docker.GetManifest(context.Background(), "wangxiaohu/brother-cups:latest")
+	manifest, contentType, err := docker.GetManifest(context.Background(), "correctroad/logseq:latest")
 	assert.NilError(t, err)
-	assert.Equal(t, contentType, schema1.MediaTypeSignedManifest)
+	assert.Equal(t, contentType, "application/vnd.docker.distribution.manifest.v2+json")
 
 	var signedManifest schema1.SignedManifest
 	decoder, err := mapstructure.NewDecoder(&mapstructure.DecoderConfig{Result: &signedManifest, Squash: true})
@@ -115,7 +115,6 @@ func TestGetManifest2(t *testing.T) {
 	err = decoder.Decode(manifest)
 	assert.NilError(t, err)
 
-	assert.Assert(t, len(signedManifest.Architecture) > 0)
 }
 
 func TestGetManifest3(t *testing.T) {

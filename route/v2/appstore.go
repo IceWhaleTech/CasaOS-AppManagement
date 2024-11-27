@@ -473,6 +473,12 @@ func (a *AppManagement) UpgradableAppList(ctx echo.Context) error {
 			})
 		}
 	}
+
+	//  sort upgradableAppList by title
+	sort.Slice(upgradableAppList, func(i, j int) bool {
+		return strings.Compare(upgradableAppList[i].Title, upgradableAppList[j].Title) < 0
+	})
+
 	return ctx.JSON(http.StatusOK, codegen.UpgradableAppListOK{
 		Data: &upgradableAppList,
 	})
