@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/IceWhaleTech/CasaOS-AppManagement/codegen/apiv1"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/common"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/model"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/pkg/config"
@@ -412,7 +413,11 @@ func UpdateSetting(ctx echo.Context) error {
 		return ctx.JSON(http.StatusInternalServerError, modelCommon.Result{Success: common_err.SERVICE_ERROR, Message: err.Error()})
 	}
 
-	return ctx.JSON(http.StatusOK, modelCommon.Result{Success: common_err.SUCCESS, Message: common_err.GetMsg(common_err.SUCCESS)})
+	return ctx.JSON(http.StatusOK, apiv1.ResponseUpdateContainerByID{
+		Success: common_err.SUCCESS,
+		Data:    &apiv1.Container{Name: containerID},
+		Message: common_err.GetMsg(common_err.SUCCESS),
+	})
 }
 
 func GetDockerNetworks(ctx echo.Context) error {
