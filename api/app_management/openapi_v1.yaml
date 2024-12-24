@@ -66,7 +66,7 @@ paths:
         - $ref: "#/components/parameters/ContainerID"
       responses:
         "200":
-          $ref: "#/components/responses/ResponseOK"
+          $ref: "#/components/responses/ResponseUpdateContainerByID"
         "404":
           $ref: "#/components/responses/ResponseNotFound"
         "500":
@@ -284,14 +284,30 @@ components:
                   data:
                     $ref: "#/components/schemas/CustomizationPostData"
 
-
+    ResponseUpdateContainerByID:
+      description: Update container by ID
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: "#/components/schemas/BaseResponse"
+              - properties:
+                  data:
+                    $ref: "#/components/schemas/Container"
   schemas:
     BaseResponse:
+      required:
+        - success
+        - message
       properties:
+        success:
+          type: integer
+          example: 200
         message:
           description: message returned by server side if there is any
           type: string
           example: ""
+
     DockerStats:
       properties:
         icon:
@@ -304,6 +320,16 @@ components:
           type: object
         previous:
           type: object
+
+    Container:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          example: "2d87d54bbfa3a0b20f0a5eb38bcd632b6e8f60e7b34d12fa1fdb8eb5a718c2ff"
+
     ComposeApp:
       type: object
       description: |-

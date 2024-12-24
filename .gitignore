@@ -26,3 +26,7 @@ package-lock.json
 
 .idea
 build/sysroot/usr/bin/appfile2compose
+
+# up.sh
+up.sh
+ZimaOS-AppManagement
