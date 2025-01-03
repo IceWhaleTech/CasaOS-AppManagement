@@ -31,5 +31,6 @@ const (
 	RecommendListFileName = "recommend-list.json"
 )
 
-// the tags can add more. like "latest", "stable", "edge", "beta", "alpha"
+// the tags can add more. like "latest", "stable", "release", "edge", "beta", "alpha"
+// var NeedCheckDigestTags = []string{"latest", "stable", "release"}
 var NeedCheckDigestTags = []string{"latest"}

@@ -227,7 +227,7 @@ func (a *ComposeApp) Update(ctx context.Context) error {
 		localComposeAppService := a.App(service.Name)
 
 		for _, tag := range common.NeedCheckDigestTags {
-			if strings.HasSuffix(service.Image, tag) {
+			if strings.HasSuffix(localComposeAppService.Image, tag) {
 				// keep latest
 			} else {
 				localComposeAppService.Image = service.Image
@@ -245,6 +245,9 @@ func (a *ComposeApp) Update(ctx context.Context) error {
 
 	// prepare for message bus events
 	eventProperties := common.PropertiesFromContext(ctx)
+	if eventProperties == nil {
+		eventProperties = make(map[string]string)
+	}
 	eventProperties[common.PropertyTypeAppName.Name] = a.Name
 
 	if err := a.UpdateEventPropertiesFromStoreInfo(eventProperties); err != nil {

@@ -46,9 +46,15 @@ func CompareDigest(imageName string, repoDigests []string) (bool, error) {
 	}
 
 	for _, dig := range repoDigests {
-		localDigest := strings.Split(dig, "@")[1]
+		localDigest := strings.Split(dig, "@")
+		var currentDigest string
+		if len(localDigest) >= 2 {
+			currentDigest = localDigest[1]
+		} else {
+			continue
+		}
 
-		if localDigest == digest {
+		if currentDigest == digest {
 			return true, nil
 		}
 	}

@@ -521,6 +521,8 @@ func (a *AppStoreManagement) isUpdateAvailable(composeApp *ComposeApp) (bool, er
 		return false, err
 	}
 
+	// if compose app tag is latest. don't need to storeComposeApp
+	// so we might can reduce the logic in future
 	storeComposeApp, err := a.ComposeApp(*storeInfo.StoreAppID)
 	if err != nil {
 		logger.Error("failed to get store compose app, thus no update available", zap.Error(err))
@@ -533,14 +535,6 @@ func (a *AppStoreManagement) isUpdateAvailable(composeApp *ComposeApp) (bool, er
 	}
 
 	return a.IsUpdateAvailableWith(composeApp, storeComposeApp)
-}
-
-// the patch is have no choice
-// the digest compare is not work for these images
-// I don't know why, but I have to do this
-// I will remove the patch after I rewrite the digest compare
-var NoUpdateBlacklist = []string{
-	"johnguan/stable-diffusion-webui:latest",
 }
 
 func (a *AppStoreManagement) IsUpdateAvailableWith(composeApp *ComposeApp, storeComposeApp *ComposeApp) (bool, error) {
@@ -563,19 +557,15 @@ func (a *AppStoreManagement) IsUpdateAvailableWith(composeApp *ComposeApp, store
 		}
 		defer cli.Close()
 
-		if lo.Contains(NoUpdateBlacklist, mainService.Image) {
-			return false, nil
-		}
-
 		image, _ := docker.ExtractImageAndTag(mainService.Image)
 
-		imageInfo, _, clientErr := cli.ImageInspectWithRaw(ctx, image)
+		localImageInfo, _, clientErr := cli.ImageInspectWithRaw(ctx, image)
 		if clientErr != nil {
 			logger.Error("failed to inspect image", zap.Error(clientErr))
 			return false, clientErr
 		}
 
-		match, clientErr := docker.CompareDigest(mainService.Image, imageInfo.RepoDigests)
+		match, clientErr := docker.CompareDigest(mainService.Image, localImageInfo.RepoDigests)
 		if clientErr != nil {
 			logger.Error("failed to compare digest", zap.Error(clientErr))
 			return false, clientErr

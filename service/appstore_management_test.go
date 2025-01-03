@@ -135,3 +135,95 @@ func TestIsUpgradable(t *testing.T) {
 	assert.NilError(t, err)
 	assert.Assert(t, upgradable)
 }
+
+// you need docker environment to run this test
+// you need zimaos environment to run this test
+// run `docker pull correctroad/logseq@sha256:7b09ab360c6d253e38fcff54c7f64c45f46b2a6297fb8b640d57a06160de09c4`
+// run `docker tag correctroad/logseq@sha256:7b09ab360c6d253e38fcff54c7f64c45f46b2a6297fb8b640d57a06160de09c4 correctroad/logseq:latest`
+// run `docker compose up -d` to start old version
+// run the test
+func TestLatestAppUpdate(t *testing.T) {
+	t.Skip("the test is ingreation testing")
+
+	logger.LogInitConsoleOnly()
+	config.InitSetup("", "")
+	config.InitGlobal("")
+
+	appStoreManagement := service.NewAppStoreManagement()
+	composeApp, err := service.NewComposeAppFromYAML([]byte(common.LatestComposeAppYAML), true, false)
+	assert.NilError(t, err)
+
+	composeApp.SetStoreAppID("logseq")
+
+	updateAvailable := appStoreManagement.IsUpdateAvailable(composeApp)
+	assert.Equal(t, false, updateAvailable)
+}
+
+// you need docker environment to run this test
+// you need zimaos environment to run this test
+// run `docker pull johnguan/stable-diffusion-webui:latest`
+// run `docker compose up -d` to start old version
+// run the test
+func TestSDAppUpdate(t *testing.T) {
+	t.Skip("the test is ingreation testing")
+
+	logger.LogInitConsoleOnly()
+	config.InitSetup("", "")
+	config.InitGlobal("")
+
+	appStoreManagement := service.NewAppStoreManagement()
+	composeApp, err := service.NewComposeAppFromYAML([]byte(common.SDComposeAppYAML), true, false)
+	assert.NilError(t, err)
+
+	composeApp.SetStoreAppID("stable-diffusion-webui")
+
+	updateAvailable := appStoreManagement.IsUpdateAvailable(composeApp)
+	assert.Equal(t, false, updateAvailable)
+}
+
+// you need docker environment to run this test
+func TestCompareDigest(t *testing.T) {
+	t.Skip("the test is ingreation testing")
+
+	match, err := docker.CompareDigest("johnguan/stable-diffusion-webui:latest", []string{"johnguan/stable-diffusion-webui@sha256:9f147d4995464dda8c9e625be91e21ce553d1617e95cb0ebcf23be40e840063b"})
+	assert.NilError(t, err)
+	assert.Equal(t, true, match)
+
+	match, err = docker.CompareDigest("neosmemo/memos:stable", []string{""})
+	assert.NilError(t, err)
+	assert.Equal(t, false, match)
+}
+
+// you need docker environment to run this test
+// you need zimaos environment to run this test
+// run `docker pull correctroad/logseq@sha256:7b09ab360c6d253e38fcff54c7f64c45f46b2a6297fb8b640d57a06160de09c4`
+// run `docker tag correctroad/logseq@sha256:7b09ab360c6d253e38fcff54c7f64c45f46b2a6297fb8b640d57a06160de09c4 correctroad/logseq:latest`
+// run `docker compose up -d` to start old version
+// run the test
+func TestUpdateLogseqToLatestDocker(t *testing.T) {
+	t.Skip("the test is ingreation testing")
+
+	logger.LogInitConsoleOnly()
+	config.InitSetup("", "")
+	config.InitGlobal("")
+
+	service.MyService = service.NewService("/var/run/casaos")
+	composeApp, err := service.NewComposeAppFromYAML([]byte(common.LatestComposeAppYAML), true, false)
+	assert.NilError(t, err)
+
+	// TODO: assert logseq digest is sha256:7b09ab360c6d253e38fcff54c7f64c45f46b2a6297fb8b640d57a06160de09c4
+
+	composeApp.SetStoreAppID("logseq")
+	dockerPath := filepath.Join(t.TempDir(), "docker-compose.yml")
+	err = file.WriteToFullPath([]byte(common.LatestComposeAppYAML), dockerPath, 0o644)
+	assert.NilError(t, err)
+
+	composeApp.ComposeFiles = []string{dockerPath}
+
+	err = composeApp.Update(context.Background())
+	assert.NilError(t, err)
+
+	select {}
+	// docker images --digests
+	// TODO: to check the digest is changed
+}
