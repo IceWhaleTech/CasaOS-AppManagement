@@ -49,14 +49,17 @@ func UpdateRegistryMirror() {
 	_, err := resty.New().SetTimeout(5 * time.Second).R().Get("https://registry-1.docker.io/v2/")
 	registryAvailable := err == nil
 
-	isChina := false
+	dockerUnreachableRegion := false
 	if resp, err := http.Get("https://ipconfig.io/country"); err == nil {
 		defer resp.Body.Close()
 		if resp.StatusCode == http.StatusOK {
 			if body, err := io.ReadAll(resp.Body); err == nil {
-				isChina = strings.Contains(string(body), "China")
+				dockerUnreachableRegion = strings.Contains(string(body), "China")
 			}
 		}
+	} else {
+		logger.Error("failed to get ipconfig.io/country", zap.Error(err))
+		dockerUnreachableRegion = true
 	}
 
 	if err = createIfNotExistDaemonJsonFile(); err != nil {
@@ -70,7 +73,7 @@ func UpdateRegistryMirror() {
 		return
 	}
 
-	shouldAddMirror := isChina && !registryAvailable
+	shouldAddMirror := dockerUnreachableRegion && !registryAvailable
 
 	currentMirrors := gjson.Get(string(content), "registry-mirrors").Array()
 	var mirrors []string
