@@ -18,6 +18,7 @@ import (
 
 	"github.com/IceWhaleTech/CasaOS-AppManagement/common"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/pkg/config"
+	"github.com/IceWhaleTech/CasaOS-AppManagement/pkg/docker"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/route"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/service"
 	"github.com/IceWhaleTech/CasaOS-Common/model"
@@ -54,6 +55,8 @@ var (
 func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
+
+	go docker.UpdateRegistryMirror()
 
 	// parse arguments and intialize
 	{

@@ -965,16 +965,16 @@ func LoadComposeAppFromConfigFile(appID string, configFile string) (*ComposeApp,
 	return (*ComposeApp)(project), err
 }
 
-var gpuCache *([]external.GPUInfo) = nil
+var gpuCache *([]external.NvidiaGPUInfo) = nil
 
 func removeRuntime(a *ComposeApp) {
 	if config.RemoveRuntimeIfNoNvidiaGPUFlag {
 
 		// if gpuCache is nil, it means it is first time fetching gpu info
 		if gpuCache == nil {
-			value, err := external.GPUInfoList()
+			value, err := external.NvidiaGPUInfoList()
 			if err != nil {
-				gpuCache = &([]external.GPUInfo{})
+				gpuCache = &([]external.NvidiaGPUInfo{})
 			} else {
 				gpuCache = &value
 			}
