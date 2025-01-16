@@ -74,6 +74,8 @@ func UpdateRegistryMirror() {
 					_, err := resty.New().SetTimeout(5 * time.Second).R().Get(strings.TrimSuffix(url, "/") + "/v2/")
 					if err == nil {
 						found.Store(true)
+					} else {
+						logger.Error("failed to check registry mirror", zap.String("url", url), zap.Error(err))
 					}
 					return nil
 				})
