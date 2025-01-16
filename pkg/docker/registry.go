@@ -11,6 +11,7 @@ import (
 	"os"
 	"path"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	"github.com/IceWhaleTech/CasaOS-Common/utils/command"
@@ -21,6 +22,7 @@ import (
 	"github.com/tidwall/gjson"
 	"github.com/tidwall/sjson"
 	"go.uber.org/zap"
+	"golang.org/x/sync/errgroup"
 )
 
 const (
@@ -46,8 +48,45 @@ func GetPullOptions(imageName string) (types.ImagePullOptions, error) {
 }
 
 func UpdateRegistryMirror() {
-	_, err := resty.New().SetTimeout(5 * time.Second).R().Get("https://registry-1.docker.io/v2/")
-	registryAvailable := err == nil
+	if err := createIfNotExistDaemonJsonFile(); err != nil {
+		logger.Error("failed to create daemon.json", zap.Error(err))
+		return
+	}
+
+	var registryAvailable bool
+	if content, err := os.ReadFile(DAEMON_JSON_PATH); err == nil {
+		mirrors := gjson.Get(string(content), "registry-mirrors").Array()
+		if len(mirrors) > 0 {
+			var found atomic.Bool
+			g := new(errgroup.Group)
+
+			for _, mirror := range mirrors {
+				mirrorURL := mirror.String()
+				if !strings.HasPrefix(mirrorURL, "https://") {
+					continue
+				}
+				url := mirrorURL
+				g.Go(func() error {
+					if found.Load() {
+						return nil
+					}
+					logger.Info("checking registry mirror", zap.String("url", url))
+					_, err := resty.New().SetTimeout(5 * time.Second).R().Get(strings.TrimSuffix(url, "/") + "/v2/")
+					if err == nil {
+						found.Store(true)
+					}
+					return nil
+				})
+			}
+			g.Wait()
+			registryAvailable = found.Load()
+		}
+	}
+
+	if !registryAvailable {
+		_, err := resty.New().SetTimeout(5 * time.Second).R().Get("https://registry-1.docker.io/v2/")
+		registryAvailable = err == nil
+	}
 
 	dockerUnreachableRegion := false
 	if resp, err := http.Get("https://ipconfig.io/country"); err == nil {
@@ -60,11 +99,6 @@ func UpdateRegistryMirror() {
 	} else {
 		logger.Error("failed to get ipconfig.io/country", zap.Error(err))
 		dockerUnreachableRegion = true
-	}
-
-	if err = createIfNotExistDaemonJsonFile(); err != nil {
-		logger.Error("failed to create daemon.json", zap.Error(err))
-		return
 	}
 
 	content, err := os.ReadFile(DAEMON_JSON_PATH)
