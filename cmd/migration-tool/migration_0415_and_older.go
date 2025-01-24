@@ -22,13 +22,13 @@ var replaceUrl = []UrlReplacement{
 	},
 	{
 		OldUrl: "https://casaos.oss-cn-shanghai.aliyuncs.com/IceWhaleTech/_appstore/archive/refs/heads/main.zip",
-		NewUrl: "https://casaos.oss-cn-shanghai.aliyuncs.com/store/main.zip",
+		NewUrl: "https://cdn.jsdelivr.net/gh/IceWhaleTech/CasaOS-AppStore@gh-pages/store/main.zip",
 	},
 }
 
-type migrationTool044AndOlder struct{}
+type migrationTool0415AndOlder struct{}
 
-func (u *migrationTool044AndOlder) IsMigrationNeeded() (bool, error) {
+func (u *migrationTool0415AndOlder) IsMigrationNeeded() (bool, error) {
 	_logger.Info("Checking if migration is needed...")
 
 	// read string from AppManagementConfigFilePath
@@ -53,11 +53,11 @@ func (u *migrationTool044AndOlder) IsMigrationNeeded() (bool, error) {
 	return false, nil
 }
 
-func (u *migrationTool044AndOlder) PreMigrate() error {
+func (u *migrationTool0415AndOlder) PreMigrate() error {
 	return nil
 }
 
-func (u *migrationTool044AndOlder) Migrate() error {
+func (u *migrationTool0415AndOlder) Migrate() error {
 	// replace string in AppManagementConfigFilePath
 	// replace https://github.com/IceWhaleTech/_appstore/archive/refs/heads/main.zip to https://casaos-appstore.github.io/casaos-appstore/linux-all-appstore.zip
 	file, err := os.OpenFile(config.AppManagementConfigFilePath, os.O_RDWR, 0644)
@@ -92,10 +92,10 @@ func (u *migrationTool044AndOlder) Migrate() error {
 	return nil
 }
 
-func (u *migrationTool044AndOlder) PostMigrate() error {
+func (u *migrationTool0415AndOlder) PostMigrate() error {
 	return nil
 }
 
-func NewMigration044AndOlder() interfaces.MigrationTool {
-	return &migrationTool044AndOlder{}
+func NewMigration0415AndOlder() interfaces.MigrationTool {
+	return &migrationTool0415AndOlder{}
 }
