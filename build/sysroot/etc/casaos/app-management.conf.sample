@@ -9,5 +9,5 @@ AppStorePath = /var/lib/casaos/appstore
 AppsPath = /var/lib/casaos/apps
 
 [server]
-appstore = https://casaos.app/store/main.zip
+appstore = https://cdn.jsdelivr.net/gh/IceWhaleTech/CasaOS-AppStore@gh-pages/store/main.zip
 appstore = https://github.com/bigbeartechworld/big-bear-casaos/archive/refs/heads/master.zip

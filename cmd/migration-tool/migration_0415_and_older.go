@@ -18,7 +18,7 @@ type UrlReplacement struct {
 var replaceUrl = []UrlReplacement{
 	{
 		OldUrl: "https://github.com/IceWhaleTech/_appstore/archive/refs/heads/main.zip",
-		NewUrl: "https://casaos.app/store/main.zip",
+		NewUrl: "https://cdn.jsdelivr.net/gh/IceWhaleTech/CasaOS-AppStore@gh-pages/store/main.zip",
 	},
 	{
 		OldUrl: "https://casaos.oss-cn-shanghai.aliyuncs.com/IceWhaleTech/_appstore/archive/refs/heads/main.zip",
