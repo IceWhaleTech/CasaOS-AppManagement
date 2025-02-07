@@ -24,6 +24,10 @@ var replaceUrl = []UrlReplacement{
 		OldUrl: "https://casaos.oss-cn-shanghai.aliyuncs.com/IceWhaleTech/_appstore/archive/refs/heads/main.zip",
 		NewUrl: "https://cdn.jsdelivr.net/gh/IceWhaleTech/CasaOS-AppStore@gh-pages/store/main.zip",
 	},
+	{
+		OldUrl: "https://casaos.app/store/main.zip",
+		NewUrl: "https://cdn.jsdelivr.net/gh/IceWhaleTech/CasaOS-AppStore@gh-pages/store/main.zip",
+	},
 }
 
 type migrationTool0415AndOlder struct{}
