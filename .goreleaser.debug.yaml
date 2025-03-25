@@ -76,6 +76,28 @@ builds:
       post:
         - cmd: go build -v -tags 'musl netgo osusergo' -o build/sysroot/usr/bin/appfile2compose github.com/IceWhaleTech/CasaOS-AppManagement/cmd/appfile2compose
           output: true
+  - id: casaos-app-management-riscv64
+    binary: build/sysroot/usr/bin/casaos-app-management
+    env:
+      - CC=riscv64-linux-gnu-gcc
+    gcflags:
+      - all=-N -l
+    ldflags:
+      - -X main.commit={{.Commit}}
+      - -X main.date={{.Date}}
+      - -extldflags "-static"
+    tags:
+      - musl
+      - netgo
+      - osusergo
+    goos:
+      - linux
+    goarch:
+      - riscv64
+    hooks:
+      post:
+        - cmd: go build -v -tags 'musl netgo osusergo' -o build/sysroot/usr/bin/appfile2compose github.com/IceWhaleTech/CasaOS-AppManagement/cmd/appfile2compose
+          output: true
   - id: casaos-app-management-migration-tool-amd64
     binary: build/sysroot/usr/bin/casaos-app-management-migration-tool
     main: ./cmd/migration-tool
@@ -135,6 +157,25 @@ builds:
       - arm
     goarm:
       - "7"
+  - id: casaos-app-management-migration-tool-riscv64
+    binary: build/sysroot/usr/bin/casaos-app-management-migration-tool
+    main: ./cmd/migration-tool
+    env:
+      - CC=riscv64-linux-gnu-gcc
+    gcflags:
+      - all=-N -l
+    ldflags:
+      - -X main.commit={{.Commit}}
+      - -X main.date={{.Date}}
+      - -extldflags "-static"
+    tags:
+      - musl
+      - netgo
+      - osusergo
+    goos:
+      - linux
+    goarch:
+      - riscv64
 archives:
   - name_template: >-
       {{ .Os }}-{{- if eq .Arch "arm" }}arm-7{{- else }}{{ .Arch }}{{- end }}-{{ .ProjectName }}-v{{ .Version }}
@@ -143,6 +184,7 @@ archives:
       - casaos-app-management-amd64
       - casaos-app-management-arm64
       - casaos-app-management-arm-7
+      - casaos-app-management-riscv64
     files:
       - build/**/*
   - name_template: >-
@@ -152,6 +194,7 @@ archives:
       - casaos-app-management-migration-tool-amd64
       - casaos-app-management-migration-tool-arm64
       - casaos-app-management-migration-tool-arm-7
+      - casaos-app-management-migration-tool-riscv64
     files:
       - build/sysroot/etc/**/*
 checksum:
