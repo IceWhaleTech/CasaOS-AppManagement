@@ -88,6 +88,28 @@ builds:
       - arm
     goarm:
       - "7"
+  - id: casaos-app-management-riscv64
+    binary: build/sysroot/usr/bin/casaos-app-management
+    hooks:
+      post:
+        - cmd: go build -v -tags 'musl netgo osusergo' -o build/sysroot/usr/bin/appfile2compose github.com/IceWhaleTech/CasaOS-AppManagement/cmd/appfile2compose
+          output: true
+    env:
+      - CC=riscv64-linux-gnu-gcc
+    ldflags:
+      - -X main.commit={{.Commit}}
+      - -X main.date={{.Date}}
+      - -s
+      - -w
+      - -extldflags "-static"
+    tags:
+      - musl
+      - netgo
+      - osusergo
+    goos:
+      - linux
+    goarch:
+      - riscv64
   - id: casaos-app-management-migration-tool-amd64
     binary: build/sysroot/usr/bin/casaos-app-management-migration-tool
     hooks:
@@ -156,6 +178,25 @@ builds:
       - arm
     goarm:
       - "7"
+  - id: casaos-app-management-migration-tool-riscv64
+    binary: build/sysroot/usr/bin/casaos-app-management-migration-tool
+    main: ./cmd/migration-tool
+    env:
+      - CC=riscv64-linux-gnu-gcc
+    ldflags:
+      - -X main.commit={{.Commit}}
+      - -X main.date={{.Date}}
+      - -s
+      - -w
+      - -extldflags "-static"
+    tags:
+      - musl
+      - netgo
+      - osusergo
+    goos:
+      - linux
+    goarch:
+      - riscv64
   - id: casaos-app-management-validator-amd64
     binary: build/sysroot/usr/bin/casaos-app-management-validator
     hooks:
@@ -178,7 +219,25 @@ builds:
       - linux
     goarch:
       - amd64
-
+  - id: casaos-app-management-validator-riscv64
+    binary: build/sysroot/usr/bin/casaos-app-management-validator
+    main: ./cmd/validator
+    env:
+      - CC=riscv64-linux-gnu-gcc
+    ldflags:
+      - -X main.commit={{.Commit}}
+      - -X main.date={{.Date}}
+      - -s
+      - -w
+      - -extldflags "-static"
+    tags:
+      - musl
+      - netgo
+      - osusergo
+    goos:
+      - linux
+    goarch:
+      - riscv64
 archives:
   - name_template: >-
       {{ .Os }}-{{- if eq .Arch "arm" }}arm-7{{- else }}{{ .Arch }}{{- end }}-{{ .ProjectName }}-v{{ .Version }}
@@ -187,6 +246,7 @@ archives:
       - casaos-app-management-amd64
       - casaos-app-management-arm64
       - casaos-app-management-arm-7
+      - casaos-app-management-riscv64
     files:
       - build/**/*
   - name_template: >-
@@ -196,6 +256,7 @@ archives:
       - casaos-app-management-migration-tool-amd64
       - casaos-app-management-migration-tool-arm64
       - casaos-app-management-migration-tool-arm-7
+      - casaos-app-management-migration-tool-riscv64
     files:
       - build/sysroot/etc/**/*
   - name_template: >-
@@ -203,9 +264,9 @@ archives:
     id: casaos-app-management-validator
     builds:
       - casaos-app-management-validator-amd64
+      - casaos-app-management-validator-riscv64
     files:
       - build/sysroot/etc/**/*
-
 checksum:
   name_template: "checksums.txt"
 snapshot:

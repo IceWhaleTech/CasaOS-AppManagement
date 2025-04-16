@@ -120,6 +120,9 @@ case $(uname -m) in
     armv7l)
         ARCH="arm-7"
         ;;
+    riscv64)
+        ARCH="riscv64"
+        ;;
     *)
         __error "Unsupported architecture"
         ;;
