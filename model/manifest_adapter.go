@@ -8,7 +8,7 @@ import (
 
 	"github.com/IceWhaleTech/CasaOS-AppManagement/codegen"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/common"
-	"github.com/compose-spec/compose-go/types"
+	"github.com/compose-spec/compose-go/v2/types"
 	"github.com/samber/lo"
 )
 
@@ -71,6 +71,30 @@ func (p *PathArray) ToSlice() []string {
 	return lo.Map(*p, func(p PathMap, i int) string {
 		return fmt.Sprintf("%s:%s", p.Path, p.ContainerPath)
 	})
+}
+
+func (p *PathArray) DeviceMappingList() []types.DeviceMapping {
+	if p == nil {
+		return nil
+	}
+
+	devices := make([]types.DeviceMapping, 0, len(*p))
+	for _, device := range *p {
+		if len(device.Path) == 0 || len(device.ContainerPath) == 0 {
+			continue
+		}
+		devices = append(devices, types.DeviceMapping{
+			Source:      device.Path,
+			Target:      device.ContainerPath,
+			Permissions: "rwm",
+		})
+	}
+
+	if len(devices) == 0 {
+		return nil
+	}
+
+	return devices
 }
 
 func (p *PathArray) DeviceStoreInfoList() []codegen.DeviceStoreInfo {
@@ -138,12 +162,14 @@ func (c *CustomizationPostData) ComposeAppStoreInfo() codegen.ComposeAppStoreInf
 }
 
 func (c *CustomizationPostData) Services() types.Services {
+	serviceName := strings.ToLower(c.ContainerName)
+
 	return types.Services{
-		{
+		serviceName: types.ServiceConfig{
 			CapAdd:      c.CapAdd,
 			Command:     emtpySliceThenNil(c.Cmd),
 			CPUShares:   c.CPUShares,
-			Devices:     c.Devices.ToSlice(),
+			Devices:     c.Devices.DeviceMappingList(),
 			Environment: c.Envs.ToMappingWithEquals(),
 			Image:       c.Image,
 			Name:        strings.ToLower(c.ContainerName),

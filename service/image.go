@@ -10,7 +10,8 @@ import (
 	"github.com/IceWhaleTech/CasaOS-AppManagement/common"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/pkg/docker"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/logger"
-	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/image"
+
 	"github.com/docker/docker/api/types/filters"
 	client2 "github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/jsonmessage"
@@ -27,7 +28,7 @@ func (ds *dockerService) IsExistImage(imageName string) bool {
 	filter := filters.NewArgs()
 	filter.Add("reference", imageName)
 
-	list, err := cli.ImageList(context.Background(), types.ImageListOptions{Filters: filter})
+	list, err := cli.ImageList(context.Background(), image.ListOptions{Filters: filter})
 
 	if err == nil && len(list) > 0 {
 		return true
@@ -90,7 +91,7 @@ func (ds *dockerService) PullLatestImage(ctx context.Context, imageName string) 
 			common.PropertyTypeMessage.Name:   message,
 		})
 
-		return false, fmt.Errorf(message)
+		return false, fmt.Errorf("%s", message)
 	}
 
 	imageInfo1, err := docker.Image(ctx, imageName)
@@ -138,7 +139,7 @@ func (ds *dockerService) RemoveImage(name string) error {
 		return err
 	}
 	defer cli.Close()
-	imageList, err := cli.ImageList(context.Background(), types.ImageListOptions{})
+	imageList, err := cli.ImageList(context.Background(), image.ListOptions{})
 	if err != nil {
 		return err
 	}
@@ -154,7 +155,7 @@ Loop:
 			}
 		}
 	}
-	_, err = cli.ImageRemove(context.Background(), imageID, types.ImageRemoveOptions{})
+	_, err = cli.ImageRemove(context.Background(), imageID, image.RemoveOptions{})
 	return err
 }
 

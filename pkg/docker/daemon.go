@@ -31,3 +31,18 @@ func CurrentArchitecture() (string, error) {
 
 	return ver.Arch, nil
 }
+
+func CurrentVersion() (string, error) {
+	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+	if err != nil {
+		return "", err
+	}
+	defer cli.Close()
+
+	ver, err := cli.ServerVersion(context.Background())
+	if err != nil {
+		return "", err
+	}
+
+	return ver.APIVersion, nil
+}

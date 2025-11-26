@@ -10,7 +10,6 @@ import (
 	"github.com/IceWhaleTech/CasaOS-AppManagement/service"
 	"github.com/IceWhaleTech/CasaOS-Common/utils"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/logger"
-	"github.com/compose-spec/compose-go/types"
 	"github.com/docker/compose/v2/pkg/api"
 	"github.com/labstack/echo/v4"
 	"github.com/samber/lo"
@@ -149,14 +148,15 @@ func WebAppGridItemAdapterV2(composeAppWithStoreInfo *codegen.ComposeAppWithStor
 		item.Title = &composeAppStoreInfo.Title
 		item.IsUncontrolled = composeAppStoreInfo.IsUncontrolled
 
-		var mainApp *types.ServiceConfig
-		for i, service := range composeApp.Services {
-			if service.Name == *composeAppStoreInfo.Main {
-				mainApp = &composeApp.Services[i]
-				item.Image = &mainApp.Image // Hengxin needs this image property for some reason...
-			}
-			break
-		}
+		// var mainApp *types.ServiceConfig
+		// for i, service := range composeApp.Services {
+		// 	if service.Name == *composeAppStoreInfo.Main {
+		// 		mainApp = &composeApp.Services[i]
+		// 		item.Image = &mainApp.Image // Hengxin needs this image property for some reason...
+		// 	}
+		// 	break
+		// }
+		item.Image = lo.ToPtr(composeApp.Services[*composeAppStoreInfo.Main].Image)
 	}
 
 	// item type

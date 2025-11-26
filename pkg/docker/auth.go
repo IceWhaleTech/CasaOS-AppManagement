@@ -12,7 +12,7 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/docker/distribution/reference"
+	"github.com/distribution/reference"
 )
 
 type TokenResponse struct {

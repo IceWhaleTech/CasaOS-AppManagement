@@ -74,7 +74,6 @@ func (s *ComposeService) Install(ctx context.Context, composeApp *ComposeApp) er
 
 	// load project
 	composeApp, err = LoadComposeAppFromConfigFile(composeApp.Name, yamlFilePath)
-
 	if err != nil {
 		logger.Error("failed to install compose app", zap.Error(err), zap.String("name", composeApp.Name))
 		cleanup(workingDirectory)
@@ -207,7 +206,7 @@ func baseInterpolationMap() map[string]string {
 	}
 }
 
-func apiService() (api.Service, client.APIClient, error) {
+func apiService() (api.Compose, client.APIClient, error) {
 	dockerCli, err := command.NewDockerCli()
 	if err != nil {
 		return nil, nil, err
@@ -220,7 +219,7 @@ func apiService() (api.Service, client.APIClient, error) {
 	return compose.NewComposeService(dockerCli), dockerCli.Client(), nil
 }
 
-func ApiService() (api.Service, client.APIClient, error) {
+func ApiService() (api.Compose, client.APIClient, error) {
 	return apiService()
 }
 

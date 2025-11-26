@@ -9,8 +9,8 @@ import (
 	url2 "net/url"
 	"time"
 
-	"github.com/docker/distribution/manifest/manifestlist"
-	"github.com/docker/distribution/manifest/schema1"
+	"github.com/distribution/distribution/manifest/manifestlist"
+	"github.com/distribution/distribution/manifest/schema1"
 	"github.com/mitchellh/mapstructure"
 	"github.com/patrickmn/go-cache"
 	"github.com/samber/lo"

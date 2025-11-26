@@ -8,8 +8,8 @@ import (
 
 	"github.com/IceWhaleTech/CasaOS-AppManagement/pkg/docker"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/random"
-	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
+	"github.com/docker/docker/api/types/image"
 	"github.com/docker/docker/api/types/network"
 	"github.com/docker/docker/client"
 	"github.com/samber/lo"
@@ -33,7 +33,7 @@ func setupTestContainer(ctx context.Context, t *testing.T) *container.CreateResp
 	hostConfig := &container.HostConfig{}
 	networkingConfig := &network.NetworkingConfig{}
 
-	out, err := cli.ImagePull(ctx, imageName, types.ImagePullOptions{})
+	out, err := cli.ImagePull(ctx, imageName, image.PullOptions{})
 	assert.NilError(t, err)
 
 	_, err = io.ReadAll(out)
@@ -68,7 +68,7 @@ func TestCloneContainer(t *testing.T) {
 	response := setupTestContainer(ctx, t)
 
 	defer func() {
-		err = cli.ContainerRemove(ctx, response.ID, types.ContainerRemoveOptions{})
+		err = cli.ContainerRemove(ctx, response.ID, container.RemoveOptions{})
 		assert.NilError(t, err)
 	}()
 
@@ -80,7 +80,7 @@ func TestCloneContainer(t *testing.T) {
 		assert.NilError(t, err)
 	}()
 
-	newID, err := docker.CloneContainer(ctx, response.ID, "test-"+random.RandomString(4, false))
+	newID, err := docker.CloneContainer(ctx, response.ID, "test-"+random.String(4, false))
 	assert.NilError(t, err)
 
 	defer func() {

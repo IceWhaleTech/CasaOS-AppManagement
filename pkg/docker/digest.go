@@ -16,10 +16,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/docker/distribution/manifest"
-	"github.com/docker/distribution/manifest/manifestlist"
-	"github.com/docker/distribution/manifest/schema1"
-	"github.com/docker/distribution/manifest/schema2"
+	"github.com/distribution/distribution/manifest"
+	"github.com/distribution/distribution/manifest/manifestlist"
+	"github.com/distribution/distribution/manifest/schema1"
+	"github.com/distribution/distribution/manifest/schema2"
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 )
 

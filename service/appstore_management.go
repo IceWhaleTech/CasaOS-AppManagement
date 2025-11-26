@@ -569,7 +569,7 @@ func (a *AppStoreManagement) IsUpdateAvailableWith(composeApp *ComposeApp, store
 
 		image, _ := docker.ExtractImageAndTag(mainService.Image)
 
-		imageInfo, _, clientErr := cli.ImageInspectWithRaw(ctx, image)
+		imageInfo, clientErr := cli.ImageInspect(ctx, image)
 		if clientErr != nil {
 			logger.Error("failed to inspect image", zap.Error(clientErr))
 			return false, clientErr

@@ -7,18 +7,18 @@ import (
 	"context"
 	"io"
 
-	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/image"
 	"github.com/docker/docker/client"
 )
 
-func Image(ctx context.Context, imageName string) (*types.ImageInspect, error) {
+func Image(ctx context.Context, imageName string) (*image.InspectResponse, error) {
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
 		return nil, err
 	}
 	defer cli.Close()
 
-	imageInfo, _, err := cli.ImageInspectWithRaw(ctx, imageName)
+	imageInfo, err := cli.ImageInspect(ctx, imageName)
 	if err != nil {
 		return nil, err
 	}
@@ -62,7 +62,7 @@ func HasNewImage(ctx context.Context, imageName string, currentImageID string) (
 	}
 	defer cli.Close()
 
-	newImageInfo, _, err := cli.ImageInspectWithRaw(ctx, imageName)
+	newImageInfo, err := cli.ImageInspect(ctx, imageName)
 	if err != nil {
 		return false, currentImageID, err
 	}

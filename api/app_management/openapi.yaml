@@ -1438,7 +1438,7 @@ components:
       x-go-type: types.Project
       x-go-type-import:
         name: types
-        path: github.com/compose-spec/compose-go/types
+        path: github.com/compose-spec/compose-go/v2/types
 
     ComposeAppWithStoreInfo:
       description: |-
