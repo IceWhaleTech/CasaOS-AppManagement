@@ -97,6 +97,12 @@ func (ea *EnvArray) ToMappingWithEquals() types.MappingWithEquals {
 	})
 }
 
+func (ea *EnvArray) ToMap() map[string]string {
+	return lo.SliceToMap(*ea, func(e Env) (string, string) {
+		return e.Name, e.Value
+	})
+}
+
 func (ea *EnvArray) EnvStoreInfoList() []codegen.EnvStoreInfo {
 	return lo.Map(*ea, func(e Env, i int) codegen.EnvStoreInfo {
 		return codegen.EnvStoreInfo{
@@ -146,6 +152,7 @@ func (c *CustomizationPostData) Services() types.Services {
 			Devices:     c.Devices.ToSlice(),
 			Environment: c.Envs.ToMappingWithEquals(),
 			Image:       c.Image,
+			Labels:      c.CustomLabels.ToMap(),
 			Name:        strings.ToLower(c.ContainerName),
 			NetworkMode: c.NetworkModel,
 			Ports:       c.Ports.ServicePortConfigList(),
