@@ -450,3 +450,7 @@ components:
         appstore_id:
           type: integer
           example: 1
+        custom_labels:
+          type: array
+          items:
+            $ref: "#/components/schemas/EnvArray"

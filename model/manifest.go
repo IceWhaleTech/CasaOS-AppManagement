@@ -93,4 +93,5 @@ type CustomizationPostData struct {
 	Protocol    string   `json:"protocol"`
 	Host        string   `json:"host"`
 	AppStoreID  uint     `json:"appstore_id"`
+	CustomLabels EnvArray `json:"custom_labels"`
 }

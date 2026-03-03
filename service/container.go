@@ -522,6 +522,12 @@ func (ds *dockerService) CreateContainer(m model.CustomizationPostData, id strin
 		config.ExposedPorts = ports
 	}
 
+	for _, l := range m.CustomLabels {
+		if len(l.Name) > 0 {
+			config.Labels[l.Name] = l.Value
+		}
+	}
+
 	config.Labels["origin"] = m.Origin
 	config.Labels["casaos"] = "casaos"
 	config.Labels["web"] = m.PortMap
