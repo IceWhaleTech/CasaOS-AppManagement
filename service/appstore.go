@@ -1,7 +1,7 @@
 package service
 
 import (
-	"crypto/md5" // nolint: gosec
+	"crypto/sha256"
 	"fmt"
 	"io/fs"
 	"net/http"
@@ -84,6 +84,8 @@ func (s *appStore) UpdateCatalog() error {
 		if err != nil {
 			return err
 		}
+		defer res.Body.Close()
+
 		if res.StatusCode != http.StatusOK {
 			return fmt.Errorf("failed to get appstore size, status code: %d", res.StatusCode)
 		}
@@ -242,7 +244,7 @@ func (s *appStore) WorkDir() (string, error) {
 
 	appstoreKey := strings.ToLower(parsedURL.Path)
 
-	hash := fmt.Sprintf("%x", md5.Sum([]byte(appstoreKey))) //nolint: gosec
+	hash := fmt.Sprintf("%x", sha256.Sum256([]byte(appstoreKey)))
 
 	return filepath.Join(config.AppInfo.AppStorePath, parsedURL.Host, hash), nil
 }
