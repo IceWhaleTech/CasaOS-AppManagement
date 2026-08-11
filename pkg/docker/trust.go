@@ -14,7 +14,7 @@ import (
 	"github.com/docker/cli/cli/config/configfile"
 	"github.com/docker/cli/cli/config/credentials"
 	"github.com/docker/cli/cli/config/types"
-	"github.com/docker/distribution/reference"
+	"github.com/distribution/reference"
 )
 
 // EncodedAuth returns an encoded auth config for the given registry

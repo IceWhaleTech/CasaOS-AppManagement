@@ -9,7 +9,7 @@ import (
 
 	url2 "net/url"
 
-	ref "github.com/docker/distribution/reference"
+	ref "github.com/distribution/reference"
 )
 
 // BuildManifestURL from raw image data

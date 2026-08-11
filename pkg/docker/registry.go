@@ -4,21 +4,21 @@ credit: https://github.com/containrrr/watchtower
 package docker
 
 import (
-	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/image"
 )
 
 // GetPullOptions creates a struct with all options needed for pulling images from a registry
-func GetPullOptions(imageName string) (types.ImagePullOptions, error) {
+func GetPullOptions(imageName string) (image.PullOptions, error) {
 	auth, err := EncodedAuth(imageName)
 	if err != nil {
-		return types.ImagePullOptions{}, err
+		return image.PullOptions{}, err
 	}
 
 	if auth == "" {
-		return types.ImagePullOptions{}, nil
+		return image.PullOptions{}, nil
 	}
 
-	return types.ImagePullOptions{
+	return image.PullOptions{
 		RegistryAuth:  auth,
 		PrivilegeFunc: func() (string, error) { return "", nil },
 	}, nil

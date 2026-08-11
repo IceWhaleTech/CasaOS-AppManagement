@@ -54,9 +54,11 @@ func TestWebAppGridItemAdapter(t *testing.T) {
 
 	gridItem, err := v2.WebAppGridItemAdapterV2(&composeAppWithStoreInfo)
 	assert.NilError(t, err)
+	mainService, err := composeApp.MainService()
+	assert.NilError(t, err)
 
 	assert.Equal(t, *gridItem.Icon, storeInfo.Icon)
-	assert.Equal(t, *gridItem.Image, composeApp.Services[0].Image)
+	assert.Equal(t, *gridItem.Image, mainService.Image)
 	assert.Equal(t, gridItem.Hostname, storeInfo.Hostname)
 	assert.Equal(t, *gridItem.Port, storeInfo.PortMap)
 	assert.Equal(t, *gridItem.Index, storeInfo.Index)

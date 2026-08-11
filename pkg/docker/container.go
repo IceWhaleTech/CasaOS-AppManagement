@@ -92,7 +92,7 @@ func RemoveContainer(ctx context.Context, id string) error {
 	}
 	defer cli.Close()
 
-	return cli.ContainerRemove(ctx, id, types.ContainerRemoveOptions{Force: true})
+	return cli.ContainerRemove(ctx, id, container.RemoveOptions{Force: true})
 }
 
 func RenameContainer(ctx context.Context, id string, name string) error {
@@ -118,7 +118,7 @@ func StartContainer(ctx context.Context, id string) error {
 	}
 
 	if !containerInfo.State.Running {
-		return cli.ContainerStart(ctx, id, types.ContainerStartOptions{})
+		return cli.ContainerStart(ctx, id, container.StartOptions{})
 	}
 
 	return nil

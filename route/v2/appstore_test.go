@@ -10,7 +10,7 @@ import (
 	v2 "github.com/IceWhaleTech/CasaOS-AppManagement/route/v2"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/service"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/logger"
-	"github.com/compose-spec/compose-go/types"
+	"github.com/compose-spec/compose-go/v2/types"
 )
 
 func TestFilterCatalogByCategory(t *testing.T) {
@@ -138,8 +138,8 @@ func TestFilterCatalogByAppStoreID(t *testing.T) {
 				"main": "test",
 			},
 		},
-		Services: []types.ServiceConfig{
-			{
+		Services: types.Services{
+			"test": {
 				Name: "test",
 				Extensions: map[string]interface{}{
 					common.ComposeExtensionNameXCasaOS: map[string]interface{}{
@@ -159,8 +159,8 @@ func TestFilterCatalogByAppStoreID(t *testing.T) {
 				"main": "test2",
 			},
 		},
-		Services: []types.ServiceConfig{
-			{
+		Services: types.Services{
+			"test2": {
 				Name: "test2",
 				Extensions: map[string]interface{}{
 					common.ComposeExtensionNameXCasaOS: map[string]interface{}{

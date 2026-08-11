@@ -34,6 +34,7 @@ import (
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/api/types/mount"
 	"github.com/docker/docker/api/types/network"
+	"github.com/docker/docker/api/types/system"
 	client2 "github.com/docker/docker/client"
 	"github.com/docker/go-connections/nat"
 )
@@ -72,7 +73,7 @@ type DockerService interface {
 	GetNetworkList() []types.NetworkResource
 
 	// docker server
-	GetServerInfo() (types.Info, error)
+	GetServerInfo() (system.Info, error)
 }
 
 type dockerService struct{}
@@ -88,13 +89,13 @@ func getContainerStats() {
 	ctx := context.Background()
 	ctx, cancel := context.WithCancel(ctx)
 
-	containers, err := cli.ContainerList(context.Background(), types.ContainerListOptions{All: true})
+	containers, err := cli.ContainerList(context.Background(), container.ListOptions{All: true})
 	if err != nil {
 		logger.Error("Failed to get container_list", zap.Any("err", err))
 	}
 	for i := 0; i < 100; i++ {
 		if i%10 == 0 {
-			containers, err = cli.ContainerList(context.Background(), types.ContainerListOptions{All: true})
+			containers, err = cli.ContainerList(context.Background(), container.ListOptions{All: true})
 			if err != nil {
 				logger.Error("Failed to get container_list", zap.Any("err", err))
 				continue
@@ -235,7 +236,7 @@ func (ds *dockerService) GetContainer(id string) (types.Container, error) {
 
 	filters := filters.NewArgs()
 	filters.Add("id", id)
-	containers, err := cli.ContainerList(context.Background(), types.ContainerListOptions{All: true, Filters: filters})
+	containers, err := cli.ContainerList(context.Background(), container.ListOptions{All: true, Filters: filters})
 	if err != nil {
 		logger.Error("Failed to get container_list", zap.Any("err", err))
 		return types.Container{}, err
@@ -258,7 +259,7 @@ func (ds *dockerService) GetContainerAppList(name, image, state *string) (*[]mod
 	// fts.Add("label", "casaos=casaos")
 	// fts.Add("label", "casaos")
 	// fts.Add("casaos", "casaos")
-	containers, err := cli.ContainerList(context.Background(), types.ContainerListOptions{All: true})
+	containers, err := cli.ContainerList(context.Background(), container.ListOptions{All: true})
 	if err != nil {
 		logger.Error("Failed to get container_list", zap.Any("err", err))
 	}
@@ -480,7 +481,7 @@ func (ds *dockerService) CreateContainer(m model.CustomizationPostData, id strin
 	rp := container.RestartPolicy{}
 
 	if len(m.Restart) > 0 {
-		rp.Name = m.Restart
+		rp.Name = container.RestartPolicyMode(m.Restart)
 	}
 	// healthTest := []string{}
 	// if len(port) > 0 {
@@ -792,7 +793,7 @@ func (ds *dockerService) GetContainerLog(name string) ([]byte, error) {
 	}
 	defer cli.Close()
 	// body, err := cli.ContainerAttach(context.Background(), name, types.ContainerAttachOptions{Logs: true, Stream: false, Stdin: false, Stdout: false, Stderr: false})
-	body, err := cli.ContainerLogs(context.Background(), name, types.ContainerLogsOptions{ShowStdout: true, ShowStderr: true})
+	body, err := cli.ContainerLogs(context.Background(), name, container.LogsOptions{ShowStdout: true, ShowStderr: true})
 	if err != nil {
 		return []byte(""), err
 	}
@@ -810,7 +811,7 @@ func (ds *dockerService) GetContainerByName(name string) (*types.Container, erro
 	defer cli.Close()
 	filter := filters.NewArgs()
 	filter.Add("name", name)
-	containers, err := cli.ContainerList(context.Background(), types.ContainerListOptions{All: true, Filters: filter})
+	containers, err := cli.ContainerList(context.Background(), container.ListOptions{All: true, Filters: filter})
 	if err != nil {
 		return &types.Container{}, err
 	}
@@ -841,10 +842,10 @@ func (ds *dockerService) GetNetworkList() []types.NetworkResource {
 	return networks
 }
 
-func (ds *dockerService) GetServerInfo() (types.Info, error) {
+func (ds *dockerService) GetServerInfo() (system.Info, error) {
 	cli, err := client2.NewClientWithOpts(client2.FromEnv, client2.WithAPIVersionNegotiation())
 	if err != nil {
-		return types.Info{}, err
+		return system.Info{}, err
 	}
 	defer cli.Close()
 

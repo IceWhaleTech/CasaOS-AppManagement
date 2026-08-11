@@ -56,6 +56,36 @@ __is_migration_needed() {
 
     __is_version_gt "${version2}" "${version1}"
 }
+
+__remove_legacy_docker_api_override() {
+    local override_dir="/etc/systemd/system/docker.service.d"
+    local override_file="${override_dir}/override.conf"
+    local normalized_content
+
+    if [ ! -f "${override_file}" ]; then
+        return 0
+    fi
+
+    normalized_content=$(sed -e '/^[[:space:]]*$/d' -e '/^[[:space:]]*#/d' -e 's/[[:space:]]//g' "${override_file}")
+    if [ "${normalized_content}" != $'[Service]\nEnvironment=DOCKER_MIN_API_VERSION=1.24' ]; then
+        if grep -q 'DOCKER_MIN_API_VERSION=1.24' "${override_file}"; then
+            __warning "The Docker API override contains additional settings; leaving it unchanged."
+        fi
+        return 0
+    fi
+
+    rm -f "${override_file}"
+    rmdir "${override_dir}" 2>/dev/null || true
+    __info_done "Removed the legacy CasaOS Docker API override."
+
+    if ! command -v systemctl >/dev/null 2>&1; then
+        return 0
+    fi
+
+    systemctl daemon-reload || __warning "Failed to reload systemd after removing the Docker API override."
+    systemctl restart docker || __warning "Failed to restart Docker after removing the Docker API override."
+}
+
 __get_download_domain(){
     local region
     # Use ipconfig.io/country and https://ifconfig.io/country_code to get the country code
@@ -79,6 +109,11 @@ readonly SOURCE_ROOT=${BUILD_PATH}/sysroot
 readonly APP_NAME="casaos-app-management"
 readonly APP_NAME_SHORT="app-management"
 readonly APP_NAME_LEGACY="casaos"
+
+# CasaOS installers briefly shipped this exact daemon drop-in to support the
+# Docker v24 client. The Docker v26 client negotiates normally, so remove only
+# the unmodified CasaOS-owned file and preserve any administrator customisation.
+__remove_legacy_docker_api_override
 
 # check if migration is needed
 readonly SOURCE_BIN_PATH=${SOURCE_ROOT}/usr/bin

@@ -8,7 +8,7 @@ import (
 
 	"github.com/IceWhaleTech/CasaOS-AppManagement/codegen"
 	"github.com/IceWhaleTech/CasaOS-AppManagement/common"
-	"github.com/compose-spec/compose-go/types"
+	"github.com/compose-spec/compose-go/v2/types"
 	"github.com/samber/lo"
 )
 
@@ -138,15 +138,17 @@ func (c *CustomizationPostData) ComposeAppStoreInfo() codegen.ComposeAppStoreInf
 }
 
 func (c *CustomizationPostData) Services() types.Services {
+	name := strings.ToLower(c.ContainerName)
+
 	return types.Services{
-		{
+		name: {
 			CapAdd:      c.CapAdd,
 			Command:     emtpySliceThenNil(c.Cmd),
 			CPUShares:   c.CPUShares,
 			Devices:     c.Devices.ToSlice(),
 			Environment: c.Envs.ToMappingWithEquals(),
 			Image:       c.Image,
-			Name:        strings.ToLower(c.ContainerName),
+			Name:        name,
 			NetworkMode: c.NetworkModel,
 			Ports:       c.Ports.ServicePortConfigList(),
 			Privileged:  c.Privileged,

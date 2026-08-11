@@ -9,7 +9,7 @@ import (
 	"github.com/IceWhaleTech/CasaOS-AppManagement/pkg/docker"
 	"github.com/docker/distribution/manifest/manifestlist"
 	"github.com/docker/distribution/manifest/schema1"
-	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/image"
 	"github.com/docker/docker/client"
 	"github.com/mitchellh/mapstructure"
 	"github.com/samber/lo"
@@ -46,7 +46,7 @@ func TestCompareDigest(t *testing.T) {
 
 	imageName := "alpine:latest"
 
-	out, err := cli.ImagePull(ctx, imageName, types.ImagePullOptions{})
+	out, err := cli.ImagePull(ctx, imageName, image.PullOptions{})
 	assert.NilError(t, err)
 	defer out.Close()
 

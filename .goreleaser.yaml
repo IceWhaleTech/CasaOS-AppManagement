@@ -12,10 +12,6 @@ builds:
     binary: build/sysroot/usr/bin/casaos-app-management
     hooks:
       post:
-        - cmd: go build -v -tags 'musl netgo osusergo' -o build/sysroot/usr/bin/appfile2compose github.com/IceWhaleTech/CasaOS-AppManagement/cmd/appfile2compose
-          output: true
-        - cmd: upx --best --lzma -v --no-progress build/sysroot/usr/bin/appfile2compose
-          output: true
         - cmd: upx --best --lzma -v --no-progress "{{ .Path }}"
           output: true
     env:
@@ -36,14 +32,6 @@ builds:
       - amd64
   - id: casaos-app-management-arm64
     binary: build/sysroot/usr/bin/casaos-app-management
-    hooks:
-      post:
-        - cmd: go build -v -tags 'musl netgo osusergo' -o build/sysroot/usr/bin/appfile2compose github.com/IceWhaleTech/CasaOS-AppManagement/cmd/appfile2compose
-          output: true
-        # - cmd: upx --best --lzma -v --no-progress build/sysroot/usr/bin/appfile2compose
-        #   output: true
-        # - cmd: upx --best --lzma -v --no-progress "{{ .Path }}"
-        #   output: true
     env:
       - CC=aarch64-linux-gnu-gcc
     ldflags:
@@ -64,10 +52,6 @@ builds:
     binary: build/sysroot/usr/bin/casaos-app-management
     hooks:
       post:
-        - cmd: go build -v -tags 'musl netgo osusergo' -o build/sysroot/usr/bin/appfile2compose github.com/IceWhaleTech/CasaOS-AppManagement/cmd/appfile2compose
-          output: true
-        - cmd: upx --best --lzma -v --no-progress build/sysroot/usr/bin/appfile2compose
-          output: true
         - cmd: upx --best --lzma -v --no-progress "{{ .Path }}"
           output: true
     env:
@@ -90,15 +74,89 @@ builds:
       - "7"
   - id: casaos-app-management-riscv64
     binary: build/sysroot/usr/bin/casaos-app-management
-    hooks:
-      post:
-        - cmd: go build -v -tags 'musl netgo osusergo' -o build/sysroot/usr/bin/appfile2compose github.com/IceWhaleTech/CasaOS-AppManagement/cmd/appfile2compose
-          output: true
     env:
       - CC=riscv64-linux-gnu-gcc
     ldflags:
       - -X main.commit={{.Commit}}
       - -X main.date={{.Date}}
+      - -s
+      - -w
+      - -extldflags "-static"
+    tags:
+      - musl
+      - netgo
+      - osusergo
+    goos:
+      - linux
+    goarch:
+      - riscv64
+  - id: casaos-app-management-appfile2compose-amd64
+    binary: build/sysroot/usr/bin/appfile2compose
+    main: ./cmd/appfile2compose
+    hooks:
+      post:
+        - cmd: upx --best --lzma -v --no-progress "{{ .Path }}"
+          output: true
+    env:
+      - CC=x86_64-linux-gnu-gcc
+    ldflags:
+      - -s
+      - -w
+      - -extldflags "-static"
+    tags:
+      - musl
+      - netgo
+      - osusergo
+    goos:
+      - linux
+    goarch:
+      - amd64
+  - id: casaos-app-management-appfile2compose-arm64
+    binary: build/sysroot/usr/bin/appfile2compose
+    main: ./cmd/appfile2compose
+    env:
+      - CC=aarch64-linux-gnu-gcc
+    ldflags:
+      - -s
+      - -w
+      - -extldflags "-static"
+    tags:
+      - musl
+      - netgo
+      - osusergo
+    goos:
+      - linux
+    goarch:
+      - arm64
+  - id: casaos-app-management-appfile2compose-arm-7
+    binary: build/sysroot/usr/bin/appfile2compose
+    main: ./cmd/appfile2compose
+    hooks:
+      post:
+        - cmd: upx --best --lzma -v --no-progress "{{ .Path }}"
+          output: true
+    env:
+      - CC=arm-linux-gnueabihf-gcc
+    ldflags:
+      - -s
+      - -w
+      - -extldflags "-static"
+    tags:
+      - musl
+      - netgo
+      - osusergo
+    goos:
+      - linux
+    goarch:
+      - arm
+    goarm:
+      - "7"
+  - id: casaos-app-management-appfile2compose-riscv64
+    binary: build/sysroot/usr/bin/appfile2compose
+    main: ./cmd/appfile2compose
+    env:
+      - CC=riscv64-linux-gnu-gcc
+    ldflags:
       - -s
       - -w
       - -extldflags "-static"
@@ -247,6 +305,10 @@ archives:
       - casaos-app-management-arm64
       - casaos-app-management-arm-7
       - casaos-app-management-riscv64
+      - casaos-app-management-appfile2compose-amd64
+      - casaos-app-management-appfile2compose-arm64
+      - casaos-app-management-appfile2compose-arm-7
+      - casaos-app-management-appfile2compose-riscv64
     files:
       - build/**/*
   - name_template: >-

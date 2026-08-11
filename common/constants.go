@@ -2,7 +2,7 @@ package common
 
 const (
 	AppManagementServiceName = "app-management"
-	AppManagementVersion     = "0.4.16"
+	AppManagementVersion     = "0.4.17"
 
 	AppsDirectoryName = "Apps"
 
